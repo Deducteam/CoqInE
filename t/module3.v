@@ -1,7 +1,9 @@
+Definition x := Prop.
+
 Module F.
-  Module H. Definition t := Prop. End H.
+  Module G. Definition y := x. End G.
 End F.
 
-Module G := F.
+Module H := F.
 
-Definition x := G.H.t.
+Definition z := H.G.y.
