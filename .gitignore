@@ -13,3 +13,7 @@ local.mk
 *.out
 *.sw[po]
 *.vo
+_build
+*.native
+*.byte
+xml
