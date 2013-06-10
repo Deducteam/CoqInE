@@ -1,11 +1,8 @@
 *.a
 *.annot
-bin
 *.cmxa
 *.cm[xioa]
-coqine_config.ml
 *.glob
-local.mk
 *.ml.d
 *.mli.d
 *.mllib.d
@@ -16,4 +13,3 @@ local.mk
 _build
 *.native
 *.byte
-xml
