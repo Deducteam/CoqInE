@@ -1,3 +1,5 @@
+#NAME Coq1univ
+
 Uset : Type.
 Uprop : Type.
 Utype : Type.

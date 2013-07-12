@@ -107,7 +107,7 @@ endif
 	$(OCAMLOPT) $(OPTFLAGS) -pp "$(CAMLP4O) `$(CAMLP4USE) $<` `$(CAMLP4DEPS) $<` $(CAMLP4COMPAT) -impl" -c -impl $<
 
 %.lua: %.dk
-	dedukti $< > $@
+	dkc -o $@ $<
 
 %.dk: %.vo
 	./bin/coqine -h $<

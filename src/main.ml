@@ -58,9 +58,10 @@ let translate filename =
       ([], Environ.empty_env) needed in
   let path,mb = Safe_typing.path_mb_compiled_library md.Check.md_compiled in
   let output_file = open_out (path_to_string path ^ ".dk") in
-  output_string output_file "#Coq1univ\n";
+  Printf.fprintf output_file "#NAME %s\n" (path_to_string path);
+  output_string output_file "#IMPORT Coq1univ\n";
   List.iter (fun i ->
-    Printf.fprintf output_file "#%s\n" (path_to_string i)) imports;
+    Printf.fprintf output_file "#IMPORT %s\n" (path_to_string i)) imports;
   let init_tenv = {env = env;
 		   decls = [];
 		   functors = [];
