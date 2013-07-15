@@ -1,5 +1,4 @@
--I src
+-R src Dedukti
 src/export.ml4
 src/Dedukti.v
-test/Test.v
 
