@@ -1,8 +1,9 @@
 COQ_MAKEFILE = coq_makefile
 
 MAKEFILE_PLUGIN = Makefile.plugin
+MAKEFILE_TEST = Makefile.test
 
-.PHONY: plugin install clean
+.PHONY: plugin install test clean
 
 plugin: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
@@ -10,6 +11,10 @@ plugin: $(MAKEFILE_PLUGIN)
 install: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - install
 
-clean: $(MAKEFILE_PLUGIN)
+test: plugin $(MAKEFILE_TEST)
+	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
+
+clean: $(MAKEFILE_PLUGIN) $(MAKEFILE_TEST)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
+	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
 
