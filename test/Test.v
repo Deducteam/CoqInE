@@ -1,7 +1,5 @@
 Require Dedukti.
+Require Identity.
 
-Definition id :=
-  fun (A : Type) (x : A) => x.
-
-Dedukti Export.
+Dedukti Export Identity "id.dk".
 

@@ -1,3 +1,5 @@
 -R src Dedukti
 -I test
+test/Identity.v
+test/Test.v
 
