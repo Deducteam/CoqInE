@@ -1,25 +1,20 @@
 COQ_MAKEFILE = coq_makefile
 
-PLUGIN_NAME = Dedukti
-PLUGIN_MAKEFILE = Makefile.plugin
-SRC_FILES = src/export.ml4 src/Dedukti.v
-TEST_FILES = test/Test.v
+MAKEFILE_INPUT = Makefile.input
+MAKEFILE_PLUGIN = Makefile.plugin
 
-.PHONY: plugin install test clean
+.PHONY: plugin install clean
 
-plugin: $(PLUGIN_MAKEFILE)
-	make -f $(PLUGIN_MAKEFILE)
+plugin: $(MAKEFILE_PLUGIN)
+	make -f $(MAKEFILE_PLUGIN)
 
-install: $(PLUGIN_MAKEFILE)
-	make -f $(PLUGIN_MAKEFILE) install
+install: $(MAKEFILE_PLUGIN)
+	make -f $(MAKEFILE_PLUGIN) install
 
-test: plugin
-	coqc -R src $(PLUGIN_NAME) $(TEST_FILES)
+clean: $(MAKEFILE_PLUGIN)
+	make -f $(MAKEFILE_PLUGIN) clean
+	rm -f $(MAKEFILE_PLUGIN)
 
-clean: $(PLUGIN_MAKEFILE)
-	make -f $(PLUGIN_MAKEFILE) clean
-	rm -f $(PLUGIN_MAKEFILE)
-
-$(PLUGIN_MAKEFILE): Makefile $(SRC_FILES)
-	$(COQ_MAKEFILE) -R src $(PLUGIN_NAME) $(SRC_FILES) -o $(PLUGIN_MAKEFILE)
+$(MAKEFILE_PLUGIN): $(MAKEFILE_INPUT)
+	$(COQ_MAKEFILE) -f $(MAKEFILE_INPUT) -o $(MAKEFILE_PLUGIN)
 
