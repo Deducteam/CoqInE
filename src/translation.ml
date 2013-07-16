@@ -35,10 +35,10 @@ let translate_sort s =
   | Prop(Pos) -> coq_p
   | Type(universe) -> coq_t
 
-let rec translate_constr context t =
+let rec translate_constr env t =
   match Term.kind_of_term t with
   | Rel(i) ->
-      let x = List.nth context (i - 1) in
+      let (x, _, _) = Environ.lookup_rel i env in
       Dedukti.var (translate_name x)
   | Var(identifier) -> failwith "Not implemented: Var"
   | Meta(metavariable) -> failwith "Not implemented: Meta"
@@ -52,19 +52,19 @@ let rec translate_constr context t =
       let s1' = coq_t in
       let s2' = coq_t in
       let x' = translate_name x in
-      let a' = translate_constr context a in
-      let a'' = translate_types context a in
-      let b' = translate_constr (x :: context) b in
+      let a' = translate_constr env a in
+      let a'' = translate_types env a in
+      let b' = translate_constr (Environ.push_rel (x, None, a) env) b in
       Dedukti.apps coq_prod [s1'; s2'; a'; Dedukti.lam (x', a'') b']
   | Lambda(x, a, t) ->
       let x' = translate_name x in
-      let a'' = translate_types context a in
-      let t' = translate_constr (x :: context) t in
+      let a'' = translate_types env a in
+      let t' = translate_constr (Environ.push_rel (x, None, a) env) t in
       Dedukti.lam (x', a'') t'
   | LetIn(x, u, a, t) -> failwith "Not implemented: LetIn"
   | App(t, u_list) ->
-      let t' = translate_constr context t in
-      let u_list' = List.map (translate_constr context) (Array.to_list u_list) in
+      let t' = translate_constr env t in
+      let u_list' = List.map (translate_constr env) (Array.to_list u_list) in
       Dedukti.apps t' u_list'
   | Const(c) ->
       let c' = translate_constant c in
@@ -75,24 +75,24 @@ let rec translate_constr context t =
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
-and translate_types context a =
+and translate_types env a =
   match Term.kind_of_type a with
   | SortType(s) ->
       let s' = translate_sort s in
       Dedukti.app coq_type s'
   | CastType(a, b) ->
       (* TODO: Fix type cast *)
-      translate_types context a
+      translate_types env a
   | ProdType(x, a, b) ->
       let x' = translate_name x in
-      let a' = translate_types context a in
-      let b' = translate_types (x :: context) b in
+      let a' = translate_types env a in
+      let b' = translate_types (Environ.push_rel (x, None, a) env) b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
       failwith "Not implemented"
   | AtomicType(_) ->
       (* TODO: compute the correct sort *)
-      let a' = translate_constr context a in
+      let a' = translate_constr env a in
       Dedukti.apps coq_term [coq_t; a']
 
 (** Translation of declarations *)
@@ -100,7 +100,7 @@ and translate_types context a =
 let translate_constant_type constant_type =
   match constant_type with
   | NonPolymorphicType(a) ->
-      translate_types [] a
+      translate_types Environ.empty_env a
   | PolymorphicArity(rel_context, polymorphic_arity) ->
       failwith "Polymorphic arity"
 
@@ -112,10 +112,10 @@ let translate_constant_body label constant_body =
   | Undef(inline) ->
       [Dedukti.declaration name const_type']
   | Def(constr_substituted) ->
-      let constr' = translate_constr [] (Declarations.force constr_substituted) in
+      let constr' = translate_constr Environ.empty_env (Declarations.force constr_substituted) in
       [Dedukti.definition false name const_type' constr']
   | OpaqueDef(lazy_constr) ->
-      let constr' = translate_constr [] (Declarations.force_opaque lazy_constr) in
+      let constr' = translate_constr Environ.empty_env (Declarations.force_opaque lazy_constr) in
       [Dedukti.definition true name const_type' constr']
 
 let rec translate_module_body module_body =
