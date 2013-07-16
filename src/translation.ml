@@ -41,11 +41,40 @@ let coq_sort s = Dedukti.apps (coq "sort") [s]
 
 let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
 
+(** Translate the Coq universe [i] as a concrete Dedukti universe.
+    Since the Coq universes are implemented as an abstract datatype, we cannot
+    access the information directly. This function uses a trick that involves
+    sorting the universe graph and manipulating the string representation. *)
+let translate_universe universes i =
+  (* Print the universe [i] to obtain a string representation. *)
+  Pp.pp_with Format.str_formatter (Univ.pr_uni i);
+  let i = Format.flush_str_formatter () in
+(*  Dedukti.var i*)
+  (* Sort the universes to solve the constraints. *)
+  let universes = Univ.sort_universes universes in
+  (* Tarverse the constraints and register when we see [i]. *)
+  let solution = ref None in
+  let register constraint_type j k =
+    if i = j then solution := Some(k) in
+  Univ.dump_universes register universes;
+  (* Extract the registered universe. *)
+  match !solution with
+  | None -> coq "z"
+  | Some(i) ->
+      let rec univ i =
+      match i with
+      | 0 -> coq_z
+      | i -> coq_s (univ (i - 1)) in
+      Scanf.sscanf i "Type.%d" univ
+
 let translate_sort env s =
   match s with
   | Prop(Null) -> coq_p
   | Prop(Pos) -> coq_p
-  | Type(i) -> coq_t coq_z
+  | Type(i) ->
+      let universes = Environ.universes env in
+      let i' = translate_universe universes i in
+      coq_t i'
 
 let rec translate_constr env t =
   match Term.kind_of_term t with
