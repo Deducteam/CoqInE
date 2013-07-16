@@ -1,0 +1,22 @@
+#NAME Coq
+
+srt : Type.
+p : srt.
+t : srt.
+
+axiom : srt -> srt.
+[] axiom p --> t
+[] axiom t --> t.
+
+rule : srt -> srt -> srt.
+[s : srt] rule s p --> p
+[s : srt] rule s t --> t.
+
+type : srt -> Type.
+
+term : s : srt -> A : type s -> Type.
+sort : s : srt -> type (axiom s).
+prod : s1 : srt -> s2 : srt -> A : type s1 -> (term s1 A -> type s2) -> type (rule s1 s2).
+[s : srt] term {axiom s} (sort s) --> type s
+[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {rule s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
+

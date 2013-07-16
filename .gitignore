@@ -6,4 +6,4 @@
 *.glob
 *.o
 *.vo
-
+!dedukti/Coq.dk
