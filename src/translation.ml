@@ -7,16 +7,6 @@ let infer_type env t =
 let infer_sort env a = 
   (fst (Typeops.infer_type env a)).Environ.utj_type
 
-(** Translation of names *)
-
-let translate_name name =
-  match name with
-  | Names.Name(identifier) -> Names.string_of_id identifier
-  | Names.Anonymous -> ""
-
-let translate_constant constant =
-  Names.string_of_con constant
-
 (** Translation of terms *)
 
 let coq name = Dedukti.Var(Printf.sprintf "Coq.%s" name)
@@ -80,7 +70,7 @@ let rec translate_constr env t =
   match Term.kind_of_term t with
   | Rel(i) ->
       let (x, _, _) = Environ.lookup_rel i env in
-      Dedukti.var (translate_name x)
+      Dedukti.var (Name.translate_name x)
   | Var(identifier) -> failwith "Not implemented: Var"
   | Meta(metavariable) -> failwith "Not implemented: Meta"
   | Evar(pexistential) -> failwith "Not implemented: Evar"
@@ -93,13 +83,13 @@ let rec translate_constr env t =
       let s2 = infer_sort (Environ.push_rel (x, None, a) env) b in
       let s1' = translate_sort env s1 in
       let s2' = translate_sort (Environ.push_rel (x, None, a) env) s2 in
-      let x' = translate_name x in
+      let x' = Name.translate_name x in
       let a' = translate_constr env a in
       let a'' = translate_types env a in
       let b' = translate_constr (Environ.push_rel (x, None, a) env) b in
       coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
-      let x' = translate_name x in
+      let x' = Name.translate_name x in
       let a'' = translate_types env a in
       let t' = translate_constr (Environ.push_rel (x, None, a) env) t in
       Dedukti.lam (x', a'') t'
@@ -109,7 +99,7 @@ let rec translate_constr env t =
       let u_list' = List.map (translate_constr env) (Array.to_list u_list) in
       Dedukti.apps t' u_list'
   | Const(c) ->
-      let c' = translate_constant c in
+      let c' = Name.translate_constant c in
       Dedukti.Var c'
   | Ind(inductive) -> failwith "Not implemented: Ind"
   | Construct(constructor) -> failwith "Not implemented: Construct"
@@ -126,7 +116,7 @@ and translate_types env a =
       (* TODO: Fix type cast *)
       translate_types env a
   | ProdType(x, a, b) ->
-      let x' = translate_name x in
+      let x' = Name.translate_name x in
       let a' = translate_types env a in
       let b' = translate_types (Environ.push_rel (x, None, a) env) b in
       Dedukti.pie (x', a') b'
@@ -148,7 +138,7 @@ let translate_constant_type env constant_type =
       failwith "Polymorphic arity"
 
 let translate_constant_body env label constant_body =
-  let name = Names.string_of_label label in
+  let name = Name.translate_label label in
   (* TODO: Handle [constant_body.const_hyps] *)
   let const_type' = translate_constant_type env constant_body.const_type in
   match constant_body.const_body with
