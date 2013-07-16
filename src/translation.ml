@@ -27,19 +27,19 @@ let coq_p = coq "p"
 
 let coq_t = coq "t"
 
-let coq_type = coq "type"
+let coq_type s = Dedukti.apps (coq "type") [s]
 
-let coq_term = coq "term"
+let coq_term s a = Dedukti.apps (coq "term") [s; a]
 
-let coq_sort = coq "sort"
+let coq_sort s = Dedukti.apps (coq "sort") [s]
 
-let coq_prod = coq "prod"
+let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
 
-let translate_sort s =
+let translate_sort env s =
   match s with
   | Prop(Null) -> coq_p
   | Prop(Pos) -> coq_p
-  | Type(universe) -> coq_t
+  | Type(u) -> coq_t
 
 let rec translate_constr env t =
   match Term.kind_of_term t with
@@ -50,20 +50,20 @@ let rec translate_constr env t =
   | Meta(metavariable) -> failwith "Not implemented: Meta"
   | Evar(pexistential) -> failwith "Not implemented: Evar"
   | Sort(s) ->
-      let s' = translate_sort s in
-      Dedukti.app coq_sort s'
+      let s' = translate_sort env s in
+      coq_sort s'
   | Cast(constr, cast_kind, types) -> failwith "Not implemented: Cast"
   | Prod(x, a, b) ->
       (* TODO: Compute the correct sorts *)
       let s1 = infer_sort env a in
       let s2 = infer_sort (Environ.push_rel (x, None, a) env) b in
-      let s1' = translate_sort s1 in
-      let s2' = translate_sort s2 in
+      let s1' = translate_sort env s1 in
+      let s2' = translate_sort (Environ.push_rel (x, None, a) env) s2 in
       let x' = translate_name x in
       let a' = translate_constr env a in
       let a'' = translate_types env a in
       let b' = translate_constr (Environ.push_rel (x, None, a) env) b in
-      Dedukti.apps coq_prod [s1'; s2'; a'; Dedukti.lam (x', a'') b']
+      coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
       let x' = translate_name x in
       let a'' = translate_types env a in
@@ -86,8 +86,8 @@ let rec translate_constr env t =
 and translate_types env a =
   match Term.kind_of_type a with
   | SortType(s) ->
-      let s' = translate_sort s in
-      Dedukti.app coq_type s'
+      let s' = translate_sort env s in
+      coq_type s'
   | CastType(a, b) ->
       (* TODO: Fix type cast *)
       translate_types env a
@@ -100,9 +100,9 @@ and translate_types env a =
       failwith "Not implemented"
   | AtomicType(_) ->
       let s = infer_sort env a in
-      let s' = translate_sort s in
+      let s' = translate_sort env s in
       let a' = translate_constr env a in
-      Dedukti.apps coq_term [s'; a']
+      coq_term s' a'
 
 (** Translation of declarations *)
 
