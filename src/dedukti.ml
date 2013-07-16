@@ -95,7 +95,7 @@ let print_instruction out instruction =
       let print_opaque out x =
         if opaque then Printf.fprintf out "{%a}" print_var x
         else Printf.fprintf out "%a" print_var x in
-      Printf.fprintf out "\n%a : %a\n  %a.\n" print_opaque x print_term a print_term t
+      Printf.fprintf out "\n%a : %a :=\n  %a.\n" print_opaque x print_term a print_term t
   | Rewrite(rules) ->
       let print_rules out = List.iter (print_rule out) in
       Printf.fprintf out "\n%a.\n" print_rules rules
