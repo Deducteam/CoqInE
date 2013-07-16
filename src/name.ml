@@ -1,4 +1,4 @@
-(** Name generation and handling. *)
+(** Translation of Coq names *)
 
 let is_alpha c =
   match c with
@@ -29,4 +29,18 @@ let escape name =
     then Printf.sprintf ""
     else Printf.sprintf "%a%a" escape_char name.[i] (escape (i + 1)) name in
   escape 0 () name
+
+let coq name =
+  Printf.sprintf "Coq.%s" name
+
+let translate_name name =
+  match name with
+  | Names.Name(identifier) -> Names.string_of_id identifier
+  | Names.Anonymous -> ""
+
+let translate_label label =
+  Names.string_of_label label
+
+let translate_constant constant =
+  Names.string_of_con constant
 
