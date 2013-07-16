@@ -1,6 +1,12 @@
 open Term
 open Declarations
 
+let infer_type env t =
+  (fst (Typeops.infer env t)).Environ.uj_type
+
+let infer_sort env a = 
+  (fst (Typeops.infer_type env a)).Environ.utj_type
+
 (** Translation of names *)
 
 let translate_name name =
@@ -49,8 +55,10 @@ let rec translate_constr env t =
   | Cast(constr, cast_kind, types) -> failwith "Not implemented: Cast"
   | Prod(x, a, b) ->
       (* TODO: Compute the correct sorts *)
-      let s1' = coq_t in
-      let s2' = coq_t in
+      let s1 = infer_sort env a in
+      let s2 = infer_sort (Environ.push_rel (x, None, a) env) b in
+      let s1' = translate_sort s1 in
+      let s2' = translate_sort s2 in
       let x' = translate_name x in
       let a' = translate_constr env a in
       let a'' = translate_types env a in
@@ -91,9 +99,10 @@ and translate_types env a =
   | LetInType(x, u, a, b) ->
       failwith "Not implemented"
   | AtomicType(_) ->
-      (* TODO: compute the correct sort *)
+      let s = infer_sort env a in
+      let s' = translate_sort s in
       let a' = translate_constr env a in
-      Dedukti.apps coq_term [coq_t; a']
+      Dedukti.apps coq_term [s'; a']
 
 (** Translation of declarations *)
 
