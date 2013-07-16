@@ -1,16 +1,25 @@
 #NAME Coq
 
+univ : Type.
+z : univ.
+s : univ -> univ.
+
+max : univ -> univ -> univ.
+[i : univ] max i z --> i
+[j : univ] max z j --> j
+[i : univ, j : univ] max (s i) (s j) --> s (max i j).
+
 srt : Type.
 p : srt.
-t : srt.
+t : univ -> srt.
 
 axiom : srt -> srt.
-[] axiom p --> t
-[] axiom t --> t.
+[] axiom p --> t (s z)
+[i : univ] axiom (t i) --> t (s i).
 
 rule : srt -> srt -> srt.
 [s : srt] rule s p --> p
-[s : srt] rule s t --> t.
+[i : univ, j : univ] rule (t i) (t j) --> t (max i j).
 
 type : srt -> Type.
 

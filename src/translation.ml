@@ -21,11 +21,17 @@ let translate_constant constant =
 
 let coq name = Dedukti.Var(Printf.sprintf "Coq.%s" name)
 
+let coq_univ = coq "univ"
+
+let coq_z = coq "z"
+
+let coq_s i = Dedukti.apps (coq "s") [i]
+
 let coq_srt = coq "srt"
 
 let coq_p = coq "p"
 
-let coq_t = coq "t"
+let coq_t u = Dedukti.apps (coq "t") [u]
 
 let coq_type s = Dedukti.apps (coq "type") [s]
 
@@ -39,7 +45,7 @@ let translate_sort env s =
   match s with
   | Prop(Null) -> coq_p
   | Prop(Pos) -> coq_p
-  | Type(u) -> coq_t
+  | Type(i) -> coq_t coq_z
 
 let rec translate_constr env t =
   match Term.kind_of_term t with
