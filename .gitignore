@@ -2,6 +2,7 @@
 *.cmxa
 *.cmxs
 *.d
+*.dk
 *.glob
 *.o
 *.vo
