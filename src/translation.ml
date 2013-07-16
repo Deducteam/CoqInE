@@ -54,7 +54,6 @@ let rec translate_constr env t =
       coq_sort s'
   | Cast(constr, cast_kind, types) -> failwith "Not implemented: Cast"
   | Prod(x, a, b) ->
-      (* TODO: Compute the correct sorts *)
       let s1 = infer_sort env a in
       let s2 = infer_sort (Environ.push_rel (x, None, a) env) b in
       let s1' = translate_sort env s1 in
@@ -106,42 +105,42 @@ and translate_types env a =
 
 (** Translation of declarations *)
 
-let translate_constant_type constant_type =
+let translate_constant_type env constant_type =
   match constant_type with
   | NonPolymorphicType(a) ->
       translate_types Environ.empty_env a
   | PolymorphicArity(rel_context, polymorphic_arity) ->
       failwith "Polymorphic arity"
 
-let translate_constant_body label constant_body =
+let translate_constant_body env label constant_body =
   let name = Names.string_of_label label in
   (* TODO: Handle [constant_body.const_hyps] *)
-  let const_type' = translate_constant_type constant_body.const_type in
+  let const_type' = translate_constant_type env constant_body.const_type in
   match constant_body.const_body with
   | Undef(inline) ->
       [Dedukti.declaration name const_type']
   | Def(constr_substituted) ->
-      let constr' = translate_constr Environ.empty_env (Declarations.force constr_substituted) in
+      let constr' = translate_constr env (Declarations.force constr_substituted) in
       [Dedukti.definition false name const_type' constr']
   | OpaqueDef(lazy_constr) ->
-      let constr' = translate_constr Environ.empty_env (Declarations.force_opaque lazy_constr) in
+      let constr' = translate_constr env (Declarations.force_opaque lazy_constr) in
       [Dedukti.definition true name const_type' constr']
 
-let rec translate_module_body module_body =
+let rec translate_module_body env module_body =
   match module_body.mod_expr with
-  | Some(struct_expr_body) -> translate_struct_expr_body struct_expr_body
+  | Some(struct_expr_body) -> translate_struct_expr_body env struct_expr_body
   | None -> failwith "Empty module body"
 
-and translate_struct_expr_body struct_expr_body =
+and translate_struct_expr_body env struct_expr_body =
   match struct_expr_body with
-  | SEBstruct(structure_body) -> translate_structure_body structure_body
+  | SEBstruct(structure_body) -> translate_structure_body env structure_body
   | _ -> []
 
-and translate_structure_body structure_body =
-  List.concat (List.map translate_structure_field_body structure_body)
+and translate_structure_body env structure_body =
+  List.concat (List.map (translate_structure_field_body env) structure_body)
 
-and translate_structure_field_body (label, structure_field_body) =
+and translate_structure_field_body env (label, structure_field_body) =
   match structure_field_body with
-  | SFBconst(constant_body) -> translate_constant_body label constant_body
+  | SFBconst(constant_body) -> translate_constant_body env label constant_body
   | _ -> []
 
