@@ -4,6 +4,7 @@
 *.d
 *.dk
 *.glob
+*.lua
 *.o
 *.vo
 !dedukti/Coq.dk
