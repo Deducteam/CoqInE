@@ -42,8 +42,10 @@ let rewrite rules = Rewrite(rules)
 (** Pretty-printing using the minimal number of parentheses. *)
 
 let print_var out x =
+  (* Print anonymous variables as "__".
+     The name "_" is not accepted by Dedukti. *)
   match x with
-  | "" -> failwith "Empty variable name"
+  | "" -> Printf.fprintf out "__"
   | _ -> Printf.fprintf out "%s" x
 
 let rec print_term out term =
