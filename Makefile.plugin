@@ -1,6 +1,7 @@
 -R src Dedukti
 -I src
 src/dedukti.ml
+src/name.ml
 src/export.ml4
 src/Dedukti.v
 
