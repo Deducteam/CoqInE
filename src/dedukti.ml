@@ -106,5 +106,5 @@ let print_comment out comment =
 (** Print the command (e.g. ["NAME"], ["IMPORT"]) followed by its arguments. *)
 let print_command out command args =
   let print_args out = List.iter (Printf.fprintf out " %s") in
-  Printf.fprintf out "\n#%s%a.\n" command print_args args
+  Printf.fprintf out "\n#%s%a\n" command print_args args
 
