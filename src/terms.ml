@@ -68,6 +68,7 @@ let rec translate_constr env t =
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
 and translate_types env a =
+  (* Specialize on the type to get a nicer and more compact translation. *)
   match Term.kind_of_type a with
   | SortType(s) ->
       let s' = translate_sort env s in
@@ -82,6 +83,7 @@ and translate_types env a =
   | LetInType(x, u, a, b) ->
       failwith "Not implemented: LetInType"
   | AtomicType(_) ->
+      (* Fall back on the usual translation of types. *)
       let s = infer_sort env a in
       let s' = translate_sort env s in
       let a' = translate_constr env a in
