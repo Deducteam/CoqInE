@@ -1,5 +1,7 @@
 (** Translation of Coq libraries *)
 
+(* This makes this solution not portable.
+   Change this to the magic number of the version you are using. *)
 let vo_magic_number = 08400
 
 let raw_intern_library =
