@@ -9,6 +9,7 @@ type term =
   | Lam of (var * term) * term
   | App of term * term
   | Dot of term
+  | Comment of string * term
 
 type instruction =
   | Declaration of var * term
@@ -24,6 +25,8 @@ let pie (x, a) b = Pie((x, a), b)
 let lam (x, a) b = Lam((x, a), b)
 
 let app a b = App(a, b)
+
+let comment s a = Comment(s, a)
 
 let arrs args b = List.fold_right arr args b
 
@@ -74,6 +77,8 @@ and print_atomic out term =
     Printf.fprintf out "%a" print_var x
   | Dot(a) ->
     Printf.fprintf out "{%a}" print_term a
+  | Comment(s, a) ->
+    Printf.fprintf out "(; %s ;) (%a)" s print_term a
   | _ ->
     Printf.fprintf out "(%a)" print_term term
 
