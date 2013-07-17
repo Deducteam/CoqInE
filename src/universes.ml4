@@ -53,7 +53,10 @@ let translate_universe env i =
   let i_str =
     (Pp.pp_with Format.str_formatter (Univ.pr_uni i);
      Format.flush_str_formatter ()) in
-  let i = parse_universe (lexer (Stream.of_string i_str)) in
+  let i =
+    try parse_universe (lexer (Stream.of_string i_str)) with
+    | Stream.Failure
+    | Stream.Error _ -> failwith (Printf.sprintf "Unable to parse universe %s" i_str) in
   (* Sort the universes to solve the constraints and save them in a table. *)
   let universes = Univ.sort_universes (Environ.universes env) in
   let solutions = Hashtbl.create 10007 in
