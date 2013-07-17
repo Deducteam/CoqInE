@@ -1,6 +1,7 @@
 (** Main export commands *)
 
-let export_library out (loc, qualid) =
+let export_library out dir_path =
+  let qualid = Libnames.qualid_of_dirpath dir_path in  
   let module_path = Nametab.locate_module qualid in
   let module_name = Names.string_of_mp module_path in
   let module_body = Global.lookup_module module_path in
@@ -10,14 +11,15 @@ let export_library out (loc, qualid) =
   Dedukti.print_command out "IMPORT" ["Coq"];
   List.iter (Dedukti.print_instruction out) translation
 
-let export reference =
-  let located_qualid = Libnames.qualid_of_reference reference in
-  let dir_path, filename = Library.try_locate_qualified_library located_qualid in
-  let out = open_out (Filename.chop_extension filename ^ ".dk") in
-  try export_library out located_qualid
+let export filename =
+  Library.require_library_from_file None filename None;
+  let dir_path = Libnames.dirpath_of_string filename in
+  let full_filename = Library.library_full_filename dir_path in
+  let out = open_out (Filename.chop_extension full_filename ^ ".dk") in
+  try export_library out dir_path
   with e -> (close_out out; raise e)
 
-VERNAC COMMAND EXTEND Coqine
-| [ "Dedukti" "Export" global(reference) ] -> [ export reference ]
+VERNAC COMMAND EXTEND Dedukti
+| [ "Dedukti" "Export" string_list(filenames) ] -> [ List.iter export filenames ]
 END
 
