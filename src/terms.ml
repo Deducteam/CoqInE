@@ -21,7 +21,7 @@ let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
 let translate_sort env s =
   match s with
   | Prop(Null) -> coq_p
-  | Prop(Pos) -> coq_p
+  | Prop(Pos) -> coq_t Universes.coq_z
   | Type(i) ->
       let i' = Universes.translate_universe env i in
       coq_t i'
