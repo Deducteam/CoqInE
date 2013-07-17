@@ -8,10 +8,12 @@ type term =
   | Pie of (var * term) * term
   | Lam of (var * term) * term
   | App of term * term
-  | Dot of term
-  | Comment of string * term
+  | Dot of term (* Dot patterns *)
+  | Cmt of string * term (* Comment annotations *)
 
 type instruction =
+  | Comment of string
+  | Command of string * string list (* e.g. "#NAME" or "IMPORT" *)
   | Declaration of var * term
   | Definition of bool * var * term * term
   | Rewrite of ((var * term) list * term * term) list
@@ -26,7 +28,7 @@ let lam (x, a) b = Lam((x, a), b)
 
 let app a b = App(a, b)
 
-let comment s a = Comment(s, a)
+let cmt s a = Cmt(s, a)
 
 let arrs args b = List.fold_right arr args b
 
@@ -35,6 +37,10 @@ let pies args b = List.fold_right pie args b
 let lams args b = List.fold_right lam args b
 
 let apps a args = List.fold_left app a args
+
+let comment c = Comment(c)
+
+let command cmd args = Command(cmd, args)
 
 let declaration x a = Declaration(x, a)
 
@@ -77,7 +83,7 @@ and print_atomic out term =
     Printf.fprintf out "%a" print_var x
   | Dot(a) ->
     Printf.fprintf out "{%a}" print_term a
-  | Comment(s, a) ->
+  | Cmt(s, a) ->
     Printf.fprintf out "(; %s ;) (%a)" s print_term a
   | _ ->
     Printf.fprintf out "(%a)" print_term term
@@ -96,22 +102,19 @@ let print_rule out (context, left, right) =
 
 let print_instruction out instruction =
   match instruction with
+  | Comment(c) ->
+      Printf.fprintf out "\n(; %s ;)\n" c
+  | Command(cmd, args) ->
+      let print_args out = List.iter (Printf.fprintf out " %s") in
+      Printf.fprintf out "\n#%s%a\n" cmd print_args args
   | Declaration(x, a) ->
       Printf.fprintf out "\n%a : %a.\n" print_var x print_term a
   | Definition(opaque, x, a, t) ->
-      let print_opaque out x =
-        if opaque then Printf.fprintf out "{%a}" print_var x
-        else Printf.fprintf out "%a" print_var x in
+      let print_opaque out =
+        if opaque then Printf.fprintf out "{%a}" print_var
+        else Printf.fprintf out "%a" print_var in
       Printf.fprintf out "\n%a : %a :=\n  %a.\n" print_opaque x print_term a print_term t
   | Rewrite(rules) ->
       let print_rules out = List.iter (print_rule out) in
       Printf.fprintf out "\n%a.\n" print_rules rules
-
-let print_comment out comment =
-  Printf.fprintf out "\n(; %s ;)\n" comment
-
-(** Print the command (e.g. ["NAME"], ["IMPORT"]) followed by its arguments. *)
-let print_command out command args =
-  let print_args out = List.iter (Printf.fprintf out " %s") in
-  Printf.fprintf out "\n#%s%a\n" command print_args args
 
