@@ -13,24 +13,27 @@ let rec make_coq_univ n =
   if n = 0 then coq_z else coq_s (make_coq_univ (n - 1))
 
 type universe =
+  | Set
   | Atom of string
   | Succ of universe
   | Max of universe list
 
-let lexer = Genlex.make_lexer ["."; "+"; "max"; "("; ","; ")"]
+let lexer = Genlex.make_lexer ["Set"; "."; "+"; "max"; "("; ","; ")"]
 
 let rec parse_universe = parser
-    [< 'Ident p; 'Kwd "."; 'Int i >] -> Atom(Printf.sprintf "%s.%d" p i)
+  | [< 'Kwd "Set" >] -> Set
+  | [< 'Ident p; 'Kwd "."; 'Int i >] -> Atom(Printf.sprintf "%s.%d" p i)
   | [< 'Kwd "("; i = parse_universe; 'Kwd ")"; 'Kwd "+"; 'Int 1 >] -> Succ(i)
   | [< 'Kwd "max"; 'Kwd "("; i_list = parse_universes; 'Kwd ")" >] -> Max(i_list)
 and parse_universes = parser
-    [< i = parse_universe; 'Kwd ","; i_list = parse_universes >] -> i :: i_list
+  | [< i = parse_universe; 'Kwd ","; i_list = parse_universes >] -> i :: i_list
   | [< i = parse_universe >] -> [i]
   | [< >] -> []
 
 let rec evaluate_universe solutions i =
   let rec evaluate i =
     match i with
+    | Set -> coq_z
     | Atom(i) ->
         (try make_coq_univ (Hashtbl.find solutions i)
          with Not_found -> coq_z)
