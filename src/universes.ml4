@@ -52,7 +52,7 @@ let translate_universe env i =
      Format.flush_str_formatter ()) in
   let i = parse_universe (lexer (Stream.of_string i_str)) in
   (* Sort the universes to solve the constraints and save them in a table. *)
-  let universes = Univ.sort_universes (Environ.universes (Global.env ())) in
+  let universes = Univ.sort_universes (Environ.universes env) in
   let solutions = Hashtbl.create 10007 in
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add solutions j k) in

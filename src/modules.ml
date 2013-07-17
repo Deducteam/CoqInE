@@ -5,7 +5,7 @@ open Declarations
 let translate_constant_type env constant_type =
   match constant_type with
   | NonPolymorphicType(a) ->
-      Terms.translate_types Environ.empty_env a
+      Terms.translate_types env a
   | PolymorphicArity(rel_context, polymorphic_arity) ->
       failwith "Polymorphic arity"
 
