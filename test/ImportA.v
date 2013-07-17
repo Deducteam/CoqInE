@@ -1,0 +1,2 @@
+Definition x := Prop.
+

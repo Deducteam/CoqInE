@@ -1,6 +1,9 @@
 -R src Dedukti
 -I test
 test/Identity.v
+test/ImportA.v
+test/ImportB.v
+test/ImportC.v
 test/Reflexivity.v
 test/Test.v
 
