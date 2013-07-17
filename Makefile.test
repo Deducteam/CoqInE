@@ -5,5 +5,4 @@ test/ImportA.v
 test/ImportB.v
 test/ImportC.v
 test/Reflexivity.v
-test/Test.v
 
