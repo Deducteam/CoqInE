@@ -2,7 +2,7 @@
 -I src
 src/dedukti.ml
 src/name.ml
-src/universes.ml
+src/universes.ml4
 src/terms.ml
 src/modules.ml
 src/export.ml4
