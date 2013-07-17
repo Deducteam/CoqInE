@@ -1,5 +1,7 @@
 (** Translation of Coq names *)
 
+(* The name "names.ml" is already taken by a file in the Coq library. *)
+
 let is_alpha c =
   match c with
   | 'a' .. 'z'
