@@ -19,4 +19,5 @@ test: plugin
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
+	rm -rf test/*.dk
 
