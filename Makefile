@@ -5,16 +5,16 @@ MAKEFILE_TEST = Makefile.test
 
 .PHONY: plugin install test clean
 
-plugin: $(MAKEFILE_PLUGIN)
+plugin:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
 
-install: $(MAKEFILE_PLUGIN)
+install:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - install
 
-test: plugin $(MAKEFILE_TEST)
+test: plugin
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
 
-clean: $(MAKEFILE_PLUGIN) $(MAKEFILE_TEST)
+clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
 
