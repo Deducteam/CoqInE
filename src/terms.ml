@@ -73,15 +73,14 @@ and translate_types env a =
       let s' = translate_sort env s in
       coq_type s'
   | CastType(a, b) ->
-      (* TODO: Fix type cast *)
-      translate_types env a
+      failwith "Not implemented: CastType"
   | ProdType(x, a, b) ->
       let x' = Name.translate_name x in
       let a' = translate_types env a in
       let b' = translate_types (Environ.push_rel (x, None, a) env) b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
-      failwith "Not implemented"
+      failwith "Not implemented: LetInType"
   | AtomicType(_) ->
       let s = infer_sort env a in
       let s' = translate_sort env s in
