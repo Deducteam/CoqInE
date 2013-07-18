@@ -14,6 +14,7 @@ let coq_type s = Dedukti.apps (coq "type") [s]
 let coq_term s a = Dedukti.apps (coq "term") [s; a]
 let coq_sort s = Dedukti.apps (coq "sort") [s]
 let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
+let coq_cast s1 s2 a b t = Dedukti.apps (coq "cast") [s1; s2; a; b; t]
 
 let translate_sort env s =
   match s with
@@ -32,7 +33,16 @@ let rec translate_constr env t =
   | Sort(s) ->
       let s' = translate_sort env s in
       coq_sort s'
-  | Cast(constr, cast_kind, types) -> failwith "Not implemented: Cast"
+  | Cast(t, _, b) ->
+      let a = infer_type env t in
+      let s1 = infer_sort env a in
+      let s2 = infer_sort env b in
+      let s1' = translate_sort env s1 in
+      let s2' = translate_sort env s2 in
+      let a' = translate_constr env a in
+      let b' = translate_constr env b in
+      let t' = translate_constr env t in
+      coq_cast s1' s2' a' b' t'
   | Prod(x, a, b) ->
       let s1 = infer_sort env a in
       let s2 = infer_sort (Environ.push_rel (x, None, a) env) b in
