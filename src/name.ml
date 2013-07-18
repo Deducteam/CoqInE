@@ -32,11 +32,12 @@ let is_alpha_numerical c =
 let escape name =
   (* Use Printf.sprintf for efficiency. *)
   let escape_char () c =
-    if is_alpha_numerical c
-    then Printf.sprintf "%c" c
-    else if c = '_'
-    then Printf.sprintf "__"
-    else Printf.sprintf "_%02X" (Char.code c) in
+    if is_alpha_numerical c then Printf.sprintf "%c" c else
+    match c with
+    | '.' -> "__"
+    | '_' -> "_underscore_"
+    | '\'' -> "_prime_"
+    | _ -> Printf.sprintf "_%02X" (Char.code c) in
   let rec escape i () name =
     if i = String.length name
     then Printf.sprintf ""
