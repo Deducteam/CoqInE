@@ -9,6 +9,7 @@
     - label: names of structure elements
     - mod_bound_id: names of functor parameters
     - module_path: module paths (e.g. "<file>.A.B", "<bound_mod_id>.A.B")
+    - kernel_name: absolute names of objects
     - constant: refers to a declared constant
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
@@ -47,9 +48,12 @@ let escape name =
 let coq name =
   Printf.sprintf "Coq.%s" name
 
+let translate_identifier identifier =
+  escape (Names.string_of_id identifier)
+
 let translate_name name =
   match name with
-  | Names.Name(identifier) -> Names.string_of_id identifier
+  | Names.Name(identifier) -> translate_identifier identifier
   | Names.Anonymous -> ""
 
 let translate_dir_path dir_path =
@@ -71,9 +75,29 @@ let translate_module_path module_path labels =
   let (prefix, labels) = split module_path labels in
   let ids = List.map Names.id_of_label labels in
   (* Reverse the order of ids as dirpath elements are given in reverse order. *)
-  let suffix = translate_dir_path (Names.make_dirpath (List.rev ids)) in
+  let dir_path = Names.make_dirpath (List.rev ids) in
+  let suffix = translate_dir_path dir_path in
   Printf.sprintf "%s.%s" prefix suffix
 
-let translate_constant constant =
+let translate_kernel_name env kernel_name =
+  translate_module_path (Names.modpath kernel_name) [Names.label kernel_name]
+
+let translate_constant env constant =
   translate_module_path (Names.con_modpath constant) [Names.con_label constant]
+
+let translate_inductive env (mutual_inductive, i) =
+  let mutual_inductive_body = Environ.lookup_mind mutual_inductive env in
+  let inductive_body = mutual_inductive_body.Declarations.mind_packets.(i) in
+  let identifier = inductive_body.Declarations.mind_typename in
+  let module_path = Names.mind_modpath mutual_inductive in
+  let label = Names.label_of_id identifier in
+  translate_module_path module_path [label]
+
+let translate_constructor env ((mutual_inductive, i), j) =
+  let mutual_inductive_body = Environ.lookup_mind mutual_inductive env in
+  let inductive_body = mutual_inductive_body.Declarations.mind_packets.(i) in
+  let identifier = inductive_body.Declarations.mind_consnames.(j - 1) in
+  let module_path = Names.mind_modpath mutual_inductive in
+  let label = Names.label_of_id identifier in
+  translate_module_path module_path [label]
 

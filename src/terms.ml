@@ -64,10 +64,14 @@ let rec translate_constr env t =
       let u_list' = List.map (translate_constr env) (Array.to_list u_list) in
       Dedukti.apps t' u_list'
   | Const(c) ->
-      let c' = Name.translate_constant c in
-      Dedukti.Var c'
-  | Ind(inductive) -> failwith "Not implemented: Ind"
-  | Construct(constructor) -> failwith "Not implemented: Construct"
+      let c' = Name.translate_constant env c in
+      Dedukti.var c'
+  | Ind(i) ->
+      let i' = Name.translate_inductive env i in
+      Dedukti.var i'
+  | Construct(c) ->
+      let c' = Name.translate_constructor env c in
+      Dedukti.var c'
   | Case(case_info, constr, constr2, constr_array) -> failwith "Not implemented: Cast"
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
