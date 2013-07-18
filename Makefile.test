@@ -3,6 +3,7 @@ test/Identity.v
 test/ImportA.v
 test/ImportB.v
 test/ImportC.v
+test/Cast.v
 test/NestedModules.v
 test/NestedLibraries.v
 test/Reflexivity.v
