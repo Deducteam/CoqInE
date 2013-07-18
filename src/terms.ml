@@ -10,9 +10,6 @@ let infer_sort env a =
   
 let coq x = Dedukti.Var(Name.coq x)
 
-let coq_srt = coq "srt"
-let coq_p = coq "p"
-let coq_t u = Dedukti.apps (coq "t") [u]
 let coq_type s = Dedukti.apps (coq "type") [s]
 let coq_term s a = Dedukti.apps (coq "term") [s; a]
 let coq_sort s = Dedukti.apps (coq "sort") [s]
@@ -20,11 +17,9 @@ let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
 
 let translate_sort env s =
   match s with
-  | Prop(Null) -> coq_p
-  | Prop(Pos) -> coq_t Universes.coq_z
-  | Type(i) ->
-      let i' = Universes.translate_universe env i in
-      coq_t i'
+  | Prop(Null) -> Universes.coq_p
+  | Prop(Pos) -> Universes.coq_z
+  | Type(i) -> Universes.translate_universe env i
 
 let rec translate_constr env t =
   match Term.kind_of_term t with

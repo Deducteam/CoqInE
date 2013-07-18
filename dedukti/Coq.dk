@@ -1,31 +1,25 @@
 #NAME Coq
 
-univ : Type.
-z : univ.
-s : univ -> univ.
-
-max : univ -> univ -> univ.
-[i : univ] max i z --> i
-[j : univ] max z j --> j
-[i : univ, j : univ] max (s i) (s j) --> s (max i j).
+(; Sorts ;)
 
 srt : Type.
 p : srt.
-t : univ -> srt.
+z : srt.
+t : srt -> srt.
+[] t p --> t z.
 
-axiom : srt -> srt.
-[] axiom p --> t (s z)
-[i : univ] axiom (t i) --> t (s i).
+r : srt -> srt -> srt.
+[s : srt] r s p --> p
+[s : srt] r s z --> s
+[s : srt] r z s --> s
+[s1 : srt, s2 : srt] r (t s1) (t s2) --> t (r s1 s2).
 
-rule : srt -> srt -> srt.
-[s : srt] rule s p --> p
-[i : univ, j : univ] rule (t i) (t j) --> t (max i j).
+(; Terms ;)
 
 type : srt -> Type.
-
 term : s : srt -> A : type s -> Type.
-sort : s : srt -> type (axiom s).
-prod : s1 : srt -> s2 : srt -> A : type s1 -> (term s1 A -> type s2) -> type (rule s1 s2).
-[s : srt] term {axiom s} (sort s) --> type s
-[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {rule s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
+sort : s : srt -> type (t s).
+prod : s1 : srt -> s2 : srt -> A : type s1 -> (term s1 A -> type s2) -> type (r s1 s2).
+[s : srt] term {t s} (sort s) --> type s
+[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {r s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
 

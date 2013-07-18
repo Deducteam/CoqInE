@@ -4,13 +4,13 @@ open Genlex
 
 let coq x = Dedukti.Var(Name.coq x)
 
-let coq_univ = coq "univ"
+let coq_p = coq "p"
 let coq_z = coq "z"
-let coq_s i = Dedukti.apps (coq "s") [i]
-let coq_max i j = Dedukti.apps (coq "max") [i; j]
+let coq_t i = Dedukti.apps (coq "t") [i]
+let coq_r i j = Dedukti.apps (coq "r") [i; j]
 
 let rec make_coq_univ n =
-  if n = 0 then coq_z else coq_s (make_coq_univ (n - 1))
+  if n = 0 then coq_z else coq_t (make_coq_univ (n - 1))
 
 type universe =
   | Set
@@ -37,10 +37,10 @@ let rec evaluate_universe solutions i =
     | Atom(i) ->
         (try make_coq_univ (Hashtbl.find solutions i)
          with Not_found -> coq_z)
-    | Succ(i) -> coq_s (evaluate i)
+    | Succ(i) -> coq_t (evaluate i)
     | Max([]) -> failwith "Empty max"
     | Max([i]) -> evaluate i
-    | Max(i :: j_list) -> coq_max (evaluate i) (evaluate (Max(j_list))) in
+    | Max(i :: j_list) -> coq_r (evaluate i) (evaluate (Max(j_list))) in
   evaluate i
 
 (** Translate the Coq universe [i] as a concrete Dedukti universe.
