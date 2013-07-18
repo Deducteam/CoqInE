@@ -71,7 +71,7 @@ let translate_module_path module_path labels =
   let ids = List.map Names.id_of_label labels in
   (* Reverse the order of ids as dirpath elements are given in reverse order. *)
   let suffix = translate_dir_path (Names.make_dirpath (List.rev ids)) in
-  Printf.sprintf "%s.%s" (escape prefix) (escape suffix)
+  Printf.sprintf "%s.%s" prefix suffix
 
 let translate_constant constant =
   translate_module_path (Names.con_modpath constant) [Names.con_label constant]
