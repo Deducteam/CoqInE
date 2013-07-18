@@ -14,7 +14,7 @@ install:
 
 test: plugin
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
-	$(COQTOP) -R src Dedukti -I test -l test/Test
+	$(COQTOP) -batch -R src Dedukti -I test -l test/Test
 
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
