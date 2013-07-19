@@ -2,10 +2,10 @@
 
 (* This makes this solution not portable.
    Change this to the magic number of the version you are using. *)
-let vo_magic_number = 08400
+let vo_magic_number = ref 08400
 
 let raw_intern_library =
-  snd (System.raw_extern_intern vo_magic_number ".vo")
+  snd (System.raw_extern_intern !vo_magic_number ".vo")
 
 type library_objects
 
