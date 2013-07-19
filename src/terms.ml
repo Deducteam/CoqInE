@@ -79,7 +79,7 @@ let rec translate_constr out env t =
   | Construct(c) ->
       let c' = Name.translate_constructor env c in
       Dedukti.var c'
-  | Case(case_info, constr, constr2, constr_array) -> failwith "Not implemented: Cast"
+  | Case(case_info, constr, constr2, constr_array) -> failwith "Not implemented: Case"
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
