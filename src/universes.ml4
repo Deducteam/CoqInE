@@ -18,18 +18,21 @@ type universe =
   | Succ of universe
   | Max of universe list
 
-let lexer = Genlex.make_lexer ["Set"; "."; "+"; "max"; "("; ","; ")"]
+let lexer = Genlex.make_lexer ["."; "+"; "("; ","; ")"]
 
 let rec parse_universe = parser
-  | [< 'Kwd "Set" >] -> Set
-  | [< 'Ident p; 'Kwd "."; 'Int i >] -> Atom(Printf.sprintf "%s.%d" p i)
+  | [< 'Ident "Set" >] -> Set
   | [< 'Kwd "("; i = parse_universe; 'Kwd ")"; 'Kwd "+"; 'Int 1 >] -> Succ(i)
-  | [< 'Kwd "max"; 'Kwd "("; i_list = parse_universes; 'Kwd ")" >] -> Max(i_list)
+  | [< 'Ident "max"; 'Kwd "("; i_list = parse_universes; 'Kwd ")" >] -> Max(i_list)
+  | [< a = parse_atom >] -> Atom(a)
 and parse_universes = parser
   | [< i = parse_universe; 'Kwd ","; i_list = parse_universes >] -> i :: i_list
   | [< i = parse_universe >] -> [i]
   | [< >] -> []
-
+and parse_atom = parser
+  | [< 'Int i >] -> Printf.sprintf "%d" i
+  | [< 'Ident p; 'Kwd "."; rest = parse_atom >] ->  Printf.sprintf "%s.%s" p rest
+  
 let rec evaluate_universe solutions i =
   let rec evaluate i =
     match i with
