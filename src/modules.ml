@@ -2,25 +2,25 @@
 
 open Declarations
 
-let translate_constant_type env constant_type =
+let translate_constant_type out env constant_type =
   match constant_type with
   | NonPolymorphicType(a) ->
-      Terms.translate_types env a
+      Terms.translate_types out env a
   | PolymorphicArity(rel_context, polymorphic_arity) ->
       failwith "Polymorphic arity"
 
 let translate_constant_body out env label constant_body =
   let name = Name.translate_label label in
   (* TODO: Handle [constant_body.const_hyps] *)
-  let const_type' = translate_constant_type env constant_body.const_type in
+  let const_type' = translate_constant_type out env constant_body.const_type in
   match constant_body.const_body with
   | Undef(inline) ->
       Dedukti.print out (Dedukti.declaration name const_type')
   | Def(constr_substituted) ->
-      let constr' = Terms.translate_constr env (Declarations.force constr_substituted) in
+      let constr' = Terms.translate_constr out env (Declarations.force constr_substituted) in
       Dedukti.print out (Dedukti.definition false name const_type' constr')
   | OpaqueDef(lazy_constr) ->
-      let constr' = Terms.translate_constr env (Declarations.force_opaque lazy_constr) in
+      let constr' = Terms.translate_constr out env (Declarations.force_opaque lazy_constr) in
       Dedukti.print out (Dedukti.definition true name const_type' constr')
 
 let rec translate_module_body out env module_body =
