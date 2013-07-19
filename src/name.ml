@@ -45,6 +45,11 @@ let escape name =
     else Printf.sprintf "%a%a" escape_char name.[i] (escape (i + 1)) name in
   escape 0 () name
 
+(** Mangle the name with the prefix to avoid clashes between translated and
+    generated variable names. *)
+let mangle prefix name =
+  Printf.sprintf "_%s_%s" prefix name
+
 let coq name =
   Printf.sprintf "Coq.%s" name
 
