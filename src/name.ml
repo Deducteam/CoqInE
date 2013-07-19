@@ -35,10 +35,10 @@ let escape name =
   let escape_char () c =
     if is_alpha_numerical c then Printf.sprintf "%c" c else
     match c with
-    | '.' -> "__"
-    | '_' -> "_underscore_"
+    | '.' -> "_dot_"
+    | '_' -> "__"
     | '\'' -> "_prime_"
-    | _ -> Printf.sprintf "_%02X" (Char.code c) in
+    | _ -> Printf.sprintf "_%02X_" (Char.code c) in
   let rec escape i () name =
     if i = String.length name
     then Printf.sprintf ""
@@ -47,8 +47,19 @@ let escape name =
 
 (** Mangle the name with the prefix to avoid clashes between translated and
     generated variable names. *)
-let mangle prefix name =
-  Printf.sprintf "_%s_%s" prefix name
+let fresh =
+  let counter = ref 0 in
+  fun prefix name ->
+    incr counter;
+    Printf.sprintf "_%s_%s_%d" prefix name !counter
+
+let fresh_identifier prefix name =
+  Names.id_of_string(fresh prefix name)
+
+let string_of_name name =
+  match name with
+  | Names.Name(identifier) -> Names.string_of_id identifier
+  | Names.Anonymous -> ""
 
 let coq name =
   Printf.sprintf "Coq.%s" name
