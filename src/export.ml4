@@ -1,14 +1,31 @@
 (** Main export commands *)
 
-let export filename =
-  Library.require_library_from_file None filename None;
-  let dir_path = Libnames.dirpath_of_string filename in
-  let full_filename = Library.library_full_filename dir_path in
-  let out = open_out (Filename.chop_extension full_filename ^ ".dk") in
+let destination = ref "."
+
+let set_destination dest =
+  destination := dest
+
+(** Export the library located at [dir_path]. *)
+let export dir_path =
+  let filename = Filename.concat !destination (Name.translate_dir_path dir_path) in
+  let out = open_out (filename ^ ".dk") in
   try Libraries.translate_library out dir_path
   with e -> (close_out out; raise e)
 
+(** Require and export export the library [reference]. *)
+let require_and_export reference =
+  let (loc, qualid) = Libnames.qualid_of_reference reference in
+  Library.require_library [loc, qualid] None;
+  let dir_path = Nametab.full_name_module qualid in
+  export dir_path
+
+(** Export all loaded libraries. *)
+let export_all () =
+  List.iter export (Library.loaded_libraries ())
+
 VERNAC COMMAND EXTEND Dedukti
-| [ "Dedukti" "Export" string_list(filenames) ] -> [ List.iter export filenames ]
+| [ "Dedukti" "Set" "Destination" string(destination) ] -> [ set_destination destination ]
+| [ "Dedukti" "Export" global_list(references) ] -> [ List.iter require_and_export references ]
+| [ "Dedukti" "All" "Export" ] -> [ export_all () ]
 END
 
