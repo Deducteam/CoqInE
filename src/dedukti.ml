@@ -100,7 +100,7 @@ let rec print_context out context =
 let print_rule out (context, left, right) =
   Printf.fprintf out "[%a]\n  %a -->\n  %a\n" print_context context print_term left print_term right
 
-let print_instruction out instruction =
+let print out instruction =
   match instruction with
   | Comment(c) ->
       Printf.fprintf out "\n(; %s ;)\n" c

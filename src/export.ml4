@@ -6,7 +6,7 @@ let export filename =
   let full_filename = Library.library_full_filename dir_path in
   let translation = Libraries.translate_library dir_path in
   let out = open_out (Filename.chop_extension full_filename ^ ".dk") in
-  List.iter (Dedukti.print_instruction out) translation;
+  List.iter (Dedukti.print out) translation;
   close_out out
 
 VERNAC COMMAND EXTEND Dedukti
