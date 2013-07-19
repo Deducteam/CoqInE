@@ -5,6 +5,7 @@ test/ImportB.v
 test/ImportC.v
 test/Cast.v
 test/Let.v
+test/Inductives.v
 test/NestedModules.v
 test/NestedLibraries.v
 test/Reflexivity.v
