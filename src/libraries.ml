@@ -37,5 +37,6 @@ let translate_library out dir_path =
   Dedukti.print out (Dedukti.command "NAME" [Name.translate_dir_path dir_path]);
   Dedukti.print out (Dedukti.command "IMPORT" ["Coq"]);
   List.iter (translate_dep out) deps;
-  Modules.translate_module_body out (Global.env ()) module_body
+  Modules.translate_module_body out (Global.env ()) module_body;
+  Dedukti.print out (Dedukti.comment "End of translation")
 
