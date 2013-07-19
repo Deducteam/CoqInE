@@ -103,18 +103,18 @@ let print_rule out (context, left, right) =
 let print out instruction =
   match instruction with
   | Comment(c) ->
-      Printf.fprintf out "\n(; %s ;)\n" c
+      Printf.fprintf out "(; %s ;)\n\n" c
   | Command(cmd, args) ->
       let print_args out = List.iter (Printf.fprintf out " %s") in
-      Printf.fprintf out "\n#%s%a\n" cmd print_args args
+      Printf.fprintf out "#%s%a\n\n" cmd print_args args
   | Declaration(x, a) ->
-      Printf.fprintf out "\n%a : %a.\n" print_var x print_term a
+      Printf.fprintf out "%a : %a.\n\n" print_var x print_term a
   | Definition(opaque, x, a, t) ->
       let print_opaque out =
         if opaque then Printf.fprintf out "{%a}" print_var
         else Printf.fprintf out "%a" print_var in
-      Printf.fprintf out "\n%a : %a :=\n  %a.\n" print_opaque x print_term a print_term t
+      Printf.fprintf out "%a : %a :=\n  %a.\n\n" print_opaque x print_term a print_term t
   | Rewrite(rules) ->
       let print_rules out = List.iter (print_rule out) in
-      Printf.fprintf out "\n%a.\n" print_rules rules
+      Printf.fprintf out "%a.\n\n" print_rules rules
 
