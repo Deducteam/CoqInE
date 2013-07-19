@@ -9,8 +9,12 @@ let set_destination dest =
 let export dir_path =
   let filename = Filename.concat !destination (Name.translate_dir_path dir_path) in
   let out = open_out (filename ^ ".dk") in
-  try Libraries.translate_library out dir_path
-  with e -> (close_out out; raise e)
+  try (
+    Libraries.translate_library out dir_path;
+    close_out out)
+  with e -> (
+    close_out out;
+    raise e)
 
 (** Require and export export the library [reference]. *)
 let require_and_export reference =
