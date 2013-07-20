@@ -136,12 +136,13 @@ and lift_let out env x u a t =
 (** Translate the context [x1 : a1, ..., xn : an] into the list
     [x1, ||a1||; ...; x1, ||an||] *)
 let translate_rel_context out env context =
-  let translate_rel_declaration (env, translated) (x, t, a) =
+  let translate_rel_declaration (x, t, a) (env, translated) =
     match t with
     | None ->
         let x' = Name.translate_name x in
-        let a' = translate_constr out env a in
+        let a' = translate_types out env a in
         (Environ.push_rel (x, t, a) env, (x', a') :: translated)
     | Some(t) -> failwith "Cannot translate a rel_declaration with a body." in
-  List.fold_left translate_rel_declaration (env, []) 
+  (* Reverse the list as the newer declarations are on top. *)
+  List.rev (snd (List.fold_right translate_rel_declaration context (env, [])))
 
