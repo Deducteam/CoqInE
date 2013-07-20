@@ -107,7 +107,7 @@ and translate_types out env a =
       coq_term s' a'
 
 and lift_let out env x u a t =
-  let x = Name.fresh_identifier "let" (Name.string_of_name x) in
+  let x = Name.fresh_identifier "let" (Name.identifier_of_name x) in
   let rel_context = Environ.rel_context env in
   let a = Term.it_mkProd_or_LetIn a rel_context in
   let u = Term.it_mkLambda_or_LetIn u rel_context in

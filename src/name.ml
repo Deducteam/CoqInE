@@ -45,21 +45,25 @@ let escape name =
     else Printf.sprintf "%a%a" escape_char name.[i] (escape (i + 1)) name in
   escape 0 () name
 
-(** Mangle the name with the prefix to avoid clashes between translated and
-    generated variable names. *)
+(** Mangle generated names with multiple parts to avoid clashes with 
+    the translated variable names. *)
+let mangle name_parts =
+  "_" ^ String.concat "_" name_parts
+
+(** Generate a fresh name from [name_parts] using a unique integer suffix. *)
 let fresh =
   let counter = ref 0 in
-  fun prefix name ->
+  fun name_parts ->
     incr counter;
-    Printf.sprintf "_%s_%s_%d" prefix name !counter
+    mangle (name_parts @ [string_of_int !counter])
 
-let fresh_identifier prefix name =
-  Names.id_of_string(fresh prefix name)
+let fresh_identifier prefix identifier =
+  Names.id_of_string (fresh [prefix; Names.string_of_id identifier])
 
-let string_of_name name =
+let identifier_of_name name =
   match name with
-  | Names.Name(identifier) -> Names.string_of_id identifier
-  | Names.Anonymous -> ""
+  | Names.Name(identifier) -> identifier
+  | Names.Anonymous -> Names.id_of_string "_"
 
 let coq name =
   Printf.sprintf "Coq.%s" name
