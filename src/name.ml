@@ -93,6 +93,12 @@ let get_inductive_body env mind i =
   let mind_body = Environ.lookup_mind mind env in
   mind_body.Declarations.mind_packets.(i)
 
+(** Name of the match function for the inductive [(mind, i)]*)
+let match_function env (mind, i) =
+  let ind_body = get_inductive_body env mind i in
+  let label = Names.label_of_id (ind_body.Declarations.mind_typename) in
+  mangle_label ["match"] label
+
 (** Name translation *)
 
 let coq name =
@@ -145,5 +151,11 @@ let translate_constructor env ((mind, i), j) =
   let ind_body = get_inductive_body env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (ind_body.Declarations.mind_consnames.(j - 1)) in
+  translate_module_path module_path [label]
+
+(** The name of the match function for the inductive type [(mind, i)]. *)
+let translate_match_function env (mind, i) =
+  let module_path = Names.mind_modpath mind in
+  let label = match_function env (mind, i) in
   translate_module_path module_path [label]
 

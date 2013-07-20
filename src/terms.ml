@@ -71,15 +71,16 @@ let rec translate_constr out env t =
       let u_list' = List.map (translate_constr out env) (Array.to_list u_list) in
       Dedukti.apps t' u_list'
   | Const(c) ->
-      let c' = Name.translate_constant env c in
-      Dedukti.var c'
+      Dedukti.var(Name.translate_constant env c)
   | Ind(i) ->
-      let i' = Name.translate_inductive env i in
-      Dedukti.var i'
+      Dedukti.var(Name.translate_inductive env i)
   | Construct(c) ->
-      let c' = Name.translate_constructor env c in
-      Dedukti.var c'
-  | Case(case_info, constr, constr2, constr_array) -> failwith "Not implemented: Case"
+      Dedukti.var(Name.translate_constructor env c)
+  | Case(case_info, return_type, matched, branches) ->
+      let match_function' = Dedukti.var (Name.translate_match_function env case_info.ci_ind) in
+      let return_type' = translate_constr out env return_type in
+      let matched' = translate_constr out env matched in
+      Dedukti.apps match_function' [return_type'; matched']
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
