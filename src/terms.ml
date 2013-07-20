@@ -22,8 +22,8 @@ let translate_sort out env s =
   | Prop(Pos) -> Universes.coq_z
   | Type(i) -> Universes.translate_universe env i
 
-let apply_context t rel_context =
-  let n = List.length rel_context in
+let apply_rel_context t context =
+  let n = List.length context in
   Term.appvectc t (Array.init n (fun i -> Term.mkRel (n - i)))
 
 (** Get the arguments of the inductive type application [a] *)
@@ -129,7 +129,19 @@ and lift_let out env x u a t =
   let a' = translate_types out (Global.env ()) a in
   let u' = translate_constr out (Global.env ()) u in
   Dedukti.print out (Dedukti.definition false x' a' u');
-  let x = apply_context (Term.mkVar x) rel_context in
+  let x = apply_rel_context (Term.mkVar x) rel_context in
   let t = Term.subst1 x t in
   env, t
+
+(** Translate the context [x1 : a1, ..., xn : an] into the list
+    [x1, ||a1||; ...; x1, ||an||] *)
+let translate_rel_context out env context =
+  let translate_rel_declaration (env, translated) (x, t, a) =
+    match t with
+    | None ->
+        let x' = Name.translate_name x in
+        let a' = translate_constr out env a in
+        (Environ.push_rel (x, t, a) env, (x', a') :: translated)
+    | Some(t) -> failwith "Cannot translate a rel_declaration with a body." in
+  List.fold_left translate_rel_declaration (env, []) 
 
