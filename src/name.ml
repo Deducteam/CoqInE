@@ -54,7 +54,7 @@ let escape name =
 let mangle name_parts =
   String.concat "_"  ("" :: name_parts)
 
-(** Convert [name] to a string, apply [f] to [prefix; name] and convert back.
+(** Convert [name] to a string, prepend [prefix], apply [f], and convert back.
     This pattern is used to process the different name types uniformly. *)
 let process of_string f prefix to_string x =
   of_string (f (prefix @ [to_string x]))
@@ -93,11 +93,9 @@ let get_inductive_body env mind i =
   let mind_body = Environ.lookup_mind mind env in
   mind_body.Declarations.mind_packets.(i)
 
-(** Name of the match function for the inductive [(mind, i)]*)
-let match_function env (mind, i) =
-  let ind_body = get_inductive_body env mind i in
-  let label = Names.label_of_id (ind_body.Declarations.mind_typename) in
-  mangle_label ["match"] label
+(** Name of the match function for the inductive type *)
+let match_function identifier =
+  mangle_identifier ["match"] identifier
 
 (** Name translation *)
 
@@ -155,7 +153,8 @@ let translate_constructor env ((mind, i), j) =
 
 (** The name of the match function for the inductive type [(mind, i)]. *)
 let translate_match_function env (mind, i) =
+  let ind_body = get_inductive_body env mind i in
   let module_path = Names.mind_modpath mind in
-  let label = match_function env (mind, i) in
+  let label = Names.label_of_id (match_function ind_body.Declarations.mind_typename) in
   translate_module_path module_path [label]
 
