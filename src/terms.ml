@@ -26,6 +26,15 @@ let apply_context t rel_context =
   let n = List.length rel_context in
   Term.appvectc t (Array.init n (fun i -> Term.mkRel (n - i)))
 
+(** Get the arguments of the inductive type application [a] *)
+let inductive_args env a =
+  (* Reduce to get the head normal form. *)
+  let whd = Reduction.whd_betadeltaiota env a in
+  let head, args = Term.destApp whd in
+  (* Make sure the head is an inductive. *)
+  let _ = Term.destInd head in
+  args
+
 let rec translate_constr out env t =
   match Term.kind_of_term t with
   | Rel(i) ->
@@ -77,10 +86,13 @@ let rec translate_constr out env t =
   | Construct(c) ->
       Dedukti.var(Name.translate_constructor env c)
   | Case(case_info, return_type, matched, branches) ->
+      let ind_args = inductive_args env (infer_type env matched) in
       let match_function' = Dedukti.var (Name.translate_match_function env case_info.ci_ind) in
       let return_type' = translate_constr out env return_type in
+      let ind_args' = Array.to_list (Array.map (translate_constr out env) ind_args) in
       let matched' = translate_constr out env matched in
-      Dedukti.apps match_function' [return_type'; matched']
+      let branches' = Array.to_list (Array.map (translate_constr out env) branches) in
+      Dedukti.apps match_function' (return_type' :: ind_args' @ matched' :: branches')
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
