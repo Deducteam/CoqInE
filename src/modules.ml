@@ -31,12 +31,14 @@ let get_inductive_arity_sort ind_arity =
 (** Translate the inductive body [ind] belonging to the mutual inductive
     body [mind]. *)
 let translate_one_inductive_body out module_path env ind label mind =
+  (* Translate the inductive type. *)
   let name = ind.mind_typename in
   let sort = get_inductive_arity_sort ind.mind_arity in
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort sort) ind.mind_arity_ctxt in
   let name' = Name.translate_identifier name in
   let arity' = Terms.translate_types out env arity in
   Dedukti.print out (Dedukti.declaration name' arity');
+  (* Translate the constructors. *)
   (* Substitute the inductive type names as specified in the Coq code. *)
   let mind_name = Names.make_mind module_path Names.empty_dirpath label in
   let mind_names = Array.init mind.mind_ntypes (fun i -> Term.mkInd(mind_name, i)) in
@@ -47,6 +49,8 @@ let translate_one_inductive_body out module_path env ind label mind =
     let ctype' = Terms.translate_types out env ctype in
     Dedukti.print out (Dedukti.declaration cname' ctype');
   done
+  (* Generate the match function. *)
+  (* Generate the fix function. *)
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body out module_path env label mind =
