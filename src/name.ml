@@ -14,6 +14,8 @@
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
 
+(** Escaping *)
+
 let is_alpha c =
   match c with
   | 'a' .. 'z'
@@ -45,10 +47,25 @@ let escape name =
     else Printf.sprintf "%a%a" escape_char name.[i] (escape (i + 1)) name in
   escape 0 () name
 
+(** Name mangling *)
+
 (** Mangle generated names with multiple parts to avoid clashes with 
     the translated variable names. *)
 let mangle name_parts =
-  "_" ^ String.concat "_" name_parts
+  String.concat "_"  ("" :: name_parts)
+
+(** Convert [name] to a string, apply [f] to [prefix; name] and convert back.
+    This pattern is used to process the different name types uniformly. *)
+let process of_string f prefix to_string x =
+  of_string (f (prefix @ [to_string x]))
+
+let mangle_identifier prefix identifier =
+  process Names.id_of_string mangle prefix Names.string_of_id identifier
+
+let mangle_label prefix label =
+  process Names.mk_label mangle prefix Names.string_of_label label
+
+(** Name generation *)
 
 (** Generate a fresh name from [name_parts] using a unique integer suffix. *)
 let fresh =
@@ -58,12 +75,25 @@ let fresh =
     mangle (name_parts @ [string_of_int !counter])
 
 let fresh_identifier prefix identifier =
-  Names.id_of_string (fresh [prefix; Names.string_of_id identifier])
+  process Names.id_of_string fresh prefix Names.string_of_id identifier
+
+let fresh_label prefix label =
+  process Names.mk_label fresh prefix Names.string_of_label label
 
 let identifier_of_name name =
   match name with
   | Names.Name(identifier) -> identifier
   | Names.Anonymous -> Names.id_of_string "_"
+
+(** Name of let constants *)
+let fresh_let name =
+  fresh_identifier ["let"] (identifier_of_name name)
+
+let get_inductive_body env mind i =
+  let mind_body = Environ.lookup_mind mind env in
+  mind_body.Declarations.mind_packets.(i)
+
+(** Name translation *)
 
 let coq name =
   Printf.sprintf "Coq.%s" name
@@ -105,19 +135,15 @@ let translate_kernel_name env kernel_name =
 let translate_constant env constant =
   translate_module_path (Names.con_modpath constant) [Names.con_label constant]
 
-let translate_inductive env (mutual_inductive, i) =
-  let mutual_inductive_body = Environ.lookup_mind mutual_inductive env in
-  let inductive_body = mutual_inductive_body.Declarations.mind_packets.(i) in
-  let identifier = inductive_body.Declarations.mind_typename in
-  let module_path = Names.mind_modpath mutual_inductive in
-  let label = Names.label_of_id identifier in
+let translate_inductive env (mind, i) =
+  let ind_body = get_inductive_body env mind i in
+  let module_path = Names.mind_modpath mind in
+  let label = Names.label_of_id (ind_body.Declarations.mind_typename) in
   translate_module_path module_path [label]
 
-let translate_constructor env ((mutual_inductive, i), j) =
-  let mutual_inductive_body = Environ.lookup_mind mutual_inductive env in
-  let inductive_body = mutual_inductive_body.Declarations.mind_packets.(i) in
-  let identifier = inductive_body.Declarations.mind_consnames.(j - 1) in
-  let module_path = Names.mind_modpath mutual_inductive in
-  let label = Names.label_of_id identifier in
+let translate_constructor env ((mind, i), j) =
+  let ind_body = get_inductive_body env mind i in
+  let module_path = Names.mind_modpath mind in
+  let label = Names.label_of_id (ind_body.Declarations.mind_consnames.(j - 1)) in
   translate_module_path module_path [label]
 
