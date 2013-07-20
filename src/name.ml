@@ -49,36 +49,34 @@ let escape name =
 
 (** Name mangling *)
 
-(** Mangle generated names with multiple parts to avoid clashes with 
+(** Mangle generated names with prefixes to avoid clashes with 
     the translated variable names. *)
-let mangle name_parts =
-  String.concat "_"  ("" :: name_parts)
-
-(** Convert [name] to a string, prepend [prefix], apply [f], and convert back.
-    This pattern is used to process the different name types uniformly. *)
-let process of_string f prefix to_string x =
-  of_string (f (prefix @ [to_string x]))
+let mangle prefix name =
+  String.concat "_"  ("" :: prefix @ [name])
 
 let mangle_identifier prefix identifier =
-  process Names.id_of_string mangle prefix Names.string_of_id identifier
+  Names.id_of_string (mangle prefix (Names.string_of_id identifier))
 
 let mangle_label prefix label =
-  process Names.mk_label mangle prefix Names.string_of_label label
+  Names.mk_label (mangle prefix (Names.string_of_label label))
+
+let mangled_identifier prefix name =
+  Names.id_of_string (mangle prefix name)
 
 (** Name generation *)
 
 (** Generate a fresh name from [name_parts] using a unique integer suffix. *)
 let fresh =
   let counter = ref 0 in
-  fun name_parts ->
+  fun prefix name ->
     incr counter;
-    mangle (name_parts @ [string_of_int !counter])
+    mangle prefix (String.concat "_" [name; string_of_int !counter])
 
 let fresh_identifier prefix identifier =
-  process Names.id_of_string fresh prefix Names.string_of_id identifier
+  Names.id_of_string (fresh prefix (Names.string_of_id identifier))
 
 let fresh_label prefix label =
-  process Names.mk_label fresh prefix Names.string_of_label label
+  Names.mk_label (fresh prefix (Names.string_of_label label))
 
 let identifier_of_name name =
   match name with
