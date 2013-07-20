@@ -4,6 +4,7 @@ open Genlex
 
 let coq x = Dedukti.Var(Name.coq x)
 
+let coq_srt = coq "srt"
 let coq_p = coq "p"
 let coq_z = coq "z"
 let coq_t i = Dedukti.apps (coq "t") [i]
