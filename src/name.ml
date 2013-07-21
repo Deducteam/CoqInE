@@ -51,44 +51,54 @@ let escape name =
 
 (** Mangle generated names with prefixes to avoid clashes with 
     the translated variable names. *)
-let mangle prefix name =
-  String.concat "_"  ("" :: prefix @ [name])
+let mangle name_parts =
+  String.concat "_"  ("" :: name_parts)
 
 let mangle_identifier prefix identifier =
-  Names.id_of_string (mangle prefix (Names.string_of_id identifier))
+  Names.id_of_string (mangle (prefix @ [Names.string_of_id identifier]))
 
 let mangle_label prefix label =
-  Names.mk_label (mangle prefix (Names.string_of_label label))
+  Names.mk_label (mangle (prefix @ [Names.string_of_label label]))
 
 let mangled_identifier prefix name =
-  Names.id_of_string (mangle prefix name)
+  Names.id_of_string (mangle (prefix @ [name]))
 
 (** Name generation *)
 
 let used_names = Hashtbl.create 10007
 
 (** Generate a fresh name from [name_parts] using a unique integer suffix. *)
-let fresh prefix name =
+let fresh name_parts =
   let counter =
-    try Hashtbl.find used_names (prefix, name)
+    try Hashtbl.find used_names name_parts
     with Not_found -> 1 in
-  Hashtbl.replace used_names (prefix, name) (counter + 1);
-  mangle prefix (String.concat "_" [name; string_of_int counter])
+  Hashtbl.replace used_names name_parts (counter + 1);
+  mangle (name_parts @ [string_of_int counter])
 
 let fresh_identifier prefix identifier =
-  Names.id_of_string (fresh prefix (Names.string_of_id identifier))
+  Names.id_of_string (fresh (prefix @ [Names.string_of_id identifier]))
+
+let fresh_identifier_option prefix identifier =
+  match identifier with
+  | Some(identifier) -> Names.id_of_string (fresh (prefix @ [Names.string_of_id identifier]))
+  | None -> Names.id_of_string (fresh prefix)
 
 let fresh_label prefix label =
-  Names.mk_label (fresh prefix (Names.string_of_label label))
+  Names.mk_label (fresh (prefix @ [Names.string_of_label label]))
 
 let identifier_of_name name =
   match name with
-  | Names.Name(identifier) -> identifier
-  | Names.Anonymous -> Names.id_of_string "_"
+  | Names.Name(identifier) -> Some(identifier)
+  | Names.Anonymous -> None
+
+let ensure_name prefix name =
+  match name with
+  | Names.Name(_) -> name
+  | Names.Anonymous -> Names.Name (fresh_identifier_option prefix None)
 
 (** Name of let constants *)
 let fresh_let name =
-  fresh_identifier ["let"] (identifier_of_name name)
+  fresh_identifier_option ["let"] (identifier_of_name name)
 
 (** Name of the match function for the inductive type *)
 let match_function identifier =

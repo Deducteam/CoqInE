@@ -133,6 +133,8 @@ and lift_let out env x u a t =
   let t = Term.subst1 x t in
   env, t
 
+let ensure_name prefix (x, t, a) = (Name.ensure_name prefix x, t, a)
+
 (** Translate the context [x1 : a1, ..., xn : an] into the list
     [x1, ||a1||; ...; x1, ||an||] *)
 let translate_rel_context out env context =
