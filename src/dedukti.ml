@@ -50,6 +50,8 @@ let definition opaque x a b = Definition(opaque, x, a, b)
 
 let rewrite rules = Rewrite(rules)
 
+let apply_context a context = apps a (List.map var (fst (List.split context)))
+
 (** Pretty-printing using the minimal number of parentheses. *)
 
 let print_var out x =
