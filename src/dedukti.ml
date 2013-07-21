@@ -30,6 +30,8 @@ let app a b = App(a, b)
 
 let cmt s a = Cmt(s, a)
 
+let vars xs = List.map var xs
+
 let arrs args b = List.fold_right arr args b
 
 let pies args b = List.fold_right pie args b
