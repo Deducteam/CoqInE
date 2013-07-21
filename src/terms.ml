@@ -92,7 +92,7 @@ let rec translate_constr out env t =
       let ind_args' = Array.to_list (Array.map (translate_constr out env) ind_args) in
       let matched' = translate_constr out env matched in
       let branches' = Array.to_list (Array.map (translate_constr out env) branches) in
-      Dedukti.apps match_function' (return_type' :: ind_args' @ matched' :: branches')
+      Dedukti.apps match_function' (return_type' :: branches' @ ind_args' @  [matched'])
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 

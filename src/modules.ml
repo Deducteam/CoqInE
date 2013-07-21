@@ -65,12 +65,14 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let match_function_name = Name.match_function name in
   let return_sort_name = Name.mangled_identifier [] "s" in
   let return_type_name = Name.mangled_identifier [] "return" in
+  let case_name j = Name.mangle_identifier ["case"] cons_names.(j) in
   let matched_name = Name.mangled_identifier [] "as" in
   let arity_context = List.map (Terms.ensure_name ["var"]) arity_context in
   let ind_applied = Terms.apply_rel_context (ind_term i) arity_context in
   let match_function_name' = Name.translate_identifier match_function_name in
   let return_sort_name' = Name.translate_identifier return_sort_name in
   let return_type_name' = Name.translate_identifier return_type_name in
+  let case_name' j = Name.translate_identifier (case_name j) in
   let matched_name' = Name.translate_identifier matched_name in
   let return_sort' = Dedukti.var return_sort_name' in
   let return_type' = Dedukti.var return_type_name' in
@@ -78,23 +80,23 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let arity_env, arity_context' = Terms.translate_rel_context out env arity_context in
   let ind_applied' = Terms.translate_types out arity_env ind_applied in
   let case' j =
-    let case_name = Name.mangle_identifier ["case"] cons_names.(j) in
     let cons_context, cons_type = Term.decompose_prod_assum cons_types.(j) in
     let ind_args = Terms.inductive_args env cons_type in
     let cons_applied = Terms.apply_rel_context (cons_term i j) cons_context in
-    let case_name' = Name.translate_identifier case_name in
     let cons_env, cons_context' = Terms.translate_rel_context out env cons_context in
     let ind_args' =  Array.to_list (Array.map (Terms.translate_constr out cons_env) ind_args) in
     let cons_applied' = Terms.translate_constr out cons_env cons_applied in
-    (case_name', Dedukti.pies cons_context'
+    (case_name' j, Dedukti.pies cons_context'
       (Terms.coq_term return_sort' (Dedukti.apps return_type' (ind_args' @ [cons_applied'])))) in
-  Dedukti.print out (Dedukti.declaration match_function_name' (Dedukti.pies (
+  let cases_context' = Array.to_list (Array.init m case') in
+  let common_context' =
     (return_sort_name', Universes.coq_srt) ::
     (return_type_name', Dedukti.pies arity_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
-    (arity_context') @
-    (matched_name', ind_applied') ::
-    Array.to_list (Array.init m case'))
-    (Terms.coq_term return_sort' (Dedukti.apps return_type' (Dedukti.vars (fst (List.split arity_context')) @ [matched'])))))
+    cases_context' in
+  let match_function_context' = common_context' @ (arity_context') @ [matched_name', ind_applied'] in
+  let match_function_type' = Terms.coq_term return_sort'
+    (Dedukti.apps return_type' (Dedukti.vars (fst (List.split arity_context')) @ [matched'])) in
+  Dedukti.print out (Dedukti.declaration match_function_name' (Dedukti.pies match_function_context' match_function_type'))
     
   (* Generate the fix function. *)
 
