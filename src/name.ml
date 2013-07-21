@@ -87,10 +87,6 @@ let identifier_of_name name =
 let fresh_let name =
   fresh_identifier ["let"] (identifier_of_name name)
 
-let get_inductive_body env mind i =
-  let mind_body = Environ.lookup_mind mind env in
-  mind_body.Declarations.mind_packets.(i)
-
 (** Name of the match function for the inductive type *)
 let match_function identifier =
   mangle_identifier ["match"] identifier
@@ -103,10 +99,10 @@ let coq name =
 let translate_identifier identifier =
   escape (Names.string_of_id identifier)
 
-let translate_name name =
+let translate_name ?(ensure_name = false) name =
   match name with
   | Names.Name(identifier) -> translate_identifier identifier
-  | Names.Anonymous -> ""
+  | Names.Anonymous -> if ensure_name then failwith "Anonymous name" else ""
 
 let translate_dir_path dir_path =
   escape (Names.string_of_dirpath dir_path)
@@ -136,6 +132,10 @@ let translate_kernel_name env kernel_name =
 
 let translate_constant env constant =
   translate_module_path (Names.con_modpath constant) [Names.con_label constant]
+
+let get_inductive_body env mind i =
+  let mind_body = Environ.lookup_mind mind env in
+  mind_body.Declarations.mind_packets.(i)
 
 let translate_inductive env (mind, i) =
   let ind_body = get_inductive_body env mind i in

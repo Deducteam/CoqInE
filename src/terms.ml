@@ -39,7 +39,7 @@ let rec translate_constr out env t =
   match Term.kind_of_term t with
   | Rel(i) ->
       let (x, _, _) = Environ.lookup_rel i env in
-      Dedukti.var (Name.translate_name x)
+      Dedukti.var (Name.translate_name ~ensure_name:true x)
   | Var(x) ->
       Dedukti.var (Name.translate_identifier x)
   | Meta(metavariable) -> failwith "Not implemented: Meta"
