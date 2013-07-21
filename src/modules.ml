@@ -31,10 +31,13 @@ let get_inductive_arity_sort ind_arity =
 (** Translate the i-th inductive body in [mind_body]. *)
 let translate_one_inductive_body out module_path env label mind_body i =
   let ind_body = mind_body.mind_packets.(i) in
+  let n_types = mind_body.mind_ntypes in (* Number of mutual inductive types *)
+  let n_cons = Array.length ind_body.mind_consnames in (* Number of constructors in the current type *)
   let mind = Names.make_mind module_path Names.empty_dirpath label in
-  let ind_term i = Term.mkInd(mind, i) in
+  let ind_terms = Array.init n_types (fun i -> Term.mkInd(mind, i)) in
   (* Constructor names start from 1. *)
-  let cons_term i j = Term.mkConstruct((mind, i), j + 1) in
+  let cons_terms = Array.init n_cons (fun j -> Term.mkConstruct((mind, i), j + 1)) in
+  
   (* Translate the inductive type. *)
   let name = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
@@ -43,19 +46,19 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let name' = Name.translate_identifier name in
   let arity' = Terms.translate_types out env arity in
   Dedukti.print out (Dedukti.declaration name' arity');
+  
   (* Translate the constructors. *)
-  let m = Array.length ind_body.mind_consnames in
   let cons_names = ind_body.mind_consnames in
   (* Substitute the inductive types as specified in the Coq code. *)
-  let ind_terms = Array.init mind_body.mind_ntypes ind_term in
   let cons_types = Array.map (Term.substl (Array.to_list ind_terms)) ind_body.mind_user_lc in
-  for j = 0 to m - 1 do
-    let cons_name' = Name.translate_identifier cons_names.(j) in
-    let cons_type' = Terms.translate_types out env cons_types.(j) in
-    Dedukti.print out (Dedukti.declaration cons_name' cons_type');
+  let cons_names' = Array.map Name.translate_identifier cons_names in
+  let cons_types' = Array.map (Terms.translate_types out env) cons_types in
+  for j = 0 to n_cons - 1 do
+    Dedukti.print out (Dedukti.declaration cons_names'.(j) cons_types'.(j));
   done;
   (* Use the normalized types in the rest. *)
   let cons_types = Array.map (Term.substl (Array.to_list ind_terms)) ind_body.mind_nf_lc in
+  
   (* Generate the match function. *)
   (* match_I : s : srt -> P : (|x1| : ||A1|| -> ... -> |xn| : ||An|| -> ||I x1 ... xn|| -> type s) ->
        case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| -> term s (P |u11| ... |u1n| (|c1 y11 ... y1k1|))) ->
@@ -65,30 +68,34 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let match_function_name = Name.match_function name in
   let return_sort_name = Name.mangled_identifier [] "s" in
   let return_type_name = Name.mangled_identifier [] "return" in
-  let case_name j = Name.mangle_identifier ["case"] cons_names.(j) in
+  let case_names = Array.map (Name.mangle_identifier ["case"]) cons_names in
   let matched_name = Name.mangled_identifier [] "as" in
+  (* Make sure that the variables in the arity context are not anonymous. *)
   let arity_context = List.map (Terms.ensure_name ["var"]) arity_context in
-  let ind_applied = Terms.apply_rel_context (ind_term i) arity_context in
+  let ind_applied = Terms.apply_rel_context ind_terms.(i) arity_context in
+  let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
+  let cons_contexts = Array.map fst cons_context_types in
+  let cons_types = Array.map snd cons_context_types in
+  let cons_ind_args = Array.map (Terms.inductive_args env) cons_types in
+  let cons_applieds = Array.mapi (fun j -> Terms.apply_rel_context cons_terms.(j)) cons_contexts in
   let match_function_name' = Name.translate_identifier match_function_name in
   let return_sort_name' = Name.translate_identifier return_sort_name in
   let return_type_name' = Name.translate_identifier return_type_name in
-  let case_name' j = Name.translate_identifier (case_name j) in
+  let case_names' = Array.map Name.translate_identifier case_names in
   let matched_name' = Name.translate_identifier matched_name in
   let return_sort' = Dedukti.var return_sort_name' in
   let return_type' = Dedukti.var return_type_name' in
   let matched' = Dedukti.var matched_name' in
   let arity_env, arity_context' = Terms.translate_rel_context out env arity_context in
   let ind_applied' = Terms.translate_types out arity_env ind_applied in
-  let case' j =
-    let cons_context, cons_type = Term.decompose_prod_assum cons_types.(j) in
-    let ind_args = Terms.inductive_args env cons_type in
-    let cons_applied = Terms.apply_rel_context (cons_term i j) cons_context in
-    let cons_env, cons_context' = Terms.translate_rel_context out env cons_context in
-    let ind_args' =  Array.to_list (Array.map (Terms.translate_constr out cons_env) ind_args) in
-    let cons_applied' = Terms.translate_constr out cons_env cons_applied in
-    (case_name' j, Dedukti.pies cons_context'
-      (Terms.coq_term return_sort' (Dedukti.apps return_type' (ind_args' @ [cons_applied'])))) in
-  let cases_context' = Array.to_list (Array.init m case') in
+  let cons_env_contexts' = Array.map (Terms.translate_rel_context out env) cons_contexts in
+  let cons_envs = Array.map fst cons_env_contexts' in
+  let cons_contexts' = Array.map snd cons_env_contexts' in
+  let cons_ind_args' = Array.mapi (fun j -> Terms.translate_args out cons_envs.(j)) cons_ind_args in
+  let cons_applieds' = Array.mapi (fun j -> Terms.translate_constr out cons_envs.(j)) cons_applieds in
+  let case_types' = Array.init n_cons (fun j -> Dedukti.pies cons_contexts'.(j)
+    (Terms.coq_term return_sort' (Dedukti.apps return_type' (cons_ind_args'.(j) @ [cons_applieds'.(j)])))) in
+  let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let common_context' =
     (return_sort_name', Universes.coq_srt) ::
     (return_type_name', Dedukti.pies arity_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
@@ -97,7 +104,6 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let match_function_type' = Terms.coq_term return_sort'
     (Dedukti.apps return_type' (Dedukti.vars (fst (List.split arity_context')) @ [matched'])) in
   Dedukti.print out (Dedukti.declaration match_function_name' (Dedukti.pies match_function_context' match_function_type'))
-    
   (* Generate the fix function. *)
 
 (** Translate the body of mutual inductive definitions [mind]. *)
