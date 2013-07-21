@@ -50,3 +50,8 @@ cast : s1 : srt -> s2 : srt -> A : type s1 -> B : type s2 -> term s1 A -> term (
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : term s1 A -> type s2, C : term s1 A -> type s3, f : x : term s1 A -> term s2 (B x)]
   cast {r s1 s2} {r s1 s3} (prod s1 s2 A B) (prod s1 s3 A C) f --> x : term s1 A => cast s2 s3 (B x) (C x) (f x).
 
+(; Coinductives ;)
+
+unit : Type.
+tt : unit.
+
