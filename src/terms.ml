@@ -86,13 +86,16 @@ let rec translate_constr out env t =
   | Construct(c) ->
       Dedukti.var(Name.translate_constructor env c)
   | Case(case_info, return_type, matched, branches) ->
+      let context, end_type = Term.decompose_lam_assum return_type in
+      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
       let ind_args = inductive_args env (infer_type env matched) in
       let match_function' = Dedukti.var (Name.translate_match_function env case_info.ci_ind) in
+      let return_sort' = translate_sort out env return_sort in
       let return_type' = translate_constr out env return_type in
       let ind_args' = Array.to_list (Array.map (translate_constr out env) ind_args) in
       let matched' = translate_constr out env matched in
       let branches' = Array.to_list (Array.map (translate_constr out env) branches) in
-      Dedukti.apps match_function' (return_type' :: branches' @ ind_args' @  [matched'])
+      Dedukti.apps match_function' (return_sort' :: return_type' :: branches' @ ind_args' @  [matched'])
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
