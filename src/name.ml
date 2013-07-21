@@ -65,12 +65,15 @@ let mangled_identifier prefix name =
 
 (** Name generation *)
 
+let used_names = Hashtbl.create 10007
+
 (** Generate a fresh name from [name_parts] using a unique integer suffix. *)
-let fresh =
-  let counter = ref 0 in
-  fun prefix name ->
-    incr counter;
-    mangle prefix (String.concat "_" [name; string_of_int !counter])
+let fresh prefix name =
+  let counter =
+    try Hashtbl.find used_names (prefix, name)
+    with Not_found -> 1 in
+  Hashtbl.replace used_names (prefix, name) (counter + 1);
+  mangle prefix (String.concat "_" [name; string_of_int counter])
 
 let fresh_identifier prefix identifier =
   Names.id_of_string (fresh prefix (Names.string_of_id identifier))
