@@ -133,6 +133,9 @@ and lift_let out env x u a t =
   let t = Term.subst1 x t in
   env, t
 
+let translate_args out env ts =
+  Array.to_list (Array.map (translate_constr out env) ts)
+
 let ensure_name prefix (x, t, a) = (Name.ensure_name prefix x, t, a)
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list
