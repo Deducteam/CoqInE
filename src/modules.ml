@@ -83,8 +83,10 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let return_type_name' = Name.translate_identifier return_type_name in
   let case_names' = Array.map Name.translate_identifier case_names in
   let matched_name' = Name.translate_identifier matched_name in
+  let match_function' = Dedukti.var match_function_name' in
   let return_sort' = Dedukti.var return_sort_name' in
   let return_type' = Dedukti.var return_type_name' in
+  let cases' = Array.map Dedukti.var case_names' in
   let matched' = Dedukti.var matched_name' in
   let arity_env, arity_context' = Terms.translate_rel_context out env arity_context in
   let ind_applied' = Terms.translate_types out arity_env ind_applied in
@@ -100,10 +102,17 @@ let translate_one_inductive_body out module_path env label mind_body i =
     (return_sort_name', Universes.coq_srt) ::
     (return_type_name', Dedukti.pies arity_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
     cases_context' in
-  let match_function_context' = common_context' @ (arity_context') @ [matched_name', ind_applied'] in
+  let match_function_context' = common_context' @ arity_context' @ [matched_name', ind_applied'] in
   let match_function_type' = Terms.coq_term return_sort'
-    (Dedukti.apps return_type' (Dedukti.vars (fst (List.split arity_context')) @ [matched'])) in
-  Dedukti.print out (Dedukti.declaration match_function_name' (Dedukti.pies match_function_context' match_function_type'))
+    (Dedukti.app (Dedukti.apply_context return_type' arity_context') matched') in
+  Dedukti.print out (Dedukti.declaration match_function_name' (Dedukti.pies match_function_context' match_function_type'));
+  let match_function_applied' = Dedukti.apps match_function' (return_sort' :: return_type' :: Array.to_list cases') in
+  let case_rules = Array.init n_cons (fun j ->
+    let case_rule_context' = common_context' @ cons_contexts'.(j) in
+    let case_rule_left' = Dedukti.apps match_function_applied' (cons_ind_args'.(j) @ [cons_applieds'.(j)]) in
+    let case_rule_right' = Dedukti.apply_context cases'.(j) cons_contexts'.(j) in
+    (case_rule_context', case_rule_left', case_rule_right')) in
+  Dedukti.print out (Dedukti.rewrite (Array.to_list case_rules))
   (* Generate the fix function. *)
 
 (** Translate the body of mutual inductive definitions [mind]. *)
