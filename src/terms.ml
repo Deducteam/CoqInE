@@ -29,8 +29,8 @@ let apply_rel_context t context =
 (** Get the arguments of the inductive type application [a] *)
 let inductive_args env a =
   (* Reduce to get the head normal form. *)
-  let whd = Reduction.whd_betadeltaiota env a in
-  let head, args = Term.destApp whd in
+  let a = Reduction.whd_betadeltaiota env a in
+  let head, args = Term.destApp a in
   (* Make sure the head is an inductive. *)
   let _ = Term.destInd head in
   args
@@ -145,6 +145,7 @@ let translate_rel_context out env context =
         let a' = translate_types out env a in
         (Environ.push_rel (x, t, a) env, (x', a') :: translated)
     | Some(t) -> failwith "Cannot translate a rel_declaration with a body." in
+  let env, translated = List.fold_right translate_rel_declaration context (env, []) in
   (* Reverse the list as the newer declarations are on top. *)
-  List.rev (snd (List.fold_right translate_rel_declaration context (env, [])))
+  (env, List.rev translated)
 
