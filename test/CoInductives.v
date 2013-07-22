@@ -32,3 +32,15 @@ Definition match_stream (P : stream -> Type) (p : stream)
 match p with
 | seq n q => case_seq n q
 end.
+
+Inductive P (p : stream) : Type :=
+| f : P p.
+
+(* This should be rejected. *)
+(* Definition g (p : stream) : P p := f (id p). *)
+
+Definition g (p : stream) : P p :=
+match p with
+| seq n q => f (id (seq n q))
+end.
+
