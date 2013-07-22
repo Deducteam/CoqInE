@@ -53,7 +53,7 @@ let inductive_args env a =
   let head, args = Term.destApp a in
   (* Make sure the head is an inductive. *)
   let _ = Term.destInd head in
-  args
+  Array.to_list args
 
 let rec translate_constr out env t =
   match Term.kind_of_term t with
@@ -110,16 +110,23 @@ let rec translate_constr out env t =
   | Construct(c) ->
       Dedukti.var(Name.translate_constructor env c)
   | Case(case_info, return_type, matched, branches) ->
-      let context, end_type = Term.decompose_lam_assum return_type in
-      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
+      let ind = case_info.ci_ind in
+      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
+      let n_params = mind_body.Declarations.mind_nparams in
+      let n_reals = ind_body.Declarations.mind_nrealargs in
       let ind_args = inductive_args env (infer_type env matched) in
-      let match_function' = Dedukti.var (Name.translate_match_function env case_info.ci_ind) in
+      let params, reals = Util.list_chop n_params ind_args in
+      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
+      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
+      let match_function' = Dedukti.var (Name.translate_match_function env ind) in
+      let params' = List.map (translate_constr out env) params in
+      let reals' = List.map (translate_constr out env) reals in
       let return_sort' = translate_sort out env return_sort in
       let return_type' = translate_constr out env return_type in
-      let ind_args' = Array.to_list (Array.map (translate_constr out env) ind_args) in
+      let ind_args' = List.map (translate_constr out env) ind_args in
       let matched' = translate_constr out env matched in
       let branches' = Array.to_list (Array.map (translate_constr out env) branches) in
-      Dedukti.apps match_function' (return_sort' :: return_type' :: branches' @ ind_args' @  [matched'])
+      Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
@@ -161,7 +168,7 @@ and lift_let out env x u a =
   Environ.push_rel (x, Some(y_applied), a) env
 
 let translate_args out env ts =
-  Array.to_list (Array.map (translate_constr out env) ts)
+  List.map (translate_constr out env) ts
 
 (** Ensure that the declaration (x, t, a) is not anonymous. *)
 let ensure_name prefix (x, t, a) = (Name.ensure_name prefix x, t, a)
