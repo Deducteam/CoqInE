@@ -9,6 +9,7 @@ let coq_p = coq "p"
 let coq_z = coq "z"
 let coq_t i = Dedukti.apps (coq "t") [i]
 let coq_r i j = Dedukti.apps (coq "r") [i; j]
+let coq_m i j = Dedukti.apps (coq "m") [i; j]
 
 let rec make_coq_univ n =
   if n = 0 then coq_z else coq_t (make_coq_univ (n - 1))
@@ -42,9 +43,9 @@ let rec evaluate_universe solutions i =
         (try make_coq_univ (Hashtbl.find solutions i)
          with Not_found -> coq_z)
     | Succ(i) -> coq_t (evaluate i)
-    | Max([]) -> failwith "Empty max"
+    | Max([]) -> coq_p
     | Max([i]) -> evaluate i
-    | Max(i :: j_list) -> coq_r (evaluate i) (evaluate (Max(j_list))) in
+    | Max(i :: j_list) -> coq_m (evaluate i) (evaluate (Max(j_list))) in
   evaluate i
 
 (** Translate the Coq universe [i] as a concrete Dedukti universe.

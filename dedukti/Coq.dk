@@ -10,9 +10,19 @@ t : srt -> srt.
 
 r : srt -> srt -> srt.
 [s : srt] r s p --> p
-[s : srt] r s z --> s
-[s : srt] r z s --> s
+[s : srt] r p s --> s
+[] r z z --> z
+[s : srt] r (t s) z --> t s
+[s : srt] r z (t s) --> t s
 [s1 : srt, s2 : srt] r (t s1) (t s2) --> t (r s1 s2).
+
+m : srt -> srt -> srt.
+[s : srt] m s p --> s
+[s : srt] m p s --> s
+[] m z z --> z
+[s : srt] m (t s) z --> t s
+[s : srt] m z (t s) --> t s
+[s1 : srt, s2 : srt] m (t s1) (t s2) --> t (m s1 s2).
 
 (; Terms ;)
 
