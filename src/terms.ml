@@ -22,9 +22,29 @@ let translate_sort out env s =
   | Prop(Pos) -> Universes.coq_z
   | Type(i) -> Universes.translate_universe env i
 
+(** Abstract over the variables of [context], ignoring let declarations. *)
+let abstract_rel_context_lam context t =
+  let abstract_rel_declaration t (x, u, a) =
+    match u with
+    | None -> Term.mkLambda (x, a, t)
+    | Some(_) -> t in
+  List.fold_left abstract_rel_declaration t context
+
+let abstract_rel_context_prod context b =
+  let abstract_rel_declaration b (x, u, a) =
+    match u with
+    | None -> Term.mkProd(x, a, b)
+    | Some(_) -> b in
+  List.fold_left abstract_rel_declaration b context
+
+(** Apply the variables of [context] to [t], ignoring let declarations. *)
 let apply_rel_context t context =
-  let n = List.length context in
-  Term.appvectc t (Array.init n (fun i -> Term.mkRel (n - i)))
+  let apply_rel_declaration (args, i) (x, t, a) =
+    match t with
+    | None -> (Term.mkRel(i) :: args, i + 1)
+    | Some(_) -> (args, i + 1) in
+  let args, _ = List.fold_left apply_rel_declaration ([], 1) context in
+  Term.applistc t args
 
 (** Get the arguments of the inductive type application [a] *)
 let inductive_args env a =
@@ -38,8 +58,12 @@ let inductive_args env a =
 let rec translate_constr out env t =
   match Term.kind_of_term t with
   | Rel(i) ->
-      let (x, _, _) = Environ.lookup_rel i env in
-      Dedukti.var (Name.translate_name ~ensure_name:true x)
+      (* If it's a let definition, replace by its value. *)
+      let (x, u, _) = Environ.lookup_rel i env in
+      begin match u with
+      | Some(u) -> translate_constr out env (Term.lift i u)
+      | None -> Dedukti.var (Name.translate_name ~ensure_name:true x)
+      end
   | Var(x) ->
       Dedukti.var (Name.translate_identifier x)
   | Meta(metavariable) -> failwith "Not implemented: Meta"
@@ -73,7 +97,7 @@ let rec translate_constr out env t =
       let t' = translate_constr out (Environ.push_rel (x, None, a) env) t in
       Dedukti.lam (x', a'') t'
   | LetIn(x, u, a, t) ->
-      let env, t = lift_let out env x u a t in
+      let env = lift_let out env x u a in
       translate_constr out env t
   | App(t, u_list) ->
       let t' = translate_constr out env t in
@@ -113,8 +137,8 @@ and translate_types out env a =
       let b' = translate_types out (Environ.push_rel (x, None, a) env) b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
-      let env, t = lift_let out env x u a b in
-      translate_types out env t
+      let env = lift_let out env x u a in
+      translate_types out env b
   | AtomicType(_) ->
       (* Fall back on the usual translation of types. *)
       let s = infer_sort env a in
@@ -122,35 +146,37 @@ and translate_types out env a =
       let a' = translate_constr out env a in
       coq_term s' a'
 
-and lift_let out env x u a t =
-  let x = Name.fresh_let x in
+and lift_let out env x u a =
+(*  Environ.push_rel (x, Some(u), a) env*)
+  let y = Name.fresh_let x in
   let rel_context = Environ.rel_context env in
-  let a = Term.it_mkProd_or_LetIn a rel_context in
-  let u = Term.it_mkLambda_or_LetIn u rel_context in
-  let env = Environ.push_named (x, Some(u), a) env in
-  let x' = Name.translate_identifier x in
-  let a' = translate_types out (Global.env ()) a in
-  let u' = translate_constr out (Global.env ()) u in
-  Dedukti.print out (Dedukti.definition false x' a' u');
-  let x = apply_rel_context (Term.mkVar x) rel_context in
-  let t = Term.subst1 x t in
-  env, t
+  let a_abstract = abstract_rel_context_prod rel_context a in
+  let u_abstract = abstract_rel_context_lam rel_context u in
+  let env = Environ.push_named (y, Some(u_abstract), a_abstract) env in
+  let y' = Name.translate_identifier y in
+  let a_abstract' = translate_types out env a_abstract in
+  let u_abstract' = translate_constr out env u_abstract in
+  Dedukti.print out (Dedukti.definition false y' a_abstract' u_abstract');
+  let y_applied = apply_rel_context (Term.mkVar(y)) rel_context in
+  Environ.push_rel (x, Some(y_applied), a) env
 
 let translate_args out env ts =
   Array.to_list (Array.map (translate_constr out env) ts)
 
+(** Ensure that the declaration (x, t, a) is not anonymous. *)
 let ensure_name prefix (x, t, a) = (Name.ensure_name prefix x, t, a)
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list
-    [x1, ||a1||; ...; x1, ||an||] *)
+    [x1, ||a1||; ...; x1, ||an||], ignoring let declarations. *)
 let translate_rel_context out env context =
-  let translate_rel_declaration (x, t, a) (env, translated) =
-    match t with
+  let translate_rel_declaration (x, u, a) (env, translated) =
+    match u with
     | None ->
         let x' = Name.translate_name x in
         let a' = translate_types out env a in
-        (Environ.push_rel (x, t, a) env, (x', a') :: translated)
-    | Some(t) -> failwith "Cannot translate a rel_declaration with a body." in
+        (Environ.push_rel (x, u, a) env, (x', a') :: translated)
+    | Some(u) ->
+        (Environ.push_rel (x, Some(u), a) env, translated) in
   let env, translated = List.fold_right translate_rel_declaration context (env, []) in
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)
