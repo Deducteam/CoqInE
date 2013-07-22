@@ -2,25 +2,25 @@
 
 open Declarations
 
-let translate_constant_type out module_path env const_type =
+let get_constant_type const_type =
   match const_type with
-  | NonPolymorphicType(a) ->
-      Terms.translate_types out env a
+  | NonPolymorphicType(a) -> a
   | PolymorphicArity(rel_context, poly_arity) ->
       failwith "Not implemented: PolymorphicArity"
 
 let translate_constant_body out module_path env label const =
   let label' = Name.translate_label label in
   (* TODO: Handle [constant_body.const_hyps] *)
-  let const_type' = translate_constant_type out module_path env const.const_type in
+  let const_type = get_constant_type const.const_type in
+  let const_type' = Terms.translate_types out env const_type in
   match const.const_body with
   | Undef(inline) ->
       Dedukti.print out (Dedukti.declaration label' const_type')
   | Def(constr_substituted) ->
-      let constr' = Terms.translate_constr out env (Declarations.force constr_substituted) in
+      let constr' = Terms.translate_constr ~expected_type:const_type out env (Declarations.force constr_substituted) in
       Dedukti.print out (Dedukti.definition false label' const_type' constr')
   | OpaqueDef(lazy_constr) ->
-      let constr' = Terms.translate_constr out env (Declarations.force_opaque lazy_constr) in
+      let constr' = Terms.translate_constr ~expected_type:const_type out env (Declarations.force_opaque lazy_constr) in
       Dedukti.print out (Dedukti.definition true label' const_type' constr')
 
 let get_inductive_arity_sort ind_arity =

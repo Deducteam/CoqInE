@@ -4,8 +4,8 @@ open Term
 
 let infer_type env t =
   (fst (Typeops.infer env t)).Environ.uj_type
-
-let infer_sort env a = 
+  
+let infer_sort env a =
   (fst (Typeops.infer_type env a)).Environ.utj_type
 
 let coq x = Dedukti.Var(Name.coq x)
@@ -21,6 +21,14 @@ let translate_sort out env s =
   | Prop(Null) -> Universes.coq_p
   | Prop(Pos) -> Universes.coq_z
   | Type(i) -> Universes.translate_universe env i
+
+(** Infer and translate the sort of [a].
+    Coq fails if we try to type a sort that was already inferred.
+    This function uses pattern matching to avoid it. *)
+let infer_translate_sort out env a =
+   match Term.kind_of_type a with
+  | SortType(s) -> Universes.coq_t (translate_sort out env s)
+  | _ -> translate_sort out env (infer_sort env a)
 
 (** Abstract over the variables of [context], ignoring let declarations. *)
 let abstract_rel_context_lam context t =
@@ -55,7 +63,19 @@ let inductive_args env a =
   let _ = Term.destInd head in
   Array.to_list args
 
-let rec translate_constr out env t =
+let convertible env a b =
+  try let _ = Reduction.conv env a b in true
+  with | Assert_failure _| Reduction.NotConvertible | Util.Anomaly _ -> false
+
+(** Translate the Coq term [t] as a Dedukti term. *)
+let rec translate_constr ?expected_type out env t =
+  (* Check if the expected type conincides, otherwise make an explicit cast. *)
+  let t =
+    match expected_type with
+    | None -> t
+    | Some(a) ->
+        let b = infer_type env t in
+        if convertible env a b then t else Term.mkCast(t, Term.VMcast, a) in
   match Term.kind_of_term t with
   | Rel(i) ->
       (* If it's a let definition, replace by its value. *)
@@ -73,10 +93,8 @@ let rec translate_constr out env t =
       coq_sort s'
   | Cast(t, _, b) ->
       let a = infer_type env t in
-      let s1 = infer_sort env a in
-      let s2 = infer_sort env b in
-      let s1' = translate_sort out env s1 in
-      let s2' = translate_sort out env s2 in
+      let s1' = infer_translate_sort out env a in
+      let s2' = infer_translate_sort out env b in
       let a' = translate_constr out env a in
       let b' = translate_constr out env b in
       let t' = translate_constr out env t in
@@ -123,13 +141,13 @@ let rec translate_constr out env t =
       let reals' = List.map (translate_constr out env) reals in
       let return_sort' = translate_sort out env return_sort in
       let return_type' = translate_constr out env return_type in
-      let ind_args' = List.map (translate_constr out env) ind_args in
       let matched' = translate_constr out env matched in
       let branches' = Array.to_list (Array.map (translate_constr out env) branches) in
       Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
   | Fix(pfixpoint) -> failwith "Not implemented: Fix"
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
+(** Translate the Coq type [a] as a Dedukti type. *)
 and translate_types out env a =
   (* Specialize on the type to get a nicer and more compact translation. *)
   match Term.kind_of_type a with
