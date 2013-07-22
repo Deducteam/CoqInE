@@ -1,5 +1,7 @@
 (** Main export commands *)
 
+open Pp
+
 let destination = ref "."
 
 let set_destination dest =
@@ -7,6 +9,7 @@ let set_destination dest =
 
 (** Export the library located at [dir_path]. *)
 let export dir_path =
+  msgnl (str "Exporting library " ++ Libnames.pr_dirpath dir_path);
   let filename = Filename.concat !destination (Name.translate_dir_path dir_path) in
   let out = open_out (filename ^ ".dk") in
   try (
