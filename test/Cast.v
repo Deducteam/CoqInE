@@ -4,7 +4,7 @@ Definition y : Type := (x : Type).
 
 Definition f : Prop -> Type := ((fun x : Prop => x) : Prop -> Type).
 
-Definition g : Prop -> Type := fun x : Prop => (x : Type).
+Definition g : Prop -> Type := fun x : Prop => x.
 
 Parameter P : (Prop -> Type) -> Type.
 
