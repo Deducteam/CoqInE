@@ -75,6 +75,10 @@ let convertible env a b =
   try let _ = Reduction.conv env.env a b in true
   with | Assert_failure _| Reduction.NotConvertible | Util.Anomaly _ -> false
 
+(** This table holds the translations of fixpoints, so that we avoid
+    translating the same definition multiple times (e.g. mutual fixpoints). *)
+let fixpoint_table = Hashtbl.create 10007
+
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type env t =
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
@@ -156,7 +160,14 @@ let rec translate_constr ?expected_type env t =
       let matched' = translate_constr env matched in
       let branches' = Array.to_list (Array.map (translate_constr env) branches) in
       Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
-  | Fix(pfixpoint) -> failwith "Not implemented: Fix"
+  | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
+      let n = Array.length names in
+      let env, fix_declarations =
+        try Hashtbl.find fixpoint_table rec_declaration
+        with Not_found -> lift_fix env names types bodies rec_indices i in
+      let env = Array.fold_left (fun env declaration ->
+        Environment.push_rel declaration env) env fix_declarations in
+      translate_constr env (Term.mkRel (n - i))
   | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
 
 (** Translate the Coq type [a] as a Dedukti type. *)
@@ -196,6 +207,50 @@ and lift_let env x u a =
   let u_closed' = translate_constr env u_closed in
   Dedukti.print env.out (Dedukti.definition false y' a_closed' u_closed');
   env, apply_rel_context (Term.mkVar y) rel_context
+
+and lift_fix env names types bodies rec_indices i =
+  (* A fixpoint is translated by 3 functions.
+     - The first function duplicates the argument and sends it to the second.
+     - The second pattern matches on the second arguments, then throws it away
+       and passes the first argument to the third function.
+     - The third function executes the body of the fixpoint. *)
+  (* fix1_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
+     fix2_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> |y1| : ||B1|| -> ... -> |yn| : ||Bn|| -> ||I y1 ... yn|| -> ||A||.
+     fix3_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
+     [...] fix1_f |G| |x1| ... |xr| --> fix2_f |x1| ... |xr| |u1| ... |un| |xr|.
+     [...] fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|) --> fix3_f |G| |x1| ... |xr|.
+     [...] fix3_f |G| |x1| ... |xr| --> |[(fix1_f G)/f]t|. *)
+  let n = Array.length names in
+  let fix_names1 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
+  let fix_names2 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
+  let fix_names3 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
+  let types1 = types in
+  let types2 = types in
+  let types3 = types in
+  let rel_context = Environ.rel_context env.env in
+  let types1_closed = Array.map (generalize_rel_context rel_context) types1 in
+  let types2_closed = Array.map (generalize_rel_context rel_context) types2 in
+  let types3_closed = Array.map (generalize_rel_context rel_context) types3 in
+  let name1_declarations = Array.init n (fun j -> (fix_names1.(j), None, types1_closed.(j))) in
+  let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name1_declarations in
+  let fix_names1' = Array.map Name.translate_identifier fix_names1 in
+  let fix_names2' = Array.map Name.translate_identifier fix_names2 in
+  let fix_names3' = Array.map Name.translate_identifier fix_names3 in
+  let types1_closed' = Array.map (translate_types env) types1_closed in
+  let types2_closed' = Array.map (translate_types env) types2_closed in
+  let types3_closed' = Array.map (translate_types env) types3_closed in
+  for j = 0 to n - 1 do
+    Dedukti.print env.out (Dedukti.declaration fix_names1'.(j) types1_closed'.(j));
+    Dedukti.print env.out (Dedukti.declaration fix_names2'.(j) types2_closed'.(j));
+    Dedukti.print env.out (Dedukti.declaration fix_names3'.(j) types3_closed'.(j));
+  done;
+  let fix_terms = Array.init n (fun j -> Term.mkVar fix_names1.(j)) in
+  let fix_applieds = Array.init n (fun j -> apply_rel_context fix_terms.(j) rel_context) in
+  (* The declarations need to be lifted to account for the displacement. *)
+  let fix_declarations = Array.init n (fun j ->
+    (names.(j), Some(Term.lift j fix_applieds.(j)), Term.lift j types.(j))) in
+  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations);
+  env, fix_declarations
 
 let translate_args env ts =
   List.map (translate_constr env) ts
