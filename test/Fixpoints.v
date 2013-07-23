@@ -8,6 +8,18 @@ match x with
 | s x => s (id x)
 end.
 
+Fixpoint id1 a b n :=
+match n with
+| o => a
+| s m => s (id2 a b m)
+end
+
+with id2 a b n :=
+match n with
+| o => b
+| s m => s (id1 a b m)
+end.
+
 Fixpoint f x :=
 (fix g y := 
   match x with
