@@ -12,6 +12,7 @@ Dedukti Export Cast.
 Dedukti Export Let.
 Dedukti Export Inductives.
 Dedukti Export Fixpoints.
+Dedukti Export Sections.
 Dedukti Export NestedModules.
 Dedukti Export NestedLibraries.
 Dedukti Export Reflexivity.
