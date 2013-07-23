@@ -91,6 +91,9 @@ let identifier_of_name name =
   | Names.Name(identifier) -> Some(identifier)
   | Names.Anonymous -> None
 
+let fresh_name prefix name =
+  fresh_identifier_option prefix (identifier_of_name name)
+
 let ensure_name prefix name =
   match name with
   | Names.Name(_) -> name
@@ -98,7 +101,7 @@ let ensure_name prefix name =
 
 (** Name of let constants *)
 let fresh_let name =
-  fresh_identifier_option ["let"] (identifier_of_name name)
+  fresh_name ["let"] name
 
 (** Name of the match function for the inductive type *)
 let match_function identifier =
