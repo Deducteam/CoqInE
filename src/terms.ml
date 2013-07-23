@@ -59,10 +59,15 @@ let apply_rel_context t context =
 let inductive_args env a =
   (* Reduce to get the head normal form. *)
   let a = Reduction.whd_betadeltaiota env a in
-  let head, args = Term.destApp a in
-  (* Make sure the head is an inductive. *)
-  let _ = Term.destInd head in
-  Array.to_list args
+  (* Use match instead of [Term.destApp] because that function fails when
+     there are no arguments. *)
+  match Term.kind_of_term a with
+  | Ind _ -> []
+  | App(head, args) ->
+      (* Make sure the head is an inductive. *)
+      let _ = Term.destInd head in
+      Array.to_list args
+  | _ -> failwith "Inductive type application"
 
 let convertible env a b =
   try let _ = Reduction.conv env a b in true
