@@ -30,10 +30,6 @@ type : srt -> Type.
 term : s : srt -> A : type s -> Type.
 sort : s : srt -> type (t s).
 prod : s1 : srt -> s2 : srt -> A : type s1 -> (term s1 A -> type s2) -> type (r s1 s2).
-[s : srt] term {t s} (sort s) --> type s
-[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {r s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
-
-(; Casts ;)
 
 cast_srt : srt -> srt -> srt.
 [s : srt] cast_srt p s --> s
@@ -49,11 +45,16 @@ cast_type : s1 : srt -> s2 : srt -> type s1 -> type s2 -> type (cast_srt s1 s2).
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : term s1 A -> type s2, C : term s1 A -> type s3]
   cast_type {r s1 s2} {r s1 s3} (prod s1 s2 A B) (prod s1 s3 A C) -->
     prod s1 (cast_srt s2 s3) A (x : term s1 A => cast_type s2 s3 (B x) (C x))
-[s : srt, A : type s] cast_type s s A A --> A
-[s1 : srt, s2 : srt, s3 : srt, A : type s1, B : type s2, C : type s3]
-  cast_type {cast_srt s1 s2} s3 (cast_type s1 s2 A B) C --> cast_type s1 s3 A C.
+[s : srt, A : type s] cast_type s s A A --> A.
 
 cast : s1 : srt -> s2 : srt -> A : type s1 -> B : type s2 -> term s1 A -> term (cast_srt s1 s2) (cast_type s1 s2 A B).
+
+[s1 : srt, s2 : srt, s3 : srt, A : type s1, B : type s2, C : type s3]
+  cast_type {cast_srt s1 s2} s3 (cast_type s1 s2 A B) C --> cast_type s1 s3 A C.
+[s : srt] term {t s} (sort s) --> type s
+[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {r s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
+[s1 : srt, s2 : srt, A : type s1] term {cast_srt s1 s2} (cast {t s1} {t s2} (sort s1) (sort s2) A) --> term s1 A.
+
 [s : srt, A : type s, x : term s A] cast s s A A x --> x
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : type s2, C : type s3, x : term s1 A]
   cast (cast_srt s1 s2) s3 (cast_type s1 s2 A B) C (cast s1 s2 A B x) --> cast s1 s3 A C x
