@@ -31,19 +31,20 @@ let infer_translate_sort out env a =
   | _ -> translate_sort out env (infer_sort env a)
 
 (** Abstract over the variables of [context], ignoring let declarations. *)
-let abstract_rel_context_lam context t =
+let abstract_rel_context context t =
   let abstract_rel_declaration t (x, u, a) =
     match u with
     | None -> Term.mkLambda (x, a, t)
     | Some(_) -> t in
   List.fold_left abstract_rel_declaration t context
 
-let abstract_rel_context_prod context b =
-  let abstract_rel_declaration b (x, u, a) =
+(** Generalize over the variables of [context], ignoring let declarations. *)
+let generalize_rel_context context b =
+  let generalize_rel_declaration b (x, u, a) =
     match u with
     | None -> Term.mkProd(x, a, b)
     | Some(_) -> b in
-  List.fold_left abstract_rel_declaration b context
+  List.fold_left generalize_rel_declaration b context
 
 (** Apply the variables of [context] to [t], ignoring let declarations. *)
 let apply_rel_context t context =
@@ -179,13 +180,13 @@ and lift_let out env x u a =
 (*  Environ.push_rel (x, Some(u), a) env*)
   let y = Name.fresh_let x in
   let rel_context = Environ.rel_context env in
-  let a_abstract = abstract_rel_context_prod rel_context a in
-  let u_abstract = abstract_rel_context_lam rel_context u in
-  let env = Environ.push_named (y, Some(u_abstract), a_abstract) env in
+  let a_closed = generalize_rel_context rel_context a in
+  let u_closed = abstract_rel_context rel_context u in
+  let env = Environ.push_named (y, Some(u_closed), a_closed) env in
   let y' = Name.translate_identifier y in
-  let a_abstract' = translate_types out env a_abstract in
-  let u_abstract' = translate_constr out env u_abstract in
-  Dedukti.print out (Dedukti.definition false y' a_abstract' u_abstract');
+  let a_closed' = translate_types out env a_closed in
+  let u_closed' = translate_constr out env u_closed in
+  Dedukti.print out (Dedukti.definition false y' a_closed' u_closed');
   let y_applied = apply_rel_context (Term.mkVar(y)) rel_context in
   Environ.push_rel (x, Some(y_applied), a) env
 
