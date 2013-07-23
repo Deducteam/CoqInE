@@ -205,6 +205,7 @@ let ensure_name prefix (x, t, a) = (Name.ensure_name prefix x, t, a)
     [x1, ||a1||; ...; x1, ||an||], ignoring let declarations. *)
 let translate_rel_context out env context =
   let translate_rel_declaration (x, u, a) (env, translated) =
+    let (x, u, a) = ensure_name [] (x, u, a) in
     match u with
     | None ->
         let x' = Name.translate_name x in

@@ -80,6 +80,8 @@ let translate_one_inductive_body out module_path env label mind_body i =
   let ind_applied = Terms.apply_rel_context ind_terms.(i) (arity_real_context @ params_context) in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
+  (* Ensure the variables in the context of the constructor are not anonymous. *)
+  let cons_contexts = Array.map (List.map (Terms.ensure_name ["var"])) cons_contexts in
   let cons_types = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init n_cons (fun j ->
     fst (Util.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
