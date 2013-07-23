@@ -69,7 +69,7 @@ let convertible env a b =
 
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type out env t =
-  (* Check if the expected type conincides, otherwise make an explicit cast. *)
+  (* Check if the expected type coincides, otherwise make an explicit cast. *)
   let t =
     match expected_type with
     | None -> t
