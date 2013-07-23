@@ -117,10 +117,14 @@ let rec translate_constr ?expected_type out env t =
   | LetIn(x, u, a, t) ->
       let env = lift_let out env x u a in
       translate_constr out env t
-  | App(t, u_list) ->
+  | App(t, args) ->
+      let a = infer_type env t in
+      let translate_app (t', a) u =
+        let _, c, d = Term.destProd (Reduction.whd_betadeltaiota env a) in
+        let u' = translate_constr ~expected_type:c out env u in
+        (Dedukti.app t' u', Term.subst1 u d) in
       let t' = translate_constr out env t in
-      let u_list' = List.map (translate_constr out env) (Array.to_list u_list) in
-      Dedukti.apps t' u_list'
+      fst (Array.fold_left translate_app (t', a) args)
   | Const(c) ->
       Dedukti.var(Name.translate_constant env c)
   | Ind(i) ->
