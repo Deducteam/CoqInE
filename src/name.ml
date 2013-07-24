@@ -2,6 +2,8 @@
 
 (* The name "names.ml" is already taken by a file in the Coq library. *)
 
+open Environment
+
 (** There are many different types of names in Coq:
     - identifier: basic identifier (i.e. string)
     - name: name used by binders (i.e. "fun x => ...")
@@ -13,6 +15,33 @@
     - constant: refers to a declared constant
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
+
+let fresh_identifier ?(reserve=false) ?(prefix=[]) env identifier =
+  let avoid = Termops.ids_of_context env.env @ env.reserved in
+  let identifier = Names.id_of_string (String.concat "_" (prefix@ [Names.string_of_id identifier])) in
+  let identifier = Namegen.next_ident_away identifier avoid in
+  if reserve then Environment.reserve env identifier;
+  identifier
+
+let fresh_identifier_of_string ?(reserve=false) ?(prefix=[]) env str =
+  fresh_identifier ~reserve ~prefix env (Names.id_of_string str)
+
+let fresh_identifier_of_name ?(reserve=false) ?(prefix=[]) ~default env name =
+  match name with
+  | Names.Anonymous -> fresh_identifier ~reserve ~prefix env (Names.id_of_string default)
+  | Names.Name(identifier) -> fresh_identifier ~reserve ~prefix env identifier
+
+let fresh_name ?(reserve=false) ?(prefix=[]) ?default env name =
+  match name, default with
+  | Names.Anonymous, None -> name
+  | Names.Anonymous, Some(default) ->
+      Names.Name(fresh_identifier ~reserve ~prefix env (Names.id_of_string default))
+  | Names.Name(identifier), _ ->
+      Names.Name(fresh_identifier ~reserve ~prefix env identifier)
+
+(** Name of the match function for the inductive type *)
+let match_function identifier =
+  Names.id_of_string (String.concat "_" ["match"; Names.string_of_id identifier])
 
 (** Escaping *)
 
@@ -33,7 +62,6 @@ let is_alpha_numerical c =
 (** Escape non-alphanumerical characters using underscores and hexadecimal
     values to be compatible with Dedukti. *)
 let escape name =
-  (* Use Printf.sprintf for efficiency. *)
   let escape_char () c =
     if is_alpha_numerical c then Printf.sprintf "%c" c else
     match c with
@@ -43,69 +71,9 @@ let escape name =
     | _ -> Printf.sprintf "_%02X_" (Char.code c) in
   let rec escape i () name =
     if i = String.length name
-    then Printf.sprintf ""
+    then ""
     else Printf.sprintf "%a%a" escape_char name.[i] (escape (i + 1)) name in
   escape 0 () name
-
-(** Name mangling *)
-
-(** Mangle generated names with prefixes to avoid clashes with 
-    the translated variable names. *)
-let mangle name_parts =
-  String.concat "_"  ("" :: name_parts)
-
-let mangle_identifier prefix identifier =
-  Names.id_of_string (mangle (prefix @ [Names.string_of_id identifier]))
-
-let mangle_label prefix label =
-  Names.mk_label (mangle (prefix @ [Names.string_of_label label]))
-
-let mangled_identifier prefix name =
-  Names.id_of_string (mangle (prefix @ [name]))
-
-(** Name generation *)
-
-let used_names = Hashtbl.create 10007
-
-(** Generate a fresh name from [name_parts] using a unique integer suffix. *)
-let fresh name_parts =
-  let counter =
-    try Hashtbl.find used_names name_parts
-    with Not_found -> 1 in
-  Hashtbl.replace used_names name_parts (counter + 1);
-  mangle (name_parts @ [string_of_int counter])
-
-let fresh_identifier prefix identifier =
-  Names.id_of_string (fresh (prefix @ [Names.string_of_id identifier]))
-
-let fresh_identifier_option prefix identifier =
-  match identifier with
-  | Some(identifier) -> Names.id_of_string (fresh (prefix @ [Names.string_of_id identifier]))
-  | None -> Names.id_of_string (fresh prefix)
-
-let fresh_label prefix label =
-  Names.mk_label (fresh (prefix @ [Names.string_of_label label]))
-
-let identifier_of_name name =
-  match name with
-  | Names.Name(identifier) -> Some(identifier)
-  | Names.Anonymous -> None
-
-let fresh_name prefix name =
-  fresh_identifier_option prefix (identifier_of_name name)
-
-let ensure_name prefix name =
-  match name with
-  | Names.Name(_) -> name
-  | Names.Anonymous -> Names.Name (fresh_identifier_option prefix None)
-
-(** Name of let constants *)
-let fresh_let name =
-  fresh_name ["let"] name
-
-(** Name of the match function for the inductive type *)
-let match_function identifier =
-  mangle_identifier ["match"] identifier
 
 (** Name translation *)
 
@@ -150,7 +118,7 @@ let translate_constant env constant =
   translate_module_path (Names.con_modpath constant) [Names.con_label constant]
 
 let get_inductive_body env mind i =
-  let mind_body = Environ.lookup_mind mind env in
+  let mind_body = Environ.lookup_mind mind env.env in
   mind_body.Declarations.mind_packets.(i)
 
 let translate_inductive env (mind, i) =
@@ -171,4 +139,5 @@ let translate_match_function env (mind, i) =
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (match_function ind_body.Declarations.mind_typename) in
   translate_module_path module_path [label]
+
 

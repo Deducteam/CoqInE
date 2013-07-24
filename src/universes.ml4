@@ -2,6 +2,8 @@
 
 open Genlex
 
+open Environment
+
 let coq x = Dedukti.Var(Name.coq x)
 
 let coq_srt = coq "srt"
@@ -63,7 +65,7 @@ let translate_universe env i =
     | Stream.Failure
     | Stream.Error _ -> failwith (Printf.sprintf "Unable to parse universe %s" i_str) in
   (* Sort the universes to solve the constraints and save them in a table. *)
-  let universes = Univ.sort_universes (Environ.universes env) in
+  let universes = Univ.sort_universes (Environ.universes env.env) in
   let solutions = Hashtbl.create 10007 in
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add solutions j k) in
