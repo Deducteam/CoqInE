@@ -195,7 +195,7 @@ and lift_let env x u a =
   env, apply_rel_context (Term.mkVar y) rel_context
 
 and lift_fix env names types bodies rec_indices =
-  (* A fixpoint is translated by 3 functions.
+  (* A fixpoint is translated by 3 functions:
      - The first function duplicates the argument and sends it to the second.
      - The second pattern matches on the second arguments, then throws it away
        and passes the first argument to the third function.
@@ -212,6 +212,10 @@ and lift_fix env names types bodies rec_indices =
   let fix_names3 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
   let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
+  for i = 0 to n - 1 do
+    assert (List.length contexts.(i) > rec_indices.(i));
+(*    assert (List.length contexts.(i) = rel_context_length contexts.(i))*)
+  done;
   let return_types = Array.map snd contexts_return_types in
   let ind_applieds = Array.map (fun context -> let (_, _, a) = List.hd context in a) contexts in
   let inds_args = Array.map (Inductive.find_inductive env.env) ind_applieds in
@@ -232,32 +236,77 @@ and lift_fix env names types bodies rec_indices =
   let types2_closed = Array.map (generalize_rel_context rel_context) types2 in
   let types3_closed = Array.map (generalize_rel_context rel_context) types3 in
   let name1_declarations = Array.init n (fun j -> (fix_names1.(j), None, types1_closed.(j))) in
-  let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name1_declarations in
+  let name2_declarations = Array.init n (fun j -> (fix_names2.(j), None, types2_closed.(j))) in
+  let name3_declarations = Array.init n (fun j -> (fix_names3.(j), None, types3_closed.(j))) in
   let fix_names1' = Array.map Name.translate_identifier fix_names1 in
   let fix_names2' = Array.map Name.translate_identifier fix_names2 in
   let fix_names3' = Array.map Name.translate_identifier fix_names3 in
   let types1_closed' = Array.map (translate_types env) types1_closed in
   let types2_closed' = Array.map (translate_types env) types2_closed in
   let types3_closed' = Array.map (translate_types env) types3_closed in
-  for j = 0 to n - 1 do
-    Dedukti.print env.out (Dedukti.declaration fix_names1'.(j) types1_closed'.(j));
-    Dedukti.print env.out (Dedukti.declaration fix_names2'.(j) types2_closed'.(j));
-    Dedukti.print env.out (Dedukti.declaration fix_names3'.(j) types3_closed'.(j));
+  for i = 0 to n - 1 do
+    Dedukti.print env.out (Dedukti.declaration fix_names1'.(i) types1_closed'.(i));
+    Dedukti.print env.out (Dedukti.declaration fix_names2'.(i) types2_closed'.(i));
+    Dedukti.print env.out (Dedukti.declaration fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms = Array.init n (fun j -> Term.mkVar fix_names1.(j)) in
-  let fix_applieds = Array.init n (fun j -> apply_rel_context fix_terms.(j) rel_context) in
+  let fix_terms1 = Array.init n (fun i -> Term.mkVar fix_names1.(i)) in
+  let fix_terms2 = Array.init n (fun i -> Term.mkVar fix_names2.(i)) in
+  let fix_terms3 = Array.init n (fun i -> Term.mkVar fix_names3.(i)) in
+  let fix_rules1 = Array.init n (fun i ->
+    let env, context' = translate_rel_context env (contexts.(i) @ rel_context) in
+    let fix_term1' = translate_constr env fix_terms1.(i) in
+    let fix_term2' = translate_constr env fix_terms2.(i) in
+    let ind_args' = List.map (translate_constr env) ind_args.(i) in
+    [(context', Dedukti.apply_context fix_term1' context',
+      Dedukti.apps (Dedukti.apply_context fix_term2' context')
+        (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))]) in
+  let fix_rules2 = Array.init n (fun i ->
+    let cons_arities = Inductive.arities_of_constructors inds.(i) ind_specifs.(i) in
+    let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in
+    let cons_contexts = Array.map fst cons_contexts_types in
+    let cons_types = Array.map snd cons_contexts_types in
+    let cons_ind_args = Array.map (fun cons_type -> snd (Inductive.find_inductive env.env cons_type)) cons_types in
+    let n_cons = Array.length cons_types in
+    let cons_rules = Array.init n_cons (fun j ->
+      let env, context' = translate_rel_context env (contexts.(i) @ rel_context) in
+      let env, cons_context' = translate_rel_context env (cons_contexts.(j)) in
+      let fix_term2' = translate_constr env fix_terms2.(i) in
+      let fix_term3' = translate_constr env fix_terms3.(i) in
+      let cons_term' = translate_constr env (Term.mkConstruct ((inds.(i), j + 1))) in
+      let cons_term_applied' = Dedukti.apply_context cons_term' cons_context' in
+      let cons_ind_args' = List.map (translate_constr env) cons_ind_args.(j) in
+      (context' @ cons_context', Dedukti.apps (Dedukti.apply_context fix_term2' context') (cons_ind_args' @ [cons_term_applied']),
+        Dedukti.apply_context fix_term3' context')) in
+    Array.to_list cons_rules) in
+  let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name1_declarations in
+  let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name2_declarations in
+  let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name3_declarations in
+  let fix_applieds1 = Array.init n (fun i -> apply_rel_context fix_terms1.(i) rel_context) in
   (* The declarations need to be lifted to account for the displacement. *)
-  let fix_declarations = Array.init n (fun j ->
-    (names.(j), Some(Term.lift j fix_applieds.(j)), Term.lift j types.(j))) in
-  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations);
-  env, fix_declarations
-
-let translate_args env ts =
-  List.map (translate_constr env) ts
+  let fix_declarations1 = Array.init n (fun i ->
+    (names.(i), Some(Term.lift i fix_applieds1.(i)), Term.lift i types.(i))) in
+  let fix_rules3 = Array.init n (fun i ->
+    let env, rel_context' = translate_rel_context (Environment.global_env env) rel_context in
+    let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name1_declarations in
+    let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name2_declarations in
+    let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name3_declarations in
+    let fix_term3' = translate_constr env fix_terms3.(i) in
+    let env = Array.fold_left (fun env declaration ->
+      Environment.push_rel declaration env) env fix_declarations1 in
+    let body' = translate_constr env bodies.(i) in
+    let env , context' = translate_rel_context env contexts.(i) in
+    [(rel_context' @ context', Dedukti.apply_context fix_term3' rel_context', body')]) in
+  for i = 0 to n - 1 do
+    Dedukti.print env.out (Dedukti.rewrite(fix_rules1.(i)));
+    Dedukti.print env.out (Dedukti.rewrite(fix_rules2.(i)));
+    Dedukti.print env.out (Dedukti.rewrite(fix_rules3.(i)))
+  done;
+  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
+  env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list
     [x1, ||a1||; ...; x1, ||an||], ignoring let declarations. *)
-let translate_rel_context env context =
+and translate_rel_context env context =
   let translate_rel_declaration (x, u, a) (env, translated) =
     match u with
     | None ->
@@ -271,6 +320,8 @@ let translate_rel_context env context =
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)
 
+let translate_args env ts =
+  List.map (translate_constr env) ts
 
 (** Translate an external declaration which does not have a real type in Coq
     and push it on the environment. *)
