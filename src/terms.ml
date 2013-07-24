@@ -109,10 +109,8 @@ let rec translate_constr ?expected_type env t =
       coq_cast s1' s2' a' b' t'
   | Prod(x, a, b) ->
       let x = Name.fresh_name ~default:"var" env x in
-      let s1 = infer_sort env a in
-      let s2 = infer_sort (Environment.push_rel (x, None, a) env) b in
-      let s1' = translate_sort env s1 in
-      let s2' = translate_sort (Environment.push_rel (x, None, a) env) s2 in
+      let s1' = infer_translate_sort env a in
+      let s2' = infer_translate_sort (Environment.push_rel (x, None, a) env) b in
       let x' = Name.translate_name x in
       let a' = translate_constr env a in
       let a'' = translate_types env a in
