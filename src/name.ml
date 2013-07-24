@@ -16,28 +16,28 @@ open Environment
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
 
-let fresh_identifier ?(reserve=false) ?(prefix=[]) env identifier =
-  let avoid = Termops.ids_of_context env.env @ env.reserved in
+let fresh_identifier ?(global=false) ?(prefix=[]) env identifier =
+  let avoid = Termops.ids_of_context env.env @ env.globals in
   let identifier = Names.id_of_string (String.concat "_" (prefix@ [Names.string_of_id identifier])) in
   let identifier = Namegen.next_ident_away identifier avoid in
-  if reserve then Environment.reserve env identifier;
+  if global then Environment.declare_global env identifier;
   identifier
 
-let fresh_identifier_of_string ?(reserve=false) ?(prefix=[]) env str =
-  fresh_identifier ~reserve ~prefix env (Names.id_of_string str)
+let fresh_identifier_of_string ?(global=false) ?(prefix=[]) env str =
+  fresh_identifier ~global ~prefix env (Names.id_of_string str)
 
-let fresh_identifier_of_name ?(reserve=false) ?(prefix=[]) ~default env name =
+let fresh_identifier_of_name ?(global=false) ?(prefix=[]) ~default env name =
   match name with
-  | Names.Anonymous -> fresh_identifier ~reserve ~prefix env (Names.id_of_string default)
-  | Names.Name(identifier) -> fresh_identifier ~reserve ~prefix env identifier
+  | Names.Anonymous -> fresh_identifier ~global ~prefix env (Names.id_of_string default)
+  | Names.Name(identifier) -> fresh_identifier ~global ~prefix env identifier
 
-let fresh_name ?(reserve=false) ?(prefix=[]) ?default env name =
+let fresh_name ?(global=false) ?(prefix=[]) ?default env name =
   match name, default with
   | Names.Anonymous, None -> name
   | Names.Anonymous, Some(default) ->
-      Names.Name(fresh_identifier ~reserve ~prefix env (Names.id_of_string default))
+      Names.Name(fresh_identifier ~global ~prefix env (Names.id_of_string default))
   | Names.Name(identifier), _ ->
-      Names.Name(fresh_identifier ~reserve ~prefix env identifier)
+      Names.Name(fresh_identifier ~global ~prefix env identifier)
 
 (** Name of the match function for the inductive type *)
 let match_function identifier =

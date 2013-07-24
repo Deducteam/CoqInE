@@ -186,7 +186,7 @@ and translate_types env a =
 
 and lift_let env x u a =
 (*  Environ.push_rel (x, Some(u), a) env*)
-  let y = Name.fresh_identifier_of_name ~reserve:true ~prefix:["let"] ~default:"_" env x in
+  let y = Name.fresh_identifier_of_name ~global:true ~prefix:["let"] ~default:"_" env x in
   let rel_context = Environ.rel_context env.env in
   let a_closed = generalize_rel_context rel_context a in
   let u_closed = abstract_rel_context rel_context u in
