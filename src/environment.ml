@@ -16,6 +16,9 @@ let init_env out dir_path = {
   env = Global.env ();
   }
 
+let global_env env =
+  {env with env = Global.env ()}
+
 (** Declare a global name. *)
 let declare_global env identifier =
   env.globals <- identifier :: env.globals
