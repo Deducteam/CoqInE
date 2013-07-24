@@ -57,20 +57,6 @@ let apply_rel_context t context =
   let args, _ = List.fold_left apply_rel_declaration ([], 1) context in
   Term.applistc t args
 
-(** Get the arguments of the inductive type application [a] *)
-let inductive_args env a =
-  (* Reduce to get the head normal form. *)
-  let a = Reduction.whd_betadeltaiota env.env a in
-  (* Use match instead of [Term.destApp] because that function fails when
-     there are no arguments. *)
-  match Term.kind_of_term a with
-  | Ind _ -> []
-  | App(head, args) ->
-      (* Make sure the head is an inductive. *)
-      let _ = Term.destInd head in
-      Array.to_list args
-  | _ -> failwith "Inductive type application"
-
 let convertible env a b =
   try let _ = Reduction.conv env.env a b in true
   with | Assert_failure _| Reduction.NotConvertible | Util.Anomaly _ -> false
@@ -148,7 +134,7 @@ let rec translate_constr ?expected_type env t =
       let mind_body, ind_body = Inductive.lookup_mind_specif env.env case_info.ci_ind in
       let n_params = mind_body.Declarations.mind_nparams in
       let n_reals = ind_body.Declarations.mind_nrealargs in
-      let ind_args = inductive_args env (infer_type env matched) in
+      let _, ind_args = Inductive.find_inductive env.env (infer_type env matched) in
       let params, reals = Util.list_chop n_params ind_args in
       let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
       let return_sort = infer_sort (Environment.push_rel_context context env) end_type in
@@ -164,7 +150,7 @@ let rec translate_constr ?expected_type env t =
       let n = Array.length names in
       let env, fix_declarations =
         try Hashtbl.find fixpoint_table rec_declaration
-        with Not_found -> lift_fix env names types bodies rec_indices i in
+        with Not_found -> lift_fix env names types bodies rec_indices in
       let env = Array.fold_left (fun env declaration ->
         Environment.push_rel declaration env) env fix_declarations in
       translate_constr env (Term.mkRel (n - i))
@@ -208,7 +194,7 @@ and lift_let env x u a =
   Dedukti.print env.out (Dedukti.definition false y' a_closed' u_closed');
   env, apply_rel_context (Term.mkVar y) rel_context
 
-and lift_fix env names types bodies rec_indices i =
+and lift_fix env names types bodies rec_indices =
   (* A fixpoint is translated by 3 functions.
      - The first function duplicates the argument and sends it to the second.
      - The second pattern matches on the second arguments, then throws it away

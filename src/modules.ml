@@ -79,7 +79,7 @@ let translate_one_inductive_body env label mind_body i =
   let cons_types = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init n_cons (fun j ->
     fst (Util.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
-  let cons_ind_args = Array.map (Terms.inductive_args env) cons_types in
+  let cons_ind_args = Array.map (fun a -> snd (Inductive.find_inductive env.env a)) cons_types in
   let cons_ind_real_args = Array.init n_cons (fun j ->
     snd (Util.list_chop n_params cons_ind_args.(j))) in
   let cons_applieds = Array.init n_cons (fun j ->
