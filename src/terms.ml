@@ -119,6 +119,7 @@ let rec translate_constr ?expected_type env t =
       let b' = translate_constr (Environment.push_rel (x, None, a) env) b in
       coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
+      let x = Name.fresh_name ~default:"var" env x in
       let x' = Name.translate_name x in
       let a'' = translate_types env a in
       let t' = translate_constr (Environment.push_rel (x, None, a) env) t in
