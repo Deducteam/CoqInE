@@ -1,3 +1,8 @@
+Definition x :=
+  let x := Type in
+  let x := Prop in
+  x.
+
 Definition f (x : Type) :=
   let y := x in y.
 
