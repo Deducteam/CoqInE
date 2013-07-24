@@ -210,8 +210,22 @@ and lift_fix env names types bodies rec_indices =
   let fix_names1 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
   let fix_names2 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
   let fix_names3 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
+  let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
+  let contexts = Array.map fst contexts_return_types in
+  let return_types = Array.map snd contexts_return_types in
+  let ind_applieds = Array.map (fun context -> let (_, _, a) = List.hd context in a) contexts in
+  let inds_args = Array.map (Inductive.find_inductive env.env) ind_applieds in
+  let inds = Array.map fst inds_args in
+  let ind_args = Array.map snd inds_args in
+  let ind_specifs = Array.map (Inductive.lookup_mind_specif env.env) inds in
+  let arities = Array.map (fun ind_specif -> Inductive.type_of_inductive env.env ind_specif) ind_specifs in
+  let arity_contexts = Array.map (fun arity -> fst (Term.decompose_prod_assum arity)) arities in
+  let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Term.mkInd inds.(i)) arity_contexts.(i)) in
   let types1 = types in
-  let types2 = types in
+  let types2 = Array.init n (fun i ->
+    generalize_rel_context contexts.(i) (
+    generalize_rel_context arity_contexts.(i) (
+    Term.mkArrow ind_applied_arities.(i) (Term.lift (List.length arity_contexts.(i) + 1) return_types.(i))))) in
   let types3 = types in
   let rel_context = Environ.rel_context env.env in
   let types1_closed = Array.map (generalize_rel_context rel_context) types1 in
