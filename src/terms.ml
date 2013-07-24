@@ -125,8 +125,8 @@ let rec translate_constr ?expected_type env t =
       let t' = translate_constr (Environment.push_rel (x, None, a) env) t in
       Dedukti.lam (x', a'') t'
   | LetIn(x, u, a, t) ->
-      let env = lift_let env x u a in
-      translate_constr env t
+      let env, u = lift_let env x u a in
+      translate_constr (Environment.push_rel (x, Some(u), a) env) t
   | App(t, args) ->
       let a = infer_type env t in
       let translate_app (t', a) u =
@@ -176,8 +176,8 @@ and translate_types env a =
       let b' = translate_types (Environment.push_rel (x, None, a) env) b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
-      let env = lift_let env x u a in
-      translate_types env b
+      let env, u = lift_let env x u a in
+      translate_constr (Environment.push_rel (x, Some(u), a) env) b
   | AtomicType(_) ->
       (* Fall back on the usual translation of types. *)
       let s = infer_sort env a in
@@ -196,8 +196,7 @@ and lift_let env x u a =
   let a_closed' = translate_types env a_closed in
   let u_closed' = translate_constr env u_closed in
   Dedukti.print env.out (Dedukti.definition false y' a_closed' u_closed');
-  let y_applied = apply_rel_context (Term.mkVar y) rel_context in
-  Environment.push_rel (x, Some(y_applied), a) env
+  env, apply_rel_context (Term.mkVar y) rel_context
 
 let translate_args env ts =
   List.map (translate_constr env) ts
