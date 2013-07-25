@@ -182,7 +182,7 @@ and translate_types info env a =
       coq_term s' a'
 
 and lift_let info env x u a =
-  let y = Name.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info env x in
+  let y = Name.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info (Global.env()) x in
   let rel_context = Environ.rel_context env in
   let a_closed = generalize_rel_context rel_context a in
   let u_closed = abstract_rel_context rel_context u in
@@ -206,9 +206,9 @@ and lift_fix info env names types bodies rec_indices =
      [...] fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|) --> fix3_f |G| |x1| ... |xr|.
      [...] fix3_f |G| |x1| ... |xr| --> |[(fix1_f G)/f]t|. *)
   let n = Array.length names in
-  let fix_names1 = Array.map (Name.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
-  let fix_names2 = Array.map (Name.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
-  let fix_names3 = Array.map (Name.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
+  let fix_names1 = Array.map (Name.fresh_of_name info (Global.env ()) ~global:true ~prefix:"fix" ~default:"_") names in
+  let fix_names2 = Array.map (Name.fresh_of_name info (Global.env ()) ~global:true ~prefix:"fix" ~default:"_") names in
+  let fix_names3 = Array.map (Name.fresh_of_name info (Global.env ()) ~global:true ~prefix:"fix" ~default:"_") names in
   let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
   let return_types = Array.map snd contexts_return_types in
