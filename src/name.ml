@@ -2,11 +2,11 @@
 
 (* The name "names.ml" is already taken by a file in the Coq library. *)
 
-open Environment
+open Info
 
 (** There are many different types of names in Coq:
     - identifier: basic identifier (i.e. string)
-    - name: name used by binders (i.e. "fun x => ...")
+    - name: names used by binders (i.e. "fun x => ...")
     - dir_path: directory paths (e.g. "A.B.C")
     - label: names of structure elements
     - mod_bound_id: names of functor parameters
@@ -16,32 +16,40 @@ open Environment
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
 
-let fresh_identifier ?(global=false) ?(prefix=[]) env identifier =
-  let avoid = Termops.ids_of_context env.env @ !(env.globals) in
-  let identifier = Names.id_of_string (String.concat "_" (prefix@ [Names.string_of_id identifier])) in
-  let identifier = Namegen.next_ident_away identifier avoid in
-  if global then Environment.declare_global env identifier;
+let fresh_identifier ?(global=false) ?(prefix=[]) info env identifier =
+  let full_path identifier =
+    Libnames.make_path (Nametab.dirpath_of_module info.module_path) identifier in
+  let avoid identifier =
+    Nametab.exists_cci (full_path identifier) ||
+    List.mem identifier (Termops.ids_of_context env) in
+  let identifier = Names.id_of_string (String.concat "_" (prefix @ [Names.string_of_id identifier])) in
+  let identifier = Namegen.next_ident_away_from identifier avoid in
+  if global then Nametab.push (Nametab.Until 0) (full_path identifier) (Libnames.VarRef identifier);
   identifier
 
-let fresh_identifier_of_string ?(global=false) ?(prefix=[]) env str =
-  fresh_identifier ~global ~prefix env (Names.id_of_string str)
+let fresh_identifier_of_string ?(global=false) ?(prefix=[]) info env str =
+  fresh_identifier ~global ~prefix info env (Names.id_of_string str)
 
-let fresh_identifier_of_name ?(global=false) ?(prefix=[]) ~default env name =
+let fresh_identifier_of_name ?(global=false) ?(prefix=[]) ~default info env name =
   match name with
-  | Names.Anonymous -> fresh_identifier ~global ~prefix env (Names.id_of_string default)
-  | Names.Name(identifier) -> fresh_identifier ~global ~prefix env identifier
+  | Names.Anonymous -> fresh_identifier ~global ~prefix info env (Names.id_of_string default)
+  | Names.Name(identifier) -> fresh_identifier ~global ~prefix info env identifier
 
-let fresh_name ?(global=false) ?(prefix=[]) ?default env name =
+let fresh_name ?(global=false) ?(prefix=[]) ?default info env name =
   match name, default with
   | Names.Anonymous, None -> name
   | Names.Anonymous, Some(default) ->
-      Names.Name(fresh_identifier ~global ~prefix env (Names.id_of_string default))
+      Names.Name(fresh_identifier ~global ~prefix info env (Names.id_of_string default))
   | Names.Name(identifier), _ ->
-      Names.Name(fresh_identifier ~global ~prefix env identifier)
+      Names.Name(fresh_identifier ~global ~prefix info env identifier)
 
 (** Name of the match function for the inductive type *)
 let match_function identifier =
   Names.id_of_string (String.concat "_" ["match"; Names.string_of_id identifier])
+
+(** Push a dummy declaration to declare an identifier locally. *)
+let push_identifier identifier env =
+  Environ.push_named (identifier, None, Term.mkSort (Term.Prop(Term.Null))) env
 
 (** Escaping *)
 
@@ -103,45 +111,45 @@ let dir_path_of_labels labels =
   Names.make_dirpath (List.rev identifiers)
 
 (** Translate the path corresponding to [module_path] followed by [labels]. *)
-let rec translate_module_path env module_path labels =
+let rec translate_module_path info env module_path labels =
   match module_path with
   | Names.MPfile(dir_path) ->
       let prefix = translate_dir_path dir_path in
       let suffix = translate_dir_path (dir_path_of_labels (labels)) in
-      if dir_path = env.library then suffix
+      if dir_path = info.library then suffix
       else String.concat "." [prefix; suffix]
   | Names.MPbound(mod_bound_id) ->
       failwith "Not implemented: MPbound"
   | Names.MPdot(module_path, label) ->
-      translate_module_path env module_path (label :: labels)
+      translate_module_path info env module_path (label :: labels)
 
-let translate_kernel_name env kernel_name =
-  translate_module_path env (Names.modpath kernel_name) [Names.label kernel_name]
+let translate_kernel_name info env kernel_name =
+  translate_module_path info env (Names.modpath kernel_name) [Names.label kernel_name]
 
-let translate_constant env constant =
-  translate_module_path env (Names.con_modpath constant) [Names.con_label constant]
+let translate_constant info env constant =
+  translate_module_path info env (Names.con_modpath constant) [Names.con_label constant]
 
-let get_inductive_body env mind i =
-  let mind_body = Environ.lookup_mind mind env.env in
+let get_inductive_body info env mind i =
+  let mind_body = Environ.lookup_mind mind env in
   mind_body.Declarations.mind_packets.(i)
 
-let translate_inductive env (mind, i) =
-  let ind_body = get_inductive_body env mind i in
+let translate_inductive info env (mind, i) =
+  let ind_body = get_inductive_body info env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (ind_body.Declarations.mind_typename) in
-  translate_module_path env module_path [label]
+  translate_module_path info env module_path [label]
 
-let translate_constructor env ((mind, i), j) =
-  let ind_body = get_inductive_body env mind i in
+let translate_constructor info env ((mind, i), j) =
+  let ind_body = get_inductive_body info env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (ind_body.Declarations.mind_consnames.(j - 1)) in
-  translate_module_path env module_path [label]
+  translate_module_path info env module_path [label]
 
 (** The name of the match function for the inductive type [(mind, i)]. *)
-let translate_match_function env (mind, i) =
-  let ind_body = get_inductive_body env mind i in
+let translate_match_function info env (mind, i) =
+  let ind_body = get_inductive_body info env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (match_function ind_body.Declarations.mind_typename) in
-  translate_module_path env module_path [label]
+  translate_module_path info env module_path [label]
 
 

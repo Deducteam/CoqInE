@@ -1,5 +1,5 @@
 Declare ML Module "dedukti".
-Declare ML Module "environment".
+Declare ML Module "info".
 Declare ML Module "name".
 Declare ML Module "universes".
 Declare ML Module "terms".

@@ -1,7 +1,7 @@
 -R src Dedukti
 -I src
 src/dedukti.ml
-src/environment.ml
+src/info.ml
 src/name.ml
 src/universes.ml4
 src/terms.ml

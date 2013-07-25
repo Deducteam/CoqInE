@@ -2,7 +2,7 @@
 
 open Genlex
 
-open Environment
+open Info
 
 let coq x = Dedukti.Var(Name.coq x)
 
@@ -54,7 +54,7 @@ let rec evaluate_universe solutions i =
     Since the Coq universes are implemented as an abstract datatype, we cannot
     access the information directly. This function uses a trick that involves
     sorting the universe graph and manipulating the string representation. *)
-let translate_universe env i =
+let translate_universe info env i =
   (* Print the universe [i] to obtain a string representation and extract
      the universe by parsing the string representation. *)
   let i_str =
@@ -65,7 +65,7 @@ let translate_universe env i =
     | Stream.Failure
     | Stream.Error _ -> failwith (Printf.sprintf "Unable to parse universe %s" i_str) in
   (* Sort the universes to solve the constraints and save them in a table. *)
-  let universes = Univ.sort_universes (Environ.universes env.env) in
+  let universes = Univ.sort_universes (Environ.universes env) in
   let solutions = Hashtbl.create 10007 in
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add solutions j k) in
