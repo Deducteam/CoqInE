@@ -17,5 +17,5 @@ Dedukti Export NestedModules.
 Dedukti Export NestedLibraries.
 Dedukti Export Reflexivity.
 
-(* Dedukti All Export. *)
+Dedukti All Export.
 
