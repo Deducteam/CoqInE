@@ -32,20 +32,20 @@ let infer_translate_sort env a =
   | SortType(s) -> Universes.coq_t (translate_sort env s)
   | _ -> translate_sort env (infer_sort env a)
 
-(** Abstract over the variables of [context], ignoring let declarations. *)
+(** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
   let abstract_rel_declaration t (x, u, a) =
     match u with
     | None -> Term.mkLambda (x, a, t)
-    | Some(_) -> t in
+    | Some(u) -> Term.subst1 u t in
   List.fold_left abstract_rel_declaration t context
 
-(** Generalize over the variables of [context], ignoring let declarations. *)
+(** Generalize over the variables of [context], eliminating let declarations. *)
 let generalize_rel_context context b =
   let generalize_rel_declaration b (x, u, a) =
     match u with
     | None -> Term.mkProd(x, a, b)
-    | Some(_) -> b in
+    | Some(u) -> Term.subst1 u b in
   List.fold_left generalize_rel_declaration b context
 
 (** Apply the variables of [context] to [t], ignoring let declarations. *)
