@@ -139,6 +139,22 @@ let translate_mutual_inductive_body env label mind_body =
     translate_one_inductive_body env label mind_body i
   done
 
+let identifiers_of_mutual_inductive_body mind_body =
+  let identifiers_of_inductive_body ind_body =
+    ind_body.mind_typename :: Array.to_list ind_body.mind_consnames in
+  List.concat (Array.to_list
+    (Array.map identifiers_of_inductive_body mind_body.mind_packets))
+
+let identifiers_of_structure_field_body (label, struct_field_body) =
+  match struct_field_body with
+  | SFBconst(_) -> [Names.id_of_label label]
+  | SFBmind(mind_body) -> identifiers_of_mutual_inductive_body mind_body
+  | SFBmodule(_) -> []
+  | SFBmodtype(_) -> []
+
+let identifiers_of_structure_body structure_body =
+  List.concat (List.map identifiers_of_structure_field_body structure_body)
+
 let rec translate_module_body env mods =
   match mods.mod_expr with
   | Some(struct_expr) -> translate_struct_expr_body env struct_expr
@@ -150,6 +166,9 @@ and translate_struct_expr_body env struct_expr =
   | _ -> ()
 
 and translate_structure_body env structure_body =
+  (* Register the module's global identifiers. *)
+  let identifiers = identifiers_of_structure_body structure_body in
+  let env = {env with globals = identifiers} in
   List.iter (translate_structure_field_body env) structure_body
 
 and translate_structure_field_body env (label, struct_field_body) =
