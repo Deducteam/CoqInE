@@ -251,7 +251,7 @@ and lift_fix info env names types bodies rec_indices =
     let env, context' = translate_rel_context info (Global.env ()) (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env fix_terms1.(i) in
     let fix_term2' = translate_constr info env fix_terms2.(i) in
-    let ind_args' = List.map (translate_constr info env) ind_args.(i) in
+    let ind_args' = List.map (translate_constr info env) (List.map (Term.lift 1) ind_args.(i)) in
     [(context', Dedukti.apply_context fix_term1' context',
       Dedukti.apps (Dedukti.apply_context fix_term2' context')
         (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))]) in
@@ -270,7 +270,8 @@ and lift_fix info env names types bodies rec_indices =
       let cons_term' = translate_constr info env (Term.mkConstruct ((inds.(i), j + 1))) in
       let cons_term_applied' = Dedukti.apply_context cons_term' cons_context' in
       let cons_ind_args' = List.map (translate_constr info env) cons_ind_args.(j) in
-      (context' @ cons_context', Dedukti.apps (Dedukti.apply_context fix_term2' context') (cons_ind_args' @ [cons_term_applied']),
+      (context' @ cons_context',
+        Dedukti.apps (Dedukti.apply_context fix_term2' context') (cons_ind_args' @ [cons_term_applied']),
         Dedukti.apply_context fix_term3' context')) in
     Array.to_list cons_rules) in
   let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name1_declarations in
@@ -287,8 +288,8 @@ and lift_fix info env names types bodies rec_indices =
     let env = Array.fold_left (fun env declaration ->
       Environ.push_rel declaration env) env fix_declarations1 in
     let body' = translate_constr info env bodies.(i) in
-    let env , context' = translate_rel_context info env contexts.(i) in
-    [(rel_context' @ context', Dedukti.apply_context fix_term3' rel_context', body')]) in
+(*    let env , context' = translate_rel_context info env contexts.(i) in*)
+    [(rel_context', Dedukti.apply_context fix_term3' rel_context', body')]) in
   for i = 0 to n - 1 do
     Dedukti.print info.out (Dedukti.rewrite(fix_rules1.(i)));
     Dedukti.print info.out (Dedukti.rewrite(fix_rules2.(i)));
