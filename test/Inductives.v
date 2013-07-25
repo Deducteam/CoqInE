@@ -2,6 +2,10 @@ Inductive nat : Type :=
 | o : nat
 | s : nat -> nat.
 
+Inductive list (A : Type) : Type :=
+| nil : list A
+| cons : A -> list A -> list A.
+
 Inductive eq (A : Type) (x : A) : A -> Type :=
 | eq_refl : eq A x x.
 
