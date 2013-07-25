@@ -212,10 +212,6 @@ and lift_fix env names types bodies rec_indices =
   let fix_names3 = Array.map (Name.fresh_identifier_of_name ~global:true ~prefix:["fix"] ~default:"_" env) names in
   let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
-  for i = 0 to n - 1 do
-    assert (List.length contexts.(i) > rec_indices.(i));
-(*    assert (List.length contexts.(i) = rel_context_length contexts.(i))*)
-  done;
   let return_types = Array.map snd contexts_return_types in
   let ind_applieds = Array.map (fun context -> let (_, _, a) = List.hd context in a) contexts in
   let inds_args = Array.map (Inductive.find_inductive env.env) ind_applieds in
@@ -241,9 +237,9 @@ and lift_fix env names types bodies rec_indices =
   let fix_names1' = Array.map Name.translate_identifier fix_names1 in
   let fix_names2' = Array.map Name.translate_identifier fix_names2 in
   let fix_names3' = Array.map Name.translate_identifier fix_names3 in
-  let types1_closed' = Array.map (translate_types env) types1_closed in
-  let types2_closed' = Array.map (translate_types env) types2_closed in
-  let types3_closed' = Array.map (translate_types env) types3_closed in
+  let types1_closed' = Array.map (translate_types (Environment.global_env env)) types1_closed in
+  let types2_closed' = Array.map (translate_types (Environment.global_env env)) types2_closed in
+  let types3_closed' = Array.map (translate_types (Environment.global_env env)) types3_closed in
   for i = 0 to n - 1 do
     Dedukti.print env.out (Dedukti.declaration fix_names1'.(i) types1_closed'.(i));
     Dedukti.print env.out (Dedukti.declaration fix_names2'.(i) types2_closed'.(i));
@@ -253,7 +249,7 @@ and lift_fix env names types bodies rec_indices =
   let fix_terms2 = Array.init n (fun i -> Term.mkVar fix_names2.(i)) in
   let fix_terms3 = Array.init n (fun i -> Term.mkVar fix_names3.(i)) in
   let fix_rules1 = Array.init n (fun i ->
-    let env, context' = translate_rel_context env (contexts.(i) @ rel_context) in
+    let env, context' = translate_rel_context (Environment.global_env env) (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr env fix_terms1.(i) in
     let fix_term2' = translate_constr env fix_terms2.(i) in
     let ind_args' = List.map (translate_constr env) ind_args.(i) in
@@ -268,7 +264,7 @@ and lift_fix env names types bodies rec_indices =
     let cons_ind_args = Array.map (fun cons_type -> snd (Inductive.find_inductive env.env cons_type)) cons_types in
     let n_cons = Array.length cons_types in
     let cons_rules = Array.init n_cons (fun j ->
-      let env, context' = translate_rel_context env (contexts.(i) @ rel_context) in
+      let env, context' = translate_rel_context (Environment.global_env env) (contexts.(i) @ rel_context) in
       let env, cons_context' = translate_rel_context env (cons_contexts.(j)) in
       let fix_term2' = translate_constr env fix_terms2.(i) in
       let fix_term3' = translate_constr env fix_terms3.(i) in
@@ -288,8 +284,6 @@ and lift_fix env names types bodies rec_indices =
   let fix_rules3 = Array.init n (fun i ->
     let env, rel_context' = translate_rel_context (Environment.global_env env) rel_context in
     let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name1_declarations in
-    let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name2_declarations in
-    let env = Array.fold_left (fun env declaration -> Environment.push_named declaration env) env name3_declarations in
     let fix_term3' = translate_constr env fix_terms3.(i) in
     let env = Array.fold_left (fun env declaration ->
       Environment.push_rel declaration env) env fix_declarations1 in
