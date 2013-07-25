@@ -93,7 +93,7 @@ let translate_one_inductive_body env label mind_body i =
   let params_env, case_names' = Array.fold_left (fun (params_env, case_names') cons_name ->
     let params_env, case_name' = Terms.translate_external params_env (Name.fresh_identifier ~prefix:["case"] params_env cons_name) in
     (params_env, case_name' :: case_names')) (params_env, []) cons_names in
-  let case_names' = Array.of_list case_names' in
+  let case_names' = Array.of_list (List.rev case_names') in
   let arity_real_env, arity_real_context' = Terms.translate_rel_context params_env arity_real_context in
   let ind_applied' = Terms.translate_types arity_real_env ind_applied in
   let matched_name = Name.fresh_identifier_of_string arity_real_env "x" in
