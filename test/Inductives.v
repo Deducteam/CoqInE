@@ -1,3 +1,7 @@
+Inductive nat : Type :=
+| o : nat
+| s : nat -> nat.
+
 Inductive eq (A : Type) (x : A) : A -> Type :=
 | eq_refl : eq A x x.
 
