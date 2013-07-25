@@ -17,7 +17,7 @@ open Environment
     - constructor: refers to a constructor of an inductive type *)
 
 let fresh_identifier ?(global=false) ?(prefix=[]) env identifier =
-  let avoid = Termops.ids_of_context env.env @ env.globals in
+  let avoid = Termops.ids_of_context env.env @ !(env.globals) in
   let identifier = Names.id_of_string (String.concat "_" (prefix@ [Names.string_of_id identifier])) in
   let identifier = Namegen.next_ident_away identifier avoid in
   if global then Environment.declare_global env identifier;

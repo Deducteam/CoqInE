@@ -4,7 +4,7 @@ type env = {
   out : out_channel;
   library : Names.dir_path;
   module_path : Names.module_path;
-  mutable globals : Names.identifier list;
+  globals : Names.identifier list ref;
   env : Environ.env;
   }
 
@@ -12,7 +12,7 @@ let init_env out dir_path = {
   out = out;
   library = dir_path;
   module_path = Names.MPfile(dir_path);
-  globals = [];
+  globals = ref [];
   env = Global.env ();
   }
 
@@ -21,7 +21,7 @@ let global_env env =
 
 (** Declare a global name. *)
 let declare_global env identifier =
-  env.globals <- identifier :: env.globals
+  env.globals := identifier :: !(env.globals)
 
 let push_rel declaration env =
   {env with env = Environ.push_rel declaration env.env}

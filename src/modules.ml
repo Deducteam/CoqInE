@@ -168,7 +168,7 @@ and translate_struct_expr_body env struct_expr =
 and translate_structure_body env structure_body =
   (* Register the module's global identifiers. *)
   let identifiers = identifiers_of_structure_body structure_body in
-  let env = {env with globals = identifiers} in
+  let env = {env with globals = ref identifiers} in
   List.iter (translate_structure_field_body env) structure_body
 
 and translate_structure_field_body env (label, struct_field_body) =
