@@ -97,25 +97,29 @@ let translate_label label =
 let translate_mod_bound_id mod_bound_id =
   escape (Names.string_of_mbid mod_bound_id)
 
-(** Translate the path corresponding to [module_path] followed by [labels]. *)
-let translate_module_path module_path labels =
-  let rec split module_path labels =
-    match module_path with
-    | Names.MPfile(dir_path) -> (translate_dir_path dir_path, labels)
-    | Names.MPbound(mod_bound_id) -> (translate_mod_bound_id mod_bound_id, labels)
-    | Names.MPdot(module_path, label) -> split module_path (label :: labels) in
-  let (prefix, labels) = split module_path labels in
-  let ids = List.map Names.id_of_label labels in
+let dir_path_of_labels labels =
+  let identifiers = List.map Names.id_of_label labels in
   (* Reverse the order of ids as dirpath elements are given in reverse order. *)
-  let dir_path = Names.make_dirpath (List.rev ids) in
-  let suffix = translate_dir_path dir_path in
-  Printf.sprintf "%s.%s" prefix suffix
+  Names.make_dirpath (List.rev identifiers)
+
+(** Translate the path corresponding to [module_path] followed by [labels]. *)
+let rec translate_module_path env module_path labels =
+  match module_path with
+  | Names.MPfile(dir_path) ->
+      let prefix = translate_dir_path dir_path in
+      let suffix = translate_dir_path (dir_path_of_labels (labels)) in
+      if dir_path = env.library then suffix
+      else String.concat "." [prefix; suffix]
+  | Names.MPbound(mod_bound_id) ->
+      failwith "Not implemented: MPbound"
+  | Names.MPdot(module_path, label) ->
+      translate_module_path env module_path (label :: labels)
 
 let translate_kernel_name env kernel_name =
-  translate_module_path (Names.modpath kernel_name) [Names.label kernel_name]
+  translate_module_path env (Names.modpath kernel_name) [Names.label kernel_name]
 
 let translate_constant env constant =
-  translate_module_path (Names.con_modpath constant) [Names.con_label constant]
+  translate_module_path env (Names.con_modpath constant) [Names.con_label constant]
 
 let get_inductive_body env mind i =
   let mind_body = Environ.lookup_mind mind env.env in
@@ -125,19 +129,19 @@ let translate_inductive env (mind, i) =
   let ind_body = get_inductive_body env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (ind_body.Declarations.mind_typename) in
-  translate_module_path module_path [label]
+  translate_module_path env module_path [label]
 
 let translate_constructor env ((mind, i), j) =
   let ind_body = get_inductive_body env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (ind_body.Declarations.mind_consnames.(j - 1)) in
-  translate_module_path module_path [label]
+  translate_module_path env module_path [label]
 
 (** The name of the match function for the inductive type [(mind, i)]. *)
 let translate_match_function env (mind, i) =
   let ind_body = get_inductive_body env mind i in
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (match_function ind_body.Declarations.mind_typename) in
-  translate_module_path module_path [label]
+  translate_module_path env module_path [label]
 
 
