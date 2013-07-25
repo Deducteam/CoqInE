@@ -86,19 +86,23 @@ let translate_one_inductive_body info env label mind_body i =
     Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
   let match_function_name' = Name.translate_identifier match_function_name in
   let params_env, params_context' = Terms.translate_rel_context info (Global.env ()) params_context in
-  let return_sort_name = Name.fresh_identifier_of_string info params_env "s" in
-  let params_env, return_sort_name' = Terms.translate_external info params_env return_sort_name in
-  let return_type_name = Name.fresh_identifier_of_string info params_env "P" in
-  let params_env, return_type_name' = Terms.translate_external info params_env return_type_name in
+  let return_sort_name = Name.fresh_of_string info params_env "s" in
+  let return_sort_name' = Name.translate_identifier return_sort_name in
+  let params_env = Name.push_identifier return_sort_name params_env in
+  let return_type_name = Name.fresh_of_string info params_env "P" in
+  let return_type_name' = Name.translate_identifier return_type_name in
+  let params_env = Name.push_identifier return_type_name params_env in
   let params_env, case_names' = Array.fold_left (fun (params_env, case_names') cons_name ->
-    let params_env, case_name' =
-      Terms.translate_external info params_env (Name.fresh_identifier ~prefix:["case"] info params_env cons_name) in
+    let case_name = Name.fresh_identifier info params_env ~prefix:"case" cons_name in
+    let case_name' = Name.translate_identifier case_name in
+    let params_env = Name.push_identifier case_name params_env in
     (params_env, case_name' :: case_names')) (params_env, []) cons_names in
   let case_names' = Array.of_list (List.rev case_names') in
   let arity_real_env, arity_real_context' = Terms.translate_rel_context info params_env arity_real_context in
   let ind_applied' = Terms.translate_types info arity_real_env ind_applied in
-  let matched_name = Name.fresh_identifier_of_string info arity_real_env "x" in
-  let arity_real_env, matched_name' = Terms.translate_external info arity_real_env matched_name in
+  let matched_name = Name.fresh_of_string info arity_real_env "x" in
+  let matched_name' = Name.translate_identifier matched_name in
+  let params_env = Name.push_identifier matched_name params_env in
   let match_function' = Dedukti.var match_function_name' in
   let return_sort' = Dedukti.var return_sort_name' in
   let return_type' = Dedukti.var return_type_name' in

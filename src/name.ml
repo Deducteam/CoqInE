@@ -16,40 +16,54 @@ open Info
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
 
-let fresh_identifier ?(global=false) ?(prefix=[]) info env identifier =
-  let full_path identifier =
-    Libnames.make_path (Nametab.dirpath_of_module info.module_path) identifier in
-  let avoid identifier =
-    Nametab.exists_cci (full_path identifier) ||
-    List.mem identifier (Termops.ids_of_context env) in
-  let identifier = Names.id_of_string (String.concat "_" (prefix @ [Names.string_of_id identifier])) in
-  let identifier = Namegen.next_ident_away_from identifier avoid in
-  if global then Nametab.push (Nametab.Until 0) (full_path identifier) (Libnames.VarRef identifier);
-  identifier
+(** Fresh names *)
 
-let fresh_identifier_of_string ?(global=false) ?(prefix=[]) info env str =
-  fresh_identifier ~global ~prefix info env (Names.id_of_string str)
+let full_path info identifier =
+  Libnames.make_path (Nametab.dirpath_of_module info.module_path) identifier
 
-let fresh_identifier_of_name ?(global=false) ?(prefix=[]) ~default info env name =
-  match name with
-  | Names.Anonymous -> fresh_identifier ~global ~prefix info env (Names.id_of_string default)
-  | Names.Name(identifier) -> fresh_identifier ~global ~prefix info env identifier
-
-let fresh_name ?(global=false) ?(prefix=[]) ?default info env name =
-  match name, default with
-  | Names.Anonymous, None -> name
-  | Names.Anonymous, Some(default) ->
-      Names.Name(fresh_identifier ~global ~prefix info env (Names.id_of_string default))
-  | Names.Name(identifier), _ ->
-      Names.Name(fresh_identifier ~global ~prefix info env identifier)
-
-(** Name of the match function for the inductive type *)
-let match_function identifier =
-  Names.id_of_string (String.concat "_" ["match"; Names.string_of_id identifier])
+(** Push a dummy declaration to declare an identifier globally. *)
+let push_global info identifier =
+  Nametab.push (Nametab.Until 0) (full_path info identifier) (Libnames.VarRef identifier)
 
 (** Push a dummy declaration to declare an identifier locally. *)
 let push_identifier identifier env =
   Environ.push_named (identifier, None, Term.mkSort (Term.Prop(Term.Null))) env
+
+(** Generate a fresh identifier that is different from any constant, inductive
+    type, or constructor in the current module, and from any identifier in
+    the current local environment.
+    If [global] is true, also declare the identifier globally. *)
+let fresh_identifier info env ?(global=false) ?prefix identifier =
+  let identifier =
+    match prefix with
+    | None -> identifier
+    | Some(prefix) -> Names.id_of_string (String.concat "_" ([prefix; Names.string_of_id identifier])) in
+  let avoid identifier =
+    Nametab.exists_cci (full_path info identifier) ||
+    List.mem identifier (Termops.ids_of_context env) in
+  let identifier = Namegen.next_ident_away_from identifier avoid in
+  if global then push_global info identifier;
+  identifier
+
+let fresh_of_string info env ?(global=false) ?prefix str =
+  fresh_identifier info env ~global ?prefix (Names.id_of_string str)
+
+let fresh_of_name info env ?(global=false) ?prefix ~default name =
+  match name with
+  | Names.Anonymous -> fresh_identifier info env ~global ?prefix (Names.id_of_string default)
+  | Names.Name(identifier) -> fresh_identifier info env ~global ?prefix identifier
+
+let fresh_name info env ?prefix ?default name =
+  match name, default with
+  | Names.Anonymous, None -> name
+  | Names.Anonymous, Some(default) ->
+      Names.Name(fresh_identifier info env ?prefix (Names.id_of_string default))
+  | Names.Name(identifier), _ ->
+      Names.Name(fresh_identifier info env ?prefix identifier)
+
+(** Name of the match function for the inductive type *)
+let match_function identifier =
+  Names.id_of_string (String.concat "_" ["match"; Names.string_of_id identifier])
 
 (** Escaping *)
 
