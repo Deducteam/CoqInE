@@ -187,11 +187,11 @@ and lift_let env x u a =
   let rel_context = Environ.rel_context env.env in
   let a_closed = generalize_rel_context rel_context a in
   let u_closed = abstract_rel_context rel_context u in
-  let env = Environment.push_named (y, Some(u_closed), a_closed) env in
   let y' = Name.translate_identifier y in
-  let a_closed' = translate_types env a_closed in
-  let u_closed' = translate_constr env u_closed in
+  let a_closed' = translate_types (Environment.global_env env) a_closed in
+  let u_closed' = translate_constr (Environment.global_env env) u_closed in
   Dedukti.print env.out (Dedukti.definition false y' a_closed' u_closed');
+  let env = Environment.push_named (y, Some(u_closed), a_closed) env in
   env, apply_rel_context (Term.mkVar y) rel_context
 
 and lift_fix env names types bodies rec_indices =

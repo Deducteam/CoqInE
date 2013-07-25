@@ -85,7 +85,7 @@ let translate_one_inductive_body env label mind_body i =
   let cons_applieds = Array.init n_cons (fun j ->
     Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
   let match_function_name' = Name.translate_identifier match_function_name in
-  let params_env, params_context' = Terms.translate_rel_context env params_context in
+  let params_env, params_context' = Terms.translate_rel_context (Environment.global_env env) params_context in
   let return_sort_name = Name.fresh_identifier_of_string params_env "s" in
   let params_env, return_sort_name' = Terms.translate_external params_env return_sort_name in
   let return_type_name = Name.fresh_identifier_of_string params_env "P" in
