@@ -3,6 +3,11 @@ Definition x :=
   let x := Prop in
   x.
 
+Definition y := 
+  let x := Prop in
+  let x := Type in
+  x.
+
 Definition f (x : Type) :=
   let y := x in y.
 
