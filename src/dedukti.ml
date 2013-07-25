@@ -120,5 +120,6 @@ let print out instruction =
       Printf.fprintf out "%a : %a :=\n  %a.\n\n" print_opaque x print_term a print_term t
   | Rewrite(rules) ->
       let print_rules out = List.iter (print_rule out) in
-      Printf.fprintf out "%a.\n\n" print_rules rules
+      if rules = [] then ()
+      else Printf.fprintf out "%a.\n\n" print_rules rules
 
