@@ -35,7 +35,7 @@ let rec infer_translate_sort info env a =
   | CastType(a, b) ->
       failwith "Not implemented: CastType"
   | ProdType(x, a, b) ->
-      let x = Name.fresh_name info env x in
+      let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env a in
       let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
       Universes.coq_r s1' s2'
@@ -110,7 +110,7 @@ let rec translate_constr ?expected_type info env t =
       let t' = translate_constr info env t in
       coq_cast s1' s2' a' b' t'
   | Prod(x, a, b) ->
-      let x = Name.fresh_name info env x in
+      let x = Name.fresh_name ~default:"_" info env x in
       let s1' = infer_translate_sort info env a in
       let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
       let x' = Name.translate_name x in
@@ -119,7 +119,7 @@ let rec translate_constr ?expected_type info env t =
       let b' = translate_constr info (Environ.push_rel (x, None, a) env) b in
       coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
-      let x = Name.fresh_name ~default:"var" info env x in
+      let x = Name.fresh_name ~default:"_" info env x in
       let x' = Name.translate_name x in
       let a'' = translate_types info env a in
       let t' = translate_constr info (Environ.push_rel (x, None, a) env) t in
@@ -178,7 +178,7 @@ and translate_types info env a =
   | CastType(a, b) ->
       failwith "Not implemented: CastType"
   | ProdType(x, a, b) ->
-      let x = Name.fresh_name info env x in
+      let x = Name.fresh_name info ~default:"_" env x in
       let x' = Name.translate_name x in
       let a' = translate_types info env a in
       let b' = translate_types info (Environ.push_rel (x, None, a) env) b in
@@ -315,7 +315,7 @@ and translate_rel_context info env context =
   let translate_rel_declaration (x, u, a) (env, translated) =
     match u with
     | None ->
-        let x = Name.fresh_name ~default:"var" info env x in
+        let x = Name.fresh_name ~default:"_" info env x in
         let x' = Name.translate_name x in
         let a' = translate_types info env a in
         (Environ.push_rel (x, u, a) env, (x', a') :: translated)
