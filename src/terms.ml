@@ -27,10 +27,22 @@ let translate_sort info env s =
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
-let infer_translate_sort info env a =
-   match Term.kind_of_type a with
-  | SortType(s) -> Universes.coq_t (translate_sort info env s)
-  | _ -> translate_sort info env (infer_sort info env a)
+let rec infer_translate_sort info env a =
+  let a = Reduction.whd_betadeltaiota env a in
+  match Term.kind_of_type a with
+  | SortType(s) ->
+      Universes.coq_t (translate_sort info env s)
+  | CastType(a, b) ->
+      failwith "Not implemented: CastType"
+  | ProdType(x, a, b) ->
+      let x = Name.fresh_name info env x in
+      let s1' = infer_translate_sort info env a in
+      let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
+      Universes.coq_r s1' s2'
+  | LetInType(x, u, a, b) ->
+      infer_translate_sort info env (Term.subst1 u b)
+  | AtomicType(_) ->
+      translate_sort info env (infer_sort info env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
@@ -176,8 +188,7 @@ and translate_types info env a =
       translate_constr info (Environ.push_rel (x, Some(u), a) env) b
   | AtomicType(_) ->
       (* Fall back on the usual translation of types. *)
-      let s = infer_sort info env a in
-      let s' = translate_sort info env s in
+      let s' = infer_translate_sort info env a in
       let a' = translate_constr info env a in
       coq_term s' a'
 
