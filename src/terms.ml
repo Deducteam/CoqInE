@@ -147,11 +147,17 @@ let rec translate_constr ?expected_type info env t =
       let n_params = mind_body.Declarations.mind_nparams in
       let n_reals = ind_body.Declarations.mind_nrealargs in
       let _, ind_args = Inductive.find_inductive env (infer_type info env matched) in
+      let arity = Inductive.type_of_inductive env (mind_body, ind_body) in
       let params, reals = Util.list_chop n_params ind_args in
       let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
       let return_sort = infer_sort info (Environ.push_rel_context context env) end_type in
       let match_function' = Dedukti.var (Name.translate_match_function info env ind) in
-      let params' = List.map (translate_constr info env) params in
+      (* Translate params using expected types to make sure we use proper casts. *)
+      let translate_param (params', a) param =
+        let _, c, d = Term.destProd (Reduction.whd_betadeltaiota env a) in
+        let param' = translate_constr ~expected_type:c info env param in
+        (param' :: params', Term.subst1 param d) in
+      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
       let reals' = List.map (translate_constr info env) reals in
       let return_sort' = translate_sort info env return_sort in
       let return_type' = translate_constr info env return_type in
