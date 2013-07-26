@@ -28,6 +28,8 @@ let lam (x, a) b = Lam((x, a), b)
 
 let app a b = App(a, b)
 
+let dot a = Dot(a)
+
 let cmt s a = Cmt(s, a)
 
 let vars xs = List.map var xs
