@@ -4,18 +4,22 @@ Require Dedukti.
 
 Dedukti Set Destination "test".
 
-Dedukti Export Identity.
-Dedukti Export ImportA.
-Dedukti Export ImportB.
-Dedukti Export ImportC.
-Dedukti Export Cast.
-Dedukti Export Let.
-Dedukti Export Inductives.
-Dedukti Export Fixpoints.
-Dedukti Export Sections.
-Dedukti Export NestedModules.
-Dedukti Export NestedLibraries.
-Dedukti Export Reflexivity.
+Require Identity.
+Require ImportA.
+Require ImportB.
+Require ImportC.
+Require Cast.
+Require Let.
+Require Inductives.
+Require Fixpoints.
+Require Sections.
+Require NestedModules.
+Require NestedLibraries.
+Require Reflexivity.
+
+Require Init.
+Require Logic.
+(*Require Arith.*)
 
 Dedukti All Export.
 
