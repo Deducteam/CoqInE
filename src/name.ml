@@ -137,6 +137,10 @@ let rec translate_module_path info env module_path labels =
   | Names.MPdot(module_path, label) ->
       translate_module_path info env module_path (label :: labels)
 
+(** Translate the name of the structure element in the current module path. *)
+let translate_element_name info env label =
+  translate_module_path info env info.module_path [label]
+
 let translate_kernel_name info env kernel_name =
   translate_module_path info env (Names.modpath kernel_name) [Names.label kernel_name]
 

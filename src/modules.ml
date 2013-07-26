@@ -11,7 +11,7 @@ let get_constant_type const_type =
       Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type(poly_arity.poly_level)))
 
 let translate_constant_body info env label const =
-  let label' = Name.translate_label label in
+  let label' = Name.translate_element_name info env label in
   (* TODO: Handle [constant_body.const_hyps] *)
   assert (List.length const.const_hyps = 0);
   let const_type = get_constant_type const.const_type in
@@ -50,7 +50,7 @@ let translate_one_inductive_body info env label mind_body i =
   let arity_context = ind_body.mind_arity_ctxt in
   let arity_sort = get_inductive_arity_sort ind_body.mind_arity in
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
-  let name' = Name.translate_identifier name in
+  let name' = Name.translate_element_name info env (Names.label_of_id name) in
   let arity' = Terms.translate_types info env arity in
   Dedukti.print info.out (Dedukti.declaration name' arity');
   
@@ -59,7 +59,7 @@ let translate_one_inductive_body info env label mind_body i =
   let cons_names = ind_body.mind_consnames in
   (* Substitute the inductive types as specified in the Coq code. *)
   let cons_types = Array.map (Term.substl (Array.to_list ind_terms)) ind_body.mind_user_lc in
-  let cons_names' = Array.map Name.translate_identifier cons_names in
+  let cons_names' = Array.map (fun cons_name -> Name.translate_element_name info env (Names.label_of_id cons_name)) cons_names in
   let cons_types' = Array.map (Terms.translate_types info env) cons_types in
   for j = 0 to n_cons - 1 do
     Dedukti.print info.out (Dedukti.declaration cons_names'.(j) cons_types'.(j));
@@ -180,5 +180,8 @@ and translate_structure_field_body info env (label, struct_field_body) =
   match struct_field_body with
   | SFBconst(const_body) -> translate_constant_body info env label const_body
   | SFBmind(mind_body) -> translate_mutual_inductive_body info env label mind_body
-  | _ -> ()
+  | SFBmodule(module_body) ->
+      let info = {info with module_path = Names.MPdot(info.module_path, label)} in
+      translate_module_body info env module_body
+  | SFBmodtype(_) -> ()
 
