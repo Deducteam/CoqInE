@@ -20,10 +20,12 @@ let translate_constant_body info env label const =
   | Undef(inline) ->
       Dedukti.print info.out (Dedukti.declaration label' const_type')
   | Def(constr_substituted) ->
-      let constr' = Terms.translate_constr ~expected_type:const_type info env (Declarations.force constr_substituted) in
+      let constr = Declarations.force constr_substituted in
+      let constr' = Terms.translate_constr ~expected_type:const_type info env constr in
       Dedukti.print info.out (Dedukti.definition false label' const_type' constr')
   | OpaqueDef(lazy_constr) ->
-      let constr' = Terms.translate_constr ~expected_type:const_type info env (Declarations.force_opaque lazy_constr) in
+      let constr = Declarations.force_opaque lazy_constr in
+      let constr' = Terms.translate_constr ~expected_type:const_type info env constr in
       Dedukti.print info.out (Dedukti.definition true label' const_type' constr')
 
 let get_inductive_arity_sort ind_arity =
