@@ -8,11 +8,12 @@ let get_constant_type const_type =
   match const_type with
   | NonPolymorphicType(a) -> a
   | PolymorphicArity(rel_context, poly_arity) ->
-      Term.mkSort (Term.Type(poly_arity.poly_level))
+      Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type(poly_arity.poly_level)))
 
 let translate_constant_body info env label const =
   let label' = Name.translate_label label in
   (* TODO: Handle [constant_body.const_hyps] *)
+  assert (List.length const.const_hyps = 0);
   let const_type = get_constant_type const.const_type in
   let const_type' = Terms.translate_types info env const_type in
   match const.const_body with
