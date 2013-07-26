@@ -8,7 +8,7 @@ let get_constant_type const_type =
   match const_type with
   | NonPolymorphicType(a) -> a
   | PolymorphicArity(rel_context, poly_arity) ->
-      failwith "Not implemented: PolymorphicArity"
+      Term.mkSort (Term.Type(poly_arity.poly_level))
 
 let translate_constant_body info env label const =
   let label' = Name.translate_label label in
