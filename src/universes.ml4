@@ -6,6 +6,8 @@
 
 open Genlex
 
+open Pp
+
 open Info
 
 let coq x = Dedukti.Var(Name.coq x)
@@ -32,7 +34,7 @@ let universe_table : (string, int) Hashtbl.t = Hashtbl.create 10007
 
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
-  (* Sort the universes to solve the constraints and save them in the table. *)
+  msgnl (str "Solving universes");
   let universes = Univ.sort_universes universes in
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k) in
