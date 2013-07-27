@@ -70,8 +70,9 @@ let apply_rel_context t context =
   Term.applistc t args
 
 let convertible info env a b =
-  try let _ = Reduction.conv env a b in true
-  with | Assert_failure _| Reduction.NotConvertible | Util.Anomaly _ -> false
+  try let _ = Reduction.default_conv Reduction.CONV env a b in true with
+  | Reduction.NotConvertible
+  | Assert_failure _ -> false
 
 (** This table holds the translations of fixpoints, so that we avoid
     translating the same definition multiple times (e.g. mutual fixpoints). *)
