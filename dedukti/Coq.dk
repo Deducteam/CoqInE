@@ -42,6 +42,9 @@ prod : s1 : srt -> s2 : srt -> A : type s1 -> (term s1 A -> type s2) -> type (r 
 cast_type : s1 : srt -> s2 : srt -> type s1 -> type s2 -> type (cast_srt s1 s2).
 cast : s1 : srt -> s2 : srt -> A : type s1 -> B : type s2 -> term s1 A -> term (cast_srt s1 s2) (cast_type s1 s2 A B).
 
+[s : srt] term {t s} (sort s) --> type s
+[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {r s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x).
+
 [s1 : srt, s2 : srt] cast_type {t s1} {t s2} (sort s1) (sort s2) --> sort (cast_srt s1 s2)
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : term s1 A -> type s2, C : term s1 A -> type s3]
   cast_type {r s1 s2} {r s1 s3} (prod s1 s2 A B) (prod s1 s3 A C) -->
@@ -50,15 +53,17 @@ cast : s1 : srt -> s2 : srt -> A : type s1 -> B : type s2 -> term s1 A -> term (
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : type s2, C : type s3]
   cast_type {cast_srt s1 s2} s3 (cast_type s1 s2 A B) C --> cast_type s1 s3 A C.
 
-[s : srt] term {t s} (sort s) --> type s
-[s1 : srt, s2 : srt, A : type s1, B : term s1 A -> type s2] term {r s1 s2} (prod s1 s2 A B) --> x : term s1 A -> term s2 (B x)
-[s1 : srt, s2 : srt, A : type s1] term {cast_srt s1 s2} (cast {t s1} {t s2} (sort s1) (sort s2) A) --> term s1 A.
-
 [s : srt, A : type s, x : term s A] cast s s A A x --> x
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : type s2, C : type s3, x : term s1 A]
-  cast (cast_srt s1 s2) s3 (cast_type s1 s2 A B) C (cast s1 s2 A B x) --> cast s1 s3 A C x
+  cast {cast_srt s1 s2} s3 {cast_type s1 s2 A B} C (cast s1 s2 A B x) --> cast s1 s3 A C x
 [s1 : srt, s2 : srt, s3 : srt, A : type s1, B : term s1 A -> type s2, C : term s1 A -> type s3, f : x : term s1 A -> term s2 (B x)]
   cast {r s1 s2} {r s1 s3} (prod s1 s2 A B) (prod s1 s3 A C) f --> x : term s1 A => cast s2 s3 (B x) (C x) (f x).
+
+(;[s1 : srt, s2 : srt] type (cast_srt s1 s2) --> type s1.;)
+(;[s1 : srt, s2 : srt, s3 : srt] type (r (cast_srt s1 s3) s2) --> type (r s1 s2).;)
+[s1 : srt, s2 : srt, A : type s1] term {cast_srt s1 s2} (cast {t s1} {t s2} (sort s1) (sort s2) A) --> term s1 A.
+(;[s1 : srt, s2 : srt, s3 : srt, A : type s1, B : term s1 A -> type s2];)
+(;  prod {cast_srt s1 s3} s2 (cast {t s1} {t s3} (sort s1) (sort s3) A) B --> prod s1 s2 A B.;)
 
 (; Coinductives ;)
 
