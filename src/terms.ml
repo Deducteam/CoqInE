@@ -40,7 +40,7 @@ let rec infer_translate_sort info env a =
       let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
       Universes.coq_r s1' s2'
   | LetInType(x, u, a, b) ->
-      infer_translate_sort info env (Term.subst1 u b)
+      assert false
   | AtomicType(_) ->
       translate_sort info env (infer_sort info env a)
 
