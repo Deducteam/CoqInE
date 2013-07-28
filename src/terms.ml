@@ -69,10 +69,31 @@ let apply_rel_context t context =
   let args, _ = List.fold_left apply_rel_declaration ([], 1) context in
   Term.applistc t args
 
-let convertible info env a b =
-  try let _ = Reduction.default_conv Reduction.CONV env a b in true with
-  | Reduction.NotConvertible
-  | Assert_failure _ -> false
+let convertible_sort info env s1 s2 =
+  translate_sort info env s1 = translate_sort info env s2
+
+let rec convertible info env a b =
+  let a = Reduction.whd_betadeltaiota env a in
+  let b = Reduction.whd_betadeltaiota env b in
+  match Term.kind_of_type a, Term.kind_of_type b with
+  | SortType(s1), SortType(s2) ->
+      convertible_sort info env s1 s2
+  | CastType(_), _
+  | _, CastType(_) ->
+      failwith "Not implemented: CastType"
+  | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
+      convertible info env a1 a2 &&
+      convertible info (Environ.push_rel (x1, None, a1) env) b1 b2
+  | LetInType(_), _
+  | _, LetInType(_) ->
+      assert false
+  | AtomicType(_), AtomicType(_) ->
+      begin try
+        let _ = Reduction.default_conv Reduction.CONV env a b in true
+      with
+      | Reduction.NotConvertible -> false
+      end
+  | _ -> false
 
 (** This table holds the translations of fixpoints, so that we avoid
     translating the same definition multiple times (e.g. mutual fixpoints). *)
