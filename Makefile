@@ -15,6 +15,7 @@ install:
 test: plugin
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
 	$(COQTOP) -batch -nois -R src Dedukti -I test -l test/Test
+	camelide -v 1 dedukti/Coq.dk test/*.dk
 
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
