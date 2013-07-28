@@ -34,8 +34,9 @@ let universe_table : (string, int) Hashtbl.t = Hashtbl.create 10007
 
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
-  msgnl (str "Solving universes");
+  msgnl (str "Sorting universes");
   let universes = Univ.sort_universes universes in
+  msgnl (str "Saving universes");
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k) in
   Univ.dump_universes register universes
