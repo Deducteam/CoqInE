@@ -12,8 +12,8 @@ let infer_sort info env a =
 
 let coq x = Dedukti.Var(Name.coq x)
 
-let coq_type s = Dedukti.apps (coq "type") [s]
-let coq_term s a = Dedukti.apps (coq "term") [s; a]
+let coq_type s = Dedukti.apps (coq "U") [s]
+let coq_term s a = Dedukti.apps (coq "T") [s; a]
 let coq_sort s = Dedukti.apps (coq "sort") [s]
 let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
 let coq_cast s1 s2 a b t = Dedukti.apps (coq "cast") [s1; s2; a; b; t]

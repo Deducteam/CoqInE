@@ -12,12 +12,12 @@ open Info
 
 let coq x = Dedukti.Var(Name.coq x)
 
-let coq_srt = coq "srt"
-let coq_p = coq "p"
-let coq_z = coq "z"
-let coq_t i = Dedukti.apps (coq "t") [i]
-let coq_r i j = Dedukti.apps (coq "r") [i; j]
-let coq_m i j = Dedukti.apps (coq "m") [i; j]
+let coq_srt = coq "Sort"
+let coq_p = coq "prop"
+let coq_z = Dedukti.app (coq "type") (coq "z")
+let coq_t i = Dedukti.apps (coq "axiom") [i]
+let coq_r i j = Dedukti.apps (coq "rule") [i; j]
+let coq_m i j = Dedukti.apps (coq "sup") [i; j]
 
 let rec make_coq_univ n =
   if n = 0 then coq_z else coq_t (make_coq_univ (n - 1))
