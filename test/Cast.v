@@ -30,11 +30,11 @@ Definition type_canonicity
 
 Parameter F : Type0 -> Type0.
 
-Definition prop_canonicity
-  (A : Type0)
-  (B : Prop)
-  (x : F ((fun (B : Type0) => forall (x : A), B) B))
-:
-  F ((fun C : Type0 => C) (forall (x : A), B))
-:=
-  x.
+(*Definition prop_canonicity*)
+(*  (A : Type0)*)
+(*  (B : Prop)*)
+(*  (x : F ((fun (B : Type0) => forall (x : A), B) B))*)
+(*:*)
+(*  F ((fun C : Type0 => C) (forall (x : A), B))*)
+(*:=*)
+(*  x.*)
