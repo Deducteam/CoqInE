@@ -3,6 +3,7 @@
 *.cmxs
 *.d
 *.dk
+*.dko
 *.glob
 *.lua
 *.o
