@@ -28,7 +28,8 @@ let translate_sort info env s =
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
 let rec infer_translate_sort info env a =
-  let a = Reduction.whd_betadeltaiota env a in
+(*  This is wrong; there is no subject reduction in Coq! *)
+(*  let a = Reduction.whd_betadeltaiota env a in*)
   match Term.kind_of_type a with
   | SortType(s) ->
       Universes.coq_t (translate_sort info env s)
