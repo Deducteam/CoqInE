@@ -12,7 +12,7 @@ let get_constant_type const_type =
 
 let translate_constant_body info env label const =
   let label' = Name.translate_element_name info env label in
-  (* TODO: Handle [constant_body.const_hyps] *)
+  (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let const_type = get_constant_type const.const_type in
   let const_type' = Terms.translate_types info env const_type in
