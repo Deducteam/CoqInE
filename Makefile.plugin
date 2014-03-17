@@ -3,7 +3,7 @@
 src/dedukti.ml
 src/info.ml
 src/name.ml
-src/universes.ml4
+src/sorts.ml4
 src/terms.ml
 src/modules.ml
 src/libraries.ml

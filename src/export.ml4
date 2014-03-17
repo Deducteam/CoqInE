@@ -26,12 +26,12 @@ let export reference =
   (* Make sure the module is loaded. *)
   if not (Library.library_is_loaded dir_path) then
     Util.errorlabstrm "Dedukti" (str "Library " ++ Libnames.pr_qualid qualid ++ str " is not loaded");
-  Universes.set_universes (Global.universes ());
+  Sorts.set_universes (Global.universes ());
   export_library dir_path
 
 (** Export all loaded libraries. *)
 let export_all () =
-  Universes.set_universes (Global.universes ());
+  Sorts.set_universes (Global.universes ());
   List.iter export_library (Library.loaded_libraries ())
 
 VERNAC COMMAND EXTEND Dedukti
