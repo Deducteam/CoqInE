@@ -6,10 +6,10 @@ MAKEFILE_PLUGIN = Makefile.plugin
 
 .PHONY: plugin install test clean
 
-plugin:
+plugin: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
 
-install:
+install: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - install
 
 test: plugin Coq.dko
@@ -18,7 +18,7 @@ test: plugin Coq.dko
 Coq.dko: dedukti/Coq.dk
 	$(DKCHECK) -e -unsafe dedukti/Coq.dk
 
-clean:
+clean: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
 	make -C test clean
 	rm -rf Coq.dko
