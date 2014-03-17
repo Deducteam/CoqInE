@@ -166,12 +166,15 @@ let identifiers_of_structure_body structure_body =
 let rec translate_module_body info env mods =
   match mods.mod_expr with
   | Some(struct_expr) -> translate_struct_expr_body info env struct_expr
-  | None -> ()
+  | None -> failwith "Empty module body"
 
 and translate_struct_expr_body info env struct_expr =
   match struct_expr with
   | SEBstruct(structs) -> translate_structure_body info env structs
-  | _ -> ()
+  | SEBident(_) -> Error.not_supported "SEBident"
+  | SEBfunctor(_) -> Error.not_supported "SEBfunctor"
+  | SEBapply(_) -> Error.not_supported "SEBapply"
+  | SEBwith(_) -> Error.not_supported "SEBwith"
 
 and translate_structure_body info env structure_body =
   List.iter (translate_structure_field_body info env) structure_body
@@ -183,5 +186,5 @@ and translate_structure_field_body info env (label, struct_field_body) =
   | SFBmodule(module_body) ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in
       translate_module_body info env module_body
-  | SFBmodtype(_) -> ()
+  | SFBmodtype(_) -> Error.not_supported "SFBmodtype"
 
