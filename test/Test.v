@@ -1,6 +1,6 @@
 (* This script tests the Dedukti plugin. *)
 
-Require Dedukti.
+Require Coqine.
 
 Dedukti Set Destination "".
 

@@ -8,5 +8,6 @@ src/terms.ml
 src/modules.ml
 src/libraries.ml
 src/export.ml4
-src/Dedukti.v
+src/coqine_plugin.mllib
+src/Coqine.v
 
