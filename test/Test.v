@@ -59,5 +59,5 @@ Require
 (*  Coq.Logic.SetIsType*)
 .
 
-Dedukti All Export.
+Dedukti Export All.
 
