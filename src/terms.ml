@@ -331,9 +331,9 @@ and lift_fix info env names types bodies rec_indices =
 (*    let env , context' = translate_rel_context info env contexts.(i) in*)
     [(rel_context', Dedukti.apply_context fix_term3' rel_context', body')]) in
   for i = 0 to n - 1 do
-    Dedukti.print info.out (Dedukti.rewrite(fix_rules1.(i)));
-    Dedukti.print info.out (Dedukti.rewrite(fix_rules2.(i)));
-    Dedukti.print info.out (Dedukti.rewrite(fix_rules3.(i)))
+    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules1.(i));
+    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules2.(i));
+    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules3.(i));
   done;
   Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
   env, fix_declarations1

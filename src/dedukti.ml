@@ -16,7 +16,7 @@ type instruction =
   | Command of string * string list (* e.g. "#NAME" or "IMPORT" *)
   | Declaration of var * term
   | Definition of bool * var * term * term
-  | Rewrite of ((var * term) list * term * term) list
+  | Rewrite of (var * term) list * term * term
 
 let var x = Var(x)
 
@@ -50,7 +50,7 @@ let declaration x a = Declaration(x, a)
 
 let definition opaque x a b = Definition(opaque, x, a, b)
 
-let rewrite rules = Rewrite(rules)
+let rewrite (context, left, right) = Rewrite(context, left, right)
 
 let apply_context a context = apps a (List.map var (fst (List.split context)))
 
@@ -120,8 +120,6 @@ let print out instruction =
         if opaque then Format.fprintf out "{%a}" print_var
         else Format.fprintf out "%a" print_var in
       Format.fprintf out "%a : %a :=\n  %a.\n\n" print_opaque x print_term a print_term t
-  | Rewrite(rules) ->
-      let print_rules out = List.iter (print_rule out) in
-      if rules = [] then ()
-      else Format.fprintf out "%a.\n\n" print_rules rules
+  | Rewrite(context, left, right) ->
+      Format.fprintf out "%a.\n\n" print_rule (context, left, right)
 

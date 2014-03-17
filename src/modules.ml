@@ -137,7 +137,7 @@ let translate_one_inductive_body info env label mind_body i =
     let case_rule_left' = Dedukti.apps match_function_applied' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)]) in
     let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
     (case_rule_context', case_rule_left', case_rule_right')) in
-  Dedukti.print info.out (Dedukti.rewrite (Array.to_list case_rules))
+  List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite (Array.to_list case_rules))
   
   (* Translate the fix function. *)
 
