@@ -87,9 +87,9 @@ let escape name =
   let escape_char () c =
     if is_alpha_numerical c then Printf.sprintf "%c" c else
     match c with
-    | '.' -> "_dot_"
+    | '.' -> "__"
     | '_' -> "__"
-    | '\'' -> "_prime_"
+(*    | '\'' -> "_prime_"*)
     | _ -> Printf.sprintf "_%02X_" (Char.code c) in
   let rec escape i () name =
     if i = String.length name
