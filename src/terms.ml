@@ -34,7 +34,7 @@ let rec infer_translate_sort info env a =
   | SortType(s) ->
       Sorts.coq_t (translate_sort info env s)
   | CastType(a, b) ->
-      failwith "Not implemented: CastType"
+      Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env a in
@@ -81,7 +81,7 @@ let rec convertible info env a b =
       convertible_sort info env s1 s2
   | CastType(_), _
   | _, CastType(_) ->
-      failwith "Not implemented: CastType"
+      Error.not_supported "CastType"
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
       convertible info env a1 a2 &&
       convertible info (Environ.push_rel (x1, None, a1) env) b1 b2
@@ -119,8 +119,8 @@ let rec translate_constr ?expected_type info env t =
       end
   | Var(x) ->
       Dedukti.var (Name.translate_identifier x)
-  | Meta(metavariable) -> failwith "Not implemented: Meta"
-  | Evar(pexistential) -> failwith "Not implemented: Evar"
+  | Meta(metavariable) -> Error.not_supported "Meta"
+  | Evar(pexistential) -> Error.not_supported "Evar"
   | Sort(s) ->
       let s' = translate_sort info env s in
       coq_sort s'
@@ -195,7 +195,7 @@ let rec translate_constr ?expected_type info env t =
       let env = Array.fold_left (fun env declaration ->
         Environ.push_rel declaration env) env fix_declarations in
       translate_constr info env (Term.mkRel (n - i))
-  | CoFix(pcofixpoint) -> failwith "Not implemented: CoFix"
+  | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
 
 (** Translate the Coq type [a] as a Dedukti type. *)
 and translate_types info env a =
@@ -205,7 +205,7 @@ and translate_types info env a =
       let s' = translate_sort info env s in
       coq_type s'
   | CastType(a, b) ->
-      failwith "Not implemented: CastType"
+      Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info ~default:"_" env x in
       let x' = Name.translate_name x in
