@@ -7,7 +7,7 @@ src/sorts.ml4
 src/terms.ml
 src/modules.ml
 src/libraries.ml
-src/export.ml4
+src/commands.ml4
 src/coqine_plugin.mllib
 src/Coqine.v
 
