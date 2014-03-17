@@ -165,28 +165,28 @@ let identifiers_of_structure_field_body (label, struct_field_body) =
 let identifiers_of_structure_body structure_body =
   List.concat (List.map identifiers_of_structure_field_body structure_body)
 
-let rec translate_module_body info env mods =
-  match mods.mod_expr with
-  | Some(struct_expr) -> translate_struct_expr_body info env struct_expr
+let rec translate_module_body info env mb =
+  match mb.mod_expr with
+  | Some(seb) -> translate_struct_expr_body info env seb
   | None -> failwith "Empty module body"
 
-and translate_struct_expr_body info env struct_expr =
-  match struct_expr with
-  | SEBstruct(structs) -> translate_structure_body info env structs
+and translate_struct_expr_body info env seb =
+  match seb with
+  | SEBstruct(sb) -> translate_structure_body info env sb
   | SEBident(_) -> Error.not_supported "SEBident"
   | SEBfunctor(_) -> Error.not_supported "SEBfunctor"
   | SEBapply(_) -> Error.not_supported "SEBapply"
   | SEBwith(_) -> Error.not_supported "SEBwith"
 
-and translate_structure_body info env structure_body =
-  List.iter (translate_structure_field_body info env) structure_body
+and translate_structure_body info env sb =
+  List.iter (translate_structure_field_body info env) sb
 
-and translate_structure_field_body info env (label, struct_field_body) =
-  match struct_field_body with
-  | SFBconst(const_body) -> translate_constant_body info env label const_body
-  | SFBmind(mind_body) -> translate_mutual_inductive_body info env label mind_body
-  | SFBmodule(module_body) ->
+and translate_structure_field_body info env (label, sfb) =
+  match sfb with
+  | SFBconst(cb) -> translate_constant_body info env label cb
+  | SFBmind(mib) -> translate_mutual_inductive_body info env label mib
+  | SFBmodule(mb) ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in
-      translate_module_body info env module_body
+      translate_module_body info env mb
   | SFBmodtype(_) -> Error.not_supported "SFBmodtype"
 
