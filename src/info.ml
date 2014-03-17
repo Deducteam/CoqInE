@@ -1,7 +1,7 @@
 (** Information about the translation *)
 
 type info = {
-  out : out_channel;
+  out : Format.formatter;
   library : Names.dir_path;
   module_path : Names.module_path;
   }

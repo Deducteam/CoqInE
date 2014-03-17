@@ -11,13 +11,18 @@ let set_destination dest =
 let export_library dir_path =
   msgnl (str "Exporting library " ++ Libnames.pr_dirpath dir_path);
   let filename = Filename.concat !destination (Name.translate_dir_path dir_path) in
-  let out = open_out (filename ^ ".dk") in
-  try (
-    Libraries.translate_library out dir_path;
-    close_out out)
-  with e -> (
-    close_out out;
-    raise e)
+  let out_channel = open_out (filename ^ ".dk") in
+  let formatter = Format.formatter_of_out_channel out_channel in
+  let flush_and_close () =
+    Format.pp_print_flush formatter ();
+    close_out out_channel
+  in
+  begin try Libraries.translate_library formatter dir_path with
+  | e ->
+    flush_and_close ();
+    raise e
+  end;
+  flush_and_close ()
 
 (** Export the library [reference]. *)
 let export reference =
