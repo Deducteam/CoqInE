@@ -4,6 +4,12 @@ open Declarations
 
 open Info
 
+(** Constant definitions have a type and a body.
+    - The type can be non-polymorphic (normal type) or
+      a polymorphic arity (universe polymorphism).
+    - The body can be empty (an axiom), a normal definition, or
+      an opaque definition (a theorem). **)
+
 let get_constant_type const_type =
   match const_type with
   | NonPolymorphicType(a) -> a
@@ -34,6 +40,12 @@ let get_inductive_arity_sort ind_arity =
   match ind_arity with
   | Monomorphic(mono_ind_arity) -> mono_ind_arity.mind_sort
   | Polymorphic(poly_arity) -> Term.Type(poly_arity.poly_level)
+
+(** An inductive definition is organised into:
+    - [mutual_inductive_body] : a block of (co)inductive type definitions,
+      containing a context of common parameter and list of [inductive_body]
+    - [inductive_body] : a single inductive type definition,
+      containing a name, an arity, and a list of constructor names and types **)
 
 (** Translate the i-th inductive body in [mind_body]. *)
 let translate_one_inductive_body info env label mind_body i =
@@ -164,6 +176,14 @@ let identifiers_of_structure_field_body (label, struct_field_body) =
 
 let identifiers_of_structure_body structure_body =
   List.concat (List.map identifiers_of_structure_field_body structure_body)
+
+(** Modules are organised into:
+    - [module_body] (mb): a wrapper around a struct expression
+    - [struct_expr_body] (seb): a struct expression, e.g. functor,
+      application, ...
+    - [structure_body] (sb): a concrete struct, i.e. a list of fields
+    - [structure_field_body] (sfb): a single field declaration, e.g.
+      definition, inductive, ... **)
 
 let rec translate_module_body info env mb =
   match mb.mod_expr with
