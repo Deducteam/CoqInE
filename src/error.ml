@@ -1,8 +1,10 @@
 (** Error and warning utilities **)
 
-let not_supported feature =
-  failwith (Printf.sprintf "%s not supported" feature)
+open Pp
 
 let error message =
-  Util.errorlabstrm "Yolk" message
+  Util.errorlabstrm "Coqine" message
+
+let not_supported feature =
+  error (str feature ++ str " not supported")
 
