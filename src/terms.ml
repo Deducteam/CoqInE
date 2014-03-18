@@ -227,8 +227,11 @@ and lift_let info env x u a =
   let a_closed = generalize_rel_context rel_context a in
   let u_closed = abstract_rel_context rel_context u in
   let y' = Name.translate_identifier y in
-  let a_closed' = translate_types info (Global.env ()) a_closed in
-  let u_closed' = translate_constr info (Global.env ()) u_closed in
+  (* [a_closed] amd [u_closed] are in the global environment but we still
+     have to remember the named variables (i.e. from nested let in). *)
+  let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
+  let a_closed' = translate_types info global_env a_closed in
+  let u_closed' = translate_constr info global_env u_closed in
   Dedukti.print info.out (Dedukti.definition false y' a_closed' u_closed');
   let env = Environ.push_named (y, Some(u_closed), a_closed) env in
   env, apply_rel_context (Term.mkVar y) rel_context
