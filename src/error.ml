@@ -8,3 +8,6 @@ let error message =
 let not_supported feature =
   error (str feature ++ str " not supported")
 
+let warning message =
+  Pp.warn message
+
