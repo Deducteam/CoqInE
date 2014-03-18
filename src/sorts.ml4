@@ -78,9 +78,7 @@ and parse_atom = parser
 let translate_universe info env i =
   (* Print the universe [i] to obtain a string representation and extract
      the universe by parsing the string representation. *)
-  let i_str = (
-    Pp.pp_with Format.str_formatter (Univ.pr_uni i);
-    Format.flush_str_formatter ()) in
+  let i_str = Pp.string_of_ppcmds (Univ.pr_uni i) in
   let i =
     try parse_universe (lexer (Stream.of_string i_str)) with
     | Stream.Failure
