@@ -137,7 +137,7 @@ let translate_one_inductive_body info env label mind_body i =
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let common_context' =
     params_context' @
-    (return_sort_name', Sorts.coq_srt) ::
+    (return_sort_name', Sorts.coq_sort) ::
     (return_type_name', Dedukti.pies arity_real_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
     cases_context' in
   let match_function_context' = common_context' @ arity_real_context' @ [matched_name', ind_applied'] in

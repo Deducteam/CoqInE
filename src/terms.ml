@@ -20,8 +20,8 @@ let coq_cast s1 s2 a b t = Dedukti.apps (coq "cast") [s1; s2; a; b; t]
 
 let translate_sort info env s =
   match s with
-  | Prop(Null) -> Sorts.coq_p
-  | Prop(Pos) -> Sorts.coq_z
+  | Prop(Null) -> Sorts.coq_prop
+  | Prop(Pos) -> Sorts.coq_type0
   | Type(i) -> Sorts.translate_universe info env i
 
 (** Infer and translate the sort of [a].
@@ -32,14 +32,14 @@ let rec infer_translate_sort info env a =
 (*  let a = Reduction.whd_betadeltaiota env a in*)
   match Term.kind_of_type a with
   | SortType(s) ->
-      Sorts.coq_t (translate_sort info env s)
+      Sorts.coq_axiom (translate_sort info env s)
   | CastType(a, b) ->
       Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env a in
       let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
-      Sorts.coq_r s1' s2'
+      Sorts.coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
       assert false
   | AtomicType(_) ->

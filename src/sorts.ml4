@@ -12,15 +12,18 @@ open Info
 
 let coq x = Dedukti.Var(Name.coq x)
 
-let coq_srt = coq "Sort"
-let coq_p = coq "prop"
-let coq_z = Dedukti.app (coq "type") (coq "z")
-let coq_t i = Dedukti.apps (coq "axiom") [i]
-let coq_r i j = Dedukti.apps (coq "rule") [i; j]
-let coq_m i j = Dedukti.apps (coq "sup") [i; j]
+let coq_z = coq "z"
+let coq_s i = Dedukti.app (coq "s") i
+let coq_sort = coq "Sort"
+let coq_prop = coq "prop"
+let coq_type i = Dedukti.app (coq "type") i
+let coq_axiom s1 = Dedukti.apps (coq "axiom") [s1]
+let coq_rule s1 s2 = Dedukti.apps (coq "rule") [s1; s2]
+let coq_sup s1 s2 = Dedukti.apps (coq "sup") [s1; s2]
+let coq_type0 = coq_type coq_z
 
 let rec make_coq_univ n =
-  if n = 0 then coq_z else coq_t (make_coq_univ (n - 1))
+  if n = 0 then coq_type0 else coq_axiom (make_coq_univ (n - 1))
 
 type universe =
   | Set
@@ -45,15 +48,15 @@ let set_universes universes =
 let evaluate_universe i =
   let rec evaluate i =
     match i with
-    | Set -> coq_z
+    | Set -> coq_type0
     | Atom(i) ->
         begin try make_coq_univ (Hashtbl.find universe_table i) with
-        | Not_found -> coq_z
+        | Not_found -> coq_type0
         end
-    | Succ(i) -> coq_t (evaluate i)
-    | Max([]) -> coq_p
+    | Succ(i) -> coq_axiom (evaluate i)
+    | Max([]) -> coq_prop
     | Max([i]) -> evaluate i
-    | Max(i :: j_list) -> coq_m (evaluate i) (evaluate (Max(j_list))) in
+    | Max(i :: j_list) -> coq_sup (evaluate i) (evaluate (Max(j_list))) in
   evaluate i
 
 let lexer = Genlex.make_lexer ["."; "+"; "("; ","; ")"]
