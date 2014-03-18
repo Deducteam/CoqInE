@@ -208,5 +208,5 @@ and translate_structure_field_body info env (label, sfb) =
   | SFBmodule(mb) ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in
       translate_module_body info env mb
-  | SFBmodtype(_) -> Error.not_supported "SFBmodtype"
+  | SFBmodtype(_) -> ()
 
