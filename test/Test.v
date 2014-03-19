@@ -19,16 +19,6 @@ Require
   NestedLibraries
   Reflexivity
 
-  Coq.Init.Datatypes
-  Coq.Init.Logic_Type
-  Coq.Init.Logic
-  Coq.Init.Notations
-  Coq.Init.Peano
-  Coq.Init.Prelude
-  Coq.Init.Specif
-  Coq.Init.Tactics
-  Coq.Init.Wf        
-
   Coq.Logic.Berardi
 (*  Coq.Logic.ChoiceFacts*)
 (*  Coq.Logic.ClassicalChoice*)

@@ -8,7 +8,7 @@ MAKEFILE_TEST = Makefile.test
 
 test: Coq.dko
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
-	$(COQTOP) -batch -debug -nois -R ../src Dedukti -l Test
+	$(COQTOP) -batch -debug -R ../src Dedukti -l Test
 	$(DKCHECK) -autodep *.dk
 
 Coq.dko: ../dedukti/Coq.dk
