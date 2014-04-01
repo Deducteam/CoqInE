@@ -278,9 +278,11 @@ and lift_fix info env names types bodies rec_indices =
   let fix_names1' = Array.map Name.translate_identifier fix_names1 in
   let fix_names2' = Array.map Name.translate_identifier fix_names2 in
   let fix_names3' = Array.map Name.translate_identifier fix_names3 in
-  let types1_closed' = Array.map (translate_types info (Global.env ())) types1_closed in
-  let types2_closed' = Array.map (translate_types info (Global.env ())) types2_closed in
-  let types3_closed' = Array.map (translate_types info (Global.env ())) types3_closed in
+  (* we still have to remember the named variables (i.e. from nested let in). *)
+  let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
+  let types1_closed' = Array.map (translate_types info global_env) types1_closed in
+  let types2_closed' = Array.map (translate_types info global_env) types2_closed in
+  let types3_closed' = Array.map (translate_types info global_env) types3_closed in
   for i = 0 to n - 1 do
     Dedukti.print info.out (Dedukti.declaration fix_names1'.(i) types1_closed'.(i));
     Dedukti.print info.out (Dedukti.declaration fix_names2'.(i) types2_closed'.(i));
@@ -290,7 +292,7 @@ and lift_fix info env names types bodies rec_indices =
   let fix_terms2 = Array.init n (fun i -> Term.mkVar fix_names2.(i)) in
   let fix_terms3 = Array.init n (fun i -> Term.mkVar fix_names3.(i)) in
   let fix_rules1 = Array.init n (fun i ->
-    let env, context' = translate_rel_context info (Global.env ()) (contexts.(i) @ rel_context) in
+    let env, context' = translate_rel_context info (global_env) (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env fix_terms1.(i) in
     let fix_term2' = translate_constr info env fix_terms2.(i) in
     let ind_args' = List.map (translate_constr info env) (List.map (Term.lift 1) ind_args.(i)) in
@@ -305,7 +307,7 @@ and lift_fix info env names types bodies rec_indices =
     let cons_ind_args = Array.map (fun cons_type -> snd (Inductive.find_inductive env cons_type)) cons_types in
     let n_cons = Array.length cons_types in
     let cons_rules = Array.init n_cons (fun j ->
-      let env, context' = translate_rel_context info (Global.env ()) (contexts.(i) @ rel_context) in
+      let env, context' = translate_rel_context info (global_env) (contexts.(i) @ rel_context) in
       let env, cons_context' = translate_rel_context info env (cons_contexts.(j)) in
       let fix_term2' = translate_constr info env fix_terms2.(i) in
       let fix_term3' = translate_constr info env fix_terms3.(i) in
@@ -324,7 +326,7 @@ and lift_fix info env names types bodies rec_indices =
   let fix_declarations1 = Array.init n (fun i ->
     (names.(i), Some(Term.lift i fix_applieds1.(i)), Term.lift i types.(i))) in
   let fix_rules3 = Array.init n (fun i ->
-    let env, rel_context' = translate_rel_context info (Global.env ()) rel_context in
+    let env, rel_context' = translate_rel_context info (global_env) rel_context in
     let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name1_declarations in
     let fix_term3' = translate_constr info env fix_terms3.(i) in
     let env = Array.fold_left (fun env declaration ->
