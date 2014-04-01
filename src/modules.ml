@@ -199,7 +199,9 @@ and translate_struct_expr_body info env seb =
   match seb with
   | SEBstruct(sb) -> translate_structure_body info env sb
   | SEBident(_) -> Error.not_supported "SEBident"
-  | SEBfunctor(_) -> Error.not_supported "SEBfunctor"
+  | SEBfunctor(_) ->
+    (* For now we ignore unapplied functors. *)
+    ()
   | SEBapply(_) -> Error.not_supported "SEBapply"
   | SEBwith(_) -> Error.not_supported "SEBwith"
 
