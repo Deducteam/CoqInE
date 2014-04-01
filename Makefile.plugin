@@ -6,6 +6,7 @@ src/info.ml
 src/name.ml
 src/sorts.ml4
 src/terms.ml
+src/inductives.ml
 src/modules.ml
 src/libraries.ml
 src/commands.ml4
