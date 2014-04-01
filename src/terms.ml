@@ -1,5 +1,6 @@
 (** Translation of Coq terms *)
 
+open Declarations
 open Term
 
 open Info
@@ -97,8 +98,30 @@ let rec convertible info env a b =
   | _ -> false
 
 (** This table holds the translations of fixpoints, so that we avoid
-    translating the same definition multiple times (e.g. mutual fixpoints). *)
+    translating the same definition multiple times (e.g. mutual fixpoints).
+    This is very important, otherwise the size of the files will explode. *)
 let fixpoint_table = Hashtbl.create 10007
+
+let make_const mp x =
+  Names.make_con mp (Names.make_dirpath []) (Names.label_of_id x)
+
+(** Use constant declarations instead of named variable declarations for lifted
+    terms because fixpoint declarations should be global and could be referred
+    to from other files (think Coq.Arith.Even with Coq.Init.Peano.plus). *)
+let push_const_decl env (c, m, a) =
+  let const_body =
+    match m with
+    | None -> Undef None
+    | Some m -> Def (from_val m) in
+  let const_body_code = Cbytegen.compile_constant_body (Environ.pre_env env) const_body in
+  let body = {
+    const_hyps = [];
+    const_body = const_body;
+    const_type = NonPolymorphicType a;
+    const_body_code = Cemitcodes.from_val const_body_code;
+    const_constraints = Univ.empty_constraint
+  } in
+  Environ.add_constant c body env
 
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env t =
@@ -233,8 +256,9 @@ and lift_let info env x u a =
   let a_closed' = translate_types info global_env a_closed in
   let u_closed' = translate_constr info global_env u_closed in
   Dedukti.print info.out (Dedukti.definition false y' a_closed' u_closed');
-  let env = Environ.push_named (y, Some(u_closed), a_closed) env in
-  env, apply_rel_context (Term.mkVar y) rel_context
+  let yconst = make_const info.module_path y in
+  let env = push_const_decl env (yconst, Some(u_closed), a_closed) in
+  env, apply_rel_context (Term.mkConst yconst) rel_context
 
 and lift_fix info env names types bodies rec_indices =
   (* A fixpoint is translated by 3 functions:
@@ -272,9 +296,12 @@ and lift_fix info env names types bodies rec_indices =
   let types1_closed = Array.map (generalize_rel_context rel_context) types1 in
   let types2_closed = Array.map (generalize_rel_context rel_context) types2 in
   let types3_closed = Array.map (generalize_rel_context rel_context) types3 in
-  let name1_declarations = Array.init n (fun j -> (fix_names1.(j), None, types1_closed.(j))) in
-  let name2_declarations = Array.init n (fun j -> (fix_names2.(j), None, types2_closed.(j))) in
-  let name3_declarations = Array.init n (fun j -> (fix_names3.(j), None, types3_closed.(j))) in
+  let const1 = Array.map (fun name -> make_const info.module_path name) fix_names1 in
+  let const2 = Array.map (fun name -> make_const info.module_path name) fix_names2 in
+  let const3 = Array.map (fun name -> make_const info.module_path name) fix_names3 in
+  let name1_declarations = Array.init n (fun j -> (const1.(j), None, types1_closed.(j))) in
+  let name2_declarations = Array.init n (fun j -> (const2.(j), None, types2_closed.(j))) in
+  let name3_declarations = Array.init n (fun j -> (const3.(j), None, types3_closed.(j))) in
   let fix_names1' = Array.map Name.translate_identifier fix_names1 in
   let fix_names2' = Array.map Name.translate_identifier fix_names2 in
   let fix_names3' = Array.map Name.translate_identifier fix_names3 in
@@ -288,9 +315,9 @@ and lift_fix info env names types bodies rec_indices =
     Dedukti.print info.out (Dedukti.declaration fix_names2'.(i) types2_closed'.(i));
     Dedukti.print info.out (Dedukti.declaration fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms1 = Array.init n (fun i -> Term.mkVar fix_names1.(i)) in
-  let fix_terms2 = Array.init n (fun i -> Term.mkVar fix_names2.(i)) in
-  let fix_terms3 = Array.init n (fun i -> Term.mkVar fix_names3.(i)) in
+  let fix_terms1 = Array.init n (fun i -> Term.mkConst (const1.(i))) in
+  let fix_terms2 = Array.init n (fun i -> Term.mkConst (const2.(i))) in
+  let fix_terms3 = Array.init n (fun i -> Term.mkConst (const3.(i))) in
   let fix_rules1 = Array.init n (fun i ->
     let env, context' = translate_rel_context info (global_env) (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env fix_terms1.(i) in
@@ -318,16 +345,16 @@ and lift_fix info env names types bodies rec_indices =
         Dedukti.apps (Dedukti.apply_context fix_term2' context') (cons_ind_args' @ [cons_term_applied']),
         Dedukti.apply_context fix_term3' context')) in
     Array.to_list cons_rules) in
-  let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name1_declarations in
-  let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name2_declarations in
-  let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name3_declarations in
+  let env = Array.fold_left push_const_decl env name1_declarations in
+  let env = Array.fold_left push_const_decl env name2_declarations in
+  let env = Array.fold_left push_const_decl env name3_declarations in
   let fix_applieds1 = Array.init n (fun i -> apply_rel_context fix_terms1.(i) rel_context) in
   (* The declarations need to be lifted to account for the displacement. *)
   let fix_declarations1 = Array.init n (fun i ->
     (names.(i), Some(Term.lift i fix_applieds1.(i)), Term.lift i types.(i))) in
   let fix_rules3 = Array.init n (fun i ->
     let env, rel_context' = translate_rel_context info (global_env) rel_context in
-    let env = Array.fold_left (fun env declaration -> Environ.push_named declaration env) env name1_declarations in
+    let env = Array.fold_left push_const_decl env name1_declarations in
     let fix_term3' = translate_constr info env fix_terms3.(i) in
     let env = Array.fold_left (fun env declaration ->
       Environ.push_rel declaration env) env fix_declarations1 in
