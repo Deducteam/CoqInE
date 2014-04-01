@@ -39,7 +39,7 @@ let translate_constructors info env label mind_body i =
   (* cj : ||p1 : P1 -> ... -> pr : Pr -> yj1 : B1 -> ... -> yjkj : Bjkj -> I p1 ... pr uj1 ... ujn|| *)
   let cons_names = ind_body.mind_consnames in
   (* Substitute the inductive types as specified in the Coq code. *)
-  let cons_types = Array.map (Term.substl (Array.to_list ind_terms)) ind_body.mind_user_lc in
+  let cons_types = Array.map (Term.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_user_lc in
   let cons_names' = Array.map (fun cons_name -> Name.translate_element_name info env (Names.label_of_id cons_name)) cons_names in
   let cons_types' = Array.map (Terms.translate_types info env) cons_types in
   for j = 0 to n_cons - 1 do
@@ -63,7 +63,7 @@ let translate_match info env label mind_body i =
   let cons_names = ind_body.mind_consnames in
   
   (* Use the normalized types in the rest. *)
-  let cons_types = Array.map (Term.substl (Array.to_list ind_terms)) ind_body.mind_nf_lc in
+  let cons_types = Array.map (Term.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_nf_lc in
   
   (* Translate the match function. *)
   (* match_I : |p1| : ||P1|| -> ... |pr| : ||Pr|| ->
