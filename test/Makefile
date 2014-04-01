@@ -12,7 +12,7 @@ test: Coq.dko
 	$(DKCHECK) -autodep *.dk
 
 Coq.dko: ../dedukti/Coq.dk
-	$(DKCHECK) -e -unsafe ../dedukti/Coq.dk
+	$(DKCHECK) -e ../dedukti/Coq.dk
 
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean

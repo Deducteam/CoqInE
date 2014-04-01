@@ -118,7 +118,7 @@ let print out instruction =
       Format.fprintf out "(; %s ;)" c
   | Command(cmd, args) ->
       let print_args out = List.iter (Format.fprintf out " %s") in
-      Format.fprintf out "#%s%a" cmd print_args args
+      Format.fprintf out "@[#%s%a.@]" cmd print_args args
   | Declaration(x, a) ->
       Format.fprintf out "@[<v2>%a :@ @ %a.@]" print_var x print_term a
   | Definition(opaque, x, a, t) ->

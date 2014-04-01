@@ -16,7 +16,7 @@ test: plugin Coq.dko
 	make -C test
 
 Coq.dko: dedukti/Coq.dk
-	$(DKCHECK) -e -unsafe dedukti/Coq.dk
+	$(DKCHECK) -e dedukti/Coq.dk
 
 clean: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
