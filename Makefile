@@ -12,7 +12,7 @@ plugin: $(MAKEFILE_PLUGIN)
 install: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - install
 
-test: plugin Coq.dko
+test: plugin 
 	make -C test
 
 Coq.dko: dedukti/Coq.dk
