@@ -12,4 +12,5 @@
 *.d
 *.dk
 *.dko
+*.depend
 !dedukti/Coq.dk
