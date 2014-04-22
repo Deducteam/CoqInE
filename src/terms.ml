@@ -42,7 +42,8 @@ let rec infer_translate_sort info env a =
       let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
       Sorts.coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
-      assert false
+      (* No need to lift the let here. *)
+      infer_translate_sort info (Environ.push_rel (x, Some(u), a) env) b
   | AtomicType(_) ->
       translate_sort info env (infer_sort info env a)
 
