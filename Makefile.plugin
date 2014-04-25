@@ -1,0 +1,15 @@
+-R src Dedukti
+-I src
+src/dedukti.ml
+src/error.ml
+src/info.ml
+src/name.ml
+src/sorts.ml4
+src/terms.ml
+src/inductives.ml
+src/modules.ml
+src/libraries.ml
+src/commands.ml4
+src/coqine_plugin.mllib
+src/Coqine.v
+
