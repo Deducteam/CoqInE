@@ -7,7 +7,7 @@ open Info
 
 let infer_type info env t =
   (fst (Typeops.infer env t)).Environ.uj_type
-  
+
 let infer_sort info env a =
   (fst (Typeops.infer_type env a)).Environ.utj_type
 
@@ -114,12 +114,16 @@ let push_const_decl env (c, m, a) =
     match m with
     | None -> Undef None
     | Some m -> Def (from_val m) in
-  let const_body_code = Cbytegen.compile_constant_body (Environ.pre_env env) const_body in
+  let const_body_code =
+    match Cbytegen.compile_constant_body true (Environ.pre_env env) const_body with
+    | Some code -> code
+    | None -> Error.error (Pp.str "compile_constant_body failed")
+  in
   let body = {
     const_hyps = [];
     const_body = const_body;
     const_type = NonPolymorphicType a;
-    const_body_code = Cemitcodes.from_val const_body_code;
+    const_body_code = Some (Cemitcodes.from_val const_body_code);
     const_constraints = Univ.empty_constraint
   } in
   Environ.add_constant c body env
