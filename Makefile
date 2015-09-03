@@ -15,11 +15,11 @@ install: $(MAKEFILE_PLUGIN)
 test: plugin 
 	make -C test
 
-Coq.dko: dedukti/Coq.dk
-	$(DKCHECK) -e -nl dedukti/Coq.dk
+dedukti/Coq.dko: dedukti/Coq.dk
+	cd dedukti && $(DKCHECK) -e -nl Coq.dk
 
 clean: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
 	make -C test clean
-	rm -rf Coq.dko
+	rm -rf dedukti/Coq.dko
 
