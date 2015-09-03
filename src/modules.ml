@@ -27,7 +27,7 @@ let translate_constant_body info env label const =
   | Undef(inline) ->
       (* For now assume inline is None. *)
       assert (inline = None);
-      Dedukti.print info.out (Dedukti.declaration label' const_type')
+      Dedukti.print info.out (Dedukti.declaration false label' const_type')
   | Def(constr_substituted) ->
       let constr = Declarations.force constr_substituted in
       let constr' = Terms.translate_constr ~expected_type:const_type info env constr in

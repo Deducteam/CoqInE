@@ -38,7 +38,7 @@ Coq.dko: ../dedukti/Coq.dk
 	$(DKCHECK) -e ../dedukti/Coq.dk
 
 .dk.dko: depend
-	$(DKCHECK) -e $<
+	$(DKCHECK) -e -nl $<
 
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean

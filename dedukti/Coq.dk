@@ -6,10 +6,10 @@ Nat : Type.
 z : Nat.
 s : Nat -> Nat.
 
-max : Nat -> Nat -> Nat.
-[i : Nat] max i z --> i.
-[j : Nat] max z (s j) --> s j.
-[i : Nat, j : Nat] max (s i) (s j) --> s (max i j).
+def max : Nat -> Nat -> Nat.
+[i] max i z --> i.
+[j] max z (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
 
 (; Sorts ;)
 
@@ -17,95 +17,101 @@ Sort : Type.
 prop : Sort.
 type : Nat -> Sort.
 
-axiom : Sort -> Sort.
+def axiom : Sort -> Sort.
 [] axiom prop --> type (s z).
-[i : Nat] axiom (type i) --> type (s i).
+[i] axiom (type i) --> type (s i).
 
-rule : Sort -> Sort -> Sort.
-[s1 : Sort] rule s1 prop --> prop.
-[j : Nat] rule prop (type j) --> type j.
-[i : Nat, j : Nat] rule (type i) (type j) --> type (max i j).
+def rule : Sort -> Sort -> Sort.
+[s1] rule s1 prop --> prop.
+[j] rule prop (type j) --> type j.
+[i,j] rule (type i) (type j) --> type (max i j).
 
-sup : Sort -> Sort -> Sort.
-[s1 : Sort] sup s1 prop --> s1.
-[j : Nat] sup prop (type j) --> type j.
-[i : Nat, j : Nat] sup (type i) (type j) --> type (max i j).
+def sup : Sort -> Sort -> Sort.
+[s1] sup s1 prop --> s1.
+[j] sup prop (type j) --> type j.
+[i,j] sup (type i) (type j) --> type (max i j).
 
 (; Canonicity rules ;)
 
-[s1 : Sort] sup s1 s1 --> s1.
-[s1 : Sort, s2 : Sort, s3 : Sort] sup (sup s1 s2) s3 --> sup s1 (sup s2 s3).
-[s1 : Sort, s2 : Sort] axiom (sup s1 s2) --> sup (axiom s1) (axiom s2).
-[s1 : Sort, s2 : Sort, s3 : Sort] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
-[s1 : Sort, s2 : Sort, s3 : Sort] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1] sup s1 s1 --> s1.
+[s1,s2,s3] sup (sup s1 s2) s3 --> sup s1 (sup s2 s3).
+[s1,s2] axiom (sup s1 s2) --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+(; /!\ Confluence broken: the term
+    (rule (sup s1 s2) (sup s3 s4)) reduces to both
+    sup (rule s1 s3) (sup (rule s1 s4) (sup (rule s2 s3) (rule s2 s4)))
+and
+    sup (rule s1 s3) (sup (rule s2 s3) (sup (rule s1 s4) (rule s2 s4))) ;)
+
 
 (; Terms ;)
 
 U : s1 : Sort -> Type.
 
-T : s1 : Sort -> a : U s1 -> Type.
+def T : s1 : Sort -> a : U s1 -> Type.
 
 sort : s1 : Sort -> U (axiom s1).
-lift : s1 : Sort -> s2 : Sort -> U s1 -> U (sup s1 s2).
-prod : s1 : Sort -> s2 : Sort -> a : U s1 -> (T s1 a -> U s2) -> U (rule s1 s2).
+def lift : s1 : Sort -> s2 : Sort -> U s1 -> U (sup s1 s2).
+def prod : s1 : Sort -> s2 : Sort -> a : U s1 -> (T s1 a -> U s2) -> U (rule s1 s2).
 
-[s1 : Sort]
-    T {axiom s1} (sort s1)
+[s1]
+    T _ (sort s1)
 --> U s1.
 
-[s1 : Sort, s2 : Sort, a : U s1]
-    T {sup s1 s2} (lift s1 s2 a)
+[s1,a]
+    T _ (lift s1 _ a)
 --> T s1 a.
 
-[s1 : Sort, s2 : Sort, a : U s1, b : (T s1 a -> U s2)]
-    T {rule s1 s2} (prod s1 s2 a b)
+[s1,s2,a,b]
+    T _ (prod s1 s2 a b)
 --> x : T s1 a -> T s2 (b x).
 
 (; Canonicity rules ;)
 
-[s1 : Sort, a : U s1]
+[s1,a]
     lift s1 s1 a
 --> a.
 
-[s1 : Sort, s2 : Sort, s3 : Sort, a : U s1]
-    lift {sup s1 s2} s3 (lift s1 s2 a)
+[s1,s2,s3,a]
+    lift _ s3 (lift s1 s2 a)
 --> lift s1 (sup s2 s3) a.
 
-[s1 : Sort, s2 : Sort, s3 : Sort, a : U s1, b : (T s1 a -> U s2)]
-    prod {sup s1 s3} s2 (lift s1 s3 a) b
---> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a b).
+[s1,s2,s3,a,b]
+    prod _ s2 (lift s1 s3 a) (x => b x)
+--> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a (x => b x)).
 
-(;[s1 : Sort, s2 : Sort, s3 : Sort, a : U s1, b : (T s1 a -> U s2)];)
-(;    prod s1 {sup s2 s3} a (x : {T s1 a} => lift s2 s3 (b x));)
-(;--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a b).;)
+[s1,s2,s3,a,b]
+    prod s1 _ a (x => lift s2 s3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
 
 (; Cast ;)
 
-join : s1 : Sort -> s2 : Sort -> U s1 -> U s2 -> U (sup s1 s2).
+def join : s1 : Sort -> s2 : Sort -> U s1 -> U s2 -> U (sup s1 s2).
 
-[s1 : Sort, s2 : Sort]
-    join {axiom s1} {axiom s2} (sort s1) (sort s2)
+[s1,s2]
+    join _ _ (sort s1) (sort s2)
 --> sort (sup s1 s2).
 
 (;[s1 : Sort, s2 : Sort, s3 : Sort, s4 : Sort, a : U s1, b : U s3];)
 (;    join {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b);)
 (;--> lift (sup s1 s3) (sup s2 s4) (join s1 s3 a b).;)
 
-[s1 : Sort, s2 : Sort, s3 : Sort, a : U s1, b : (T s1 a -> U s2), c : (T s1 a -> U s3)]
-    join {rule s1 s2} {rule s1 s3} (prod s1 s2 a b) (prod s1 s3 a c)
+[s1,s2,s3,a,b,c]
+    join _ _ (prod s1 s2 a b) (prod s1 s3 a c)
 --> prod s1 (sup s2 s3) a (x : T s1 a => join s2 s3 (b x) (c x)).
 
-cast : s1 : Sort -> s2 : Sort -> a : U s1 -> b : U s2 -> T s1 a -> T (sup s1 s2) (join s1 s2 a b).
+def cast : s1 : Sort -> s2 : Sort -> a : U s1 -> b : U s2 -> T s1 a -> T (sup s1 s2) (join s1 s2 a b).
 
-[s1 : Sort, s2 : Sort, m : U s1]
-    cast {axiom s1} {axiom s2} (sort s1) (sort s2) m
+[s1,s2,m]
+    cast _ _ (sort s1) (sort s2) m
 --> lift s1 s2 m.
 
 (;[s1 : Sort, s2 : Sort, s3 : Sort, s4 : Sort, a : U s1, b : U s3, m : T s1 a];)
 (;cast {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b) m;)
 (;--> cast s1 s3 a b m.;)
 
-[s1 : Sort, s2 : Sort, s3 : Sort, a : U s1, b : (T s1 a -> U s2), c : (T s1 a -> U s3), m : (x : T s1 a -> T s2 (b x))]
-    cast {rule s1 s2} {rule s1 s3} (prod s1 s2 a b) (prod s1 s3 a c) m
+[s1,s2,s3,a,b,c,m]
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m
 --> x : T s1 a => cast s2 s3 (b x) (c x) (m x).
 

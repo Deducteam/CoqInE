@@ -316,9 +316,9 @@ and lift_fix info env names types bodies rec_indices =
   let types2_closed' = Array.map (translate_types info global_env) types2_closed in
   let types3_closed' = Array.map (translate_types info global_env) types3_closed in
   for i = 0 to n - 1 do
-    Dedukti.print info.out (Dedukti.declaration fix_names1'.(i) types1_closed'.(i));
-    Dedukti.print info.out (Dedukti.declaration fix_names2'.(i) types2_closed'.(i));
-    Dedukti.print info.out (Dedukti.declaration fix_names3'.(i) types3_closed'.(i));
+    Dedukti.print info.out (Dedukti.declaration true fix_names1'.(i) types1_closed'.(i));
+    Dedukti.print info.out (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
+    Dedukti.print info.out (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
   let fix_terms1 = Array.init n (fun i -> Term.mkConst (const1.(i))) in
   let fix_terms2 = Array.init n (fun i -> Term.mkConst (const2.(i))) in

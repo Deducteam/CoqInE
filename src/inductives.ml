@@ -25,7 +25,7 @@ let translate_inductive info env label mind_body i =
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
   let name' = Name.translate_element_name info env (Names.label_of_id name) in
   let arity' = Terms.translate_types info env arity in
-  Dedukti.print info.out (Dedukti.declaration name' arity')
+  Dedukti.print info.out (Dedukti.declaration false name' arity')
 
 (** Translate the constructors of the i-th inductive type in [mind_body]. *)
 let translate_constructors info env label mind_body i =
@@ -43,7 +43,7 @@ let translate_constructors info env label mind_body i =
   let cons_names' = Array.map (fun cons_name -> Name.translate_element_name info env (Names.label_of_id cons_name)) cons_names in
   let cons_types' = Array.map (Terms.translate_types info env) cons_types in
   for j = 0 to n_cons - 1 do
-    Dedukti.print info.out (Dedukti.declaration cons_names'.(j) cons_types'.(j));
+    Dedukti.print info.out (Dedukti.declaration false cons_names'.(j) cons_types'.(j));
   done
 
 (** Translate the match function for the i-th inductive type in [mind_body]. *)
@@ -126,7 +126,7 @@ let translate_match info env label mind_body i =
   let match_function_context' = common_context' @ arity_real_context' @ [matched_name', ind_applied'] in
   let match_function_type' = Terms.coq_term return_sort'
     (Dedukti.app (Dedukti.apply_context return_type' arity_real_context') matched') in
-  Dedukti.print info.out (Dedukti.declaration match_function_name' (Dedukti.pies match_function_context' match_function_type'));
+  Dedukti.print info.out (Dedukti.declaration true match_function_name' (Dedukti.pies match_function_context' match_function_type'));
   let match_function_applied' =
     Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: Array.to_list cases') in
   let case_rules = Array.init n_cons (fun j ->

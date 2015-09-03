@@ -14,7 +14,7 @@ type term =
 type instruction =
   | Comment of string
   | Command of string * string list (* e.g. "#NAME" or "IMPORT" *)
-  | Declaration of var * term
+  | Declaration of bool * var * term
   | Definition of bool * var * term * term
   | Rewrite of (var * term) list * term * term
 
@@ -46,7 +46,7 @@ let comment c = Comment(c)
 
 let command cmd args = Command(cmd, args)
 
-let declaration x a = Declaration(x, a)
+let declaration definable x a = Declaration(definable ,x, a)
 
 let definition opaque x a b = Definition(opaque, x, a, b)
 
@@ -103,12 +103,15 @@ and print_atomic out term =
 and print_binding out (x, a) =
   Format.fprintf out "@[<2>%a :@ %a@]" print_var x print_app a
 
+let print_binding_context out (x, a) =
+  Format.fprintf out "@[<2>%a@]" print_var x
+
 let print_context out context =
   let rec print_context out context =
     match context with
     | [] -> ()
-    | [xa] -> Format.fprintf out "%a" print_binding xa
-    | xa :: context -> Format.fprintf out "%a,@ %a" print_binding xa print_context context
+    | [xa] -> Format.fprintf out "%a" print_binding_context xa
+    | xa :: context -> Format.fprintf out "%a,@ %a" print_binding_context xa print_context context
   in
   Format.fprintf out "@[<v>%a@]" print_context context
 
@@ -119,12 +122,12 @@ let print out instruction =
   | Command(cmd, args) ->
       let print_args out = List.iter (Format.fprintf out " %s") in
       Format.fprintf out "@[#%s%a.@]" cmd print_args args
-  | Declaration(x, a) ->
-      Format.fprintf out "@[<v2>%a :@ @ %a.@]" print_var x print_term a
+  | Declaration(definable, x, a) ->
+     Format.fprintf out "@[<v2>%s%a :@ @ %a.@]" (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
       let print_opaque out =
         if opaque then Format.fprintf out "{%a}" print_var
-        else Format.fprintf out "%a" print_var in
+        else Format.fprintf out "def %a" print_var in
       Format.fprintf out "@[<v2>%a :@ @ %a :=@ @ %a.@]" print_opaque x print_term a print_term t
   | Rewrite(context, left, right) ->
       Format.fprintf out "@[<v2>[ %a]@ @ %a -->@ @ %a.@]" print_context context print_term left print_term right
