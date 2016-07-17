@@ -125,10 +125,9 @@ let print out instruction =
   | Declaration(definable, x, a) ->
      Format.fprintf out "@[<v2>%s%a :@ @ %a.@]" (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
-      let print_opaque out =
-        if opaque then Format.fprintf out "{%a}" print_var
-        else Format.fprintf out "def %a" print_var in
-      Format.fprintf out "@[<v2>%a :@ @ %a :=@ @ %a.@]" print_opaque x print_term a print_term t
+      Format.fprintf out "@[<v2>%s %a :@ @ %a :=@ @ %a.@]"
+         (if opaque then "thm" else "def")
+         print_var x print_term a print_term t
   | Rewrite(context, left, right) ->
       Format.fprintf out "@[<v2>[ %a]@ @ %a -->@ @ %a.@]" print_context context print_term left print_term right
   end;
