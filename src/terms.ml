@@ -6,10 +6,10 @@ open Term
 open Info
 
 let infer_type info env t =
-  (fst (Typeops.infer env t)).Environ.uj_type
+  (Typeops.infer env t).Environ.uj_type
 
 let infer_sort info env a =
-  (fst (Typeops.infer_type env a)).Environ.utj_type
+  (Typeops.infer_type env a).Environ.utj_type
 
 let coq x = Dedukti.Var(Name.coq x)
 
@@ -392,5 +392,3 @@ and translate_rel_context info env context =
 
 let translate_args info env ts =
   List.map (translate_constr info env) ts
-
-

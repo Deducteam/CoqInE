@@ -3,11 +3,10 @@
 open Pp
 
 let error message =
-  Util.errorlabstrm "Coqine" message
+  CErrors.errorlabstrm "Coqine" message
 
 let not_supported feature =
   error (str feature ++ str " not supported")
 
 let warning message =
-  Pp.warn message
-
+  Feedback.msg_warning message

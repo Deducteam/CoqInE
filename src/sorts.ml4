@@ -37,12 +37,12 @@ let universe_table : (string, int) Hashtbl.t = Hashtbl.create 10007
 
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
-  msgnl (str "Sorting universes");
-  let universes = Univ.sort_universes universes in
-  msgnl (str "Saving universes");
+  Feedback.msg_info (str "Sorting universes");
+  let universes = UGraph.sort_universes universes in
+  Feedback.msg_info (str "Saving universes");
   let register constraint_type j k =
     Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k) in
-  Univ.dump_universes register universes
+  UGraph.dump_universes register universes
 
 (** Evaluate a universe according to the solutions in the universe table. *)
 let evaluate_universe i =
@@ -85,4 +85,3 @@ let translate_universe info env i =
     | Stream.Error _ -> failwith (Printf.sprintf "Unable to parse universe %s" i_str) in
   (* Evaluate the universe using the solutions of the universe graph. *)
   evaluate_universe i
-

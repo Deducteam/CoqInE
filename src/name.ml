@@ -23,11 +23,11 @@ let full_path info identifier =
 
 (** Push a dummy declaration to declare an identifier globally. *)
 let push_global info identifier =
-  Nametab.push (Nametab.Until 0) (full_path info identifier) (Libnames.VarRef identifier)
+  Nametab.push (Nametab.Until 0) (full_path info identifier) (Globnames.VarRef identifier)
 
 (** Push a dummy declaration to declare an identifier locally. *)
 let push_identifier identifier env =
-  Environ.push_named (identifier, None, Term.mkSort (Term.Prop(Term.Null))) env
+  Environ.push_named (Context.Named.Declaration.of_tuple (identifier, None, Term.mkSort (Term.Prop(Term.Null)))) env
 
 (** Generate a fresh identifier that is different from any constant, inductive
     type, or constructor in the current module, and from any identifier in
@@ -169,5 +169,3 @@ let translate_match_function info env (mind, i) =
   let module_path = Names.mind_modpath mind in
   let label = Names.label_of_id (match_function ind_body.Declarations.mind_typename) in
   translate_module_path info env module_path [label]
-
-
