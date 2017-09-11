@@ -21,51 +21,54 @@ let coq_cast s1 s2 a b t = Dedukti.apps (coq "cast") [s1; s2; a; b; t]
 
 let translate_sort info env s =
   match s with
-  | Prop(Null) -> Sorts.coq_prop
-  | Prop(Pos) -> Sorts.coq_type0
-  | Type(i) -> Sorts.translate_universe info env i
+  | Prop(Null) -> Sorts2.coq_prop
+  | Prop(Pos) -> Sorts2.coq_type0
+  | Type(i) -> Sorts2.translate_universe info env i
 
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
 let rec infer_translate_sort info env a =
 (*  This is wrong; there is no subject reduction in Coq! *)
-(*  let a = Reduction.whd_betadeltaiota env a in*)
+(*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
   | SortType(s) ->
-      Sorts.coq_axiom (translate_sort info env s)
+      Sorts2.coq_axiom (translate_sort info env s)
   | CastType(a, b) ->
       Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env a in
-      let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
-      Sorts.coq_rule s1' s2'
+      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) b in
+      Sorts2.coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
       (* No need to lift the let here. *)
-      infer_translate_sort info (Environ.push_rel (x, Some(u), a) env) b
+      infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) b
   | AtomicType(_) ->
       translate_sort info env (infer_sort info env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
-  let abstract_rel_declaration t (x, u, a) =
+  let abstract_rel_declaration t c =
+    let (x, u, a) = (Context.Rel.Declaration.to_tuple c) in
     match u with
     | None -> Term.mkLambda (x, a, t)
-    | Some(u) -> Term.subst1 u t in
+    | Some(u) -> Vars.subst1 u t in
   List.fold_left abstract_rel_declaration t context
 
 (** Generalize over the variables of [context], eliminating let declarations. *)
 let generalize_rel_context context b =
-  let generalize_rel_declaration b (x, u, a) =
+  let generalize_rel_declaration b c =
+    let (x, u, a) = (Context.Rel.Declaration.to_tuple c) in
     match u with
     | None -> Term.mkProd(x, a, b)
-    | Some(u) -> Term.subst1 u b in
+    | Some(u) -> Vars.subst1 u b in
   List.fold_left generalize_rel_declaration b context
 
 (** Apply the variables of [context] to [t], ignoring let declarations. *)
 let apply_rel_context t context =
-  let apply_rel_declaration (args, i) (x, t, a) =
+  let apply_rel_declaration (args, i) c =
+    let (x, t, a) = (Context.Rel.Declaration.to_tuple c) in
     match t with
     | None -> (Term.mkRel(i) :: args, i + 1)
     | Some(_) -> (args, i + 1) in
@@ -76,8 +79,8 @@ let convertible_sort info env s1 s2 =
   translate_sort info env s1 = translate_sort info env s2
 
 let rec convertible info env a b =
-  let a = Reduction.whd_betadeltaiota env a in
-  let b = Reduction.whd_betadeltaiota env b in
+  let a = Reduction.whd_all env a in
+  let b = Reduction.whd_all env b in
   match Term.kind_of_type a, Term.kind_of_type b with
   | SortType(s1), SortType(s2) ->
       convertible_sort info env s1 s2
@@ -86,7 +89,7 @@ let rec convertible info env a b =
       Error.not_supported "CastType"
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
       convertible info env a1 a2 &&
-      convertible info (Environ.push_rel (x1, None, a1) env) b1 b2
+      convertible info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x1, None, a1)) env) b1 b2
   | LetInType(_), _
   | _, LetInType(_) ->
       assert false
@@ -109,22 +112,33 @@ let make_const mp x =
 (** Use constant declarations instead of named variable declarations for lifted
     terms because fixpoint declarations should be global and could be referred
     to from other files (think Coq.Arith.Even with Coq.Init.Peano.plus). *)
-let push_const_decl env (c, m, a) =
+let push_const_decl env (c, m, const_type) =
   let const_body =
     match m with
     | None -> Undef None
-    | Some m -> Def (from_val m) in
+    | Some m -> Def (Mod_subst.from_val m) in
   let const_body_code =
-    match Cbytegen.compile_constant_body true (Environ.pre_env env) const_body with
+    (** TODO : None does not handle polymorphic types ! *)
+    match Cbytegen.compile_constant_body true (Environ.pre_env env) None const_body with
     | Some code -> code
     | None -> Error.error (Pp.str "compile_constant_body failed")
   in
+  (** TODO : Double check the following *)
+  let const_universes = (Univ.UContext.make (Univ.Instance.empty, Univ.Constraint.empty)) in
+  let const_inline_typing_flags = {
+      check_guarded = false;
+      check_universes = false
+    } in
   let body = {
     const_hyps = [];
     const_body = const_body;
-    const_type = NonPolymorphicType a;
+    const_type = const_type;
     const_body_code = Some (Cemitcodes.from_val const_body_code);
-    const_constraints = Univ.empty_constraint
+    const_polymorphic = false;
+    const_universes = const_universes;
+    const_proj = None;
+    const_inline_code = false;
+    const_typing_flags = const_inline_typing_flags
   } in
   Environ.add_constant c body env
 
@@ -133,23 +147,23 @@ let rec translate_constr ?expected_type info env t =
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
   let t =
     match expected_type with
-    | None -> t
-    | Some(a) ->
+    | None   -> t
+    | Some a ->
         let b = infer_type info env t in
         if convertible info env a b then t else Term.mkCast(t, Term.VMcast, a) in
   match Term.kind_of_term t with
-  | Rel(i) ->
+  | Rel i ->
       (* If it's a let definition, replace by its value. *)
-      let (x, u, _) = Environ.lookup_rel i env in
+      let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
       begin match u with
-      | Some(u) -> translate_constr info env (Term.lift i u)
+      | Some(u) -> translate_constr info env u (**  (Term.lift i u)  *)
       | None -> Dedukti.var (Name.translate_name ~ensure_name:true x)
       end
-  | Var(x) ->
+  | Var x ->
       Dedukti.var (Name.translate_identifier x)
-  | Meta(metavariable) -> Error.not_supported "Meta"
-  | Evar(pexistential) -> Error.not_supported "Evar"
-  | Sort(s) ->
+  | Meta metavariable  -> Error.not_supported "Meta"
+  | Evar pexistential  -> Error.not_supported "Evar"
+  | Sort s ->
       let s' = translate_sort info env s in
       coq_sort s'
   | Cast(t, _, b) ->
@@ -163,58 +177,32 @@ let rec translate_constr ?expected_type info env t =
   | Prod(x, a, b) ->
       let x = Name.fresh_name ~default:"_" info env x in
       let s1' = infer_translate_sort info env a in
-      let s2' = infer_translate_sort info (Environ.push_rel (x, None, a) env) b in
+      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) b in
       let x' = Name.translate_name x in
       let a' = translate_constr info env a in
       let a'' = translate_types info env a in
-      let b' = translate_constr info (Environ.push_rel (x, None, a) env) b in
+      let b' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) b in
       coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
       let x = Name.fresh_name ~default:"_" info env x in
       let x' = Name.translate_name x in
       let a'' = translate_types info env a in
-      let t' = translate_constr info (Environ.push_rel (x, None, a) env) t in
+      let t' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) t in
       Dedukti.lam (x', a'') t'
   | LetIn(x, u, a, t) ->
       let env, u = lift_let info env x u a in
-      translate_constr info (Environ.push_rel (x, Some(u), a) env) t
+      translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) t
   | App(t, args) ->
       let a = infer_type info env t in
       let translate_app (t', a) u =
-        let _, c, d = Term.destProd (Reduction.whd_betadeltaiota env a) in
+        let _, c, d = Term.destProd (Reduction.whd_all env a) in
         let u' = translate_constr ~expected_type:c info env u in
-        (Dedukti.app t' u', Term.subst1 u d) in
+        (Dedukti.app t' u', Vars.subst1 u d) in
       let t' = translate_constr info env t in
       fst (Array.fold_left translate_app (t', a) args)
-  | Const(c) ->
-      Dedukti.var(Name.translate_constant info env c)
-  | Ind(i) ->
-      Dedukti.var(Name.translate_inductive info env i)
-  | Construct(c) ->
-      Dedukti.var(Name.translate_constructor info env c)
-  | Case(case_info, return_type, matched, branches) ->
-      let ind = case_info.ci_ind in
-      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
-      let n_params = mind_body.Declarations.mind_nparams in
-      let n_reals = ind_body.Declarations.mind_nrealargs in
-      let _, ind_args = Inductive.find_inductive env (infer_type info env matched) in
-      let arity = Inductive.type_of_inductive env (mind_body, ind_body) in
-      let params, reals = Util.list_chop n_params ind_args in
-      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
-      let return_sort = infer_sort info (Environ.push_rel_context context env) end_type in
-      let match_function' = Dedukti.var (Name.translate_match_function info env ind) in
-      (* Translate params using expected types to make sure we use proper casts. *)
-      let translate_param (params', a) param =
-        let _, c, d = Term.destProd (Reduction.whd_betadeltaiota env a) in
-        let param' = translate_constr ~expected_type:c info env param in
-        (param' :: params', Term.subst1 param d) in
-      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
-      let reals' = List.map (translate_constr info env) reals in
-      let return_sort' = translate_sort info env return_sort in
-      let return_type' = translate_constr info env return_type in
-      let matched' = translate_constr info env matched in
-      let branches' = Array.to_list (Array.map (translate_constr info env) branches) in
-      Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
+  | Const     (kn, univ_instance) -> Dedukti.var(Name.translate_constant    info env kn)
+  | Ind       (kn, univ_instance) -> Dedukti.var(Name.translate_inductive   info env kn)
+  | Construct (kn, univ_instance) -> Dedukti.var(Name.translate_constructor info env kn)
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
       let n = Array.length names in
       let env, fix_declarations =
@@ -223,6 +211,33 @@ let rec translate_constr ?expected_type info env t =
       let env = Array.fold_left (fun env declaration ->
         Environ.push_rel declaration env) env fix_declarations in
       translate_constr info env (Term.mkRel (n - i))
+(**
+  | Case(case_info, return_type, matched, branches) ->
+      let ind = case_info.ci_ind in
+      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
+      let n_params = mind_body.Declarations.mind_nparams in
+      let n_reals = ind_body.Declarations.mind_nrealargs in
+      let _, ind_args = Inductive.find_inductive env (infer_type info env matched) in
+      (** Somehow get a Univ.Instance.t instead of the "true" next line.  *)
+      let arity = Inductive.type_of_inductive env ((mind_body, ind_body), true) in
+      let params, reals = Util.list_chop n_params ind_args in
+      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
+      let return_sort = infer_sort info (Environ.push_rel_context context env) end_type in
+      let match_function' = Dedukti.var (Name.translate_match_function info env ind) in
+      (* Translate params using expected types to make sure we use proper casts. *)
+      let translate_param (params', a) param =
+        let _, c, d = Term.destProd (Reduction.whd_all env a) in
+        let param' = translate_constr ~expected_type:c info env param in
+        (param' :: params', Vars.subst1 param d) in
+      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
+      let reals' = List.map (translate_constr info env) reals in
+      let return_sort' = translate_sort info env return_sort in
+      let return_type' = translate_constr info env return_type in
+      let matched' = translate_constr info env matched in
+      let branches' = Array.to_list (Array.map (translate_constr info env) branches) in
+      Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
+*)
+  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case"
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
 
 (** Translate the Coq type [a] as a Dedukti type. *)
@@ -238,11 +253,11 @@ and translate_types info env a =
       let x = Name.fresh_name info ~default:"_" env x in
       let x' = Name.translate_name x in
       let a' = translate_types info env a in
-      let b' = translate_types info (Environ.push_rel (x, None, a) env) b in
+      let b' = translate_types info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
       let env, u = lift_let info env x u a in
-      translate_constr info (Environ.push_rel (x, Some(u), a) env) b
+      translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) b
   | AtomicType(_) ->
       (* Fall back on the usual translation of types. *)
       let s' = infer_translate_sort info env a in
@@ -262,7 +277,8 @@ and lift_let info env x u a =
   let u_closed' = translate_constr info global_env u_closed in
   Dedukti.print info.out (Dedukti.definition false y' a_closed' u_closed');
   let yconst = make_const info.module_path y in
-  let env = push_const_decl env (yconst, Some(u_closed), a_closed) in
+  let env =
+    push_const_decl env (yconst, Some(u_closed), Declarations.RegularArity a_closed) in
   env, apply_rel_context (Term.mkConst yconst) rel_context
 
 and lift_fix info env names types bodies rec_indices =
@@ -284,9 +300,10 @@ and lift_fix info env names types bodies rec_indices =
   let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
   let return_types = Array.map snd contexts_return_types in
-  let ind_applieds = Array.map (fun context -> let (_, _, a) = List.hd context in a) contexts in
+  let ind_applieds = Array.map (fun context -> let (_, _, a) = Context.Rel.Declaration.to_tuple (List.hd context) in a) contexts in
   let inds_args = Array.map (Inductive.find_inductive env) ind_applieds in
-  let inds = Array.map fst inds_args in
+  let pinds = Array.map fst inds_args in
+  let inds = Array.map fst pinds in
   let ind_args = Array.map snd inds_args in
   let ind_specifs = Array.map (Inductive.lookup_mind_specif env) inds in
   let arity_contexts = Array.map (fun ind_specif -> fst (Inductive.mind_arity (snd ind_specif))) ind_specifs in
@@ -383,9 +400,9 @@ and translate_rel_context info env context =
         let x = Name.fresh_name ~default:"_" info env x in
         let x' = Name.translate_name x in
         let a' = translate_types info env a in
-        (Environ.push_rel (x, u, a) env, (x', a') :: translated)
+        (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, u, a)) env, (x', a') :: translated)
     | Some(u) ->
-        (Environ.push_rel (x, Some(u), a) env, translated) in
+        (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env, translated) in
   let env, translated = List.fold_right translate_rel_declaration context (env, []) in
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)

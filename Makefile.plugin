@@ -4,7 +4,7 @@ src/dedukti.ml
 src/error.ml
 src/info.ml
 src/name.ml
-src/sorts.ml4
+src/sorts2.ml4
 src/terms.ml
 src/inductives.ml
 src/modules.ml
