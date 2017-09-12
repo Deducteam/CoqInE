@@ -8,11 +8,6 @@ open Info
     - [inductive_body] : a single inductive type definition,
       containing a name, an arity, and a list of constructor names and types **)
 
-let get_inductive_arity_sort ind_arity =
-  match ind_arity with
-  | Monomorphic(mono_ind_arity) -> mono_ind_arity.mind_sort
-  | Polymorphic(poly_arity) -> Term.Type(poly_arity.poly_level)
-
 (** Translate the i-th inductive type in [mind_body]. *)
 let translate_inductive info env label mind_body i =
   let ind_body = mind_body.mind_packets.(i) in (* Body of the current inductive type *)
@@ -21,7 +16,9 @@ let translate_inductive info env label mind_body i =
   (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
   let name = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
-  let arity_sort = get_inductive_arity_sort ind_body.mind_arity in
+  let arity_sort = match ind_body.mind_arity with
+    | RegularArity ria -> ria.mind_sort
+    | TemplateArity _ -> Error.not_supported "TemplateArity" in
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
   let name' = Name.translate_element_name info env (Names.label_of_id name) in
   let arity' = Terms.translate_types info env arity in
@@ -39,7 +36,7 @@ let translate_constructors info env label mind_body i =
   (* cj : ||p1 : P1 -> ... -> pr : Pr -> yj1 : B1 -> ... -> yjkj : Bjkj -> I p1 ... pr uj1 ... ujn|| *)
   let cons_names = ind_body.mind_consnames in
   (* Substitute the inductive types as specified in the Coq code. *)
-  let cons_types = Array.map (Term.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_user_lc in
+  let cons_types = Array.map (Vars.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_user_lc in
   let cons_names' = Array.map (fun cons_name -> Name.translate_element_name info env (Names.label_of_id cons_name)) cons_names in
   let cons_types' = Array.map (Terms.translate_types info env) cons_types in
   for j = 0 to n_cons - 1 do
@@ -63,7 +60,7 @@ let translate_match info env label mind_body i =
   let cons_names = ind_body.mind_consnames in
   
   (* Use the normalized types in the rest. *)
-  let cons_types = Array.map (Term.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_nf_lc in
+  let cons_types = Array.map (Vars.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_nf_lc in
   
   (* Translate the match function. *)
   (* match_I : |p1| : ||P1|| -> ... |pr| : ||Pr|| ->

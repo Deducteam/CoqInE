@@ -97,12 +97,12 @@ and translate_structure_body info env sb =
 
 and translate_structure_field_body info env (label, sfb) =
   match sfb with
-  | SFBconst(cb) -> translate_constant_body info env label cb
-  | SFBmind(mib) ->
+  | SFBconst cb  -> translate_constant_body info env label cb
+  | SFBmind mib  ->
     if not mib.mind_finite
     then Error.warning (str "Ignoring coinductive " ++ Names.pr_label label)
     else translate_mutual_inductive_body info env label mib
-  | SFBmodule(mb) ->
+  | SFBmodule mb ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in
       translate_module_body info env mb
   | SFBmodtype(_) -> ()

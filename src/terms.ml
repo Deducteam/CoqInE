@@ -156,7 +156,7 @@ let rec translate_constr ?expected_type info env t =
       (* If it's a let definition, replace by its value. *)
       let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
       begin match u with
-      | Some(u) -> translate_constr info env u (**  (Term.lift i u)  *)
+      | Some(u) -> translate_constr info env (Vars.lift i u)
       | None -> Dedukti.var (Name.translate_name ~ensure_name:true x)
       end
   | Var x ->
@@ -239,6 +239,7 @@ let rec translate_constr ?expected_type info env t =
 *)
   | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case"
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
+  | Proj (_,_) -> Error.not_supported "Proj"
 
 (** Translate the Coq type [a] as a Dedukti type. *)
 and translate_types info env a =
@@ -312,7 +313,7 @@ and lift_fix info env names types bodies rec_indices =
   let types2 = Array.init n (fun i ->
     generalize_rel_context contexts.(i) (
     generalize_rel_context arity_contexts.(i) (
-    Term.mkArrow ind_applied_arities.(i) (Term.lift (List.length arity_contexts.(i) + 1) return_types.(i))))) in
+    Term.mkArrow ind_applied_arities.(i) (Vars.lift (List.length arity_contexts.(i) + 1) return_types.(i))))) in
   let types3 = types in
   let rel_context = Environ.rel_context env in
   let types1_closed = Array.map (generalize_rel_context rel_context) types1 in
@@ -321,9 +322,9 @@ and lift_fix info env names types bodies rec_indices =
   let const1 = Array.map (fun name -> make_const info.module_path name) fix_names1 in
   let const2 = Array.map (fun name -> make_const info.module_path name) fix_names2 in
   let const3 = Array.map (fun name -> make_const info.module_path name) fix_names3 in
-  let name1_declarations = Array.init n (fun j -> (const1.(j), None, types1_closed.(j))) in
-  let name2_declarations = Array.init n (fun j -> (const2.(j), None, types2_closed.(j))) in
-  let name3_declarations = Array.init n (fun j -> (const3.(j), None, types3_closed.(j))) in
+  let name1_declarations = Array.init n (fun j -> (const1.(j), None, Declarations.RegularArity types1_closed.(j))) in
+  let name2_declarations = Array.init n (fun j -> (const2.(j), None, Declarations.RegularArity types2_closed.(j))) in
+  let name3_declarations = Array.init n (fun j -> (const3.(j), None, Declarations.RegularArity types3_closed.(j))) in
   let fix_names1' = Array.map Name.translate_identifier fix_names1 in
   let fix_names2' = Array.map Name.translate_identifier fix_names2 in
   let fix_names3' = Array.map Name.translate_identifier fix_names3 in
@@ -344,12 +345,12 @@ and lift_fix info env names types bodies rec_indices =
     let env, context' = translate_rel_context info (global_env) (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env fix_terms1.(i) in
     let fix_term2' = translate_constr info env fix_terms2.(i) in
-    let ind_args' = List.map (translate_constr info env) (List.map (Term.lift 1) ind_args.(i)) in
+    let ind_args' = List.map (translate_constr info env) (List.map (Vars.lift 1) ind_args.(i)) in
     [(context', Dedukti.apply_context fix_term1' context',
       Dedukti.apps (Dedukti.apply_context fix_term2' context')
         (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))]) in
   let fix_rules2 = Array.init n (fun i ->
-    let cons_arities = Inductive.arities_of_constructors inds.(i) ind_specifs.(i) in
+    let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in
     let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in
     let cons_contexts = Array.map fst cons_contexts_types in
     let cons_types = Array.map snd cons_contexts_types in
@@ -373,13 +374,14 @@ and lift_fix info env names types bodies rec_indices =
   let fix_applieds1 = Array.init n (fun i -> apply_rel_context fix_terms1.(i) rel_context) in
   (* The declarations need to be lifted to account for the displacement. *)
   let fix_declarations1 = Array.init n (fun i ->
-    (names.(i), Some(Term.lift i fix_applieds1.(i)), Term.lift i types.(i))) in
+    Context.Rel.Declaration.of_tuple
+      (names.(i), Some(Vars.lift i fix_applieds1.(i)), Vars.lift i types.(i))) in
   let fix_rules3 = Array.init n (fun i ->
     let env, rel_context' = translate_rel_context info (global_env) rel_context in
     let env = Array.fold_left push_const_decl env name1_declarations in
     let fix_term3' = translate_constr info env fix_terms3.(i) in
-    let env = Array.fold_left (fun env declaration ->
-      Environ.push_rel declaration env) env fix_declarations1 in
+    let env = Array.fold_left (fun env declaration -> Environ.push_rel declaration env)
+                              env fix_declarations1 in
     let body' = translate_constr info env bodies.(i) in
 (*    let env , context' = translate_rel_context info env contexts.(i) in*)
     [(rel_context', Dedukti.apply_context fix_term3' rel_context', body')]) in
@@ -394,7 +396,8 @@ and lift_fix info env names types bodies rec_indices =
 (** Translate the context [x1 : a1, ..., xn : an] into the list
     [x1, ||a1||; ...; x1, ||an||], ignoring let declarations. *)
 and translate_rel_context info env context =
-  let translate_rel_declaration (x, u, a) (env, translated) =
+  let translate_rel_declaration c (env, translated) =
+    let (x, u, a) = Context.Rel.Declaration.to_tuple c in
     match u with
     | None ->
         let x = Name.fresh_name ~default:"_" info env x in
