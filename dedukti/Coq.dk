@@ -42,8 +42,8 @@ def sup : Sort -> Sort -> Sort.
     (rule (sup s1 s2) (sup s3 s4)) reduces to both
     sup (rule s1 s3) (sup (rule s1 s4) (sup (rule s2 s3) (rule s2 s4)))
 and
-    sup (rule s1 s3) (sup (rule s2 s3) (sup (rule s1 s4) (rule s2 s4))) ;)
-
+    sup (rule s1 s3) (sup (rule s2 s3) (sup (rule s1 s4) (rule s2 s4)))
+;)
 
 (; Terms ;)
 

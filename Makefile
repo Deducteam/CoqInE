@@ -1,6 +1,7 @@
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
+VERBOSE=1
 
 MAKEFILE_PLUGIN = Makefile.plugin
 

@@ -17,8 +17,8 @@ let translate_inductive info env label mind_body i =
   let name = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
   let arity_sort = match ind_body.mind_arity with
-    | RegularArity ria -> ria.mind_sort
-    | TemplateArity _ -> Error.not_supported "TemplateArity" in
+    | RegularArity  ria -> ria.mind_sort
+    | TemplateArity ta  -> Term.Type(ta.template_level) in
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
   let name' = Name.translate_element_name info env (Names.label_of_id name) in
   let arity' = Terms.translate_types info env arity in
@@ -69,16 +69,16 @@ let translate_match info env label mind_body i =
        |x1| : ||A1|| -> ... -> |xn| : ||An|| -> x : ||I p1 ... pr x1 ... xn|| -> term s (P |x1| ... |xn| x) *)
   let match_function_name = Name.match_function name in
   let params_context = mind_body.mind_params_ctxt in
-  let arity_real_context, _ = Util.list_chop ind_body.mind_nrealargs_ctxt arity_context in
+  let arity_real_context, _ = Utils.list_chop ind_body.mind_nrealdecls arity_context in
   let ind_applied = Terms.apply_rel_context ind_terms.(i) (arity_real_context @ params_context) in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init n_cons (fun j ->
-    fst (Util.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
+    fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
   let cons_ind_args = Array.map (fun a -> snd (Inductive.find_inductive env a)) cons_types in
   let cons_ind_real_args = Array.init n_cons (fun j ->
-    snd (Util.list_chop n_params cons_ind_args.(j))) in
+    snd (Utils.list_chop n_params cons_ind_args.(j))) in
   let cons_applieds = Array.init n_cons (fun j ->
     Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
   let match_function_name' = Name.translate_identifier match_function_name in
@@ -117,7 +117,7 @@ let translate_match info env label mind_body i =
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let common_context' =
     params_context' @
-    (return_sort_name', Sorts.coq_sort) ::
+    (return_sort_name', Sorts2.coq_sort) ::
     (return_type_name', Dedukti.pies arity_real_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
     cases_context' in
   let match_function_context' = common_context' @ arity_real_context' @ [matched_name', ind_applied'] in

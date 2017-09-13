@@ -15,3 +15,4 @@
 *.depend
 *~
 !dedukti/Coq.dk
+src/.Coqine.aux

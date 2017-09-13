@@ -4,13 +4,12 @@ open Pp
 
 let destination = ref "."
 
-let set_destination dest =
-  destination := dest
+let set_destination dest = destination := dest
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
-  Pp.msgnl (str "Exporting " ++ Libnames.pr_qualid qualid);
+  msg_with Format.std_formatter (str "Exporting " ++ Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
@@ -38,14 +37,15 @@ let translate_qualified_library qualid =
 (** Translate the library referred to by [reference]. *)
 let translate_library reference =
   let loc, qualid = Libnames.qualid_of_reference reference in
-  Library.require_library [loc, qualid] None;
-  Sorts.set_universes (Global.universes ());
+  let lib_loc, lib_path, lib_phys_path = Library.locate_qualified_library qualid in
+  Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] None;
+  Sorts2.set_universes (Global.universes ());
   translate_qualified_library qualid
 
 (** Translate all loaded libraries. **)
 let translate_all () =
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
-  Sorts.set_universes (Global.universes ());
+  Sorts2.set_universes (Global.universes ());
   List.iter translate_qualified_library qualids
 

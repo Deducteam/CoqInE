@@ -3,12 +3,11 @@ S src
 B src
 
 PKG coq.kernel
+PKG coq.lib
 
 PKG coq.config
 PKG coq.engine
 PKG coq.grammar
-PKG coq.kernel
-PKG coq.lib
 PKG coq.library
 PKG coq.ltac
 PKG coq.parsing

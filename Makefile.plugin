@@ -1,5 +1,6 @@
 -R src Dedukti
 -I src
+src/utils.mli
 src/dedukti.ml
 src/error.ml
 src/info.ml
@@ -9,6 +10,7 @@ src/terms.ml
 src/inductives.ml
 src/modules.ml
 src/libraries.ml
+src/utils.ml
 src/commands.ml4
 src/coqine_plugin.mllib
 src/Coqine.v
