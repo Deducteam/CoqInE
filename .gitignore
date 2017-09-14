@@ -15,4 +15,6 @@
 *.depend
 *~
 !dedukti/Coq.dk
-src/.Coqine.aux
+
+src/.*.aux
+test/.*.aux
