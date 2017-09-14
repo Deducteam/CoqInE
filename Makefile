@@ -1,17 +1,21 @@
-COQ_MAKEFILE = coq_makefile
-COQTOP = coqtop
-DKCHECK = dkcheck
+
 VERBOSE=1
 
+COQ_MAKEFILE = coq_makefile VERBOSE = $(VERBOSE)
+COQTOP = coqtop
+DKCHECK = dkcheck
+
+
 MAKEFILE_PLUGIN = Makefile.plugin
+MAKEFILE_GENERATED = Makefile.generated
 
 .PHONY: plugin install test clean
 
 plugin: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
+	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - all .merlin
 
 install: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - install
+	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
 
 test: plugin 
 	make -C test
