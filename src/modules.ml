@@ -66,6 +66,8 @@ let identifiers_of_structure_field_body (label, struct_field_body) =
 let identifiers_of_structure_body structure_body =
   List.concat (List.map identifiers_of_structure_field_body structure_body)
 
+
+              
 (** Modules are organised into:
     - [module_body] (mb): a wrapper around a struct expression
     - [struct_expr_body] (seb): a struct expression, e.g. functor,
@@ -73,7 +75,6 @@ let identifiers_of_structure_body structure_body =
     - [structure_body] (sb): a concrete struct, i.e. a list of fields
     - [structure_field_body] (sfb): a single field declaration, e.g.
       definition, inductive, ... **)
-
 let rec translate_module_body info env mb =
   match mb.mod_expr with
   | Abstract   -> Error.not_supported "Abstract"

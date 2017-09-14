@@ -2,14 +2,19 @@
 
 open Pp
 
+let print m = msg_with Format.std_formatter (m ++ str "\n")
+
 let destination = ref "."
 
-let set_destination dest = destination := dest
+let set_destination dest =
+  print (str "Setting destination: " ++ str dest);
+  destination := dest
+
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
-  msg_with Format.std_formatter (str "Exporting " ++ Libnames.pr_qualid qualid);
+  print (str "Exporting " ++ Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
@@ -48,4 +53,26 @@ let translate_all () =
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
   Sorts2.set_universes (Global.universes ());
   List.iter translate_qualified_library qualids
+
+
+let test () =
+  print (str "Test")
+
+
+let show_universes_constraints () =
+  print (str "");
+  print (str "-----------------------------------------------");
+  print (str "|    Printing global universes constraints    |");
+  print (str "-----------------------------------------------");
+  let universes = UGraph.sort_universes (Global.universes ()) in
+  let register constraint_type j k =
+    match constraint_type with
+    | Univ.Lt -> print (str j ++ str " <  " ++ str k)
+    | Univ.Le -> print (str j ++ str " <= " ++ str k)
+    | Univ.Eq -> print (str j ++ str " == " ++ str k)
+  in
+  UGraph.dump_universes register universes;
+  print (str "-----------------------------------------------");
+  print (str "")
+
 

@@ -1,5 +1,15 @@
--R src Dedukti
+-R src Coqine
 -I src
+CONSTRUCTORS_PLUGIN = "src/coqine_plugin.cma"
+CONSTRUCTORS_PLUGINOPT = "src/coqine_plugin.cmxs"
+src/dedukti.mli
+src/error.mli
+src/info.mli
+src/name.mli
+src/terms.mli
+src/inductives.mli
+src/modules.mli
+src/libraries.mli
 src/utils.mli
 src/dedukti.ml
 src/error.ml
@@ -14,4 +24,3 @@ src/utils.ml
 src/commands.ml4
 src/coqine_plugin.mllib
 src/Coqine.v
-

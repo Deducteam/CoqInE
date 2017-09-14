@@ -1,3 +1,7 @@
+(*i camlp4deps: "grammar/grammar.cma" i*)
+
+DECLARE PLUGIN "coqine_plugin"
+
 
 open Libraries
 open Stdarg
@@ -21,3 +25,11 @@ VERNAC COMMAND EXTEND DeduktiExportAll
   [ translate_all () ]
 END
 
+VERNAC COMMAND EXTEND DeduktiShowUniverses
+| [ "Dedukti" "Show" "Universes" ] ->
+  [ show_universes_constraints () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiTest
+| [ "Dedukti" "Test" ] -> [ test () ]
+END

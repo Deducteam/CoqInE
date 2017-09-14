@@ -1,0 +1,14 @@
+(** Translation of Coq libraries *)
+
+
+val set_destination : string -> unit
+
+val translate_qualified_library : Libnames.qualid -> unit
+
+val translate_library : Libnames.reference -> unit
+
+val translate_all : unit -> unit
+
+val test : unit -> unit
+
+val show_universes_constraints : unit -> unit
