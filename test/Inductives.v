@@ -11,6 +11,6 @@ Inductive eq (A : Type) (x : A) : A -> Type :=
 
 Definition f (A : Type) (x : A) (y : A) (p : eq A x y) : A :=
 match p with
-| eq_refl => x
+| eq_refl _ _ => x
 end.
 
