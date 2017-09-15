@@ -77,11 +77,13 @@ let identifiers_of_structure_body structure_body =
       definition, inductive, ... **)
 let rec translate_module_body info env mb =
   match mb.mod_expr with
-  | Abstract   -> Error.not_supported "Abstract"
+  | Abstract    -> Error.not_supported "Abstract"
   | Algebraic _ -> Error.not_supported "Algebraic"
-  | Struct (NoFunctor struct_body) ->  translate_structure_body info env struct_body
-  | Struct (MoreFunctor _) -> Error.not_supported "Functor"
-  | FullStruct -> Error.not_supported "FullStruct"
+  | Struct mod_sig -> translate_module_signature info env mod_sig
+  | FullStruct     -> translate_module_signature info env mb.mod_type
+and translate_module_signature info env  = function
+  | NoFunctor   struct_body -> translate_structure_body info env struct_body
+  | MoreFunctor _           -> Error.not_supported "Functor"
 (**
 and translate_struct_expr_body info env seb =
   match seb with

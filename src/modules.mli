@@ -20,6 +20,9 @@ val translate_mutual_inductive_body :
 val translate_module_body :
   Info.info -> Environ.env -> Declarations.module_body -> unit
 
+val translate_module_signature :
+  Info.info -> Environ.env -> Declarations.module_signature -> unit
+
 val translate_structure_body :
   Info.info -> Environ.env -> Declarations.structure_body -> unit
 
