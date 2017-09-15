@@ -99,9 +99,6 @@ let escape name =
 
 (** Name translation *)
 
-let coq name =
-  Printf.sprintf "Coq.%s" name
-
 let translate_identifier identifier =
   escape (Names.string_of_id identifier)
 

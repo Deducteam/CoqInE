@@ -33,8 +33,6 @@ val is_alpha_numerical : char -> bool
 val escape : string -> string
 
 
-val coq : string -> string
-
 val translate_identifier : Names.identifier -> string
 
 val translate_name : ?ensure_name:bool -> Names.name -> string

@@ -44,14 +44,14 @@ let translate_library reference =
   let loc, qualid = Libnames.qualid_of_reference reference in
   let lib_loc, lib_path, lib_phys_path = Library.locate_qualified_library qualid in
   Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] None;
-  Sorts2.set_universes (Global.universes ());
+  Tsorts.set_universes (Global.universes ());
   translate_qualified_library qualid
 
 (** Translate all loaded libraries. **)
 let translate_all () =
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
-  Sorts2.set_universes (Global.universes ());
+  Tsorts.set_universes (Global.universes ());
   List.iter translate_qualified_library qualids
 
 

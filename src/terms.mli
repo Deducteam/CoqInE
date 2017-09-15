@@ -4,14 +4,6 @@ val infer_type : 'a -> Environ.env -> Term.constr -> Term.types
 
 val infer_sort : 'a -> Environ.env -> Term.types -> Term.sorts
 
-val coq : string -> Dedukti.term
-
-val coq_type : Dedukti.term -> Dedukti.term
-val coq_term : Dedukti.term -> Dedukti.term -> Dedukti.term
-val coq_sort : Dedukti.term -> Dedukti.term
-val coq_prod : Dedukti.term -> Dedukti.term -> Dedukti.term -> Dedukti.term -> Dedukti.term
-val coq_cast : Dedukti.term -> Dedukti.term -> Dedukti.term -> Dedukti.term -> Dedukti.term -> Dedukti.term
-
 val translate_sort : 'a -> 'b -> Term.sorts -> Dedukti.term
 
 val infer_translate_sort :

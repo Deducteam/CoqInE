@@ -28,11 +28,11 @@ compile:
 
 # Generate the [.dk] files by executing [Test.v]
 export:
-	$(COQTOP) -batch -debug -R ../src Dedukti -l Test
+	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Test
 
 # Generate the dependencies of [.dk] files
 depend:
-	$(DKDEP) -I ../dedukti -v *.dk > .depend
+	$(DKDEP) -v *.dk ../dedukti/*.dk > .depend
 
 # Check and compile the generated [.dk]
 check: ../dedukti/Coq.dko $(DKOS)
@@ -45,7 +45,7 @@ check: ../dedukti/Coq.dko $(DKOS)
 
 clean:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
-	rm -rf *.dk *.dko .depend
+	rm -rf *.dk *.dko .depend .*.aux *.vo
 
 -include .depend
 

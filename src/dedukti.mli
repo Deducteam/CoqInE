@@ -44,3 +44,31 @@ val print_binding : Format.formatter -> var * term -> unit
 val print_binding_context : Format.formatter -> string * 'a -> unit
 val print_context : Format.formatter -> (string * 'a) list -> unit
 val print : Format.formatter -> instruction -> unit
+
+type coq_universe =
+  | Prop
+  | Set
+  | Atom of string
+  | Succ of coq_universe
+  | Max of coq_universe list
+
+val coqify : string -> string
+
+val coq_var : string -> term
+
+val coq_Sort  : term
+val coq_z     : term
+val coq_prop  : term
+val coq_U     : term -> term
+val coq_sort  : term -> term
+val coq_type  : term -> term
+val coq_s     : term -> term
+val coq_term  : term -> term -> term
+val coq_prod  : term -> term -> term -> term -> term
+val coq_cast  : term -> term -> term -> term -> term -> term
+val coq_axiom : term -> term
+val coq_rule  : term -> term -> term
+val coq_sup   : term -> term -> term
+val coq_type0 : term
+
+

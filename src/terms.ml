@@ -2,28 +2,18 @@
 
 open Declarations
 open Term
+open Dedukti
 
 open Info
 
-let infer_type info env t =
-  (Typeops.infer env t).Environ.uj_type
-
-let infer_sort info env a =
-  (Typeops.infer_type env a).Environ.utj_type
-
-let coq x = Dedukti.Var(Name.coq x)
-
-let coq_type s = Dedukti.apps (coq "U") [s]
-let coq_term s a = Dedukti.apps (coq "T") [s; a]
-let coq_sort s = Dedukti.apps (coq "sort") [s]
-let coq_prod s1 s2 a b = Dedukti.apps (coq "prod") [s1; s2; a; b]
-let coq_cast s1 s2 a b t = Dedukti.apps (coq "cast") [s1; s2; a; b; t]
+let infer_type info env t = (Typeops.infer      env t).Environ.uj_type
+let infer_sort info env a = (Typeops.infer_type env a).Environ.utj_type
 
 let translate_sort info env s =
   match s with
-  | Prop(Null) -> Sorts2.coq_prop
-  | Prop(Pos) -> Sorts2.coq_type0
-  | Type(i) -> Sorts2.translate_universe info env i
+  | Term.Prop(Null) -> coq_prop
+  | Prop(Pos) -> coq_type0
+  | Type(i) -> Tsorts.translate_universe info env i
 
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
@@ -33,14 +23,14 @@ let rec infer_translate_sort info env a =
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
   | SortType(s) ->
-      Sorts2.coq_axiom (translate_sort info env s)
+      coq_axiom (translate_sort info env s)
   | CastType(a, b) ->
       Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env a in
       let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) b in
-      Sorts2.coq_rule s1' s2'
+      coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
       (* No need to lift the let here. *)
       infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) b
@@ -211,16 +201,15 @@ let rec translate_constr ?expected_type info env t =
       let env = Array.fold_left (fun env declaration ->
         Environ.push_rel declaration env) env fix_declarations in
       translate_constr info env (Term.mkRel (n - i))
-(**
   | Case(case_info, return_type, matched, branches) ->
       let ind = case_info.ci_ind in
       let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
       let n_params = mind_body.Declarations.mind_nparams in
       let n_reals = ind_body.Declarations.mind_nrealargs in
-      let _, ind_args = Inductive.find_inductive env (infer_type info env matched) in
+      let pind, ind_args = Inductive.find_inductive env (infer_type info env matched) in
       (** Somehow get a Univ.Instance.t instead of the "true" next line.  *)
-      let arity = Inductive.type_of_inductive env ((mind_body, ind_body), true) in
-      let params, reals = Util.list_chop n_params ind_args in
+      let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
+      let params, reals = Utils.list_chop n_params ind_args in
       let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
       let return_sort = infer_sort info (Environ.push_rel_context context env) end_type in
       let match_function' = Dedukti.var (Name.translate_match_function info env ind) in
@@ -236,8 +225,7 @@ let rec translate_constr ?expected_type info env t =
       let matched' = translate_constr info env matched in
       let branches' = Array.to_list (Array.map (translate_constr info env) branches) in
       Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
-*)
-  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case"
+(*  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case" *)
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Proj (_,_) -> Error.not_supported "Proj"
 

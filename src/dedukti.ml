@@ -123,7 +123,7 @@ let print out instruction =
       let print_args out = List.iter (Format.fprintf out " %s") in
       Format.fprintf out "@[#%s%a.@]" cmd print_args args
   | Declaration(definable, x, a) ->
-     Format.fprintf out "@[<v2>%s%a :@ @ %a.@]" (if definable then "def " else "") print_var x print_term a
+     Format.fprintf out "@[<v2>%s%a :@ %a.@]" (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
       Format.fprintf out "@[<v2>%s %a :@ @ %a :=@ @ %a.@]"
          (if opaque then "thm" else "def")
@@ -133,4 +133,36 @@ let print out instruction =
   end;
   Format.pp_print_newline out ();
   Format.pp_print_newline out ()
+
+
+type coq_universe =
+  | Prop
+  | Set
+  | Atom of string
+  | Succ of coq_universe
+  | Max of coq_universe list
+
+let coqify name = Printf.sprintf "Coq.%s" name
+
+let coq_var  x = Var(coqify x)
+
+let coq_Sort = coq_var "Sort"
+
+let coq_z    =      coq_var "z"
+let coq_s i  = app (coq_var "s") i
+
+let coq_prop   =       coq_var "prop"
+let coq_type i = app  (coq_var "type" ) i
+let coq_type0  = coq_type coq_z
+
+let coq_U    s           = app  (coq_var "U"    ) s
+let coq_term s  a        = apps (coq_var "T"    ) [s; a]
+let coq_sort s           = app  (coq_var "sort" ) s
+let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [s1; s2; a; b]
+let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [s1; s2; a; b; t]
+
+let coq_axiom s1         = apps (coq_var "axiom") [s1]
+let coq_rule s1 s2       = apps (coq_var "rule" ) [s1; s2]
+let coq_sup  s1 s2       = apps (coq_var "sup"  ) [s1; s2]
+
 

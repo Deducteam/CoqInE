@@ -113,15 +113,15 @@ let translate_match info env label mind_body i =
   let cons_applieds' = Array.mapi (fun j -> Terms.translate_constr info cons_real_envs.(j)) cons_applieds in
   (* Combine the above. *)
   let case_types' = Array.init n_cons (fun j -> Dedukti.pies cons_real_contexts'.(j)
-    (Terms.coq_term return_sort' (Dedukti.apps return_type' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
+    (Dedukti.coq_term return_sort' (Dedukti.apps return_type' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let common_context' =
     params_context' @
-    (return_sort_name', Sorts2.coq_sort) ::
-    (return_type_name', Dedukti.pies arity_real_context' (Dedukti.arr ind_applied' (Terms.coq_type return_sort'))) ::
+    (return_sort_name', Dedukti.coq_Sort) ::
+    (return_type_name', Dedukti.pies arity_real_context' (Dedukti.arr ind_applied' (Dedukti.coq_U return_sort'))) ::
     cases_context' in
   let match_function_context' = common_context' @ arity_real_context' @ [matched_name', ind_applied'] in
-  let match_function_type' = Terms.coq_term return_sort'
+  let match_function_type' = Dedukti.coq_term return_sort'
     (Dedukti.app (Dedukti.apply_context return_type' arity_real_context') matched') in
   Dedukti.print info.out (Dedukti.declaration true match_function_name' (Dedukti.pies match_function_context' match_function_type'));
   let match_function_applied' =
