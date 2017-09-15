@@ -2,17 +2,14 @@ Require Coqine.
 
 Dedukti Set Destination "".
 
-Dedukti Test.
-
-Definition id1 := fun (A : Type) (x : A) => x.
+Require Coq.Init.Logic.
+Require Coq.Init.Datatypes.
 
 Dedukti Show Universes.
 
-Require Identity.
-
-Dedukti Export All.
 
 (**
 
+Dedukti Export All.
 
 *)

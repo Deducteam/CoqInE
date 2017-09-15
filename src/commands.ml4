@@ -30,6 +30,11 @@ VERNAC COMMAND EXTEND DeduktiShowUniverses
   [ show_universes_constraints () ]
 END
 
+VERNAC COMMAND EXTEND DeduktiShowSortedUniverses
+| [ "Dedukti" "Show" "Sorted" "Universes" ] ->
+  [ show_sorted_universes_constraints () ]
+END
+
 VERNAC COMMAND EXTEND DeduktiTest
 | [ "Dedukti" "Test" ] -> [ test () ]
 END

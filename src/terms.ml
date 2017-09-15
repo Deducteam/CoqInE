@@ -235,7 +235,7 @@ and translate_types info env a =
   match Term.kind_of_type a with
   | SortType(s) ->
       let s' = translate_sort info env s in
-      coq_type s'
+      coq_U s'
   | CastType(a, b) ->
       Error.not_supported "CastType"
   | ProdType(x, a, b) ->

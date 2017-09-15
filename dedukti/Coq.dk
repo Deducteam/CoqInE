@@ -22,13 +22,14 @@ def axiom : Sort -> Sort.
 [i] axiom (type i) --> type (s i).
 
 def rule : Sort -> Sort -> Sort.
-[s1] rule s1 prop --> prop.
-[j] rule prop (type j) --> type j.
-[i,j] rule (type i) (type j) --> type (max i j).
+[s1]  rule s1       prop         --> prop.
+[j]   rule prop     (type z)     --> type (s z).
+[j]   rule prop     (type (s j)) --> type (s j).
+[i,j] rule (type i) (type j)     --> type (max i j).
 
 def sup : Sort -> Sort -> Sort.
-[s1] sup s1 prop --> s1.
-[j] sup prop (type j) --> type j.
+[s1]  sup s1       prop     --> s1.
+[j]   sup prop     (type j) --> type j.
 [i,j] sup (type i) (type j) --> type (max i j).
 
 (; Canonicity rules ;)
@@ -89,6 +90,11 @@ def prod : s1 : Sort -> s2 : Sort -> a : U s1 -> (T s1 a -> U s2) -> U (rule s1 
 
 def join : s1 : Sort -> s2 : Sort -> U s1 -> U s2 -> U (sup s1 s2).
 
+[i]
+    join _ _ i i
+--> i.
+
+
 [s1,s2]
     join _ _ (sort s1) (sort s2)
 --> sort (sup s1 s2).
@@ -100,6 +106,7 @@ def join : s1 : Sort -> s2 : Sort -> U s1 -> U s2 -> U (sup s1 s2).
 [s1,s2,s3,a,b,c]
     join _ _ (prod s1 s2 a b) (prod s1 s3 a c)
 --> prod s1 (sup s2 s3) a (x : T s1 a => join s2 s3 (b x) (c x)).
+
 
 def cast : s1 : Sort -> s2 : Sort -> a : U s1 -> b : U s2 -> T s1 a -> T (sup s1 s2) (join s1 s2 a b).
 

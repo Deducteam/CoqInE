@@ -153,7 +153,7 @@ let coq_s i  = app (coq_var "s") i
 
 let coq_prop   =       coq_var "prop"
 let coq_type i = app  (coq_var "type" ) i
-let coq_type0  = coq_type coq_z
+let coq_type0  = coq_type (coq_s coq_z)
 
 let coq_U    s           = app  (coq_var "U"    ) s
 let coq_term s  a        = apps (coq_var "T"    ) [s; a]

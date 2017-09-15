@@ -6,7 +6,8 @@ Require Coqine.
 Dedukti Set Destination "".
 
 Require
-
+  Polymorph
+(*
   Identity
   ImportA
   ImportB
@@ -19,8 +20,8 @@ Require
   NestedModules
   NestedLibraries
   Reflexivity
-
-  Coq.Logic.Berardi
+*)
+(*  Coq.Logic.Berardi*)
 (*  Coq.Logic.ChoiceFacts*)
 (*  Coq.Logic.ClassicalChoice*)
 (*  Coq.Logic.ClassicalDescription*)
@@ -49,6 +50,10 @@ Require
 (*  Coq.Logic.RelationalChoice*)
 (*  Coq.Logic.SetIsType*)
 .
+
+Dedukti Show Universes.
+
+Dedukti Show Sorted Universes.
 
 Dedukti Export All.
 

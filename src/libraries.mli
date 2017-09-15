@@ -12,3 +12,5 @@ val translate_all : unit -> unit
 val test : unit -> unit
 
 val show_universes_constraints : unit -> unit
+
+val show_sorted_universes_constraints : unit -> unit
