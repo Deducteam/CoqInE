@@ -1,10 +1,10 @@
 (** Translation of Coq terms *)
 
-val infer_type : 'a -> Environ.env -> Term.constr -> Term.types
+val infer_type : Environ.env -> Term.constr -> Term.types
 
-val infer_sort : 'a -> Environ.env -> Term.types -> Term.sorts
+val infer_sort : Environ.env -> Term.types -> Term.sorts
 
-val translate_sort : 'a -> 'b -> Term.sorts -> Dedukti.term
+val translate_sort : Term.sorts -> Dedukti.term
 
 val infer_translate_sort :
   Info.info -> Environ.env -> Term.types -> Dedukti.term

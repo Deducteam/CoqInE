@@ -49,7 +49,7 @@ type coq_universe =
   | Prop
   | Set
   | Atom of string
-  | Succ of coq_universe
+  | Succ of coq_universe * int
   | Max of coq_universe list
 
 val coqify : string -> string
@@ -58,17 +58,26 @@ val coq_var : string -> term
 
 val coq_Sort  : term
 val coq_z     : term
-val coq_prop  : term
-val coq_U     : term -> term
-val coq_sort  : term -> term
-val coq_type  : term -> term
 val coq_s     : term -> term
-val coq_term  : term -> term -> term
-val coq_prod  : term -> term -> term -> term -> term
-val coq_cast  : term -> term -> term -> term -> term -> term
+val coq_univ_index : int -> term
+val coq_prop  : term
+val coq_set   : term
+val coq_type  : term -> term
+val coq_univ  : int -> term
 val coq_axiom : term -> term
+val coq_axioms: term -> int -> term
 val coq_rule  : term -> term -> term
 val coq_sup   : term -> term -> term
-val coq_type0 : term
+val coq_U     : term -> term
+val coq_term  : term -> term -> term
+val coq_sort  : term -> term
+val coq_prod  : term -> term -> term -> term -> term
+val coq_cast  : term -> term -> term -> term -> term -> term
 
+val start_debug : unit -> unit
+val stop_debug : unit -> unit
 
+val debug_dk_term : term -> unit
+val debug_coq_term : Term.constr -> unit
+val debug_coq_type : Term.types -> unit
+val debug_string : string -> unit

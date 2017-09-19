@@ -14,31 +14,44 @@ def max : Nat -> Nat -> Nat.
 (; Sorts ;)
 
 Sort : Type.
+
 prop : Sort.
+set  : Sort.
 type : Nat -> Sort.
 
 def axiom : Sort -> Sort.
-[] axiom prop --> type (s z).
+[]  axiom prop     --> axiom set.
+[]  axiom set      --> type z.
 [i] axiom (type i) --> type (s i).
 
 def rule : Sort -> Sort -> Sort.
-[s1]  rule s1       prop         --> prop.
-[j]   rule prop     (type z)     --> type (s z).
-[j]   rule prop     (type (s j)) --> type (s j).
-[i,j] rule (type i) (type j)     --> type (max i j).
+[]    rule prop     set      --> set.
+[s1]  rule s1       prop     --> prop.
+[]    rule set      set      --> set.
+[i]   rule set      (type i) --> type i.
+[i]   rule (type i) set      --> type i.
+[i,j] rule (type i) (type j) --> type (max i j).
 
 def sup : Sort -> Sort -> Sort.
-[s1]  sup s1       prop     --> s1.
-[j]   sup prop     (type j) --> type j.
+[] sup prop prop --> prop.
+[] sup set  set  --> set.
+[] sup prop set  --> type z. (;  ;)
+[] sup set  prop --> type z.
+[i]   sup set      (type i) --> type i.
+[i]   sup prop     (type i) --> type i.
+[i]   sup (type i) set      --> type i.
+[i]   sup (type i) prop     --> type i.
 [i,j] sup (type i) (type j) --> type (max i j).
 
 (; Canonicity rules ;)
 
 [s1] sup s1 s1 --> s1.
-[s1,s2,s3] sup (sup s1 s2) s3 --> sup s1 (sup s2 s3).
 [s1,s2] axiom (sup s1 s2) --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] sup (sup s1 s2) s3 --> sup s1 (sup s2 s3).
 [s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
 [s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+
+
 (; /!\ Confluence broken: the term
     (rule (sup s1 s2) (sup s3 s4)) reduces to both
     sup (rule s1 s3) (sup (rule s1 s4) (sup (rule s2 s3) (rule s2 s4)))
@@ -94,7 +107,6 @@ def join : s1 : Sort -> s2 : Sort -> U s1 -> U s2 -> U (sup s1 s2).
     join _ _ i i
 --> i.
 
-
 [s1,s2]
     join _ _ (sort s1) (sort s2)
 --> sort (sup s1 s2).
@@ -121,4 +133,12 @@ def cast : s1 : Sort -> s2 : Sort -> a : U s1 -> b : U s2 -> T s1 a -> T (sup s1
 [s1,s2,s3,a,b,c,m]
     cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m
 --> x : T s1 a => cast s2 s3 (b x) (c x) (m x).
+
+
+(; Aliases for readibility ;)
+
+def Prop  := U prop.
+def Set   := U set.
+def Type0 := U (type z).
+def Type1 := U (type (s z)).
 

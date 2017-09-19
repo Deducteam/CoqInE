@@ -1,5 +1,5 @@
 
-VERBOSE=1
+VERBOSE=0
 
 COQ_MAKEFILE = coq_makefile VERBOSE = $(VERBOSE)
 COQTOP = coqtop
@@ -19,6 +19,9 @@ install: $(MAKEFILE_PLUGIN)
 
 test: plugin 
 	make -C test
+
+debug: plugin 
+	make -C test debug
 
 dedukti/Coq.dko: dedukti/Coq.dk
 	cd dedukti && $(DKCHECK) -e -nl Coq.dk

@@ -15,10 +15,13 @@ open Dedukti
 let lexer = Genlex.make_lexer ["."; "+"; "("; ","; ")"]
 
 let rec parse_universe = parser
+  | [< 'Ident "Set"; 'Kwd "+"; 'Int i >] -> Succ (Set, i)
   | [< 'Ident "Set" >] -> Set
+  | [< 'Ident "Prop"; 'Kwd "+"; 'Int i >] -> Succ (Prop, i)
   | [< 'Ident "Prop" >] -> Prop
-  | [< 'Kwd "("; i = parse_universe; 'Kwd ")"; 'Kwd "+"; 'Int 1 >] -> Succ(i)
+  | [< 'Kwd "("; u = parse_universe; 'Kwd ")"; 'Kwd "+"; 'Int i >] -> Succ (u,i)
   | [< 'Ident "max"; 'Kwd "("; i_list = parse_universes; 'Kwd ")" >] -> Max(i_list)
+  | [< a = parse_atom; 'Kwd "+"; 'Int i >] -> Succ (Atom(a),i)
   | [< a = parse_atom >] -> Atom(a)
 and parse_universes = parser
   | [< i = parse_universe; 'Kwd ","; i_list = parse_universes >] -> i :: i_list

@@ -139,7 +139,7 @@ type coq_universe =
   | Prop
   | Set
   | Atom of string
-  | Succ of coq_universe
+  | Succ of coq_universe * int
   | Max of coq_universe list
 
 let coqify name = Printf.sprintf "Coq.%s" name
@@ -150,19 +150,58 @@ let coq_Sort = coq_var "Sort"
 
 let coq_z    =      coq_var "z"
 let coq_s i  = app (coq_var "s") i
+let rec coq_univ_index i = if i == 0 then coq_z else coq_s (coq_univ_index (i-1))
 
-let coq_prop   =       coq_var "prop"
-let coq_type i = app  (coq_var "type" ) i
-let coq_type0  = coq_type (coq_s coq_z)
+let coq_prop   =      coq_var "prop"
+let coq_set    =      coq_var "set"
+let coq_type i = app (coq_var "type" ) i
+let coq_univ i = coq_type (coq_univ_index i)
 
-let coq_U    s           = app  (coq_var "U"    ) s
+let coq_axiom s          = app  (coq_var "axiom") s
+let rec coq_axioms s i   = if i == 0 then s else coq_axiom (coq_axioms s (i-1))
+let coq_rule s1 s2       = apps (coq_var "rule" ) [s1; s2]
+let coq_sup  s1 s2       = apps (coq_var "sup"  ) [s1; s2]
+
+let coq_U = function
+  | Var "set"  -> coq_var "Set"
+  | Var "prop" -> coq_var "Prop"
+  | App( (Var "type"), (Var "z") ) -> coq_var "Type0"
+  | App( (Var "type"), (App( (Var "s"), (Var "z")))) -> coq_var "Type1"
+  | s -> app (coq_var "U") s
 let coq_term s  a        = apps (coq_var "T"    ) [s; a]
 let coq_sort s           = app  (coq_var "sort" ) s
 let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [s1; s2; a; b]
 let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [s1; s2; a; b; t]
 
-let coq_axiom s1         = apps (coq_var "axiom") [s1]
-let coq_rule s1 s2       = apps (coq_var "rule" ) [s1; s2]
-let coq_sup  s1 s2       = apps (coq_var "sup"  ) [s1; s2]
+
+let debug_flag = ref false
+
+let std = Format.std_formatter
+
+let start_debug () = debug_flag := true
+let  stop_debug () = debug_flag := false
 
 
+let debug_dk_term t =
+  if !debug_flag then begin
+    print_term std t;
+    Pp.msg_with std (Pp.str "\n")
+    end
+
+let debug_coq_term t =
+  if !debug_flag then begin
+    Pp.msg_with std (Printer.safe_pr_constr t);
+    Pp.msg_with std (Pp.str "\n")
+    end
+
+let debug_coq_type t =
+  if !debug_flag then begin
+    Pp.msg_with std (Printer.pr_type t);
+    Pp.msg_with std (Pp.str "\n")
+    end
+
+let debug_string s =
+  if !debug_flag then begin
+    Pp.msg_with std (Pp.str s);
+    Pp.msg_with std (Pp.str "\n")
+    end

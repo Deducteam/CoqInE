@@ -22,6 +22,11 @@ test: compile export depend
 #	Call make again so that it include the updated depend file
 	$(MAKE) check
 
+# Debugging target
+debug: compile export-debug depend
+	$(MAKE) check-debug
+
+
 # Compile the local [.v] files that are not part of the stdlib
 compile:
 	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
@@ -29,13 +34,18 @@ compile:
 # Generate the [.dk] files by executing [Test.v]
 export:
 	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Test
+export-debug:
+	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Debug
+
+# Check and compile the generated [.dk]
+check: ../dedukti/Coq.dko $(DKOS)
+check-debug: ../dedukti/Coq.dko Top__Debuglib.dko
+
 
 # Generate the dependencies of [.dk] files
 depend:
 	$(DKDEP) -v *.dk ../dedukti/*.dk > .depend
 
-# Check and compile the generated [.dk]
-check: ../dedukti/Coq.dko $(DKOS)
 
 ../dedukti/Coq.dko:
 	make -C .. dedukti/Coq.dko

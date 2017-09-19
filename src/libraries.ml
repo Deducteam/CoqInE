@@ -55,9 +55,6 @@ let translate_all () =
   List.iter translate_qualified_library qualids
 
 
-let test () =
-  print (str "Test")
-
 let print_universes_constraints universes =
   let register constraint_type j k =
     match constraint_type with
@@ -84,3 +81,10 @@ let show_sorted_universes_constraints () =
   print_universes_constraints (UGraph.sort_universes (Global.universes ()));
   print (str "-----------------------------------------------");
   print (str "")
+
+
+let debug () =
+  print (str "Debug")
+
+let test () =
+  print (str "Test")

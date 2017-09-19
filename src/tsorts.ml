@@ -3,8 +3,6 @@
 open Pp
 open Dedukti
 
-let rec make_coq_univ n =
-  if n = 0 then coq_type0 else coq_axiom (make_coq_univ (n - 1))
 
 (** Maping from the string reresentation of abstract atomic universes to
     concrete levels. *)
@@ -25,20 +23,20 @@ let set_universes universes =
 let evaluate_universe i =
   let rec evaluate i =
     match i with
-    | Set -> coq_type0
+    | Set -> coq_set
     | Prop -> coq_prop
-    | Atom(i) ->
-        begin try make_coq_univ (Hashtbl.find universe_table i) with
-        | Not_found -> coq_type0
+    | Atom a -> coq_univ
+        begin try (Hashtbl.find universe_table a) with
+        | Not_found -> failwith (Printf.sprintf "Unable to parse atom: %s" a)
         end
-    | Succ(i) -> coq_axiom (evaluate i)
-    | Max([]) -> coq_prop
-    | Max([i]) -> evaluate i
-    | Max(i :: j_list) -> coq_sup (evaluate i) (evaluate (Max(j_list))) in
+    | Succ (u,i) -> coq_axioms (evaluate u) i
+    | Max []  -> coq_prop
+    | Max [i] -> evaluate i
+    | Max (i :: j_list) -> coq_sup (evaluate i) (evaluate (Max(j_list))) in
   evaluate i
 
-(** Translate the Coq universe [i] as a concrete Dedukti universe. *)
-let translate_universe info env i =
+
+let translate_universe i =
   let i_str = Pp.string_of_ppcmds (Univ.pr_uni i) in
    evaluate_universe (Univparse.translate_universe i_str)
 
