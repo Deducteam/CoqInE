@@ -1,7 +1,7 @@
 
-VERBOSE=0
+VERBOSE?=
 
-COQ_MAKEFILE = coq_makefile VERBOSE = $(VERBOSE)
+COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
 
@@ -12,7 +12,7 @@ MAKEFILE_GENERATED = Makefile.generated
 .PHONY: plugin install test clean
 
 plugin: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - all .merlin
+	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - all .merlin VERBOSE=$(VERBOSE)
 
 install: $(MAKEFILE_PLUGIN)
 	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -

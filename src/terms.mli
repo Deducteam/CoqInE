@@ -4,7 +4,7 @@ val infer_type : Environ.env -> Term.constr -> Term.types
 
 val infer_sort : Environ.env -> Term.types -> Term.sorts
 
-val translate_sort : Term.sorts -> Dedukti.term
+val translate_sort : Info.info -> Environ.env -> Term.sorts -> Dedukti.term
 
 val infer_translate_sort :
   Info.info -> Environ.env -> Term.types -> Dedukti.term
@@ -18,9 +18,9 @@ val generalize_rel_context :
 val apply_rel_context :
   Term.constr -> Context.Rel.Declaration.t list -> Term.constr
 
-val convertible_sort : 'a -> 'b -> Term.sorts -> Term.sorts -> bool
+val convertible_sort : Info.info -> Environ.env -> Term.sorts -> Term.sorts -> bool
 
-val convertible : 'a -> Environ.env -> Term.constr -> Term.constr -> bool
+val convertible : Info.info -> Environ.env -> Term.constr -> Term.constr -> bool
 
 val fixpoint_table :
   (Names.name array * Term.types array * Term.constr array,

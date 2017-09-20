@@ -15,6 +15,7 @@ let set_destination dest =
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
   print (str "Exporting " ++ Libnames.pr_qualid qualid);
+  
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
@@ -36,7 +37,8 @@ let translate_qualified_library qualid =
     flush_and_close ();
     raise e
   end;
-  flush_and_close ()
+  flush_and_close ();
+  Dedukti.stop_debug ()
 
 
 (** Translate the library referred to by [reference]. *)

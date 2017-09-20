@@ -81,20 +81,11 @@ let rec translate_module_body info env mb =
   | Algebraic _ -> Error.not_supported "Algebraic"
   | Struct mod_sig -> translate_module_signature info env mod_sig
   | FullStruct     -> translate_module_signature info env mb.mod_type
+
 and translate_module_signature info env  = function
   | NoFunctor   struct_body -> translate_structure_body info env struct_body
   | MoreFunctor _           -> Error.not_supported "Functor"
-(**
-and translate_struct_expr_body info env seb =
-  match seb with
-  | SEBstruct  sb -> translate_structure_body info env sb
-  | SEBident   _  -> Error.not_supported "SEBident"
-  | SEBfunctor _  ->
-    (* For now we ignore unapplied functors. *)
-    ()
-  | SEBapply(_) -> Error.not_supported "SEBapply"
-  | SEBwith(_) -> Error.not_supported "SEBwith"
-*)
+
 and translate_structure_body info env sb =
   List.iter (translate_structure_field_body info env) sb
 
@@ -104,9 +95,12 @@ and translate_structure_field_body info env (label, sfb) =
   | SFBmind mib ->
      (
      match mib.mind_finite with
-     | Finite (** = inductive *)  -> translate_mutual_inductive_body info env label mib
-     | CoFinite (** = coinductive   *) -> Error.warning (str "Ignoring coinductive " ++ Names.pr_label label)
-     | BiFinite (** = non-recursive *) -> Error.warning (str "Ignoring non-recursive " ++ Names.pr_label label)
+     | Decl_kinds.Finite   (** = inductive *)
+       -> translate_mutual_inductive_body info env label mib
+     | Decl_kinds.CoFinite (** = coinductive   *)
+       -> Error.warning (str "Ignoring coinductive " ++ Names.pr_label label)
+     | Decl_kinds.BiFinite (** = non-recursive *)
+       -> Error.warning (str "Ignoring non-recursive " ++ Names.pr_label label)
      )
   | SFBmodule mb ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in

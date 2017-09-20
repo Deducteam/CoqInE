@@ -51,9 +51,5 @@ Require
   (*  Coq.Logic.SetIsType*)
 .
 
-Dedukti Show Universes.
-
-Dedukti Show Sorted Universes.
-
 Dedukti Export All.
 

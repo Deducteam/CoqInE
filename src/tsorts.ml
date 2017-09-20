@@ -20,7 +20,7 @@ let set_universes universes =
   UGraph.dump_universes register universes
 
 (** Evaluate a universe according to the solutions in the universe table. *)
-let evaluate_universe i =
+let evaluate_universe info env i =
   let rec evaluate i =
     match i with
     | Set -> coq_set
@@ -36,8 +36,8 @@ let evaluate_universe i =
   evaluate i
 
 
-let translate_universe i =
+let translate_universe info env i =
   let i_str = Pp.string_of_ppcmds (Univ.pr_uni i) in
-   evaluate_universe (Univparse.translate_universe i_str)
+   evaluate_universe info env (Univparse.translate_universe i_str)
 
 

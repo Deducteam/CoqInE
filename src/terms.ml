@@ -9,11 +9,10 @@ open Info
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
-let translate_sort s =
-  match s with
+let translate_sort info env = function
   | Term.Prop Null -> coq_prop
   | Term.Prop Pos  -> coq_set
-  | Term.Type i    -> Tsorts.translate_universe i
+  | Term.Type i    -> Tsorts.translate_universe info env i
 
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
@@ -22,8 +21,7 @@ let rec infer_translate_sort info env a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
-  | SortType(s) ->
-      coq_axiom (translate_sort s)
+  | SortType(s) -> coq_axiom (translate_sort info env s)
   | CastType(a, b) ->
       Error.not_supported "CastType"
   | ProdType(x, a, b) ->
@@ -34,8 +32,7 @@ let rec infer_translate_sort info env a =
   | LetInType(x, u, a, b) ->
       (* No need to lift the let here. *)
       infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) b
-  | AtomicType(_) ->
-      translate_sort (infer_sort env a)
+  | AtomicType(_) -> translate_sort info env (infer_sort env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
@@ -65,20 +62,20 @@ let apply_rel_context t context =
   let args, _ = List.fold_left apply_rel_declaration ([], 1) context in
   Term.applistc t args
 
-let convertible_sort info env s1 s2 = translate_sort s1 = translate_sort s2
+let convertible_sort info env s1 s2 = translate_sort info env s1 = translate_sort info env s2
 
 let rec convertible info env a b =
   let a = Reduction.whd_all env a in
   let b = Reduction.whd_all env b in
   match Term.kind_of_type a, Term.kind_of_type b with
-  | SortType(s1), SortType(s2) ->
-      convertible_sort info env s1 s2
+  | SortType(s1), SortType(s2) -> convertible_sort info env s1 s2
   | CastType(_), _
   | _, CastType(_) ->
-      Error.not_supported "CastType"
+     Error.not_supported "CastType"
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
-      convertible info env a1 a2 &&
-      convertible info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x1, None, a1)) env) b1 b2
+     convertible info env a1 a2 &&
+       let nenv = Environ.push_rel (Context.Rel.Declaration.LocalAssum (x1, a1)) env in
+      convertible info nenv b1 b2
   | LetInType(_), _
   | _, LetInType(_) ->
       assert false
@@ -145,15 +142,13 @@ let rec translate_constr ?expected_type info env t =
       (* If it's a let definition, replace by its value. *)
       let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
       begin match u with
-      | Some(u) -> translate_constr info env (Vars.lift i u)
-      | None -> Dedukti.var (Name.translate_name ~ensure_name:true x)
+      | Some u -> translate_constr info env (Vars.lift i u)
+      | None   -> Dedukti.var (Name.translate_name ~ensure_name:true x)
       end
   | Var x -> Dedukti.var (Name.translate_identifier x)
   | Meta metavariable  -> Error.not_supported "Meta"
   | Evar pexistential  -> Error.not_supported "Evar"
-  | Sort s ->
-      let s' = translate_sort s in
-      coq_sort s'
+  | Sort s -> coq_sort (translate_sort info env s)
   | Cast(t, _, b) ->
       let a = infer_type env t in
       let s1' = infer_translate_sort info env a in
@@ -208,7 +203,6 @@ let rec translate_constr ?expected_type info env t =
      let n_params = mind_body.Declarations.mind_nparams in
      let n_reals = ind_body.Declarations.mind_nrealargs in
      let pind, ind_args = Inductive.find_inductive env (infer_type env matched) in
-     (** Somehow get a Univ.Instance.t instead of the "true" next line.  *)
      let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
      let params, reals = Utils.list_chop n_params ind_args in
      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
@@ -220,7 +214,7 @@ let rec translate_constr ?expected_type info env t =
        (param' :: params', Vars.subst1 param d) in
      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
      let reals' = List.map (translate_constr info env) reals in
-     let return_sort' = translate_sort return_sort in
+     let return_sort' = translate_sort info env return_sort in
      let return_type' = translate_constr info env return_type in
      let matched' = translate_constr info env matched in
      let branches' = Array.to_list (Array.map (translate_constr info env) branches) in
@@ -233,11 +227,8 @@ let rec translate_constr ?expected_type info env t =
 and translate_types info env a =
   (* Specialize on the type to get a nicer and more compact translation. *)
   match Term.kind_of_type a with
-  | SortType(s) ->
-      let s' = translate_sort s in
-      coq_U s'
-  | CastType(a, b) ->
-      Error.not_supported "CastType"
+  | SortType(s) -> coq_U (translate_sort info env s)
+  | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info ~default:"_" env x in
       let x' = Name.translate_name x in

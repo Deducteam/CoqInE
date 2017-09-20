@@ -15,6 +15,7 @@
 *.depend
 *.merlin
 *~
+*#
 !dedukti/Coq.dk
 
 src/.*.aux

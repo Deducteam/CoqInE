@@ -1,5 +1,7 @@
 (** Dedukti syntax and pretty-printing functions *)
 
+open Pp
+
 type var = string
 
 type term =
@@ -52,7 +54,7 @@ let definition opaque x a b = Definition(opaque, x, a, b)
 
 let rewrite (context, left, right) = Rewrite(context, left, right)
 
-let apply_context a context = apps a (List.map var (fst (List.split context)))
+let apply_context a context = apps a (List.map var (List.map fst context))
 
 (** Pretty-printing using the minimal number of parentheses. *)
 
@@ -181,27 +183,61 @@ let std = Format.std_formatter
 let start_debug () = debug_flag := true
 let  stop_debug () = debug_flag := false
 
+let debug_str s =
+  if !debug_flag then begin
+    msg_with std s;
+    msg_with std (str "\n")
+    end
+
+let debug_string s = debug_str (str s)
 
 let debug_dk_term t =
   if !debug_flag then begin
     print_term std t;
-    Pp.msg_with std (Pp.str "\n")
+    msg_with std (str "\n")
     end
 
-let debug_coq_term t =
-  if !debug_flag then begin
-    Pp.msg_with std (Printer.safe_pr_constr t);
-    Pp.msg_with std (Pp.str "\n")
-    end
+let pt_coq_term  = Printer.safe_pr_constr
+let pt_coq_type  = Printer.pr_type
+let pt_coq_level = Univ.Level.pr
+let pt_coq_univ  = Univ.Universe.pr
+let pt_coq_id    = Names.Id.print
+let pt_coq_name = function
+  | Names.Name.Anonymous -> (str "_")
+  | Names.Name.Name n -> pt_coq_id n
+let pt_coq_sort = function
+  | Term.Prop Null -> (str "Set")
+  | Term.Prop Pos  -> (str "Prop")
+  | Term.Type i    -> (str "Univ(") ++ (pt_coq_univ i)
+let pt_coq_decl = function
+  | Context.Rel.Declaration.LocalAssum (name, t) ->
+     (pt_coq_name name) ++ (str " = ") ++ (pt_coq_term t)
+  | Context.Rel.Declaration.LocalDef (name, v, t) ->
+     (pt_coq_name name) ++ (str " : ") ++ (pt_coq_term t) ++ (str " = ") ++ (pt_coq_term t)
+let pt_coq_named_decl = function
+  | Context.Named.Declaration.LocalAssum (id, t) ->
+     (pt_coq_id id) ++ (str " = ") ++ (pt_coq_term t)
+  | Context.Named.Declaration.LocalDef (id, v, t) ->
+     (pt_coq_id id) ++ (str " : ") ++ (pt_coq_term t) ++ (str " = ") ++ (pt_coq_term t)
+let rec pt_coq_ctxt t =
+  let pt s decl = s ++ (str "\n  ") ++ (pt_coq_decl decl) in
+    (List.fold_left pt (str "[") t) ++ (str "\n]")
+let rec pt_coq_named_ctxt t =
+  let pt s decl = s ++ (str "\n  ") ++ (pt_coq_named_decl decl) in
+    (List.fold_left pt (str "[") t) ++ (str "\n]")
+let pt_coq_env e =
+  (pt_coq_ctxt (Environ.rel_context e)) ++
+  (str "\n") ++
+  (pt_coq_named_ctxt (Environ.named_context e))
 
-let debug_coq_type t =
-  if !debug_flag then begin
-    Pp.msg_with std (Printer.pr_type t);
-    Pp.msg_with std (Pp.str "\n")
-    end
+let debug_coq_term  t = debug_str (pt_coq_term  t)
+let debug_coq_type  t = debug_str (pt_coq_type  t)
+let debug_coq_level t = debug_str (pt_coq_level t)
+let debug_coq_univ  t = debug_str (pt_coq_univ  t)
+let debug_coq_id    t = debug_str (pt_coq_id    t)
+let debug_coq_name  t = debug_str (pt_coq_name  t)
+let debug_coq_sort  t = debug_str (pt_coq_sort  t)
+let debug_coq_decl  t = debug_str (pt_coq_decl  t)
+let debug_coq_ctxt  t = debug_str (pt_coq_ctxt  t)
+let debug_coq_env   t = debug_str (pt_coq_env   t)
 
-let debug_string s =
-  if !debug_flag then begin
-    Pp.msg_with std (Pp.str s);
-    Pp.msg_with std (Pp.str "\n")
-    end
