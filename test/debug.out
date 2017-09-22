@@ -1,0 +1,497 @@
+--- True
+[
+]
+Prop
+[
+]
+[
+]
+Coq.U Coq.prop
+--- False
+[
+]
+Prop
+[
+]
+[
+]
+Coq.U Coq.prop
+--- and
+[
+  B = Prop
+  A = Prop
+]
+(Prop -> Prop -> Prop)
+[
+]
+[
+]
+A : Coq.U Coq.prop -> B : Coq.U Coq.prop -> Coq.U Coq.prop
+--- or
+[
+  B = Prop
+  A = Prop
+]
+(Prop -> Prop -> Prop)
+[
+]
+[
+]
+A : Coq.U Coq.prop -> B : Coq.U Coq.prop -> Coq.U Coq.prop
+--- ex
+[
+  P = (_UNBOUND_REL_1 -> Prop)
+  A = Type
+]
+(forall A : Type, (A -> Prop) -> Prop)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Coq.U Coq.prop
+--- ex2
+[
+  Q = (_UNBOUND_REL_2 -> Prop)
+  P = (_UNBOUND_REL_1 -> Prop)
+  A = Type
+]
+(forall A : Type, (A -> Prop) -> (A -> Prop) -> Prop)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Q : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Coq.U Coq.prop
+--- eq
+[
+  _ = _UNBOUND_REL_2
+  x = _UNBOUND_REL_1
+  A = Type
+]
+(forall A : Type, A -> A -> Prop)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+x : Coq.T (Coq.type Coq.z) A ->
+__ : Coq.T (Coq.type Coq.z) A ->
+Coq.U Coq.prop
+--- inhabited
+[
+  A = Type
+]
+(Type -> Prop)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) -> Coq.U Coq.prop
+###  match__inhabited
+(inhabited _UNBOUND_REL_1)
+Coq.T Coq.prop (inhabited A)
+[
+  A = Type
+]
+[
+  x = Prop
+  case_inhabits = Prop
+  P = Prop
+  s = Prop
+]
+[
+  _ = _UNBOUND_REL_1
+]
+[
+  _ = _UNBOUND_REL_1
+  A = Type
+]
+[
+  x = Prop
+  case_inhabits = Prop
+  P = Prop
+  s = Prop
+]
+--- Empty__set
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- unit
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- bool
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- eq__true
+[
+  _ = bool
+]
+(bool -> Prop)
+[
+]
+[
+]
+__ : Coq.T Coq.set bool -> Coq.U Coq.prop
+--- BoolSpec
+[
+  _ = bool
+  Q = Prop
+  P = Prop
+]
+(Prop -> Prop -> bool -> Prop)
+[
+]
+[
+]
+P : Coq.U Coq.prop ->
+Q : Coq.U Coq.prop ->
+__ : Coq.T Coq.set bool ->
+Coq.U Coq.prop
+--- nat
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- option
+[
+  A = Type
+]
+Template arity
+max(Set, Coq.Init.Datatypes.13)
+Coq.Init.Datatypes.13
+(Type -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) -> Coq.U (Coq.sup Coq.set (Coq.type Coq.z))
+--- sum
+[
+  B = Type
+  A = Type
+]
+Template arity
+max(Set, Coq.Init.Datatypes.19, Coq.Init.Datatypes.20)
+Coq.Init.Datatypes.19
+Coq.Init.Datatypes.20
+(Type -> Type -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+B : Coq.U (Coq.type Coq.z) ->
+Coq.U (Coq.sup Coq.set (Coq.sup (Coq.type Coq.z) (Coq.type Coq.z)))
+--- prod
+[
+  B = Type
+  A = Type
+]
+Template arity
+max(Coq.Init.Datatypes.23, Coq.Init.Datatypes.24)
+Coq.Init.Datatypes.23
+Coq.Init.Datatypes.24
+(Type -> Type -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+B : Coq.U (Coq.type Coq.z) ->
+Coq.U (Coq.sup (Coq.type Coq.z) (Coq.type Coq.z))
+--- list
+[
+  A = Type
+]
+Template arity
+max(Set, Coq.Init.Datatypes.44)
+Coq.Init.Datatypes.44
+(Type -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) -> Coq.U (Coq.sup Coq.set (Coq.type Coq.z))
+--- comparison
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- CompareSpec
+[
+  _ = comparison
+  Pgt = Prop
+  Plt = Prop
+  Peq = Prop
+]
+(Prop -> Prop -> Prop -> comparison -> Prop)
+[
+]
+[
+]
+Peq : Coq.U Coq.prop ->
+Plt : Coq.U Coq.prop ->
+Pgt : Coq.U Coq.prop ->
+__ : Coq.T Coq.set comparison ->
+Coq.U Coq.prop
+--- CompareSpecT
+[
+  _ = comparison
+  Pgt = Prop
+  Plt = Prop
+  Peq = Prop
+]
+(Prop -> Prop -> Prop -> comparison -> Set)
+[
+]
+[
+]
+Peq : Coq.U Coq.prop ->
+Plt : Coq.U Coq.prop ->
+Pgt : Coq.U Coq.prop ->
+__ : Coq.T Coq.set comparison ->
+Coq.U Coq.set
+--- identity
+[
+  _ = _UNBOUND_REL_2
+  a = _UNBOUND_REL_1
+  A = Type
+]
+Template arity
+Prop
+Coq.Init.Datatypes.80
+None
+(forall A : Type, A -> A -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+a : Coq.T (Coq.type Coq.z) A ->
+__ : Coq.T (Coq.type Coq.z) A ->
+Coq.U Coq.prop
+--- sig
+[
+  P = (_UNBOUND_REL_1 -> Prop)
+  A = Type
+]
+Template arity
+Coq.Init.Specif.1
+Coq.Init.Specif.1
+None
+(forall A : Type, (A -> Prop) -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Coq.U (Coq.type Coq.z)
+--- sig2
+[
+  Q = (_UNBOUND_REL_2 -> Prop)
+  P = (_UNBOUND_REL_1 -> Prop)
+  A = Type
+]
+Template arity
+Coq.Init.Specif.4
+Coq.Init.Specif.4
+None
+None
+(forall A : Type, (A -> Prop) -> (A -> Prop) -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Q : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U Coq.prop) ->
+Coq.U (Coq.type Coq.z)
+--- sigT
+[
+  P = (_UNBOUND_REL_1 -> Type)
+  A = Type
+]
+Template arity
+max(Coq.Init.Specif.7, Coq.Init.Specif.8)
+Coq.Init.Specif.7
+Coq.Init.Specif.8
+(forall A : Type, (A -> Type) -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U (Coq.type Coq.z)) ->
+Coq.U (Coq.sup (Coq.type Coq.z) (Coq.type Coq.z))
+--- sigT2
+[
+  Q = (_UNBOUND_REL_2 -> Type)
+  P = (_UNBOUND_REL_1 -> Type)
+  A = Type
+]
+Template arity
+max(Coq.Init.Specif.11, Coq.Init.Specif.12, Coq.Init.Specif.13)
+Coq.Init.Specif.11
+Coq.Init.Specif.12
+Coq.Init.Specif.13
+(forall A : Type, (A -> Type) -> (A -> Type) -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+P : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U (Coq.type Coq.z)) ->
+Q : (__ : Coq.T (Coq.type Coq.z) A -> Coq.U (Coq.type Coq.z)) ->
+Coq.U (Coq.sup (Coq.type Coq.z) (Coq.sup (Coq.type Coq.z) (Coq.type Coq.z)))
+--- sumbool
+[
+  B = Prop
+  A = Prop
+]
+(Prop -> Prop -> Set)
+[
+]
+[
+]
+A : Coq.U Coq.prop -> B : Coq.U Coq.prop -> Coq.U Coq.set
+--- sumor
+[
+  B = Prop
+  A = Type
+]
+Template arity
+max(Set, Coq.Init.Specif.36)
+Coq.Init.Specif.36
+None
+(Type -> Prop -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+B : Coq.U Coq.prop ->
+Coq.U (Coq.sup Coq.set (Coq.type Coq.z))
+--- le
+[
+  _ = nat
+  n = nat
+]
+(nat -> nat -> Prop)
+[
+]
+[
+]
+n : Coq.T Coq.set Coq__Init__Datatypes.nat ->
+__ : Coq.T Coq.set Coq__Init__Datatypes.nat ->
+Coq.U Coq.prop
+--- Acc
+[
+  x = _UNBOUND_REL_2
+  R = (_UNBOUND_REL_1 -> _UNBOUND_REL_2 -> Prop)
+  A = Type
+]
+(forall A : Type, (A -> A -> Prop) -> A -> Prop)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+R :
+  (__ : Coq.T (Coq.type Coq.z) A ->
+   __0 : Coq.T (Coq.type Coq.z) A ->
+   Coq.U Coq.prop) ->
+x : Coq.T (Coq.type Coq.z) A ->
+Coq.U Coq.prop
+--- xSet
+[
+]
+Set
+[
+]
+[
+]
+Coq.U Coq.set
+--- xProp
+[
+]
+Prop
+[
+]
+[
+]
+Coq.U Coq.prop
+--- exp2
+[
+  A = (Type -> Type)
+]
+Template arity
+max(Top.Debuglib.6, Top.Debuglib.8+1)
+Top.Debuglib.6
+((Type -> Type) -> Type)
+[
+]
+[
+]
+A : (__ : Coq.U (Coq.type Coq.z) -> Coq.U (Coq.type Coq.z)) ->
+Coq.U (Coq.sup (Coq.type Coq.z) (Coq.axiom (Coq.type Coq.z)))
+--- exp
+[
+  B = Type
+  A = Type
+]
+Template arity
+max(Top.Debuglib.11, Top.Debuglib.12)
+Top.Debuglib.11
+Top.Debuglib.12
+(Type -> Type -> Type)
+[
+]
+[
+]
+A : Coq.U (Coq.type Coq.z) ->
+B : Coq.U (Coq.type Coq.z) ->
+Coq.U (Coq.sup (Coq.type Coq.z) (Coq.type Coq.z))
+--- test
+[
+  f = (nat -> Type)
+]
+Template arity
+Top.Debuglib.15
+Top.Debuglib.15
+((nat -> Type) -> Type)
+[
+]
+[
+]
+f : (__ : Coq.T Coq.set Coq__Init__Datatypes.nat -> Coq.U (Coq.type Coq.z)) ->
+Coq.U (Coq.type Coq.z)

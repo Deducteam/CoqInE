@@ -4,6 +4,7 @@ CONSTRUCTORS_PLUGIN = "src/coqine_plugin.cma"
 CONSTRUCTORS_PLUGINOPT = "src/coqine_plugin.cmxs"
 src/utils.mli
 src/dedukti.mli
+src/debug.mli
 src/error.mli
 src/info.mli
 src/name.mli
@@ -14,6 +15,7 @@ src/modules.mli
 src/libraries.mli
 src/utils.ml
 src/dedukti.ml
+src/debug.ml
 src/error.ml
 src/info.ml
 src/name.ml

@@ -16,29 +16,30 @@ let translate_inductive info env label mind_body i =
   (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
   let name = ind_body.mind_typename in
   let name' = Name.translate_element_name info env (Names.label_of_id name) in
-  if name' = "sig" or true then Dedukti.start_debug ();
-  Dedukti.debug_string ("--- " ^ name');
+  if name' = "sig" or true then Debug.debug_start ();
+  Debug.debug_string ("--- " ^ name');
   let arity_context = ind_body.mind_arity_ctxt in
-  Dedukti.debug_coq_ctxt arity_context;
+  Debug.debug_coq_ctxt arity_context;
   let arity_sort = match ind_body.mind_arity with
     | RegularArity  ria -> ria.mind_sort
     | TemplateArity ta  ->
-       (*
-We should translate this term to
-s1:Sort -> ... -> sn : Sort ->
-|x1| : ||A1||(s1,...,sn) -> ... -> |xk| : ||Ak||(s1,...,sn) -> return_type(s1,...,sk)
+       (* We should translate this term to
+       s11:Sort -> ... -> s1j1 : Sort -> |x1| : ||A1||(s11,...,s1j1) ->
+       ... ->
+       sk1:Sort -> ... -> skjk : Sort -> |xk| : ||Ak||(sk1,...,skjk) ->
+       return_type(s11,...,skjk)
         *)
-       Dedukti.debug_string "Template arity";
-       Dedukti.debug_coq_univ ta.template_level;
-       List.iter (function   None -> Dedukti.debug_string "None"
-                           | Some u -> Dedukti.debug_coq_level u) ta.template_param_levels;
+       Debug.debug_string "Template arity";
+       Debug.debug_coq_univ ta.template_level;
+       List.iter (function   None -> Debug.debug_string "None"
+                           | Some u -> Debug.debug_coq_level u) ta.template_param_levels;
        Term.Type(ta.template_level) in
   let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
-  Dedukti.debug_coq_type arity;
-  Dedukti.debug_coq_env env;
+  Debug.debug_coq_type arity;
+  Debug.debug_coq_env env;
   let arity' = Terms.translate_types info env arity in
-  Dedukti.debug_dk_term arity';
-  Dedukti.stop_debug ();
+  Debug.debug_dk_term arity';
+  Debug.debug_stop ();
   Dedukti.print info.out (Dedukti.declaration false name' arity')
 
 (** Translate the constructors of the i-th inductive type in [mind_body]. *)
@@ -78,21 +79,36 @@ let translate_match info env label mind_body i =
   let indtype_name = ind_body.mind_typename in
   let match_function_name' = Name.translate_identifier (Name.match_function indtype_name) in
   let match_function_var'  = Dedukti.var match_function_name' in
-  if match_function_name' = "match__inhabited" then Dedukti.start_debug ();
-  Dedukti.debug_string ("###  " ^ match_function_name');
+  if match_function_name' = "match__inhabited" then Debug.debug_start ();
+  Debug.debug_string ("###  " ^ match_function_name');
   
   let arity_context = ind_body.mind_arity_ctxt in
   
   let cons_names = ind_body.mind_consnames in
   
   (* Use the normalized types in the rest. *)
-  let cons_types = Array.map (Vars.substl (List.rev (Array.to_list ind_terms))) ind_body.mind_nf_lc in
+  let cons_types = Array.map (Vars.substl (List.rev (Array.to_list ind_terms)))
+                             ind_body.mind_nf_lc in
   
   (* Translate the match function. *)
-  (* match_I : |p1| : ||P1|| -> ... |pr| : ||Pr|| ->
-       s : srt -> P : (|x1| : ||A1|| -> ... -> |xn| : ||An|| -> ||I p1 ... pr x1 ... xn|| -> type s) -> ...
-       case_cj : (|yj1| : ||Bj1|| -> ... -> |yjk1| : ||Bjk1|| -> term s (P |uj1| ... |ujn| (|c1 p1 ... pr yj1 ... yjkj|))) -> ...
-       |x1| : ||A1|| -> ... -> |xn| : ||An|| -> x : ||I p1 ... pr x1 ... xn|| -> term s (P |x1| ... |xn| x) *)
+  (* match_I :
+       s11:Sort -> ... -> s1j1 : Sort -> |p1| : ||P1||(s11,...,s1j1) ->
+       ... ->
+       sr1:Sort -> ... -> srjr : Sort -> |pr| : ||Pr||(sr1,...,srjr) ->
+       s : srt ->
+       P : (|x1| : ||A1|| -> ... -> |xn| : ||An|| ->
+            ||I s11 ... s1j1 p1 ... sr1 ... srjr pr x1 ... xn|| ->
+            type s) ->
+       case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
+                  term s (P |u11| ... |u1n| (|c1 p1 ... pr y11 ... y1k1|))) -> ...
+       ... ->
+       case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
+                  term s (P |uj1| ... |ujn| (|c1 p1 ... pr yj1 ... yjkj|))) -> ...
+                  
+       |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
+       x : ||I p1 ... pr x1 ... xn|| ->
+       term s (P |x1| ... |xn| x)
+   *)
   let params_context = mind_body.mind_params_ctxt in
   let arity_real_context, _ = Utils.list_chop ind_body.mind_nrealdecls arity_context in
   let ind_applied = Terms.apply_rel_context ind_terms.(i) (arity_real_context @ params_context) in
@@ -134,8 +150,8 @@ let translate_match info env label mind_body i =
     Terms.translate_rel_context info params_env arity_real_context in
   let ind_applied' = Terms.translate_types info arity_real_env ind_applied in
   
-  Dedukti.debug_coq_term ind_applied;
-  Dedukti.debug_dk_term  ind_applied';
+  Debug.debug_coq_term ind_applied;
+  Debug.debug_dk_term  ind_applied';
   
   (* Create a fresh variable x and add it to the environment *)
   let matched_name = Name.fresh_of_string info arity_real_env "x" in
@@ -147,13 +163,13 @@ let translate_match info env label mind_body i =
   let cases' = Array.map Dedukti.var case_names' in
   let params' = List.map Dedukti.var (fst (List.split params_context')) in
   
-  Dedukti.debug_coq_env params_env;
-  Array.map Dedukti.debug_coq_ctxt cons_real_contexts;
+  Debug.debug_coq_env params_env;
+  Array.map Debug.debug_coq_ctxt cons_real_contexts;
   let cons_real_env_contexts' = Array.map (Terms.translate_rel_context info params_env)
                                           cons_real_contexts in
   let cons_real_envs = Array.map fst cons_real_env_contexts' in
   let cons_real_contexts' = Array.map snd cons_real_env_contexts' in
-  Array.map Dedukti.debug_coq_env cons_real_envs;
+  Array.map Debug.debug_coq_env cons_real_envs;
   
   let cons_ind_real_args' = Array.mapi (fun j -> Terms.translate_args info cons_real_envs.(j))
                                        cons_ind_real_args in
@@ -164,8 +180,8 @@ let translate_match info env label mind_body i =
     (Dedukti.coq_term return_sort_var' (Dedukti.apps return_type_var' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let common_context' =
-    params_context' @
     (return_sort_name', Dedukti.coq_Sort) ::
+    params_context' @
     (return_type_name', Dedukti.pies arity_real_context'
                                      (Dedukti.arr ind_applied'
                                                   (Dedukti.coq_U return_sort_var'))) ::
@@ -180,12 +196,12 @@ let translate_match info env label mind_body i =
                 (Dedukti.declaration true match_function_name'
                                      (Dedukti.pies match_function_context' match_function_type'));
   let match_function_applied' =
-    Dedukti.apps match_function_var' (params' @ return_sort_var' :: return_type_var' :: Array.to_list cases') in
+    Dedukti.apps match_function_var' (return_sort_var' :: params' @ return_type_var' :: Array.to_list cases') in
   let case_rules = Array.init n_cons (fun j ->
     let case_rule_context' = common_context' @ cons_real_contexts'.(j) in
     let case_rule_left' = Dedukti.apps match_function_applied' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)]) in
     let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
     (case_rule_context', case_rule_left', case_rule_right')) in
-  Dedukti.stop_debug ();
+  Debug.debug_stop ();
   List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite (Array.to_list case_rules))
 

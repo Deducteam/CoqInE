@@ -15,6 +15,11 @@ VERNAC COMMAND EXTEND DeduktiSetDestination
   [ set_destination dest ]
 END
 
+VERNAC COMMAND EXTEND DeduktiSetDebug
+| [ "Dedukti" "Set" "Debug" string(dest) ] ->
+  [ set_debug dest ]
+END
+
 VERNAC COMMAND EXTEND DeduktiExportLibrary
 | [ "Dedukti" "Export" "Library" global_list(refs) ] ->
   [ List.iter translate_library refs ]

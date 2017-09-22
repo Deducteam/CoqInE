@@ -177,49 +177,52 @@ let rec translate_constr ?expected_type info env t =
       translate_constr info
         (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) t
   | App(t, args) ->
+     let translate_app (t', a) u =
+       let _, c, d = Term.destProd (Reduction.whd_all env a) in
+       let u' = translate_constr ~expected_type:c info env u in
+       (Dedukti.app t' u', Vars.subst1 u d) in
      let a = infer_type env t in
-      let translate_app (t', a) u =
-        let _, c, d = Term.destProd (Reduction.whd_all env a) in
-        let u' = translate_constr ~expected_type:c info env u in
-        (Dedukti.app t' u', Vars.subst1 u d) in
-      let t' = translate_constr info env t in
-      fst (Array.fold_left translate_app (t', a) args)
+     let t' = translate_constr ~expected_type:a info env t in
+     fst (Array.fold_left translate_app (t', a) args)
   | Const     (kn, univ_instance) -> Dedukti.var(Name.translate_constant    info env kn)
   | Ind       (kn, univ_instance) -> Dedukti.var(Name.translate_inductive   info env kn)
   | Construct (kn, univ_instance) -> Dedukti.var(Name.translate_constructor info env kn)
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
-      let n = Array.length names in
-      let env, fix_declarations =
-        try Hashtbl.find fixpoint_table rec_declaration
-        with Not_found -> lift_fix info env names types bodies rec_indices in
-      let env = Array.fold_left (fun env declaration ->
-        Environ.push_rel declaration env) env fix_declarations in
-      translate_constr info env (Term.mkRel (n - i))
+     let n = Array.length names in
+     let env, fix_declarations =
+       try Hashtbl.find fixpoint_table rec_declaration
+       with Not_found -> lift_fix info env names types bodies rec_indices in
+     let env = Array.fold_left (fun env declaration ->
+                   Environ.push_rel declaration env) env fix_declarations in
+     translate_constr info env (Term.mkRel (n - i))
   | Case(case_info, return_type, matched, branches) ->
-     let ind = case_info.ci_ind in
-     let match_function_name' = Name.translate_match_function info env ind in
-     let match_function' = Dedukti.var match_function_name' in
+     let match_function_name = Name.translate_match_function info env case_info.ci_ind in
      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
-     let n_params = mind_body.Declarations.mind_nparams in
-     let n_reals = ind_body.Declarations.mind_nrealargs in
+     let n_params = mind_body.Declarations.mind_nparams   in
+     let n_reals  =  ind_body.Declarations.mind_nrealargs in
      let pind, ind_args = Inductive.find_inductive env (infer_type env matched) in
      let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
      let params, reals = Utils.list_chop n_params ind_args in
      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
+     
      (* Translate params using expected types to make sure we use proper casts. *)
      let translate_param (params', a) param =
        let _, c, d = Term.destProd (Reduction.whd_all env a) in
        let param' = translate_constr ~expected_type:c info env param in
        (param' :: params', Vars.subst1 param d) in
-     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
-     let reals' = List.map (translate_constr info env) reals in
+     let match_function' = Dedukti.var match_function_name in
      let return_sort' = translate_sort info env return_sort in
+     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
      let return_type' = translate_constr info env return_type in
-     let matched' = translate_constr info env matched in
      let branches' = Array.to_list (Array.map (translate_constr info env) branches) in
-     Dedukti.apps match_function' (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
-(*  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case" *)
+     let reals' = List.map (translate_constr info env) reals in
+     let matched' = translate_constr info env matched in
+     
+     Dedukti.apps match_function'
+                  (return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+
+  (*  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case" *)
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Proj (_,_) -> Error.not_supported "Proj"
 

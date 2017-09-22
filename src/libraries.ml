@@ -10,6 +10,9 @@ let set_destination dest =
   print (str "Setting destination: " ++ str dest);
   destination := dest
 
+let set_debug dest =
+  print (str "Setting debug to: " ++ str dest);
+  Debug.debug_to_file dest
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
@@ -37,8 +40,7 @@ let translate_qualified_library qualid =
     flush_and_close ();
     raise e
   end;
-  flush_and_close ();
-  Dedukti.stop_debug ()
+  flush_and_close ()
 
 
 (** Translate the library referred to by [reference]. *)

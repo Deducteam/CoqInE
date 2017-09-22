@@ -3,6 +3,8 @@
 
 val set_destination : string -> unit
 
+val set_debug : string -> unit
+
 val translate_qualified_library : Libnames.qualid -> unit
 
 val translate_library : Libnames.reference -> unit
