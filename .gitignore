@@ -20,3 +20,4 @@
 
 src/.*.aux
 test/.*.aux
+*/debug.out
