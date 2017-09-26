@@ -146,13 +146,14 @@ type coq_universe =
 
 let coqify name = Printf.sprintf "Coq.%s" name
 
-let coq_var  x = Var(coqify x)
+let coq_var  x = Var (coqify x)
 
 let coq_Sort = coq_var "Sort"
 
 let coq_z    =      coq_var "z"
 let coq_s i  = app (coq_var "s") i
 let rec coq_univ_index i = if i == 0 then coq_z else coq_s (coq_univ_index (i-1))
+let     coq_univ_var   s = var (String.concat "__" (String.split_on_char '.' s))
 
 let coq_prop   =      coq_var "prop"
 let coq_set    =      coq_var "set"

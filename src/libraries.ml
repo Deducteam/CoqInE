@@ -17,8 +17,10 @@ let set_debug dest =
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
-  print (str "Exporting " ++ Libnames.pr_qualid qualid);
-  
+  let libname = Libnames.pr_qualid qualid in
+  print (str "Exporting " ++ libname);
+  if (libname = (str "Top.Debuglib")) then Debug.debug_start ();
+  Debug.debug_str (str "Exporting " ++ Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
@@ -40,6 +42,7 @@ let translate_qualified_library qualid =
     flush_and_close ();
     raise e
   end;
+  Debug.debug_stop ();
   flush_and_close ()
 
 

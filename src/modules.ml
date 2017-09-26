@@ -16,10 +16,15 @@ let translate_constant_body info env label const =
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let const_type = match const.const_type with
-    | RegularArity a -> a
-    | TemplateArity(rel_context, poly_arity) ->
-       Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type poly_arity.template_level)) in
-  let const_type' = Terms.translate_types info env const_type in
+    | RegularArity a -> (
+       Debug.debug_string ("Constant regular body: "^ label');
+       a)
+    | TemplateArity(rel_context, poly_arity) -> (
+       Debug.debug_string ("Constant template body: "^ label');
+       Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type poly_arity.template_level))) in
+  (* TODO: fix this ! *)
+  let uenv = Info.empty () in
+  let const_type' = Terms.translate_types info env uenv const_type in
   match const.const_body with
   | Undef inline ->
       (* For now assume inline is None. *)
@@ -27,26 +32,27 @@ let translate_constant_body info env label const =
       Dedukti.print info.out (Dedukti.declaration false label' const_type')
   | Def constr_substituted ->
       let constr = Mod_subst.force_constr constr_substituted in
-      let constr' = Terms.translate_constr ~expected_type:const_type info env constr in
+      let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
       Dedukti.print info.out (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
       let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
-      let constr' = Terms.translate_constr ~expected_type:const_type info env constr in
+      let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
       Dedukti.print info.out (Dedukti.definition true label' const_type' constr')
   
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
+  Debug.debug_string ("Inductive body: "^ (Name.translate_element_name info env label));
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
-  for i = 0 to mind_body.mind_ntypes - 1 do
+  for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_inductive info env label mind_body i
   done;
   (* Then declare all the constructors. *)
-  for i = 0 to mind_body.mind_ntypes - 1 do
+  for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_constructors info env label mind_body i
   done;
   (* Then declare all the match functions. *)
-  for i = 0 to mind_body.mind_ntypes - 1 do
+  for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_match info env label mind_body i
   done
 

@@ -60,6 +60,7 @@ val coq_Sort  : term
 val coq_z     : term
 val coq_s     : term -> term
 val coq_univ_index : int -> term
+val coq_univ_var: string -> term
 val coq_prop  : term
 val coq_set   : term
 val coq_type  : term -> term

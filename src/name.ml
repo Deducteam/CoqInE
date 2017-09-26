@@ -27,7 +27,8 @@ let push_global info identifier =
 
 (** Push a dummy declaration to declare an identifier locally. *)
 let push_identifier identifier env =
-  Environ.push_named (Context.Named.Declaration.of_tuple (identifier, None, Term.mkSort (Term.Prop(Term.Null)))) env
+  Environ.push_named
+    (Context.Named.Declaration.of_tuple (identifier, None, Term.mkSort (Term.Prop(Term.Null)))) env
 
 (** Generate a fresh identifier that is different from any constant, inductive
     type, or constructor in the current module, and from any identifier in

@@ -27,6 +27,7 @@ let pt_coq_term  = Printer.safe_pr_constr
 let pt_coq_type  = Printer.pr_type
 let pt_coq_level = Univ.Level.pr
 let pt_coq_univ  = Univ.Universe.pr
+let pt_coq_inst  = Univ.Instance.pr (Univ.Level.pr)
 let pt_coq_id    = Names.Id.print
 let pt_coq_name = function
   | Names.Name.Anonymous -> (str "_")
@@ -60,6 +61,7 @@ let debug_coq_term  t = debug_str (pt_coq_term  t)
 let debug_coq_type  t = debug_str (pt_coq_type  t)
 let debug_coq_level t = debug_str (pt_coq_level t)
 let debug_coq_univ  t = debug_str (pt_coq_univ  t)
+let debug_coq_inst  t = debug_str (pt_coq_inst  t)
 let debug_coq_id    t = debug_str (pt_coq_id    t)
 let debug_coq_name  t = debug_str (pt_coq_name  t)
 let debug_coq_sort  t = debug_str (pt_coq_sort  t)

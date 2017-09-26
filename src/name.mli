@@ -4,6 +4,7 @@ val full_path : Info.info -> Names.Id.t -> Libnames.full_path
 
 val push_global : Info.info -> Names.variable -> unit
 
+(** Push a dummy declaration to declare an identifier locally. *)
 val push_identifier : Names.Id.t -> Environ.env -> Environ.env
 
 val fresh_identifier :

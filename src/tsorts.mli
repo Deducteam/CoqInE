@@ -2,5 +2,6 @@
 
 val set_universes : UGraph.universes -> unit
 
-val translate_universe : Info.info -> Environ.env -> Univ.universe -> Dedukti.term
+val translate_universe : Info.info -> Environ.env -> Info.env ->
+                         Univ.universe -> Dedukti.term
 
