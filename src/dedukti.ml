@@ -153,7 +153,9 @@ let coq_Sort = coq_var "Sort"
 let coq_z    =      coq_var "z"
 let coq_s i  = app (coq_var "s") i
 let rec coq_univ_index i = if i == 0 then coq_z else coq_s (coq_univ_index (i-1))
-let     coq_univ_var   s = var (String.concat "__" (String.split_on_char '.' s))
+let translate_univ_name s = String.concat "__" (String.split_on_char '.' s)
+let translate_univ_level l = translate_univ_name (Univ.Level.to_string l)
+let     coq_univ_var   s = var (translate_univ_name s)
 
 let coq_prop   =      coq_var "prop"
 let coq_set    =      coq_var "set"

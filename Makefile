@@ -3,8 +3,10 @@ VERBOSE?=
 
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
-DKCHECK = dkcheck
 
+DKFOLDER = /home/gaspi/github/dedukti/acu
+DKCHECK = $(DKFOLDER)/dkcheck.native
+DKDEP = $(DKFOLDER)/dkdep.native
 
 MAKEFILE_PLUGIN = Makefile.plugin
 MAKEFILE_GENERATED = Makefile.generated

@@ -28,3 +28,9 @@ let init out dir_path = {
   library = dir_path;
   module_path = Names.MPfile(dir_path);
   }
+
+let universe_env =
+  let aux acc = function
+  | None   -> acc
+  | Some u -> add_poly_univ_lbl acc u in
+  List.fold_left aux (empty ())

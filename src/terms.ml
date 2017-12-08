@@ -3,7 +3,6 @@
 open Declarations
 open Term
 open Dedukti
-
 open Info
 
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
@@ -200,9 +199,33 @@ let rec translate_constr ?expected_type info env uenv t =
      let a = infer_type env t in
      let t' = translate_constr ~expected_type:a info env uenv t in
      fst (Array.fold_left translate_app (t', a) args)
-  | Const     (kn, univ_instance) -> (check_const     env kn; Dedukti.var(Name.translate_constant    info env kn))
-  | Ind       (kn, univ_instance) -> (check_ind       env kn; Dedukti.var(Name.translate_inductive   info env kn))
-  | Construct (kn, univ_instance) -> (check_construct env kn; Dedukti.var(Name.translate_constructor info env kn))
+  | Const     (kn, univ_instance) ->
+    begin
+      let univs = Univ.Instance.to_array univ_instance in
+      if Array.length univs > 0 then
+        ( assert false; Debug.debug_string "Const Universe: ";
+          Debug.debug_coq_inst univ_instance );
+      check_const env kn;
+      Dedukti.var (Name.translate_constant info env kn)
+    end
+  | Ind (kn, univ_instance) ->
+    begin
+      let univs = Univ.Instance.to_array univ_instance in
+      if Array.length univs > 0 then
+        ( Debug.debug_string "Const Universe: ";
+          Debug.debug_coq_inst univ_instance );
+      check_ind env kn;
+      Dedukti.var(Name.translate_inductive   info env kn)
+    end
+  | Construct (kn, univ_instance) ->
+    begin
+      let univs = Univ.Instance.to_array univ_instance in
+      if Array.length univs > 0 then
+        ( Debug.debug_string "Construct Universe: ";
+          Debug.debug_coq_inst univ_instance );
+      check_construct env kn;
+      Dedukti.var(Name.translate_constructor info env kn)
+    end
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
      let n = Array.length names in
      let env, fix_declarations =
@@ -218,6 +241,32 @@ let rec translate_constr ?expected_type info env uenv t =
      let n_reals  =  ind_body.Declarations.mind_nrealargs in
      let pind, ind_args = Inductive.find_inductive env (infer_type env matched) in
      let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
+     
+     (* TODO:
+implement universe instanciation here
+  cf kernel/inductive.ml : line 203
+      *)
+     begin
+       match ind_body.mind_arity with
+       | RegularArity a ->
+         Debug.debug_string "Case: RegularArity";
+         (* subst_instance_constr u a.mind_user_arity *)
+       | TemplateArity ar ->
+         let ctx = List.rev ind_body.mind_arity_ctxt in
+         Debug.debug_string "Case: TemplateArity";
+         (*
+         let args = Array.to_list paramtyps in
+         let subst = make_subst env (ctx,ar.template_param_levels,args) in
+         let level = Univ.subst_univs_universe (Univ.make_subst subst) ar.template_level in
+         let ty =
+           (* Singleton type not containing types are interpretable in Prop *)
+           if is_type0m_univ level then prop_sort
+           (* Non singleton type not containing types are interpretable in Set *)
+           else if is_type0_univ level then set_sort
+           (* This is a Type with constraints *)
+           else Type level
+         *)
+     end;
      let params, reals = Utils.list_chop n_params ind_args in
      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
@@ -236,9 +285,8 @@ let rec translate_constr ?expected_type info env uenv t =
      let matched' = translate_constr info env uenv matched in
      
      Dedukti.apps match_function'
-                  (return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+                  (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
 
-  (*  | Case(case_info, return_type, matched, branches) -> Error.not_supported "Case" *)
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Proj (_,_) -> Error.not_supported "Proj"
 

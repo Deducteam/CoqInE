@@ -17,3 +17,5 @@ type info = {
 }
 
 val init : Format.formatter -> Names.dir_path -> info
+
+val universe_env : Univ.Level.t option list -> env

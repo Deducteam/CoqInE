@@ -2,10 +2,15 @@
 
 (** Translate the i-th inductive type in [mind_body].
 Handles both regular inductive type:
-    I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> return_type||
+    I : p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+        x1 : ||A1|| -> ... -> xn : ||An|| -> ||return_type||
 
 and template polymorphic inductive type:
-    I :
+    I : s1:Sort -> ... -> sr:Sort
+        p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+        x1 : ||A1|| -> ... -> xn : ||An|| -> ||return_type||
+
+(old translation:)
     [ s1:Sort -> ] -> p1 : ||P1||(s1)        ->
     [ s2:Sort -> ] -> p2 : ||P2||(s1,s2)     ->
     ... ->
@@ -18,15 +23,12 @@ val translate_inductive :
 
 
 (** Translate the constructors of the i-th inductive type in [mind_body].
-    cj :
-    [ s1:Sort -> ] -> p1 : ||P1||(s1)        ->
-    [ s2:Sort -> ] -> p2 : ||P2||(s1,s2)     ->
-    ... ->
-    [ sr:Sort -> ] -> pr : ||Pr||(s1,...,sr) ->
-    yj1  : ||Bj1||(s1,...,sr) ->
-    ... ->
-    yjkj : ||Bjkj||(s1,...,sr) ->
-    I [s1] p1 ... [sr] pr  yj1 ... yjkj
+    cj : s1:Sort -> ... -> sr:Sort
+         p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+         yj1  : ||Bj1||(s1,...,sr) ->
+         ... ->
+         yjkj : ||Bjkj||(s1,...,sr) ->
+         I  s1 ... sr  p1 ... pr  yj1 ... yjkj
 *)
 val translate_constructors :
   Info.info -> Environ.env ->
