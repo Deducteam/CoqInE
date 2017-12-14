@@ -6,9 +6,9 @@ Require Coqine.
 Dedukti Set Destination "".
 
 Require
-  Polymorph
-  (*
   Identity
+  (*
+  Polymorph
   ImportA
   ImportB
   ImportC
