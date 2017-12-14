@@ -20,7 +20,9 @@ Print exp.
 Check exp xType0.
 Check exp xType0 xType1.
 
+(*
 Inductive foo
           (A:xSet)
           (B:xSet -> Type) :
   (B A) -> Type := bar : forall x:(B A), foo A B x.
+*)
