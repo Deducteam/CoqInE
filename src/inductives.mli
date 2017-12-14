@@ -1,12 +1,12 @@
 
 
 (** Translate the i-th inductive type in [mind_body].
-Handles both regular inductive type:
+Handles both regular inductive type (no polymorphism):
     I : p1 : ||P1|| -> ... -> pr : ||Pr|| ->
         x1 : ||A1|| -> ... -> xn : ||An|| -> ||return_type||
 
 and template polymorphic inductive type:
-    I : s1:Sort -> ... -> sr:Sort
+    I : [s1:Sort] -> ... -> [sr:Sort] ->
         p1 : ||P1|| -> ... -> pr : ||Pr|| ->
         x1 : ||A1|| -> ... -> xn : ||An|| -> ||return_type||
 
@@ -23,8 +23,8 @@ val translate_inductive :
 
 
 (** Translate the constructors of the i-th inductive type in [mind_body].
-    cj : s1:Sort -> ... -> sr:Sort
-         p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+    cj : [s1:Sort] -> ... -> [sr:Sort] ->
+         p1 : ||P1||(s1) -> ... -> pr : ||Pr||(sr) ->
          yj1  : ||Bj1||(s1,...,sr) ->
          ... ->
          yjkj : ||Bjkj||(s1,...,sr) ->
@@ -38,10 +38,8 @@ val translate_constructors :
 (** Translate the match function for the i-th inductive type in [mind_body].
 
     match_I :
-    [ s1:Sort -> ] -> p1 : ||P1||(s1)        ->
-    [ s2:Sort -> ] -> p2 : ||P2||(s1,s2)     ->
-    ... ->
-    [ sr:Sort -> ] -> pr : ||Pr||(s1,...,sr) ->
+    [s1:Sort] -> ... -> [sr:Sort] ->
+    p1 : ||P1||(s1) -> ... -> pr : ||Pr||(sr) ->
     
     s : Sort ->
     P : (|x1| : ||A1|| -> ... -> |xn| : ||An|| ->

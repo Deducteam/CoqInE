@@ -2,6 +2,8 @@ open Declarations
 
 open Info
 
+let lvl_to_var lvl = (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort)
+
 (** Insert template levels as coq Sort parameters in an inductive declaration *)
 let rec insert_params_in_arity params arity =
   match params with
@@ -11,13 +13,12 @@ let rec insert_params_in_arity params arity =
     Dedukti.Pie ( (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort),
                   insert_params_in_arity tl arity )
 
-let rec insert_params_in_decl params decls =
-  match (params, decls) with
-  | [], _ -> decls
-  | None::tl, h::t -> h::(insert_params_in_decl tl t)
-  | (Some lvl)::tl, h::t ->
-     (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort) :: h :: (insert_params_in_decl tl t)
-  | _ -> failwith "Error translating polymorphic arity"
+let insert_params_in_decl params decls =
+  let rec aux acc = function
+    | [] -> List.rev_append acc decls
+    | None       :: tl -> aux acc tl
+    | (Some lvl) :: tl -> aux ((lvl_to_var lvl) :: acc) tl in
+  aux [] params
 
 
 (** An inductive definition is organised into:
@@ -75,7 +76,7 @@ let translate_inductive info env label mind_body i =
          yj1  : B1(s1,...,sr) ->
          ... ->
          yjkj : Bjkj(s1,...,sr) ->
-         I [s1] p1 ... [sr] pr  yj1 ... yjkj
+         I [s1] ... [sr]  p1 ... pr  yj1 ... yjkj
 *)
 let translate_constructors info env label mind_body i =
   (* Body of the current inductive type *)

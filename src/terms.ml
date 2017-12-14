@@ -199,30 +199,30 @@ let rec translate_constr ?expected_type info env uenv t =
      let a = infer_type env t in
      let t' = translate_constr ~expected_type:a info env uenv t in
      fst (Array.fold_left translate_app (t', a) args)
-  | Const     (kn, univ_instance) ->
+  | Const (kn, univ_instance) ->
     begin
-      let univs = Univ.Instance.to_array univ_instance in
-      if Array.length univs > 0 then
-        ( assert false; Debug.debug_string "Const Universe: ";
-          Debug.debug_coq_inst univ_instance );
+      Debug.debug_string "Univ instance: ";
+      Debug.debug_coq_inst univ_instance;
+      if not (Univ.Instance.is_empty univ_instance)
+      then assert false; (* (non-template) polymorphic constant. *)
       check_const env kn;
       Dedukti.var (Name.translate_constant info env kn)
     end
   | Ind (kn, univ_instance) ->
     begin
-      let univs = Univ.Instance.to_array univ_instance in
-      if Array.length univs > 0 then
-        ( Debug.debug_string "Const Universe: ";
-          Debug.debug_coq_inst univ_instance );
+      Debug.debug_string "Univ instance: ";
+      Debug.debug_coq_inst univ_instance;
+      if not (Univ.Instance.is_empty univ_instance)
+      then assert false; (* (non-template) polymorphic inductive. *)
       check_ind env kn;
       Dedukti.var(Name.translate_inductive   info env kn)
     end
   | Construct (kn, univ_instance) ->
     begin
-      let univs = Univ.Instance.to_array univ_instance in
-      if Array.length univs > 0 then
-        ( Debug.debug_string "Construct Universe: ";
-          Debug.debug_coq_inst univ_instance );
+      Debug.debug_string "Univ instance: ";
+      Debug.debug_coq_inst univ_instance;
+      if not (Univ.Instance.is_empty univ_instance)
+      then assert false; (* (non-template) polymorphic inductive. *)
       check_construct env kn;
       Dedukti.var(Name.translate_constructor info env kn)
     end
