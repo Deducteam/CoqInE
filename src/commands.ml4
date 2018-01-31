@@ -5,7 +5,7 @@ DECLARE PLUGIN "coqine_plugin"
 
 open Libraries
 open Stdarg
-open Constrarg
+
 
 (** Commands used in Coq to interact with the Yolk plugin **)
 
