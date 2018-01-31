@@ -13,7 +13,6 @@
 *.dk
 *.dko
 *.depend
-*.merlin
 *~
 *#
 !dedukti/Coq.dk
