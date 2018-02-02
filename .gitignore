@@ -27,5 +27,6 @@ src/.*.aux
 test/.*.aux
 debug/.*.aux
 
+# Debuging files
 */*.out
 *.conf
