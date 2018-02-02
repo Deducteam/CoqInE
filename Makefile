@@ -5,17 +5,20 @@ COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
 
-.PHONY: plugin install test clean
+.PHONY: all plugin install test clean
+
+all: install .merlin
 
 plugin: CoqMakefile
 	make -f CoqMakefile VERBOSE=$(VERBOSE) -
-	rm CoqMakefile
 
 install: CoqMakefile
 	make -f CoqMakefile -
-	rm CoqMakefile
 
-test: plugin 
+.merlin: CoqMakefile
+	make -f CoqMakefile .merlin
+
+test: plugin
 	make -C test
 
 debug: plugin 
