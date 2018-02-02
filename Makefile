@@ -8,18 +8,20 @@ DKFOLDER = /home/gaspi/github/dedukti/acu
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 
-MAKEFILE_PLUGIN = Makefile.plugin
-MAKEFILE_GENERATED = Makefile.generated
+.PHONY: all plugin install test debug clean
 
-.PHONY: plugin install test clean
+all: .merlin plugin test
 
-plugin: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - all .merlin VERBOSE=$(VERBOSE)
+plugin: CoqMakefile
+	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
 
-install: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
+install: CoqMakefile
+	make -f CoqMakefile - install
 
-test: plugin 
+.merlin: CoqMakefile
+	make -f CoqMakefile .merlin
+
+test: plugin
 	make -C test
 
 debug: plugin 
@@ -28,9 +30,12 @@ debug: plugin
 dedukti/Coq.dko: dedukti/Coq.dk
 	cd dedukti && $(DKCHECK) -e -nl Coq.dk
 
-clean: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
+clean: CoqMakefile
+	make -f CoqMakefile - clean
 	make -C test clean
 	make -C debug clean
 	rm -rf dedukti/Coq.dko
+	rm CoqMakefile
 
+CoqMakefile: Make
+	$(COQ_MAKEFILE) -f Make > CoqMakefile

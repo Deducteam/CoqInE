@@ -6,9 +6,6 @@ DKFOLDER = /home/gaspi/github/dedukti/acu
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 
-# Contains the local test files that are not part of the stdlib
-MAKEFILE_TEST = Makefile.test
-
 DKS = $(wildcard *.dk)
 DKOS = $(DKS:.dk=.dko)
 
@@ -22,11 +19,13 @@ DKOS = $(DKS:.dk=.dko)
 #	precalculated, so we need to call make twice.
 test: compile export depend
 #	Call make again so that it include the updated depend file
-	$(MAKE) check
+	make check
+	rm CoqMakefile
+
 
 # Compile the local [.v] files that are not part of the stdlib
-compile:
-	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
+compile: CoqMakefile
+	make -f CoqMakefile
 
 # Generate the [.dk] files by executing [Test.v]
 export:
@@ -45,9 +44,13 @@ depend:
 .dk.dko: depend ../dedukti/Coq.dko
 	$(DKCHECK) -I ../dedukti -e -nl -errors-in-snf $<
 
-clean:
-	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
+clean: CoqMakefile
+	make -f CoqMakefile - clean
 	rm -rf *.dk *.dko .depend .*.aux *.vo
+	rm CoqMakefile
+
+CoqMakefile: Make
+	$(COQ_MAKEFILE) -f Make > CoqMakefile
 
 -include .depend
 

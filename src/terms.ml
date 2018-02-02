@@ -25,11 +25,11 @@ let rec infer_translate_sort info env uenv a =
   | ProdType(x, a, b) ->
       let x = Name.fresh_name info env ~default:"_" x in
       let s1' = infer_translate_sort info env uenv a in
-      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) uenv b in
+      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
       coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
       (* No need to lift the let here. *)
-      infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) uenv b
+      infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env) uenv b
   | AtomicType(_) -> translate_sort info env uenv (infer_sort env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
@@ -104,19 +104,18 @@ let push_const_decl env (c, m, const_type) =
     | Some m -> Def (Mod_subst.from_val m) in
   let const_body_code =
     (** TODO : None does not handle polymorphic types ! *)
-    match Cbytegen.compile_constant_body true (Environ.pre_env env) None const_body with
+    match Cbytegen.compile_constant_body true (Environ.pre_env env) (Monomorphic_const(Univ.UContext.empty)) const_body with
     | Some code -> code
     | None -> Error.error (Pp.str "compile_constant_body failed")
   in
   (** TODO : Double check the following *)
-  let const_universes = (Univ.UContext.make (Univ.Instance.empty, Univ.Constraint.empty)) in
+  (*    let const_universes = (Univ.UContext.make (Univ.Instance.empty, Univ.Constraint.empty)) in *)
   let body = {
     const_hyps = [];
     const_body = const_body;
     const_type = const_type;
     const_body_code = Some (Cemitcodes.from_val const_body_code);
-    const_polymorphic = false;
-    const_universes = const_universes;
+    const_universes = Monomorphic_const(Univ.UContext.empty);
     const_proj = None;
     const_inline_code = false;
     const_typing_flags = { check_guarded = false; check_universes = false }
@@ -174,22 +173,22 @@ let rec translate_constr ?expected_type info env uenv t =
   | Prod(x, a, b) ->
       let x = Name.fresh_name ~default:"_" info env x in
       let s1' = infer_translate_sort info env uenv a in
-      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) uenv b in
+      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
       let x' = Name.translate_name x in
       let a' = translate_constr info env uenv a in
       let a'' = translate_types info env uenv a in
-      let b' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) uenv b in
+      let b' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
       coq_prod s1' s2' a' (Dedukti.lam (x', a'') b')
   | Lambda(x, a, t) ->
       let x = Name.fresh_name ~default:"_" info env x in
       let x' = Name.translate_name x in
       let a'' = translate_types info env uenv a in
-      let t' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) uenv t in
+      let t' = translate_constr info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv t in
       Dedukti.lam (x', a'') t'
   | LetIn(x, u, a, t) ->
       let env, u = lift_let info env uenv x u a in
       translate_constr info
-        (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env)
+        (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env)
         uenv t
   | App(t, args) ->
      let translate_app (t', a) u =
@@ -270,7 +269,7 @@ implement universe instanciation here
      let params, reals = Utils.list_chop n_params ind_args in
      let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
-     
+
      (* Translate params using expected types to make sure we use proper casts. *)
      let translate_param (params', a) param =
        let _, c, d = Term.destProd (Reduction.whd_all env a) in
@@ -283,7 +282,7 @@ implement universe instanciation here
      let branches' = Array.to_list (Array.map (translate_constr info env uenv) branches) in
      let reals' = List.map (translate_constr info env uenv) reals in
      let matched' = translate_constr info env uenv matched in
-     
+
      Dedukti.apps match_function'
                   (params' @ return_sort' :: return_type' :: branches' @ reals' @  [matched'])
 
@@ -300,11 +299,11 @@ and translate_types info env uenv a =
       let x = Name.fresh_name info ~default:"_" env x in
       let x' = Name.translate_name x in
       let a' = translate_types info env uenv a in
-      let b' = translate_types info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, None, a)) env) uenv b in
+      let b' = translate_types info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
       Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
       let env, u = lift_let info env uenv x u a in
-      translate_constr info (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env) uenv b
+      translate_constr info (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env) uenv b
   | AtomicType(_) ->
       (* Fall back on the usual translation of types. *)
       let s' = infer_translate_sort info env uenv a in
@@ -424,8 +423,8 @@ and lift_fix info env uenv names types bodies rec_indices =
   let fix_applieds1 = Array.init n (fun i -> apply_rel_context fix_terms1.(i) rel_context) in
   (* The declarations need to be lifted to account for the displacement. *)
   let fix_declarations1 = Array.init n (fun i ->
-    Context.Rel.Declaration.of_tuple
-      (names.(i), Some(Vars.lift i fix_applieds1.(i)), Vars.lift i types.(i))) in
+    Context.Rel.Declaration.LocalDef
+      (names.(i), Vars.lift i fix_applieds1.(i), Vars.lift i types.(i))) in
   let fix_rules3 = Array.init n (fun i ->
     let env, rel_context' = translate_rel_context info (global_env) uenv rel_context in
     let env = Array.fold_left push_const_decl env name1_declarations in
@@ -453,9 +452,9 @@ and translate_rel_context info env uenv context =
         let x = Name.fresh_name ~default:"_" info env x in
         let x' = Name.translate_name x in
         let a' = translate_types info env uenv a in
-        (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, u, a)) env, (x', a') :: translated)
+        (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env, (x', a') :: translated)
     | Some(u) ->
-        (Environ.push_rel (Context.Rel.Declaration.of_tuple (x, Some(u), a)) env, translated) in
+        (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env, translated) in
   let env, translated = List.fold_right translate_rel_declaration context (env, []) in
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)
