@@ -1,15 +1,32 @@
-*.a
 *.annot
-bin
-*.cmxa
-*.cm[xioa]
-coqine_config.ml
-*.glob
-local.mk
-*.ml.d
-*.mli.d
-*.mllib.d
+*.cmo
+*.cma
+*.cmi
+*.a
 *.o
-*.out
-*.sw[po]
+*.cmx
+*.cmxs
+*.cmxa
+*.glob
 *.vo
+*.d
+*.dk
+*.dko
+*.depend
+.merlin
+
+# emacs tmp files
+*~
+*#
+!dedukti/Coq.dk
+
+CoqMakefile
+
+# Generated .aux files
+src/.*.aux
+test/.*.aux
+debug/.*.aux
+
+# Debuging files
+*/*.out
+*.conf
