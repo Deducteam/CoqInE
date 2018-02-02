@@ -5,7 +5,7 @@ COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
 
-.PHONY: all plugin install test clean
+.PHONY: all plugin install test debug clean
 
 all: .merlin plugin test
 
