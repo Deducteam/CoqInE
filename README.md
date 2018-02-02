@@ -32,12 +32,17 @@ git clone https://github.com/Deducteam/CoqInE.git
 cd CoqInE
 make
 ```
+
+Adding the following lines to your `~\.coqrc` file can help solve some issues (`/path/to/coqine` should be replaced with the actual path to your CoqInE repository folder).
+```
+Add Rec LoadPath "/path/to/coqine/master/dedukti/" as Coqine.
+Add ML Path "/path/to/coqine/master/src".
+```
+
+
+### Using CoqInE (TODO)
+
 Generated `.dk` files are in the `test` folder.
-
-
-### Using CoqInE
-
-TODO
 
 
 #### Documentation
