@@ -40,7 +40,7 @@ depend:
 .dk.dko: depend ../dedukti/Coq.dko
 	$(DKCHECK) -I ../dedukti -e -nl $<
 
-clean:
+clean: CoqMakefile
 	make -f CoqMakefile - clean
 	rm -rf *.dk *.dko .depend .*.aux *.vo
 	rm CoqMakefile
