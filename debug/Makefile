@@ -1,8 +1,10 @@
 # Binaries
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
-DKCHECK = dkcheck
-DKDEP = dkdep
+
+DKFOLDER=/home/gaspi/github/dedukti/acu/
+DKCHECK = $(DKFOLDER)/dkcheck.native
+DKDEP = $(DKFOLDER)/dkdep.native
 
 # Contains the local test files that are not part of the stdlib
 MAKEFILE_TEST = Makefile.test

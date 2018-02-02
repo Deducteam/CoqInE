@@ -4,22 +4,24 @@ open Info
 
 let lvl_to_var lvl = (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort)
 
+
+
 (** Insert template levels as coq Sort parameters in an inductive declaration *)
-let rec insert_params_in_arity params arity =
+let rec insert_params_in_arity params arity = arity (*  TODO: remove this comment
   match params with
   | [] -> arity
   | None::tl -> insert_params_in_arity tl arity
   | (Some lvl)::tl ->
     Dedukti.Pie ( (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort),
                   insert_params_in_arity tl arity )
-
-let insert_params_in_decl params decls =
+*)
+let insert_params_in_decl params decls = decls (*  TODO: remove this comment
   let rec aux acc = function
     | [] -> List.rev_append acc decls
     | None       :: tl -> aux acc tl
     | (Some lvl) :: tl -> aux ((lvl_to_var lvl) :: acc) tl in
   aux [] params
-
+*)
 
 (** An inductive definition is organised into:
     - [mutual_inductive_body] : a block of (co)inductive type definitions,
