@@ -6,6 +6,7 @@ addons:
     sources:
       - avsm
     packages:
+      - opam
       - time
 cache:
   directories:
