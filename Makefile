@@ -5,19 +5,20 @@ COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
 
+.PHONY: all plugin install test debug clean
 
-MAKEFILE_PLUGIN = Makefile.plugin
-MAKEFILE_GENERATED = Makefile.generated
+all: .merlin plugin test
 
-.PHONY: plugin install test clean
+plugin: CoqMakefile
+	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
 
-plugin: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - all .merlin VERBOSE=$(VERBOSE)
+install: CoqMakefile
+	make -f CoqMakefile - install
 
-install: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f -
+.merlin: CoqMakefile
+	make -f CoqMakefile .merlin
 
-test: plugin 
+test: plugin
 	make -C test
 
 debug: plugin 
@@ -26,8 +27,12 @@ debug: plugin
 dedukti/Coq.dko: dedukti/Coq.dk
 	cd dedukti && $(DKCHECK) -e -nl Coq.dk
 
-clean: $(MAKEFILE_PLUGIN)
-	$(COQ_MAKEFILE) -f $(MAKEFILE_PLUGIN) | make -f - clean
+clean: CoqMakefile
+	make -f CoqMakefile - clean
 	make -C test clean
+	make -C debug clean
 	rm -rf dedukti/Coq.dko
+	rm CoqMakefile
 
+CoqMakefile: Make
+	$(COQ_MAKEFILE) -f Make > CoqMakefile

@@ -4,7 +4,7 @@ open Pp
 let debug_out = ref Format.std_formatter
 
 let debug_to_file fn = debug_out := Format.formatter_of_out_channel (open_out fn)
-let debug_msg s = msg_with !debug_out s
+let debug_msg s = pp_with !debug_out s
 
 
 let debug_flag = ref false
@@ -68,4 +68,3 @@ let debug_coq_sort  t = debug_str (pt_coq_sort  t)
 let debug_coq_decl  t = debug_str (pt_coq_decl  t)
 let debug_coq_ctxt  t = debug_str (pt_coq_ctxt  t)
 let debug_coq_env   t = debug_str (pt_coq_env   t)
-

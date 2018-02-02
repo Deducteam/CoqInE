@@ -2,7 +2,7 @@
 
 open Pp
 
-let print m = msg_with Format.std_formatter (m ++ str "\n")
+let print m = pp_with Format.std_formatter (m ++ str "\n")
 
 let destination = ref "."
 

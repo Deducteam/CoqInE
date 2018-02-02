@@ -4,9 +4,6 @@ COQTOP = coqtop
 DKCHECK = dkcheck
 DKDEP = dkdep
 
-# Contains the local test files that are not part of the stdlib
-MAKEFILE_TEST = Makefile.test
-
 DKS = $(wildcard *.dk)
 DKOS = $(DKS:.dk=.dko)
 
@@ -20,11 +17,11 @@ DKOS = $(DKS:.dk=.dko)
 #	precalculated, so we need to call make twice.
 debug: compile export depend
 	$(MAKE) check
-
+	rm CoqMakefile
 
 # Compile the local [.v] files that are not part of the stdlib
-compile:
-	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f -
+compile: CoqMakefile
+	make -f CoqMakefile
 
 # Generate the [.dk] files by executing [Test.v]
 export:
@@ -33,12 +30,9 @@ export:
 # Check and compile the generated [.dk]
 check: ../dedukti/Coq.dko Top__Debuglib.dko $(DKOS)
 
-check: ../dedukti/Coq.dko Top__Debuglib.dko $(DKOS)
-
 # Generate the dependencies of [.dk] files
 depend:
 	$(DKDEP) -v *.dk ../dedukti/*.dk > .depend
-
 
 ../dedukti/Coq.dko:
 	make -C .. dedukti/Coq.dko
@@ -47,8 +41,11 @@ depend:
 	$(DKCHECK) -I ../dedukti -e -nl $<
 
 clean:
-	$(COQ_MAKEFILE) -f $(MAKEFILE_TEST) | make -f - clean
+	make -f CoqMakefile - clean
 	rm -rf *.dk *.dko .depend .*.aux *.vo
+	rm CoqMakefile
+
+CoqMakefile: Make
+	$(COQ_MAKEFILE) -f Make > CoqMakefile
 
 -include .depend
-
