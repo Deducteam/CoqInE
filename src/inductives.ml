@@ -12,6 +12,13 @@ open Info
 let translate_inductive info env label mind_body i =
   let ind_body = mind_body.mind_packets.(i) in (* Body of the current inductive type *)
   
+  let universes = mind_body.mind_universes in
+  let _ = 
+    match universes with
+    | Monomorphic_ind univ_ctxt -> () (* Univ.universe_context *)
+    | Polymorphic_ind univ_ctxt -> () (* Univ.abstract_universe_context *)
+    | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
+
   let name          = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
   let arity         = ind_body.mind_arity in

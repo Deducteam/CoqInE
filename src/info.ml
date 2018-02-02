@@ -6,6 +6,8 @@ type env = StringSet.t
 let empty () = StringSet.empty
 
 let add_poly_univ_str env v =
+  Debug.debug_string "Adding polymorphic universe: ";
+  Debug.debug_string v;
   StringSet.add v env
 
 let is_poly_univ_str env v =

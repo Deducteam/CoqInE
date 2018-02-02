@@ -9,7 +9,10 @@ Inductive  xSet   : Set  :=.
 Inductive  xProp  : Prop :=.
 
 
-Inductive exp (A:Type) (B:Type) : Type := tst : forall f: A -> B, exp A B.
+Inductive exp (A:Type) (B:Type) : Type :=
+  tst : forall f: A -> B, exp A B.
+
+Print exp.
 
 
 Definition expType0 := @exp xType0 xType0.
@@ -19,6 +22,8 @@ Definition expProp  := @exp xProp  xProp.
 Print exp.
 Check exp xType0.
 Check exp xType0 xType1.
+
+Print Universes.
 
 (*
 Inductive foo
