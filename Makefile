@@ -7,13 +7,13 @@ DKCHECK = dkcheck
 
 .PHONY: all plugin install test clean
 
-all: install .merlin
+all: .merlin plugin test
 
 plugin: CoqMakefile
-	make -f CoqMakefile VERBOSE=$(VERBOSE) -
+	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
 
 install: CoqMakefile
-	make -f CoqMakefile -
+	make -f CoqMakefile - install
 
 .merlin: CoqMakefile
 	make -f CoqMakefile .merlin
@@ -30,14 +30,8 @@ dedukti/Coq.dko: dedukti/Coq.dk
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	make -C test clean
+	make -C debug clean
 	rm -rf dedukti/Coq.dko
-	rm -rf src/*.cm*
-	rm -rf src/*.d
-	rm -rf src/*.a
-	rm -rf src/*.o
-	rm -rf src/*.vo
-	rm -rf src/*.a*
-	rm -rf src/*.glob
 	rm CoqMakefile
 
 CoqMakefile: Make

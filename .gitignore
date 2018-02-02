@@ -14,15 +14,18 @@
 *.dko
 *.depend
 .merlin
+
+# emacs tmp files
 *~
 *#
 !dedukti/Coq.dk
 
 CoqMakefile
 
-
+# Generated .aux files
 src/.*.aux
 test/.*.aux
-*/debug.out
+debug/.*.aux
 
+*/*.out
 *.conf
