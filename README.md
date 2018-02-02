@@ -7,7 +7,8 @@ CoqInE is a plugin for the [Coq](http://coq.inria.fr/) software translating Coq 
 It provides a signature file faithfully encoding the underlying theory of Coq (or a sufficiently large subset of it).
 The generated ouput is meant to be type-checkable using the latest version of Dedukti.
 
-It is developed by Gaspard Férey and François Thiré.
+It was developed by Ali Assaf, Mathieu Boespflug, Guillaume Burel, Quentin Carbonneaux, Gaspard Férey and François Thiré.
+It is currently developed by Gaspard Férey and François Thiré.
 Current development is mostly focused on implementing support for Coq universe polymorphism.
 
 Previous versions of the project can be found on:
@@ -25,9 +26,14 @@ Make sure the following dependencies are installed
 
 Warning: the version of OCaml used to compile CoqInE must be the same as the one used to compile the Coq program that generates the `.vo` files you want to translate.
 
-1. Fork the project at `https://github.com/Deducteam/CoqInE/tree`
-2. `coq_makefile -f Make -o CoqMakefile`
-3. `make -f CoqMakefile`
+Installation steps:
+```
+git clone https://github.com/Deducteam/CoqInE/tree
+cd CoqInE
+make test
+```
+Generated `.dk` files are in the `test` folder.
+
 
 ### Using CoqInE
 
