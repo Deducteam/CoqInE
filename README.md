@@ -42,6 +42,7 @@ TODO
 
 #### Documentation
 
+A succinct (outdated) manual is provided with the sources (`doc/coqine.1.gz`).
 The translation itself is explained in the following paper:
 
 Mathieu Boespflug and Guillaume Burel.
