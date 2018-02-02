@@ -17,6 +17,11 @@
 *#
 !dedukti/Coq.dk
 
+CoqMakefile
+
+
 src/.*.aux
 test/.*.aux
 */debug.out
+
+*.conf
