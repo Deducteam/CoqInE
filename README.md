@@ -28,9 +28,9 @@ Warning: the version of OCaml used to compile CoqInE must be the same as the one
 
 Installation steps:
 ```
-git clone https://github.com/Deducteam/CoqInE/tree
+git clone https://github.com/Deducteam/CoqInE.git
 cd CoqInE
-make test
+make
 ```
 Generated `.dk` files are in the `test` folder.
 
