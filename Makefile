@@ -22,16 +22,12 @@ test: plugin
 	make -C test
 
 debug: plugin 
-	make -C test debug
-
-dedukti/Coq.dko: dedukti/Coq.dk
-	cd dedukti && $(DKCHECK) -e -nl Coq.dk
+	make -C debug
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	make -C test clean
 	make -C debug clean
-	rm -rf dedukti/Coq.dko
 	rm CoqMakefile
 
 CoqMakefile: Make

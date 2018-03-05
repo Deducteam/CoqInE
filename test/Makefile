@@ -7,9 +7,7 @@ DKDEP = dkdep
 DKS = $(wildcard *.dk)
 DKOS = $(DKS:.dk=.dko)
 
-.PHONY:	test compile generate depend check clean Coq.dko
-# Coq.dko is generated as a dependency by dkdep instead of ../dedukti/Coq.dko
-# so we need to ignore it
+.PHONY:	test compile generate depend check clean
 
 .SUFFIXES: .dk .dko
 
@@ -27,22 +25,25 @@ compile: CoqMakefile
 generate: compile
 	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Test
 
-# Check and compile the generated [.dk]
-check: ../dedukti/Coq.dko $(DKOS)
+Coq.dk: ../dedukti/Coq.dk
+	cp ../dedukti/Coq.dk ./Coq.dk
 
 # Generate the dependencies of [.dk] files
-depend:
-	$(DKDEP) -v *.dk ../dedukti/*.dk > .depend
+depend: Coq.dk
+	$(DKDEP) *.dk > .depend
 
-../dedukti/Coq.dko:
-	make -C .. dedukti/Coq.dko
+# Check and compile the generated [.dk]
+check: Coq.dko $(DKOS)
 
-.dk.dko: depend ../dedukti/Coq.dko
-	$(DKCHECK) -I ../dedukti -e -nl $<
+Coq.dko: depend Coq.dk
+	$(DKCHECK) -e -nl Coq.dk
+
+.dk.dko: depend
+	$(DKCHECK) -e -nl $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	rm -rf *.dk *.dko .depend .*.aux *.vo
+	rm -rf *.dk *.dko .depend .*.aux *.vo Coq.dk
 	rm CoqMakefile
 
 CoqMakefile: Make

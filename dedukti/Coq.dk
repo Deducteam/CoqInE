@@ -1,5 +1,3 @@
-#NAME Coq.
-
 (; Natural numbers ;)
 
 Nat : Type.
@@ -141,4 +139,3 @@ def Prop  := U prop.
 def Set   := U set.
 def Type0 := U (type z).
 def Type1 := U (type (s z)).
-
