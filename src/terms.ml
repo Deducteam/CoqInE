@@ -3,6 +3,7 @@
 open Declarations
 open Term
 open Dedukti
+open Debug
 
 open Info
 
@@ -125,21 +126,18 @@ let push_const_decl env (c, m, const_type) =
 
 let check_const env kn =
   try
-    Debug.debug_string "Check const:";
     let (types, univ_ctxt) = Global.type_of_global_in_context env (Globnames.ConstRef kn) in
-    Debug.debug_coq_type types
+    debug "Check const: %a" pp_coq_type types
   with | _ -> ()
 let check_ind env kn =
   try
-    Debug.debug_string "Check ind:";
     let (types, univ_ctxt) = Global.type_of_global_in_context env (Globnames.IndRef kn) in
-    Debug.debug_coq_type types
+    debug "Check ind: %a" pp_coq_type types
   with | _ -> ()
 let check_construct env kn =
   try
-    Debug.debug_string "Check construct:";
     let (types, univ_ctxt) = Global.type_of_global_in_context env (Globnames.ConstructRef kn) in
-    Debug.debug_coq_type types
+    debug "Check constructor: %a" pp_coq_type types
   with | _ -> ()
 
 (** Translate the Coq term [t] as a Dedukti term. *)
@@ -199,9 +197,27 @@ let rec translate_constr ?expected_type info env uenv t =
      let a = infer_type env t in
      let t' = translate_constr ~expected_type:a info env uenv t in
      fst (Array.fold_left translate_app (t', a) args)
-  | Const     (kn, univ_instance) -> (check_const     env kn; Dedukti.var(Name.translate_constant    info env kn))
-  | Ind       (kn, univ_instance) -> (check_ind       env kn; Dedukti.var(Name.translate_inductive   info env kn))
-  | Construct (kn, univ_instance) -> (check_construct env kn; Dedukti.var(Name.translate_constructor info env kn))
+  | Const (kn, univ_instance) ->
+    begin
+      check_const env kn;
+      let name = Name.translate_constant info env kn in
+      debug "Printing constant: %s" name;
+      Tsorts.instantiate_univ_params name univ_instance
+    end
+  | Ind (kn, univ_instance) ->
+    begin
+      check_ind env kn;
+      let name = Name.translate_inductive info env kn in
+      debug "Printing inductive: %s" name;
+      Tsorts.instantiate_univ_params name univ_instance
+    end
+  | Construct (kn, univ_instance) ->
+    begin
+      check_construct env kn;
+      let name = Name.translate_constructor info env kn in
+      debug "Printing constructor: %s" name;
+      Tsorts.instantiate_univ_params name univ_instance
+    end
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
      let n = Array.length names in
      let env, fix_declarations =

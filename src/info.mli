@@ -5,10 +5,11 @@ type env
 val empty : unit -> env
 
 val add_poly_univ_str : env -> string       -> env
-val add_poly_univ_lbl : env -> Univ.Level.t -> env
+val add_poly_univ_lvl : env -> Univ.Level.t -> env
+val add_poly_univ_lvl_list : env -> Univ.Level.t option list -> env
 
 val is_poly_univ_str : env -> string       -> bool
-val is_poly_univ_lbl : env -> Univ.Level.t -> bool
+val is_poly_univ_lvl : env -> Univ.Level.t -> bool
 
 type info = {
   out : Format.formatter;

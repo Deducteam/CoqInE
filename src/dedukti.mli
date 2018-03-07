@@ -1,5 +1,7 @@
 (** Dedukti syntax and pretty-printing functions *)
 
+open Debug
+
 type var = string
 
 type term =
@@ -36,7 +38,8 @@ val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val rewrite : (var * term) list * term * term -> instruction
 val apply_context : term -> (var * 'a) list -> term
-val print_var : Format.formatter -> string -> unit
+
+val print_var : var printer
 val print_term : Format.formatter -> term -> unit
 val print_app : Format.formatter -> term -> unit
 val print_atomic : Format.formatter -> term -> unit
@@ -44,6 +47,8 @@ val print_binding : Format.formatter -> var * term -> unit
 val print_binding_context : Format.formatter -> string * 'a -> unit
 val print_context : Format.formatter -> (string * 'a) list -> unit
 val print : Format.formatter -> instruction -> unit
+
+val pp_term : term printer
 
 type coq_universe =
   | Prop
@@ -60,7 +65,6 @@ val coq_Sort  : term
 val coq_z     : term
 val coq_s     : term -> term
 val coq_univ_index : int -> term
-val coq_univ_var: string -> term
 val coq_prop  : term
 val coq_set   : term
 val coq_type  : term -> term

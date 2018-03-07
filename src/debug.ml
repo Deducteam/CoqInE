@@ -1,70 +1,72 @@
 
 open Pp
+open Format
 
-let debug_out = ref Format.std_formatter
+let debug_out = ref std_formatter
 
-let debug_to_file fn = debug_out := Format.formatter_of_out_channel (open_out fn)
-let debug_msg s = pp_with !debug_out s
+let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
 
+type 'a printer = formatter -> 'a -> unit
 
 let debug_flag = ref false
 
 let debug_start () = debug_flag := true
 let debug_stop  () = debug_flag := false
 
+let debug fmt =
+  if !debug_flag
+  then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
+  else ifprintf err_formatter fmt
 
-let debug_str s = if !debug_flag then debug_msg (s ++ (str "\n"))
 
-let debug_string s = debug_str (str s)
+let string_of fp = Format.asprintf "%a" fp
 
-let debug_dk_term t =
-  if !debug_flag then begin
-    Dedukti.print_term !debug_out t;
-    debug_msg (str "\n")
-    end
+let format_of_sep str fmt () : unit =
+  Format.fprintf fmt "%s" str
 
-let pt_coq_term  = Printer.safe_pr_constr
-let pt_coq_type  = Printer.pr_type
-let pt_coq_level = Univ.Level.pr
-let pt_coq_univ  = Univ.Universe.pr
-let pt_coq_inst  = Univ.Instance.pr (Univ.Level.pr)
-let pt_coq_id    = Names.Id.print
-let pt_coq_name = function
-  | Names.Name.Anonymous -> (str "_")
-  | Names.Name.Name n -> pt_coq_id n
-let pt_coq_sort = function
-  | Term.Prop Null -> (str "Set")
-  | Term.Prop Pos  -> (str "Prop")
-  | Term.Type i    -> (str "Univ(") ++ (pt_coq_univ i)
-let pt_coq_decl = function
+let pp_list sep pp fmt l = Format.pp_print_list ~pp_sep:(format_of_sep sep) pp fmt l
+
+
+let pp_std_ppcmds = pp_with
+
+let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_std_ppcmds (f x)
+
+
+let pp_coq_term  = printer_of_std_ppcmds Printer.safe_pr_constr
+let pp_coq_type  = printer_of_std_ppcmds Printer.pr_type
+let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
+let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
+let pp_coq_inst  = printer_of_std_ppcmds (Univ.Instance.pr (Univ.Level.pr))
+let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
+
+let pp_coq_name fmt = function
+  | Names.Name.Anonymous -> fprintf fmt "_"
+  | Names.Name.Name n    -> fprintf fmt "%a" pp_coq_id n
+
+let pp_coq_sort fmt = function
+  | Term.Prop Term.Null -> fprintf fmt "Set"
+  | Term.Prop Term.Pos  -> fprintf fmt "Prop"
+  | Term.Type i         -> fprintf fmt "Univ(%a)" pp_coq_univ i
+
+let pp_coq_decl fmt = function
   | Context.Rel.Declaration.LocalAssum (name, t) ->
-     (pt_coq_name name) ++ (str " = ") ++ (pt_coq_term t)
+    fprintf fmt "%a = %a" pp_coq_name name pp_coq_term t
   | Context.Rel.Declaration.LocalDef (name, v, t) ->
-     (pt_coq_name name) ++ (str " : ") ++ (pt_coq_term t) ++ (str " = ") ++ (pt_coq_term t)
-let pt_coq_named_decl = function
-  | Context.Named.Declaration.LocalAssum (id, t) ->
-     (pt_coq_id id) ++ (str " = ") ++ (pt_coq_term t)
-  | Context.Named.Declaration.LocalDef (id, v, t) ->
-     (pt_coq_id id) ++ (str " : ") ++ (pt_coq_term t) ++ (str " = ") ++ (pt_coq_term t)
-let rec pt_coq_ctxt t =
-  let pt s decl = s ++ (str "\n  ") ++ (pt_coq_decl decl) in
-    (List.fold_left pt (str "[") t) ++ (str "\n]")
-let rec pt_coq_named_ctxt t =
-  let pt s decl = s ++ (str "\n  ") ++ (pt_coq_named_decl decl) in
-    (List.fold_left pt (str "[") t) ++ (str "\n]")
-let pt_coq_env e =
-  (pt_coq_ctxt (Environ.rel_context e)) ++
-  (str "\n") ++
-  (pt_coq_named_ctxt (Environ.named_context e))
+    fprintf fmt "%a : %a = %a" pp_coq_name name pp_coq_term t pp_coq_term t
 
-let debug_coq_term  t = debug_str (pt_coq_term  t)
-let debug_coq_type  t = debug_str (pt_coq_type  t)
-let debug_coq_level t = debug_str (pt_coq_level t)
-let debug_coq_univ  t = debug_str (pt_coq_univ  t)
-let debug_coq_inst  t = debug_str (pt_coq_inst  t)
-let debug_coq_id    t = debug_str (pt_coq_id    t)
-let debug_coq_name  t = debug_str (pt_coq_name  t)
-let debug_coq_sort  t = debug_str (pt_coq_sort  t)
-let debug_coq_decl  t = debug_str (pt_coq_decl  t)
-let debug_coq_ctxt  t = debug_str (pt_coq_ctxt  t)
-let debug_coq_env   t = debug_str (pt_coq_env   t)
+let pp_coq_named_decl fmt = function
+  | Context.Named.Declaration.LocalAssum (id, t) ->
+    fprintf fmt "%a = %a" pp_coq_id id pp_coq_term t
+  | Context.Named.Declaration.LocalDef (id, v, t) ->
+    fprintf fmt "%a : %a = %a" pp_coq_id id pp_coq_term t pp_coq_term t
+
+let pp_coq_ctxt fmt ctxt =
+  fprintf fmt "[\n  %a\n]" (pp_list "\n  " pp_coq_decl) ctxt
+
+let pp_coq_named_ctxt fmt ctxt =
+  fprintf fmt "[\n  %a\n]" (pp_list "\n  " pp_coq_named_decl) ctxt
+
+let pp_coq_env fmt e =
+  fprintf fmt "%a\n%a"
+    pp_coq_ctxt       (Environ.rel_context e)
+    pp_coq_named_ctxt (Environ.named_context e)

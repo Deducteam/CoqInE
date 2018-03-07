@@ -2,7 +2,7 @@
 
 open Pp
 open Declarations
-
+open Debug
 open Info
 
 (** Constant definitions have a type and a body.
@@ -17,11 +17,12 @@ let translate_constant_body info env label const =
   assert (List.length const.const_hyps = 0);
   let const_type = match const.const_type with
     | RegularArity a -> (
-       Debug.debug_string ("Constant regular body: "^ label');
-       a)
+        debug "Constant regular body: %s" label';
+        a)
     | TemplateArity(rel_context, poly_arity) -> (
-       Debug.debug_string ("Constant template body: "^ label');
-       Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type poly_arity.template_level))) in
+        debug "Constant template body: %s" label';
+        Terms.generalize_rel_context rel_context
+          (Term.mkSort (Term.Type poly_arity.template_level))) in
   (* TODO: fix this ! *)
   let uenv = Info.empty () in
   let const_type' = Terms.translate_types info env uenv const_type in
@@ -41,7 +42,7 @@ let translate_constant_body info env label const =
   
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  Debug.debug_string ("Inductive body: "^ (Name.translate_element_name info env label));
+  debug "Inductive body: %s" (Name.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do

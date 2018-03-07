@@ -1,7 +1,5 @@
 (** Dedukti syntax and pretty-printing functions *)
 
-open Pp
-
 type var = string
 
 type term =
@@ -105,17 +103,13 @@ and print_atomic out term =
 and print_binding out (x, a) =
   Format.fprintf out "@[<2>%a :@ %a@]" print_var x print_app a
 
+let pp_term = print_term
+
 let print_binding_context out (x, a) =
   Format.fprintf out "@[<2>%a@]" print_var x
 
 let print_context out context =
-  let rec print_context out context =
-    match context with
-    | [] -> ()
-    | [xa] -> Format.fprintf out "%a" print_binding_context xa
-    | xa :: context -> Format.fprintf out "%a,@ %a" print_binding_context xa print_context context
-  in
-  Format.fprintf out "@[<v>%a@]" print_context context
+  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_binding_context) context
 
 let print out instruction =
   begin match instruction with
@@ -153,7 +147,6 @@ let coq_Sort = coq_var "Sort"
 let coq_z    =      coq_var "z"
 let coq_s i  = app (coq_var "s") i
 let rec coq_univ_index i = if i == 0 then coq_z else coq_s (coq_univ_index (i-1))
-let     coq_univ_var   s = var (String.concat "__" (String.split_on_char '.' s))
 
 let coq_prop   =      coq_var "prop"
 let coq_set    =      coq_var "set"
@@ -175,4 +168,3 @@ let coq_term s  a        = apps (coq_var "T"    ) [s; a]
 let coq_sort s           = app  (coq_var "sort" ) s
 let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [s1; s2; a; b]
 let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [s1; s2; a; b; t]
-
