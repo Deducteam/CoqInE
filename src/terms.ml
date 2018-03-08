@@ -25,13 +25,15 @@ let rec infer_translate_sort info env uenv a =
   | SortType(s) -> coq_axiom (translate_sort info env uenv s)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
-      let x = Name.fresh_name info env ~default:"_" x in
-      let s1' = infer_translate_sort info env uenv a in
-      let s2' = infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
-      coq_rule s1' s2'
+    let x = Name.fresh_name info env ~default:"_" x in
+    let s1' = infer_translate_sort info env uenv a in
+    let s2' = infer_translate_sort info
+        (Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env) uenv b in
+    coq_rule s1' s2'
   | LetInType(x, u, a, b) ->
-      (* No need to lift the let here. *)
-      infer_translate_sort info (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env) uenv b
+    (* No need to lift the let here. *)
+    infer_translate_sort info
+      (Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env) uenv b
   | AtomicType(_) -> translate_sort info env uenv (infer_sort env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
@@ -201,21 +203,21 @@ let rec translate_constr ?expected_type info env uenv t =
     begin
       check_const env kn;
       let name = Name.translate_constant info env kn in
-      debug "Printing constant: %s" name;
+      debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
       Tsorts.instantiate_univ_params name univ_instance
     end
   | Ind (kn, univ_instance) ->
     begin
       check_ind env kn;
       let name = Name.translate_inductive info env kn in
-      debug "Printing inductive: %s" name;
+      debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
       Tsorts.instantiate_univ_params name univ_instance
     end
   | Construct (kn, univ_instance) ->
     begin
       check_construct env kn;
       let name = Name.translate_constructor info env kn in
-      debug "Printing constructor: %s" name;
+      debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
       Tsorts.instantiate_univ_params name univ_instance
     end
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
@@ -363,9 +365,11 @@ and lift_fix info env uenv names types bodies rec_indices =
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in
     let fix_term2' = translate_constr info env uenv fix_terms2.(i) in
     let ind_args' = List.map (translate_constr info env uenv) (List.map (Vars.lift 1) ind_args.(i)) in
-    [(context', Dedukti.apply_context fix_term1' context',
+    [(context',
+      Dedukti.apply_context fix_term1' context',
       Dedukti.apps (Dedukti.apply_context fix_term2' context')
-        (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))]) in
+        (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))
+    ]) in
   let fix_rules2 = Array.init n (fun i ->
     let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in
     let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in
@@ -382,8 +386,10 @@ and lift_fix info env uenv names types bodies rec_indices =
       let cons_term_applied' = Dedukti.apply_context cons_term' cons_context' in
       let cons_ind_args' = List.map (translate_constr info env uenv) cons_ind_args.(j) in
       (context' @ cons_context',
-        Dedukti.apps (Dedukti.apply_context fix_term2' context') (cons_ind_args' @ [cons_term_applied']),
-        Dedukti.apply_context fix_term3' context')) in
+       Dedukti.apps
+         (Dedukti.apply_context fix_term2' context')
+         (cons_ind_args' @ [cons_term_applied']),
+       Dedukti.apply_context fix_term3' context')) in
     Array.to_list cons_rules) in
   let env = Array.fold_left push_const_decl env name1_declarations in
   let env = Array.fold_left push_const_decl env name2_declarations in
@@ -401,7 +407,10 @@ and lift_fix info env uenv names types bodies rec_indices =
                               env fix_declarations1 in
     let body' = translate_constr info env uenv bodies.(i) in
 (*    let env , context' = translate_rel_context info env uenv contexts.(i) in*)
-    [(rel_context', Dedukti.apply_context fix_term3' rel_context', body')]) in
+    [(rel_context',
+      Dedukti.apply_context fix_term3' rel_context',
+      body')
+    ]) in
   for i = 0 to n - 1 do
     List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules1.(i));
     List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules2.(i));

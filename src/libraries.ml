@@ -3,23 +3,21 @@
 open Pp
 open Debug
 
-let print m = pp_with Format.std_formatter (m ++ str "\n")
-
 let destination = ref "."
 
 let set_destination dest =
-  print (str "Setting destination: " ++ str dest);
+  message "Setting destination: %s" dest;
   destination := dest
 
 let set_debug dest =
-  print (str "Setting debug to: " ++ str dest);
+  message "Setting debug to: %s" dest;
   debug_to_file dest
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
   let libname = Libnames.pr_qualid qualid in
-  print (str "Exporting " ++ libname);
+  message "Exporting %a" pp_std_ppcmds libname;
   if (libname = (str "Top.Debuglib")) then debug_start ();
   debug "Exporting %a" pp_std_ppcmds (Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
@@ -67,33 +65,26 @@ let translate_all () =
 let print_universes_constraints universes =
   let register constraint_type j k =
     match constraint_type with
-    | Univ.Lt -> print (str j ++ str " <  " ++ str k)
-    | Univ.Le -> print (str j ++ str " <= " ++ str k)
-    | Univ.Eq -> print (str j ++ str " == " ++ str k)
+    | Univ.Lt -> message "%s <  %s" j k
+    | Univ.Le -> message "%s <= %s" j k
+    | Univ.Eq -> message "%s == %s" j k
   in
   UGraph.dump_universes register universes
 
 let show_universes_constraints () =
-  print (str "");
-  print (str "------------------------------------------------");
-  print (str "|    Printing global universes constraints     |");
-  print (str "------------------------------------------------");
+  message "";
+  message "------------------------------------------------";
+  message "|    Printing global universes constraints     |";
+  message "------------------------------------------------";
   print_universes_constraints (Global.universes ());
-  print (str "-----------------------------------------------");
-  print (str "")
+  message "-----------------------------------------------";
+  message ""
 
 let show_sorted_universes_constraints () =
-  print (str "");
-  print (str "------------------------------------------------");
-  print (str "| Printing global sorted universes constraints |");
-  print (str "------------------------------------------------");
+  message "";
+  message "------------------------------------------------";
+  message "| Printing global sorted universes constraints |";
+  message "------------------------------------------------";
   print_universes_constraints (UGraph.sort_universes (Global.universes ()));
-  print (str "-----------------------------------------------");
-  print (str "")
-
-
-let debug () =
-  print (str "Debug")
-
-let test () =
-  print (str "Test")
+  message "-----------------------------------------------";
+  message ""

@@ -37,16 +37,15 @@ val command : string -> string list -> instruction
 val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val rewrite : (var * term) list * term * term -> instruction
-val apply_context : term -> (var * 'a) list -> term
+val apply_context : term -> (var * term) list -> term
 
 val print_var : var printer
 val print_term : Format.formatter -> term -> unit
 val print_app : Format.formatter -> term -> unit
 val print_atomic : Format.formatter -> term -> unit
-val print_binding : Format.formatter -> var * term -> unit
-val print_binding_context : Format.formatter -> string * 'a -> unit
-val print_context : Format.formatter -> (string * 'a) list -> unit
-val print : Format.formatter -> instruction -> unit
+
+val print_binding     : (var * term)      printer
+val print             : instruction       printer
 
 val pp_term : term printer
 

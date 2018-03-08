@@ -1,6 +1,8 @@
 
 VERBOSE?=
 
+CAMLFLAGS="-bin-annot -annot"
+
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 DKCHECK = dkcheck
@@ -31,4 +33,5 @@ clean: CoqMakefile
 	rm CoqMakefile
 
 CoqMakefile: Make
-	$(COQ_MAKEFILE) -f Make > CoqMakefile
+	$(COQ_MAKEFILE) -f Make -o CoqMakefile
+	echo "COQMF_CAMLFLAGS+=-annot -bin-annot" >> CoqMakefile.conf

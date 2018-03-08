@@ -17,14 +17,13 @@ let get_level_vars level_params =
       (translate_level u) :: acc in
   List.fold_right aux level_params []
 
-
 let univ_params args b =
   List.fold_right
     (function x -> pie (coq_univ_name x, coq_Sort)) args b
 
 let instantiate_univ_params name univ_instance =
   let levels = Univ.Instance.to_array univ_instance in
-  debug "Instantiating: %a" (pp_list ", " pp_coq_level) (Array.to_list levels);
+  if Array.length levels > 0 then debug "Instantiating: %a" pp_coq_inst univ_instance;
   Array.fold_left
     (fun t l -> Dedukti.app t (var (translate_level l)))
     (Dedukti.var name)
@@ -52,7 +51,7 @@ let evaluate_universe info env uenv i =
     | Set -> coq_set
     | Prop -> coq_prop
     | Atom a ->
-       if Info.is_poly_univ_str uenv a
+       if Info.is_poly_univ_str uenv a && Debug.polymorphism ()
        (* If a is a polymorphic universe variable in this context *)
        then var (coq_univ_name a)
        else begin

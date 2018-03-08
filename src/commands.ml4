@@ -40,10 +40,12 @@ VERNAC COMMAND EXTEND DeduktiShowSortedUniverses CLASSIFIED AS QUERY
   [ show_sorted_universes_constraints () ]
 END
 
-VERNAC COMMAND EXTEND DeduktiDebug CLASSIFIED AS QUERY
-| [ "Dedukti" "Debug" ] -> [ debug () ]
+VERNAC COMMAND EXTEND DeduktiEnablePolymorphism CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Universes" ] ->
+  [ Debug.enable_polymorphism () ]
 END
 
-VERNAC COMMAND EXTEND DeduktiTest CLASSIFIED AS QUERY
-| [ "Dedukti" "Test" ] -> [ test () ]
+VERNAC COMMAND EXTEND DeduktiDisablePolymorphism CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Universes" ] ->
+  [ Debug.disable_polymorphism () ]
 END

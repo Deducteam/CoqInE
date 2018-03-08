@@ -100,16 +100,16 @@ and print_atomic out term =
   | _ ->
     Format.fprintf out "(%a)" print_term term
 
-and print_binding out (x, a) =
-  Format.fprintf out "@[<2>%a :@ %a@]" print_var x print_app a
+and print_binding out (v, ty) =
+  Format.fprintf out "@[<2>%a :@ %a@]" print_var v print_app ty
 
 let pp_term = print_term
 
-let print_binding_context out (x, a) =
-  Format.fprintf out "@[<2>%a@]" print_var x
+let print_context_var out (v, ty) =
+  Format.fprintf out "@[<2>%a@]" print_var v
 
 let print_context out context =
-  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_binding_context) context
+  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_context_var) context
 
 let print out instruction =
   begin match instruction with

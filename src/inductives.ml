@@ -141,7 +141,8 @@ let translate_match info env label mind_body i =
   let ind_terms = Array.init n_types (fun i -> Term.mkIndU((mind, i),univ_instance)) in
   
   (* Constructor names start from 1. *)
-  let cons_terms = Array.init n_cons (fun j -> Term.mkConstruct((mind, i), j + 1)) in
+  let cons_terms = Array.init n_cons
+      (fun j -> Term.mkConstructU(((mind, i), j + 1), univ_instance)) in
   
   let indtype_name = ind_body.mind_typename in
   let match_function_name' = Name.translate_identifier (Name.match_function indtype_name) in
@@ -188,9 +189,10 @@ let translate_match info env label mind_body i =
   let cons_applieds = Array.init n_cons (fun j ->
       Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
   
+  if n_cons > 0 then debug "Test: %a" pp_coq_term cons_applieds.(0);
   let params_env, params_context' =
     Terms.translate_rel_context info (Global.env ()) uenv params_context in
-
+  
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Name.fresh_of_string info params_env "s" in
   let return_sort_name' = Name.translate_identifier return_sort_name in
@@ -205,20 +207,24 @@ let translate_match info env label mind_body i =
   
   (* Create a fresh variables for each constructors of the inductive type
      and add them to the environment (why ?) *)
-  let params_env, case_names' = Array.fold_left (fun (params_env, case_names') cons_name ->
-    let case_name = Name.fresh_identifier info params_env ~prefix:"case" cons_name in
-    let case_name' = Name.translate_identifier case_name in
-    let params_env = Name.push_identifier case_name params_env in
-    (params_env, case_name' :: case_names')) (params_env, []) cons_names in
+  let params_env, case_names' =
+    Array.fold_left
+      (fun (params_env, case_names') cons_name ->
+         let case_name = Name.fresh_identifier info params_env ~prefix:"case" cons_name in
+         let case_name' = Name.translate_identifier case_name in
+         let params_env = Name.push_identifier case_name params_env in
+         (params_env, case_name' :: case_names'))
+      (params_env, [])
+      cons_names in
   let case_names' = Array.of_list (List.rev case_names') in
   
   let arity_real_env, arity_real_context' =
     Terms.translate_rel_context info params_env uenv arity_real_context in
   let ind_applied' = Terms.translate_types info arity_real_env uenv ind_applied in
   
-  debug "ind_applied: %a / %a" pp_coq_term ind_applied Dedukti.pp_term  ind_applied';
+  debug "ind_applied: %a / %a" pp_coq_term ind_applied Dedukti.pp_term ind_applied';
   
-  (* Create a fresh variable x and add it to the environment (why ?) *)
+  (* Create a fresh variable x and add it to the environment *)
   let matched_name = Name.fresh_of_string info arity_real_env "x" in
   let matched_name' = Name.translate_identifier matched_name in
   let matched_var' = Dedukti.var matched_name' in
@@ -237,7 +243,7 @@ let translate_match info env label mind_body i =
   
   debug "Env: %a" pp_coq_env params_env;
   Array.iter (debug "%a" pp_coq_ctxt) cons_real_contexts;
-  Array.iter (debug "%a" pp_coq_env) cons_real_envs;
+  Array.iter (debug "%a" pp_coq_env ) cons_real_envs;
   
   let cons_ind_real_args' =
     Array.mapi
@@ -250,32 +256,60 @@ let translate_match info env label mind_body i =
       cons_applieds in
   
   (* Combine the above. *)
-  let case_types' = Array.init n_cons (fun j -> Dedukti.pies cons_real_contexts'.(j)
-    (Dedukti.coq_term return_sort_var' (Dedukti.apps return_type_var' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
+  let case_types' =
+    Array.init n_cons
+      (fun j ->
+         Dedukti.pies cons_real_contexts'.(j)
+           (Dedukti.coq_term return_sort_var'
+              (Dedukti.apps return_type_var'
+                 (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
+
+  if n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
+  
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let univ_poly_context' = List.map (fun x -> (x, Dedukti.coq_Sort)) univ_poly_context in
   let common_context' =
     (return_sort_name', Dedukti.coq_Sort) ::
     params_context' @   (* Shouldn't this be first ? *)
-    (return_type_name', Dedukti.pies arity_real_context'
-                                     (Dedukti.arr ind_applied'
-                                                  (Dedukti.coq_U return_sort_var'))) ::
-        cases_context' in
+    (return_type_name',
+     Dedukti.pies
+       arity_real_context'
+       (Dedukti.arr ind_applied' (Dedukti.coq_U return_sort_var'))
+    ) ::
+    cases_context' in
   let match_function_context' =
-    univ_poly_context' @ common_context' @ arity_real_context' @ [matched_name', ind_applied'] in
+    univ_poly_context' @
+    common_context' @
+    arity_real_context' @
+    [matched_name', ind_applied'] in
   let match_function_type' = Dedukti.coq_term return_sort_var'
     (Dedukti.app
        (Dedukti.apply_context return_type_var' arity_real_context')
        matched_var') in
+
+  (* Printing out the match definition. *)
   Dedukti.print info.out
     (Dedukti.declaration true match_function_name'
        (Dedukti.pies match_function_context' match_function_type'));
-  let match_function_applied' =
-    Dedukti.apps match_function_var' (return_sort_var' :: params' @ return_type_var' :: Array.to_list cases') in
-  let case_rules = Array.init n_cons (fun j ->
-    let case_rule_context' = common_context' @ cons_real_contexts'.(j) in
-    let case_rule_left' = Dedukti.apps match_function_applied' (cons_ind_real_args'.(j) @ [cons_applieds'.(j)]) in
-    let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
-    (case_rule_context', case_rule_left', case_rule_right')) in
-  List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite (Array.to_list case_rules))
 
+  let match_function_applied' =
+    Dedukti.apps match_function_var'
+      (List.map Dedukti.var univ_poly_context @
+       return_sort_var' ::
+       params' @
+       return_type_var' ::
+       Array.to_list cases') in
+  let case_rules = Array.init n_cons
+      (fun j ->
+         let case_rule_context' =
+           univ_poly_context' @ common_context' @ cons_real_contexts'.(j) in
+         let case_rule_left' =
+           Dedukti.apps
+             match_function_applied'
+             (cons_ind_real_args'.(j) @ [cons_applieds'.(j)]) in
+         let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
+         (case_rule_context', case_rule_left', case_rule_right')
+      ) in
+  
+  (* Printing out the match rewrite rules. *)
+  List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite (Array.to_list case_rules))

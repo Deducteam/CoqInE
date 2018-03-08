@@ -2,6 +2,14 @@
 open Pp
 open Format
 
+
+let polymorphism_flag = ref true
+
+let  enable_polymorphism () = polymorphism_flag := true
+let disable_polymorphism () = polymorphism_flag := false
+let polymorphism () = !polymorphism_flag
+
+
 let debug_out = ref std_formatter
 
 let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
@@ -18,6 +26,8 @@ let debug fmt =
   then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
   else ifprintf err_formatter fmt
 
+let message fmt =
+  kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
 
 let string_of fp = Format.asprintf "%a" fp
 
@@ -26,6 +36,7 @@ let format_of_sep str fmt () : unit =
 
 let pp_list sep pp fmt l = Format.pp_print_list ~pp_sep:(format_of_sep sep) pp fmt l
 
+let pp_array sep pp fmt a = pp_list sep pp fmt (Array.to_list a)
 
 let pp_std_ppcmds = pp_with
 
@@ -36,8 +47,13 @@ let pp_coq_term  = printer_of_std_ppcmds Printer.safe_pr_constr
 let pp_coq_type  = printer_of_std_ppcmds Printer.pr_type
 let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
 let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
-let pp_coq_inst  = printer_of_std_ppcmds (Univ.Instance.pr (Univ.Level.pr))
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
+
+let pp_coq_lvl_arr = pp_array " " pp_coq_level
+
+let pp_coq_inst fmt univ_instance =
+  let levels = Univ.Instance.to_array univ_instance in
+  fprintf fmt "%a" pp_coq_lvl_arr levels
 
 let pp_coq_name fmt = function
   | Names.Name.Anonymous -> fprintf fmt "_"
