@@ -2,14 +2,12 @@
 
 val list_chop : int -> 'a list -> 'a list * 'a list
 
+(** [str_starts_with prefix s] returns true iif [s] starts with [prefix]. *)
+val str_starts_with : string -> string -> bool
 
-(** Printing functions here *)
-(**
-Printer.pr_lconstr_env         : env -> evar_map -> constr -> std_ppcmds
-Printer.pr_lconstr             : constr -> std_ppcmds
-Printer.pr_lconstr_goal_style_env : env -> evar_map -> constr -> std_ppcmds
+(** Keep only Somes *)
+val filter_some : 'a option list -> 'a list
 
-Printer.pr_constr_env          : env -> evar_map -> constr -> std_ppcmds
-Printer.pr_constr              : constr -> std_ppcmds
-Printer.pr_constr_goal_style_env : env -> evar_map -> constr -> std_ppcmds
- *)
+(** Compose a function n times *)
+val iterate : int -> ('a -> 'a) -> 'a -> 'a
+

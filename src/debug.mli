@@ -1,16 +1,4 @@
 
-val  enable_polymorphism : unit -> unit
-val disable_polymorphism : unit -> unit
-
-val polymorphism : unit -> bool
-
-
-(** Enables debugging *)
-val debug_start : unit -> unit
-
-(** Disables debugging *)
-val debug_stop  : unit -> unit
-
 (** Sets debugging output to file at given path *)
 val debug_to_file : string -> unit
 
@@ -39,3 +27,5 @@ val pp_coq_level   : Univ.universe_level       printer
 val pp_coq_univ    : Univ.universe             printer
 val pp_coq_lvl_arr : Univ.universe_level array printer
 val pp_coq_inst    : Univ.universe_instance    printer
+
+val pp_globname : Globnames.global_reference printer

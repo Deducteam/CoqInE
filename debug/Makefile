@@ -39,7 +39,7 @@ Coq.dko: depend Coq.dk
 	$(DKCHECK) -e -nl Coq.dk
 
 .dk.dko: depend
-	$(DKCHECK) -e -nl $<
+	$(DKCHECK) -errors-in-snf -e -nl $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean

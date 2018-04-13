@@ -17,10 +17,8 @@ let is_poly_univ_str env v =
 let add_poly_univ_lvl env lvl =
   add_poly_univ_str env (Univ.Level.to_string lvl)
 
-let rec add_poly_univ_lvl_list env = function
-  | [] -> env
-  | None   :: tl -> add_poly_univ_lvl_list env                       tl
-  | Some u :: tl -> add_poly_univ_lvl_list (add_poly_univ_lvl env u) tl
+let rec add_poly_univ_lvl_list = List.fold_left add_poly_univ_lvl
+
 
 let is_poly_univ_lvl env l =
   is_poly_univ_str env (Univ.Level.to_string l)

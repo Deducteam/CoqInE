@@ -26,32 +26,30 @@ let translate_inductive info env label mind_body i =
   let name' = Name.translate_element_name info env (Names.label_of_id name) in
   debug "--- %s ---" name';
   debug "%a" pp_coq_ctxt arity_context;
+
+  let (level_params, arity_sort) =
+    match arity with
+    | RegularArity ria -> ([], ria.mind_sort)
+    | TemplateArity ta  -> begin
+        debug "Template params levels:";
+        List.iter (function   None   -> debug "None"
+                            | Some u -> debug "%a" pp_coq_level u) ta.template_param_levels;
+        debug "Template level: %a" pp_coq_univ ta.template_level;
+        debug "Arity context: %a"  pp_coq_ctxt arity_context;
+        Utils.filter_some ta.template_param_levels,      (* level_params *)
+        Term.Type ta.template_level                      (* arity_sort *)
+      end in
   
-  match arity with
-  | RegularArity ria -> begin
-      (* Translate the regular inductive type. *)
-      (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
-      let arity = Term.it_mkProd_or_LetIn (Term.mkSort ria.mind_sort) arity_context in
-      let arity' = Terms.translate_types info env (Info.empty ()) arity in
-      Dedukti.print info.out (Dedukti.declaration false name' arity')
-    end
-  | TemplateArity ta  -> begin
-      debug "Template params levels:";
-      List.iter (function   None   -> debug "None"
-                          | Some u -> debug "%a" pp_coq_level u) ta.template_param_levels;
-      debug "Template level: %a" pp_coq_univ ta.template_level;
-      debug "Arity context: %a"  pp_coq_ctxt arity_context;
-      let univ_parameters = Tsorts.get_level_vars ta.template_param_levels in
-      let uenv = Info.add_poly_univ_lvl_list (Info.empty ()) ta.template_param_levels in
-      let arity_sort = Term.Type ta.template_level in
-      debug "Arity sort: %a" pp_coq_type (Term.mkSort arity_sort);
-      let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
-      debug "Arity: %a" pp_coq_type arity;
-      let arity' = Terms.translate_types info env uenv arity in
-      debug "Arity': %a" Dedukti.pp_term arity';
-      let parameterized_arity = Tsorts.univ_params univ_parameters arity' in
-      Dedukti.print info.out (Dedukti.declaration false name' parameterized_arity)
-    end
+  let uenv = Info.add_poly_univ_lvl_list (Info.empty ()) level_params in
+  debug "Translate the regular inductive type.";
+  (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
+  let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
+  let arity' = Terms.translate_types info env uenv arity in
+  let arity' = Tsorts.add_univ_params level_params arity' in
+  debug "Arity sort: %a" pp_coq_type (Term.mkSort arity_sort);
+  debug "Arity: %a" pp_coq_type arity;
+  debug "Arity': %a" Dedukti.pp_term arity';
+  Dedukti.print info.out (Dedukti.declaration false name' arity')
 
 (** Translate the constructors of the i-th inductive type in [mind_body]. *)
 let translate_constructors info env label mind_body i =
@@ -74,8 +72,9 @@ let translate_constructors info env label mind_body i =
     match ind_body.mind_arity with
     | RegularArity  ria -> [], Info.empty ()
     | TemplateArity ta  ->
-      Tsorts.get_level_vars ta.template_param_levels,
-      Info.add_poly_univ_lvl_list (Info.empty ()) ta.template_param_levels in
+      let param_levels = Utils.filter_some ta.template_param_levels in
+      param_levels,
+      Info.add_poly_univ_lvl_list (Info.empty ()) param_levels in
   
   let mind = Names.make_mind info.module_path Names.empty_dirpath label in
 
@@ -96,7 +95,7 @@ let translate_constructors info env label mind_body i =
     
     let cons_name = Name.translate_element_name info env (Names.label_of_id cons_name) in
     let cons_type = Terms.translate_types info env uenv cons_type in
-    let parameterized_type = Tsorts.univ_params univ_poly_context cons_type in
+    let parameterized_type = Tsorts.add_univ_params univ_poly_context cons_type in
     debug "Cons_type: %a" Dedukti.pp_term parameterized_type;
     
     Dedukti.print info.out (Dedukti.declaration false cons_name parameterized_type);
@@ -133,8 +132,9 @@ let translate_match info env label mind_body i =
     match ind_body.mind_arity with
     | RegularArity  ria -> [], Info.empty ()
     | TemplateArity ta  ->
-      Tsorts.get_level_vars ta.template_param_levels,
-      Info.add_poly_univ_lvl_list (Info.empty ()) ta.template_param_levels in
+      let param_levels = Utils.filter_some ta.template_param_levels in
+      Tsorts.get_level_vars param_levels,
+      Info.add_poly_univ_lvl_list (Info.empty ()) param_levels in
 
   let mind = Names.make_mind info.module_path Names.empty_dirpath label in
   
@@ -260,21 +260,21 @@ let translate_match info env label mind_body i =
     Array.init n_cons
       (fun j ->
          Dedukti.pies cons_real_contexts'.(j)
-           (Dedukti.coq_term return_sort_var'
+           (Dedukti.Coq.coq_term return_sort_var'
               (Dedukti.apps return_type_var'
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
   if n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
   
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
-  let univ_poly_context' = List.map (fun x -> (x, Dedukti.coq_Sort)) univ_poly_context in
+  let univ_poly_context' = List.map (fun x -> (x, Dedukti.Coq.coq_Sort)) univ_poly_context in
   let common_context' =
-    (return_sort_name', Dedukti.coq_Sort) ::
+    (return_sort_name', Dedukti.Coq.coq_Sort) ::
     params_context' @   (* Shouldn't this be first ? *)
     (return_type_name',
      Dedukti.pies
        arity_real_context'
-       (Dedukti.arr ind_applied' (Dedukti.coq_U return_sort_var'))
+       (Dedukti.arr ind_applied' (Dedukti.Coq.coq_U return_sort_var'))
     ) ::
     cases_context' in
   let match_function_context' =
@@ -282,7 +282,7 @@ let translate_match info env label mind_body i =
     common_context' @
     arity_real_context' @
     [matched_name', ind_applied'] in
-  let match_function_type' = Dedukti.coq_term return_sort_var'
+  let match_function_type' = Dedukti.Coq.coq_term return_sort_var'
     (Dedukti.app
        (Dedukti.apply_context return_type_var' arity_real_context')
        matched_var') in

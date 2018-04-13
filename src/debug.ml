@@ -1,33 +1,19 @@
-
 open Pp
 open Format
 
-
-let polymorphism_flag = ref true
-
-let  enable_polymorphism () = polymorphism_flag := true
-let disable_polymorphism () = polymorphism_flag := false
-let polymorphism () = !polymorphism_flag
-
-
-let debug_out = ref std_formatter
-
-let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
-
 type 'a printer = formatter -> 'a -> unit
-
-let debug_flag = ref false
-
-let debug_start () = debug_flag := true
-let debug_stop  () = debug_flag := false
-
-let debug fmt =
-  if !debug_flag
-  then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
-  else ifprintf err_formatter fmt
 
 let message fmt =
   kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
+
+let debug_out = ref err_formatter
+
+let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
+
+let debug fmt =
+  if Parameters.is_debug_on ()
+  then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
+  else ifprintf err_formatter fmt
 
 let string_of fp = Format.asprintf "%a" fp
 
@@ -86,3 +72,7 @@ let pp_coq_env fmt e =
   fprintf fmt "%a\n%a"
     pp_coq_ctxt       (Environ.rel_context e)
     pp_coq_named_ctxt (Environ.named_context e)
+
+let pp_globname fmt n =
+  fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)
+

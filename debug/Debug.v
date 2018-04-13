@@ -1,6 +1,7 @@
 Require Coqine.
 
 Dedukti Set Destination "".
+Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
 Require Coq.Init.Notations

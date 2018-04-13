@@ -42,10 +42,20 @@ END
 
 VERNAC COMMAND EXTEND DeduktiEnablePolymorphism CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Universes" ] ->
-  [ Debug.enable_polymorphism () ]
+  [ Parameters.enable_polymorphism () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisablePolymorphism CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Universes" ] ->
-  [ Debug.disable_polymorphism () ]
+  [ Parameters.disable_polymorphism () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiEnableDebug CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Debug" ] ->
+  [ Parameters.enable_debug () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiDisableDebug CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Debug" ] ->
+  [ Parameters.disable_debug () ]
 END

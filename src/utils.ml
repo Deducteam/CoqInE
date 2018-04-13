@@ -12,3 +12,26 @@ let list_chop n l =
     | [] -> failwith "list_chop"
   in
   chop_aux n [] l
+
+
+let str_starts_with p =
+  let p_l = String.length p in
+  let rec f i res =
+    if i >= p_l
+    then res
+    else
+      let c = String.get p i in
+      fun x -> res x && String.get x i = c
+  in
+  f 0 (fun x -> true)
+
+let filter_some l =
+  let aux acc = function
+  | None   -> acc
+  | Some a -> a :: acc in
+  List.rev (List.fold_left aux [] l)
+
+
+let rec iterate n f x = match n with
+  | 0 -> x
+  | n -> iterate (n-1) f (f x)

@@ -1,11 +1,9 @@
-
 VERBOSE?=
 
 CAMLFLAGS="-bin-annot -annot"
 
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
-DKCHECK = dkcheck
 
 .PHONY: all plugin install test debug clean
 
@@ -31,7 +29,10 @@ clean: CoqMakefile
 	make -C test clean
 	make -C debug clean
 	rm CoqMakefile
+	rm src/*.cmt
+	rm src/*.cmti
+	rm src/*.annot
 
 CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
-	echo "COQMF_CAMLFLAGS+=-annot -bin-annot" >> CoqMakefile.conf
+	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf
