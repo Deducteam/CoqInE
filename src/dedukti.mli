@@ -18,6 +18,8 @@ type instruction =
   | Definition of bool * var * term * term
   | Rewrite of (var * term) list * term * term
 
+type 'a printer = Format.formatter -> 'a -> unit
+
 val var : var -> term
 val arr : term -> term -> term
 val pie : var * term -> term -> term
@@ -36,14 +38,15 @@ val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val rewrite : (var * term) list * term * term -> instruction
 val apply_context : term -> (var * 'a) list -> term
-val print_var : Format.formatter -> string -> unit
-val print_term : Format.formatter -> term -> unit
-val print_app : Format.formatter -> term -> unit
-val print_atomic : Format.formatter -> term -> unit
-val print_binding : Format.formatter -> var * term -> unit
-val print_binding_context : Format.formatter -> string * 'a -> unit
-val print_context : Format.formatter -> (string * 'a) list -> unit
-val print : Format.formatter -> instruction -> unit
+
+val print_var             : string printer
+val print_term            : term printer
+val print_app             : term printer
+val print_atomic          : term printer
+val print_binding         : (var * term) printer
+val print_binding_context : (string * 'a)      printer
+val print_context         : (string * 'a) list printer
+val print                 : instruction        printer
 
 type coq_universe =
   | Prop
