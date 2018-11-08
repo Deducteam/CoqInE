@@ -12,17 +12,22 @@ open Info
       an opaque definition (a theorem). **)
 
 let translate_constant_body info env label const =
-  let label' = Name.translate_element_name info env label in
+  let label' = Cname.translate_element_name info env label in
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
-  let const_type = match const.const_type with
-    | RegularArity a -> (
-       Debug.debug_string ("Constant regular body: "^ label');
-       a)
-    | TemplateArity(rel_context, poly_arity) -> (
-       Debug.debug_string ("Constant template body: "^ label');
-       Terms.generalize_rel_context rel_context (Term.mkSort (Term.Type poly_arity.template_level))) in
-  (* TODO: fix this ! *)
+  let ucontext = match const.const_universes with
+    | Monomorphic_const ctxt (* Univ.ContextSet.t *) ->
+      Debug.debug_string ("Constant regular body: "^ label');
+      Univ.ContextSet.to_context ctxt
+    | Polymorphic_const ctxt (* Univ.AUContext.t *) ->
+      Debug.debug_string ("Constant template body: "^ label');
+      Univ.AUContext.repr ctxt
+  in
+  let instance, constraints = Univ.UContext.dest ucontext in
+  let lvl_names   = Univ.Instance.to_array instance in
+  let constraints = Univ.Constraint.elements constraints in
+  (* TODO: do something with the constraints and level instances *)
+  let const_type = const.const_type in
   let uenv = Info.empty () in
   let const_type' = Terms.translate_types info env uenv const_type in
   match const.const_body with
@@ -41,7 +46,7 @@ let translate_constant_body info env label const =
   
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  Debug.debug_string ("Inductive body: "^ (Name.translate_element_name info env label));
+  Debug.debug_string ("Inductive body: "^ (Cname.translate_element_name info env label));
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
@@ -64,7 +69,7 @@ let identifiers_of_mutual_inductive_body mind_body =
 
 let identifiers_of_structure_field_body (label, struct_field_body) =
   match struct_field_body with
-  | SFBconst(_) -> [Names.id_of_label label]
+  | SFBconst(_) -> [Names.Label.to_id label]
   | SFBmind(mind_body) -> identifiers_of_mutual_inductive_body mind_body
   | SFBmodule(_) -> []
   | SFBmodtype(_) -> []
@@ -101,12 +106,12 @@ and translate_structure_field_body info env (label, sfb) =
   | SFBmind mib ->
      (
      match mib.mind_finite with
-     | Decl_kinds.Finite   (** = inductive *)
+     | Declarations.Finite   (** = inductive *)
        -> translate_mutual_inductive_body info env label mib
-     | Decl_kinds.CoFinite (** = coinductive   *)
-       -> Error.warning (str "Ignoring coinductive " ++ Names.pr_label label)
-     | Decl_kinds.BiFinite (** = non-recursive *)
-       -> Error.warning (str "Ignoring non-recursive " ++ Names.pr_label label)
+     | Declarations.CoFinite (** = coinductive   *)
+       -> Error.warning (str "Ignoring coinductive " ++ Names.Label.print label)
+     | Declarations.BiFinite (** = non-recursive *)
+       -> Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
      )
   | SFBmodule mb ->
       let info = {info with module_path = Names.MPdot(info.module_path, label)} in

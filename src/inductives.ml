@@ -5,7 +5,6 @@ open Info
 let lvl_to_var lvl = (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort)
 
 
-
 (** Insert template levels as coq Sort parameters in an inductive declaration *)
 let rec insert_params_in_arity params arity = arity (*  TODO: remove this comment
   match params with
@@ -15,6 +14,7 @@ let rec insert_params_in_arity params arity = arity (*  TODO: remove this commen
     Dedukti.Pie ( (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort),
                   insert_params_in_arity tl arity )
 *)
+
 let insert_params_in_decl params decls = decls (*  TODO: remove this comment
   let rec aux acc = function
     | [] -> List.rev_append acc decls
@@ -37,7 +37,7 @@ let translate_inductive info env label mind_body i =
   let arity_context = ind_body.mind_arity_ctxt in
   let arity         = ind_body.mind_arity in
   
-  let name' = Name.translate_element_name info env (Names.label_of_id name) in
+  let name' = Cname.translate_element_name info env (Names.Label.of_id name) in
   Debug.debug_string ("--- " ^ name');
   Debug.debug_coq_ctxt arity_context;
   
@@ -45,7 +45,7 @@ let translate_inductive info env label mind_body i =
   | RegularArity  ria -> begin
       (* Translate the regular inductive type. *)
       (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
-      let arity = Term.it_mkProd_or_LetIn (Term.mkSort ria.mind_sort) arity_context in
+      let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ria.mind_sort) arity_context in
       Terms.translate_types info env (Info.empty ()) arity
     end
   | TemplateArity ta  -> begin
@@ -58,7 +58,7 @@ let translate_inductive info env label mind_body i =
       Debug.debug_string "Arity context:";
       Debug.debug_coq_ctxt arity_context;
       let arity_sort = Term.Type ta.template_level in
-      let arity = Term.it_mkProd_or_LetIn (Term.mkSort arity_sort) arity_context in
+      let arity = Term.it_mkProd_or_LetIn (Constr.mkSort arity_sort) arity_context in
       Debug.debug_string "Arity";
       Debug.debug_coq_type arity;
       (* Arity without parameterization *)
@@ -87,12 +87,12 @@ let translate_constructors info env label mind_body i =
   (* Number of mutual inductive types *)
   let n_types = mind_body.mind_ntypes in
   
-  let mind = Names.make_mind info.module_path Names.empty_dirpath label in
-  let ind_terms = Array.init n_types (fun i -> Term.mkInd(mind, i)) in
+  let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
+  let ind_terms = Array.init n_types (fun i -> Constr.mkInd(mind, i)) in
   
   (* Substitute the inductive types as specified in the Coq code. *)
   let cons_types = Array.map (Vars.substl (List.rev (Array.to_list ind_terms)))                                     ind_body.mind_user_lc in
-  let translate_name cname = Name.translate_element_name info env (Names.label_of_id cname) in
+  let translate_name cname = Cname.translate_element_name info env (Names.Label.of_id cname) in
   let cons_names' = Array.map translate_name ind_body.mind_consnames in
 
   (* Number of constructors in the current type *)
@@ -154,14 +154,14 @@ let translate_match info env label mind_body i =
   (* Number of constructors in the current type *)
   let n_cons = Array.length cons_names in
   
-  let mind = Names.make_mind info.module_path Names.empty_dirpath label in
-  let ind_terms = Array.init n_types (fun i -> Term.mkInd(mind, i)) in
+  let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
+  let ind_terms = Array.init n_types (fun i -> Constr.mkInd(mind, i)) in
   
   (* Constructor names start from 1. *)
-  let cons_terms = Array.init n_cons (fun j -> Term.mkConstruct((mind, i), j + 1)) in
+  let cons_terms = Array.init n_cons (fun j -> Constr.mkConstruct((mind, i), j + 1)) in
   
   let indtype_name = ind_body.mind_typename in
-  let match_function_name' = Name.translate_identifier (Name.match_function indtype_name) in
+  let match_function_name' = Cname.translate_identifier (Cname.match_function indtype_name) in
   let match_function_var'  = Dedukti.var match_function_name' in
   Debug.debug_string ("###  " ^ match_function_name');
   
@@ -197,23 +197,23 @@ let translate_match info env label mind_body i =
   in
 
   (* Create a fresh variable s and add it to the environment *)
-  let return_sort_name = Name.fresh_of_string info params_env "s" in
-  let return_sort_name' = Name.translate_identifier return_sort_name in
+  let return_sort_name = Cname.fresh_of_string info params_env "s" in
+  let return_sort_name' = Cname.translate_identifier return_sort_name in
   let return_sort_var' = Dedukti.var return_sort_name' in
-  let params_env = Name.push_identifier return_sort_name params_env in
+  let params_env = Cname.push_identifier return_sort_name params_env in
   
   (* Create a fresh variable P and add it to the environment *)
-  let return_type_name = Name.fresh_of_string info params_env "P" in
-  let return_type_name' = Name.translate_identifier return_type_name in
+  let return_type_name = Cname.fresh_of_string info params_env "P" in
+  let return_type_name' = Cname.translate_identifier return_type_name in
   let return_type_var' = Dedukti.var return_type_name' in
-  let params_env = Name.push_identifier return_type_name params_env in
+  let params_env = Cname.push_identifier return_type_name params_env in
   
   (* Create a fresh variables for each constructors of the inductive type
      and add them to the environment (why ?) *)
   let params_env, case_names' = Array.fold_left (fun (params_env, case_names') cons_name ->
-    let case_name = Name.fresh_identifier info params_env ~prefix:"case" cons_name in
-    let case_name' = Name.translate_identifier case_name in
-    let params_env = Name.push_identifier case_name params_env in
+    let case_name = Cname.fresh_identifier info params_env ~prefix:"case" cons_name in
+    let case_name' = Cname.translate_identifier case_name in
+    let params_env = Cname.push_identifier case_name params_env in
     (params_env, case_name' :: case_names')) (params_env, []) cons_names in
   let case_names' = Array.of_list (List.rev case_names') in
   
@@ -225,10 +225,10 @@ let translate_match info env label mind_body i =
   Debug.debug_dk_term  ind_applied';
   
   (* Create a fresh variable x and add it to the environment (why ?) *)
-  let matched_name = Name.fresh_of_string info arity_real_env "x" in
-  let matched_name' = Name.translate_identifier matched_name in
+  let matched_name = Cname.fresh_of_string info arity_real_env "x" in
+  let matched_name' = Cname.translate_identifier matched_name in
   let matched_var' = Dedukti.var matched_name' in
-  let params_env = Name.push_identifier matched_name params_env in
+  let params_env = Cname.push_identifier matched_name params_env in
   
   
   let cases' = Array.map Dedukti.var case_names' in

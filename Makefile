@@ -8,7 +8,7 @@ DKFOLDER = /home/gaspi/github/dedukti/acu
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 
-.PHONY: all plugin install test debug clean
+.PHONY: all plugin install test debug clean fullclean
 
 all: .merlin plugin test
 
@@ -36,6 +36,10 @@ clean: CoqMakefile
 	make -C debug clean
 	rm -rf dedukti/Coq.dko
 	rm CoqMakefile
+
+fullclean: clean
+	rm src/*.cmt
+	rm src/*.cmti
 
 CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make > CoqMakefile

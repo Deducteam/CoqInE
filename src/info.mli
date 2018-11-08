@@ -12,10 +12,10 @@ val is_poly_univ_lbl : env -> Univ.Level.t -> bool
 
 type info = {
   out : Format.formatter;
-  library : Names.dir_path;
-  module_path : Names.module_path;
+  library : Names.DirPath.t;
+  module_path : Names.ModPath.t;
 }
 
-val init : Format.formatter -> Names.dir_path -> info
+val init : Format.formatter -> Names.DirPath.t -> info
 
 val universe_env : Univ.Level.t option list -> env

@@ -3,7 +3,7 @@
 open Pp
 
 let error message =
-  CErrors.errorlabstrm "Coqine" message
+  raise (CErrors.make_anomaly ?label:(Some "Coqine") message)
 
 let not_supported feature =
   error (str feature ++ str " not supported")

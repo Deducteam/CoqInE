@@ -6,10 +6,6 @@
 
 open Genlex
 
-open Pp
-
-open Info
-
 open Dedukti
 
 let lexer = Genlex.make_lexer ["."; "+"; "("; ","; ")"]

@@ -19,8 +19,8 @@ let is_poly_univ_lbl env l =
 
 type info = {
   out : Format.formatter;
-  library : Names.dir_path;
-  module_path : Names.module_path;
+  library : Names.DirPath.t;
+  module_path : Names.ModPath.t;
   }
 
 let init out dir_path = {

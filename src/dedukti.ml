@@ -1,7 +1,5 @@
 (** Dedukti syntax and pretty-printing functions *)
 
-open Pp
-
 type var = string
 
 type term =

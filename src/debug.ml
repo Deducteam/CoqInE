@@ -26,15 +26,15 @@ let debug_dk_term t =
 let pt_coq_term  = Printer.safe_pr_constr
 let pt_coq_type  = Printer.pr_type
 let pt_coq_level = Univ.Level.pr
+let pt_coq_inst inst = Univ.Instance.pr pt_coq_level inst
 let pt_coq_univ  = Univ.Universe.pr
-let pt_coq_inst  = Univ.Instance.pr (Univ.Level.pr)
 let pt_coq_id    = Names.Id.print
 let pt_coq_name = function
   | Names.Name.Anonymous -> (str "_")
   | Names.Name.Name n -> pt_coq_id n
 let pt_coq_sort = function
-  | Term.Prop Null -> (str "Set")
-  | Term.Prop Pos  -> (str "Prop")
+  | Term.Prop Sorts.Null -> (str "Set")
+  | Term.Prop Sorts.Pos  -> (str "Prop")
   | Term.Type i    -> (str "Univ(") ++ (pt_coq_univ i)
 let pt_coq_decl = function
   | Context.Rel.Declaration.LocalAssum (name, t) ->
@@ -46,12 +46,12 @@ let pt_coq_named_decl = function
      (pt_coq_id id) ++ (str " = ") ++ (pt_coq_term t)
   | Context.Named.Declaration.LocalDef (id, v, t) ->
      (pt_coq_id id) ++ (str " : ") ++ (pt_coq_term t) ++ (str " = ") ++ (pt_coq_term t)
-let rec pt_coq_ctxt t =
+let pt_coq_ctxt t =
   let pt s decl = s ++ (str "\n  ") ++ (pt_coq_decl decl) in
-    (List.fold_left pt (str "[") t) ++ (str "\n]")
-let rec pt_coq_named_ctxt t =
+  (List.fold_left pt (str "[") t) ++ (str "\n]")
+let pt_coq_named_ctxt t =
   let pt s decl = s ++ (str "\n  ") ++ (pt_coq_named_decl decl) in
-    (List.fold_left pt (str "[") t) ++ (str "\n]")
+  (List.fold_left pt (str "[") t) ++ (str "\n]")
 let pt_coq_env e =
   (pt_coq_ctxt (Environ.rel_context e)) ++
   (str "\n") ++
@@ -60,8 +60,8 @@ let pt_coq_env e =
 let debug_coq_term  t = debug_str (pt_coq_term  t)
 let debug_coq_type  t = debug_str (pt_coq_type  t)
 let debug_coq_level t = debug_str (pt_coq_level t)
-let debug_coq_univ  t = debug_str (pt_coq_univ  t)
 let debug_coq_inst  t = debug_str (pt_coq_inst  t)
+let debug_coq_univ  t = debug_str (pt_coq_univ  t)
 let debug_coq_id    t = debug_str (pt_coq_id    t)
 let debug_coq_name  t = debug_str (pt_coq_name  t)
 let debug_coq_sort  t = debug_str (pt_coq_sort  t)
