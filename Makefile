@@ -4,7 +4,7 @@ VERBOSE?=
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 
-DKFOLDER = /home/gaspi/github/dedukti/acu
+DKFOLDER = /home/gferey/git/dedukti/acu
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 

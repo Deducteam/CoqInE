@@ -2,7 +2,7 @@
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 
-DKFOLDER=/home/gaspi/github/dedukti/acu/
+DKFOLDER=/home/gferey/git/dedukti/acu
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 
@@ -37,7 +37,7 @@ check: ../dedukti/Coq.dko Top__Debuglib.dko $(DKOS)
 
 # Generate the dependencies of [.dk] files
 depend:
-	$(DKDEP) -v *.dk ../dedukti/*.dk > .depend
+	$(DKDEP) -v *.dk ../dedukti/*.dk -I ../dedukti > .depend
 
 
 ../dedukti/Coq.dko:

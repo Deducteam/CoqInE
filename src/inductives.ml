@@ -1,6 +1,7 @@
-open Declarations
 
+open Declarations
 open Info
+
 
 let lvl_to_var lvl = (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort)
 
