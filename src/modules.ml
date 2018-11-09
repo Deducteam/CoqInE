@@ -2,7 +2,7 @@
 
 open Pp
 open Declarations
-
+open Debug
 open Info
 
 (** Constant definitions have a type and a body.
@@ -46,7 +46,7 @@ let translate_constant_body info env label const =
   
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  Debug.debug_string ("Inductive body: "^ (Cname.translate_element_name info env label));
+  debug "Inductive body: %s" (Name.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do

@@ -31,5 +31,6 @@ test/.*.aux
 debug/*.aux
 */debug.out
 
+# Debuging files
 */*.out
 *.conf

@@ -1,5 +1,6 @@
-
 VERBOSE?=
+
+CAMLFLAGS="-bin-annot -annot"
 
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
@@ -27,19 +28,17 @@ test: plugin
 debug: plugin 
 	make -C debug
 
-dedukti/Coq.dko: dedukti/Coq.dk
-	cd dedukti && $(DKCHECK) -e -nl Coq.dk
-
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	make -C test clean
 	make -C debug clean
-	rm -rf dedukti/Coq.dko
 	rm CoqMakefile
 
 fullclean: clean
 	rm src/*.cmt
 	rm src/*.cmti
+	rm src/*.annot
 
 CoqMakefile: Make
-	$(COQ_MAKEFILE) -f Make > CoqMakefile
+	$(COQ_MAKEFILE) -f Make -o CoqMakefile
+	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf

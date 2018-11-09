@@ -16,6 +16,7 @@ type instruction =
   | Command of string * string list
   | Declaration of bool * var * term
   | Definition of bool * var * term * term
+  | UDefinition of bool * var * term
   | Rewrite of (var * term) list * term * term
 
 type 'a printer = Format.formatter -> 'a -> unit
@@ -36,46 +37,43 @@ val comment : string -> instruction
 val command : string -> string list -> instruction
 val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
+val udefinition : bool -> var -> term -> instruction
 val rewrite : (var * term) list * term * term -> instruction
-val apply_context : term -> (var * 'a) list -> term
 
-val print_var             : string printer
-val print_term            : term printer
-val print_app             : term printer
-val print_atomic          : term printer
-val print_binding         : (var * term) printer
-val print_binding_context : (string * 'a)      printer
-val print_context         : (string * 'a) list printer
-val print                 : instruction        printer
+val apply_context : term -> (var * term) list -> term
+
+val print  : instruction printer
+val printc : instruction printer
+
+val pp_term : term printer
 
 type coq_universe =
   | Prop
   | Set
   | Atom of string
   | Succ of coq_universe * int
-  | Max of coq_universe list
+  | Max  of coq_universe list
 
-val coqify              : string -> var
-val translate_univ_name : string -> var
-val translate_univ_level: Univ.Level.t -> var
 
-val coq_var : string -> term
-val coq_univ_var: string -> term
+module type CoqTraductor =
+sig
+  val coq_Sort  : term
+  val coq_univ_index : int -> term
+  val coq_prop  : term
+  val coq_set   : term
+  val coq_univ  : int -> term
+  val coq_axiom : term -> term
+  val coq_axioms: term -> int -> term
+  val coq_rule  : term -> term -> term
+  val coq_sup   : term -> term -> term
+  val coq_U     : term -> term
+  val coq_term  : term -> term -> term
+  val coq_sort  : term -> term
+  val coq_prod  : term -> term -> term -> term -> term
+  val coq_cast  : term -> term -> term -> term -> term -> term
+    
+  val coq_header : instruction list
+  val coq_footer : instruction list
+end
 
-val coq_Sort  : term
-val coq_z     : term
-val coq_s     : term -> term
-val coq_univ_index : int -> term
-val coq_prop  : term
-val coq_set   : term
-val coq_type  : term -> term
-val coq_univ  : int -> term
-val coq_axiom : term -> term
-val coq_axioms: term -> int -> term
-val coq_rule  : term -> term -> term
-val coq_sup   : term -> term -> term
-val coq_U     : term -> term
-val coq_term  : term -> term -> term
-val coq_sort  : term -> term
-val coq_prod  : term -> term -> term -> term -> term
-val coq_cast  : term -> term -> term -> term -> term -> term
+module Coq : CoqTraductor

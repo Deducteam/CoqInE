@@ -54,11 +54,10 @@ let fresh_of_name info env ?(global=false) ?prefix ~default name =
 
 let fresh_name info env ?prefix ?default name =
   match name, default with
-  | Names.Anonymous, None -> name
-  | Names.Anonymous, Some(default) ->
-      Names.Name(fresh_identifier info env ?prefix (Names.Id.of_string default))
-  | Names.Name(identifier), _ ->
-      Names.Name(fresh_identifier info env ?prefix identifier)
+  | Names.Name(identifier), _ -> Names.Name(fresh_identifier info env ?prefix identifier)
+  | Names.Anonymous, None     -> name
+  | Names.Anonymous, Some(d)  ->
+    Names.Name(fresh_identifier info env ?prefix (Names.Id.of_string d))
 
 (** Name of the match function for the inductive type *)
 let match_function identifier =
