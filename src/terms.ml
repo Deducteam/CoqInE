@@ -191,27 +191,19 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
     let ctx = List.rev mip.mind_arity_ctxt in
     let s, subst = instantiate_universes env ctx ar args_types in
 
-    let safe_subst_fn l =
-      try Univ.LMap.find l subst with Not_found -> Univ.Universe.make l in
-
-    (* Note: this was copied from Inductive.instantiate_universes *)
-    (*
-    let args = Array.to_list args_types in
+    (* Note: this was copied from Inductive.instantiate_universes
     let subst = make_subst env (ctx,ar.template_param_levels,args) in
     let subst_fn = Univ.make_subst subst in
     let safe_subst_fn x =
       try subst_fn x with Not_found -> Univ.Universe.make x in
-    let level = Univ.subst_univs_level_universe subst ar.template_level in
-    let ty = if Univ.is_type0m_univ level then Sorts.prop
-      else if Univ.is_type0_univ level then Sorts.set
-      else Type level in
-
-    let arity = mkArity (List.rev ctx, ty) in
-    Vars.subst_univs_fn_constr subst_fn arity,
-    (* Why did we need to apply subst_fn to arity ? *)
     *)
+    let safe_subst_fn l =
+      try Univ.LMap.find l subst with Not_found -> Univ.Universe.make l in
 
-    Term.mkArity (List.rev ctx,s),
+    let arity = Term.mkArity (List.rev ctx,s) in
+    (* Vars.subst_univs_fn_constr subst_fn arity, *)
+    (* Do we really need to apply subst_fn to arity ? *)
+    Universes.subst_univs_constr subst arity,
     List.map
       (Tsorts.translate_universe info env uenv)
       (List.map safe_subst_fn
@@ -220,7 +212,6 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
-  let specif = mip.mind_user_lc in
   assert (i <= Array.length mip.mind_consnames);
   
   match mip.mind_arity with
@@ -228,16 +219,19 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
   | TemplateArity ar ->
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let _,ty = Inductive.instantiate_universes env ctx ar args_types in
+    let s,subst = instantiate_universes env ctx ar args_types in
     
-    (* Note: this was copied from Inductive.instantiate_universes *)
-    let subst = make_subst env (ctx,ar.template_param_levels,args) in
+    (* Note: this was copied from Inductive.instantiate_universes
+    let subst = make_subst env (ctx,ar.template_param_levels,args_types) in
     let subst_fn = Univ.make_subst subst in
     let safe_subst_fn x =
       try subst_fn x with | Not_found -> Univ.Universe.make x in
+    *)
+    let safe_subst_fn l =
+      try Univ.LMap.find l subst with Not_found -> Univ.Universe.make l in
     
-    let type_c = Inductive.type_of_constructor ((ind,c),u) spec in
-    Vars.subst_univs_fn_constr subst_fn type_c,
+    let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
+    Universes.subst_univs_constr subst type_c,
     List.map
       (Tsorts.translate_universe info env uenv)
       (List.map safe_subst_fn
@@ -365,13 +359,12 @@ let rec translate_constr ?expected_type info env uenv t =
     let n_reals  =  ind_body.Declarations.mind_nrealargs in
     let pind, ind_args = Inductive.find_inductive env (infer_type env matched) in
     
-    
     let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
     let params, reals = Utils.list_chop n_params ind_args in
     let params = List.map (Reduction.whd_all env) params in
     
     debug "params: %a" (pp_list ", " pp_coq_term) params;
-    let params_types = List.map (fun t -> lazy (infer_type env t)) params in
+    let params_types = List.map (fun t -> infer_type env t) params in
     let _, univ_params =
       infer_template_polymorph_ind_applied info env uenv
         case_info.ci_ind (Array.of_list params_types)

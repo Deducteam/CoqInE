@@ -17,10 +17,10 @@ let translate_constant_body info env label const =
   assert (List.length const.const_hyps = 0);
   let ucontext = match const.const_universes with
     | Monomorphic_const ctxt (* Univ.ContextSet.t *) ->
-      Debug.debug_string ("Constant regular body: "^ label');
+      debug "Constant regular body: %s" label';
       Univ.ContextSet.to_context ctxt
     | Polymorphic_const ctxt (* Univ.AUContext.t *) ->
-      Debug.debug_string ("Constant template body: "^ label');
+      debug "Constant template body: %s" label';
       Univ.AUContext.repr ctxt
   in
   let instance, constraints = Univ.UContext.dest ucontext in
@@ -46,7 +46,7 @@ let translate_constant_body info env label const =
   
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  debug "Inductive body: %s" (Name.translate_element_name info env label);
+  debug "Inductive body: %s" (Cname.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
