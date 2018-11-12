@@ -21,6 +21,7 @@ let translate_qualified_library qualid =
   let libname = Libnames.pr_qualid qualid in
   message "Exporting %a" pp_t libname;
   if (libname = (str "Top.Debuglib")) then debug_start ();
+  debug_start ();
   debug "Exporting %a" pp_t (Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
@@ -34,14 +35,14 @@ let translate_qualified_library qualid =
     close_out out
   in
   begin
-    try
+    (*    try*)
       (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_header);
       Modules.translate_module_body info (Global.env ()) module_body;
       (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_footer)
-  with
+(*  with
   | e ->
     flush_and_close ();
-    raise e
+    raise e*)
   end;
   debug_stop ();
   flush_and_close ()

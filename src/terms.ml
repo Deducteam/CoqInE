@@ -174,12 +174,15 @@ let make_subst env =
 let instantiate_universes env ctx ar argsorts =
   let args = Array.to_list argsorts in
   let subst = make_subst env (ctx,ar.template_param_levels,args) in
-  let level = Univ.subst_univs_universe (Univ.make_subst subst) ar.template_level in
+  let subst_fn = Univ.make_subst subst in
+  let safe_subst_fn x =
+    try subst_fn x with | Not_found -> Univ.Universe.make x in
+  let level = Univ.subst_univs_universe safe_subst_fn ar.template_level in
   let ty =
     if Univ.is_type0m_univ level then Sorts.prop
     else if Univ.is_type0_univ level then Sorts.set
     else Sorts.Type level
-  in (ty, subst) (* original returns (ctx, ty) *)
+  in (ty, subst, safe_subst_fn) (* original returns (ctx, ty) *)
 
 
 let infer_template_polymorph_ind_applied info env uenv ind args =
@@ -189,25 +192,14 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
   | TemplateArity ar ->
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let s, subst = instantiate_universes env ctx ar args_types in
-
-    (* Note: this was copied from Inductive.instantiate_universes
-    let subst = make_subst env (ctx,ar.template_param_levels,args) in
-    let subst_fn = Univ.make_subst subst in
-    let safe_subst_fn x =
-      try subst_fn x with Not_found -> Univ.Universe.make x in
-    *)
-    let safe_subst_fn l =
-      try Univ.LMap.find l subst with Not_found -> Univ.Universe.make l in
-
+    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    (* Vars.subst_univs_fn_constr subst_fn arity, *)
-    (* Do we really need to apply subst_fn to arity ? *)
+    
+    (* Do we really need to apply safe_subst to arity ? *)
     Universes.subst_univs_constr subst arity,
     List.map
       (Tsorts.translate_universe info env uenv)
-      (List.map safe_subst_fn
-         (Utils.filter_some ar.template_param_levels))
+      (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
@@ -219,22 +211,13 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
   | TemplateArity ar ->
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let s,subst = instantiate_universes env ctx ar args_types in
-    
-    (* Note: this was copied from Inductive.instantiate_universes
-    let subst = make_subst env (ctx,ar.template_param_levels,args_types) in
-    let subst_fn = Univ.make_subst subst in
-    let safe_subst_fn x =
-      try subst_fn x with | Not_found -> Univ.Universe.make x in
-    *)
-    let safe_subst_fn l =
-      try Univ.LMap.find l subst with Not_found -> Univ.Universe.make l in
+    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     
     let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
     Universes.subst_univs_constr subst type_c,
     List.map
       (Tsorts.translate_universe info env uenv)
-      (List.map safe_subst_fn
+      (List.map safe_subst
          (Utils.filter_some ar.template_param_levels))
 
 
@@ -313,7 +296,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | Const (kn, univ_instance) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
-    if Utils.str_starts_with "fix_" name
+    if Utils.str_starts_with "fix_" name || Utils.str_starts_with "Little__fix_" name
     then Tsorts.instantiate_univ_params name univ_instance
     else
       let globname = Globnames.ConstRef kn in

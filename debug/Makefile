@@ -25,7 +25,7 @@ debug: compile export depend
 compile: CoqMakefile
 	make -f CoqMakefile
 
-# Generate the [.dk] files by executing [Test.v]
+# Generate the [.dk] files by executing [Debug.v]
 export: compile
 	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Debug
 
@@ -49,6 +49,7 @@ clean: CoqMakefile
 	make -f CoqMakefile - clean
 	rm -rf *.dk *.dko .depend .*.aux *.vo Coq.dk
 	rm CoqMakefile
+	rm debug.out
 
 CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make > CoqMakefile

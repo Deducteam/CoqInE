@@ -43,7 +43,7 @@ let translate_constant_body info env label const =
       let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
       let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
       Dedukti.print info.out (Dedukti.definition true label' const_type' constr')
-  
+
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
   debug "Inductive body: %s" (Cname.translate_element_name info env label);

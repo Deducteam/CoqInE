@@ -76,8 +76,7 @@ let is_numerical c =
   | '0' .. '9' -> true
   | _ -> false
 
-let is_alpha_numerical c =
-  is_alpha c || is_numerical c
+let is_alpha_numerical c = is_alpha c || is_numerical c
 
 (** Escape non-alphanumerical characters using underscores and hexadecimal
     values to be compatible with Dedukti. *)

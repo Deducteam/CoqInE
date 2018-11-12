@@ -19,13 +19,12 @@ Definition test := exp_rect xSet xSet.
 Print test.
 
 
-Print Universes.
-
 Definition exp_i := exp_rect xSet xSet.
 Print exp_i.
 Print exp_rect.
 
-Print Sorted Universes.
+(* Print Universes. *)
+(* Print Sorted Universes. *)
 
 (* Applied to various parameters. *)
 Definition expType0 := @exp xType0 xType0.
