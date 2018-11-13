@@ -274,7 +274,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let env, u = lift_let info env uenv x u a in
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     translate_constr info new_env uenv t
-      
+
   | App(f, args) ->
     let type_f, univ_params =
       match Constr.kind f with
@@ -292,7 +292,7 @@ let rec translate_constr ?expected_type info env uenv t =
       let u' = translate_constr ~expected_type:c info env uenv u in
       (Dedukti.app f' u', Vars.subst1 u d) in
     fst (Array.fold_left translate_app (f', type_f) args)
-      
+
   | Const (kn, univ_instance) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
@@ -304,7 +304,7 @@ let rec translate_constr ?expected_type info env uenv t =
       if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
       then debug "Something suspicious is going on with thoses universes...";
       Tsorts.instantiate_univ_params name univ_instance
-        
+
   | Ind (kn, univ_instance) ->
     let name = Cname.translate_inductive info env kn in
     debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
@@ -313,7 +313,7 @@ let rec translate_constr ?expected_type info env uenv t =
     if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
     then debug "Something suspicious is going on with thoses universes...";
     Tsorts.instantiate_univ_params name univ_instance
-      
+
   | Construct (kn, univ_instance) ->
     let name = Cname.translate_constructor info env kn in
     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
@@ -322,7 +322,7 @@ let rec translate_constr ?expected_type info env uenv t =
     if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
     then debug "Something suspicious is going on with thoses universes...";
     Tsorts.instantiate_univ_params name univ_instance
-      
+
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
      let n = Array.length names in
      let env, fix_declarations =

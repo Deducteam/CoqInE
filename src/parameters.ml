@@ -22,3 +22,9 @@ let constraints_flag = ref true
 let  enable_constraints () = constraints_flag := true
 let disable_constraints () = constraints_flag := false
 let is_constraints_on () = !constraints_flag
+
+let destination = ref "."
+
+let set_destination dest = destination := dest
+
+let get_destination_path path = Filename.concat !destination path

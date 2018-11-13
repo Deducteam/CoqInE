@@ -8,7 +8,10 @@ let message fmt =
 
 let debug_out = ref err_formatter
 
-let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
+let debug_to_file fn =
+  message "Setting debug to: %s" fn;
+  Parameters.enable_debug ();
+  debug_out := formatter_of_out_channel (open_out fn)
 
 let debug fmt =
   if Parameters.is_debug_on ()

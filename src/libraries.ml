@@ -4,16 +4,6 @@ open Parameters
 open Pp
 open Debug
 
-let destination = ref "."
-
-let set_destination dest =
-  message "Setting destination: %s" dest;
-  destination := dest
-
-let set_debug dest =
-  message "Setting debug to: %s" dest;
-  Parameters.enable_debug ();
-  debug_to_file dest
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
@@ -26,7 +16,7 @@ let translate_qualified_library qualid =
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
-  let filename = Filename.concat !destination (Cname.translate_dir_path dir_path) in
+  let filename = get_destination_path (Cname.translate_dir_path dir_path) in
   let out = open_out (filename ^ ".dk") in
   let formatter = Format.formatter_of_out_channel out in
   let info = Info.init formatter dir_path in
@@ -35,14 +25,14 @@ let translate_qualified_library qualid =
     close_out out
   in
   begin
-    (*    try*)
+    try
       (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_header);
       Modules.translate_module_body info (Global.env ()) module_body;
       (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_footer)
-(*  with
-  | e ->
-    flush_and_close ();
-    raise e*)
+    with
+    | e ->
+      flush_and_close ();
+      raise e
   end;
   debug_stop ();
   flush_and_close ()
