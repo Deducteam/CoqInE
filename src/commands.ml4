@@ -50,6 +50,26 @@ VERNAC COMMAND EXTEND DeduktiDisablePolymorphism CLASSIFIED AS QUERY
   [ Parameters.disable_polymorphism () ]
 END
 
+VERNAC COMMAND EXTEND DeduktiEnableTemplate CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Template" ] ->
+  [ Parameters.enable_templ_polymorphism () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiDisableTemplate CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Template" ] ->
+  [ Parameters.disable_templ_polymorphism () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiEnableConstraints CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Constraints" ] ->
+  [ Parameters.enable_constraints () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiDisableConstraints CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Constraints" ] ->
+  [ Parameters.disable_constraints () ]
+END
+
 VERNAC COMMAND EXTEND DeduktiEnableDebug CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Debug" ] ->
   [ Parameters.enable_debug () ]

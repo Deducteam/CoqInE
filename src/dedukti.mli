@@ -55,7 +55,7 @@ type coq_universe =
   | Max  of coq_universe list
 
 
-module type CoqTraductor =
+module type CoqTranslator =
 sig
   val coq_Sort  : term
   val coq_univ_index : int -> term
@@ -76,4 +76,4 @@ sig
   val coq_footer : instruction list
 end
 
-module Coq : CoqTraductor
+module Translator : CoqTranslator

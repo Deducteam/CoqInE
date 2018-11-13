@@ -2,24 +2,32 @@ open Declarations
 open Debug
 open Info
 
+(** Return a map of template parameters and a sort for given declaration. *)
+let dest_ind_body (ind_body:Declarations.one_inductive_body) =
+  let arity_context = ind_body.mind_arity_ctxt in
+  let arity         = ind_body.mind_arity in
+  match arity with
+  | RegularArity ria -> ([], ria.mind_sort)
+  | TemplateArity ta  -> begin
+      debug "Template params levels:";
+      List.iter (function   None   -> debug "None"
+                          | Some u -> debug "%a" pp_coq_level u) ta.template_param_levels;
+      debug "Template level: %a" pp_coq_univ ta.template_level;
+      debug "Arity context: %a"  pp_coq_ctxt arity_context;
+      Tsorts.translate_template_params ta.template_param_levels,
+      Term.Type ta.template_level
+    end
 
-(** Insert template levels as coq Sort parameters in an inductive declaration *)
-let rec insert_params_in_arity params arity = arity (*  TODO: remove this comment
-  match params with
-  | [] -> arity
-  | None::tl -> insert_params_in_arity tl arity
-  | (Some lvl)::tl ->
-    Dedukti.Pie ( (Dedukti.translate_univ_level lvl, Dedukti.coq_Sort),
-                  insert_params_in_arity tl arity )
-*)
+let dest_ind_univ universes =
+  match universes with
+  | Monomorphic_ind univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
+  | Polymorphic_ind univ_ctxt ->
+    let uctxt = Univ.AUContext.repr univ_ctxt in
+    Univ.UContext.instance uctxt,
+    Univ.UContext.constraints uctxt
+  | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
 
-let insert_params_in_decl params decls = decls (*  TODO: remove this comment
-  let rec aux acc = function
-    | [] -> List.rev_append acc decls
-    | None       :: tl -> aux acc tl
-    | (Some lvl) :: tl -> aux ((lvl_to_var lvl) :: acc) tl in
-  aux [] params
-*)
+
 
 (** An inductive definition is organised into:
     - [mutual_inductive_body] : a block of (co)inductive type definitions,
@@ -38,45 +46,29 @@ let translate_inductive info env label mind_body i =
   (* Body of the current inductive type *)
   let ind_body = mind_body.mind_packets.(i) in
   
-  let universes = mind_body.mind_universes in
-  let _ =
-    match universes with
-    | Monomorphic_ind univ_ctxt -> () (* Univ.universe_context *)
-    | Polymorphic_ind univ_ctxt -> () (* Univ.abstract_universe_context *)
-    | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
-  
   let name          = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
-  let arity         = ind_body.mind_arity in
   
   let name' = Cname.translate_element_name info env (Names.Label.of_id name) in
   debug "--- %s ---" name';
   debug "%a" pp_coq_ctxt arity_context;
 
-  let (level_params, arity_sort) =
-    match arity with
-    | RegularArity ria -> ([], ria.mind_sort)
-    | TemplateArity ta  -> begin
-        debug "Template params levels:";
-        List.iter (function   None   -> debug "None"
-                            | Some u -> debug "%a" pp_coq_level u) ta.template_param_levels;
-        debug "Template level: %a" pp_coq_univ ta.template_level;
-        debug "Arity context: %a"  pp_coq_ctxt arity_context;
-        Utils.filter_some ta.template_param_levels,      (* level_params *)
-        Term.Type ta.template_level                      (* arity_sort *)
-      end in
+  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
+  let (template_map, arity_sort) = dest_ind_body ind_body in
+  let template_params = List.map snd template_map in
+  let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
+  let uenv = Info.make poly_cstr template_map in
   
-  let uenv = Info.add_poly_univ_lvl_list (Info.empty ()) level_params in
   debug "Translate the regular inductive type.";
   (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort arity_sort) arity_context in
   let arity' = Terms.translate_types info env uenv arity in
-  let arity' = Tsorts.add_univ_params level_params arity' in
+  let arity' = Tsorts.add_sort_params template_params arity' in
+  let arity' = Tsorts.add_sort_params univ_poly_params arity' in
   debug "Arity sort: %a" pp_coq_type (Constr.mkSort arity_sort);
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
   Dedukti.print info.out (Dedukti.declaration false name' arity')
-
 
 
 
@@ -92,9 +84,6 @@ let translate_inductive info env label mind_body i =
          I [s1] ... [sr]  p1 ... pr  yj1 ... yjkj
 *)
 let translate_constructors info env label mind_body i =
-  (* Number of mutual inductive types *)
-  let n_types = mind_body.mind_ntypes in
-  
   (* Body of the current inductive type *)
   let ind_body = mind_body.mind_packets.(i) in
   
@@ -107,13 +96,11 @@ let translate_constructors info env label mind_body i =
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
   
   (* Compute universe parameters names and corresponding local environnement *)
-  let univ_poly_context, uenv =
-    match ind_body.mind_arity with
-    | RegularArity  ria -> [], Info.empty ()
-    | TemplateArity ta  ->
-      let param_levels = Utils.filter_some ta.template_param_levels in
-      param_levels,
-      Info.add_poly_univ_lvl_list (Info.empty ()) param_levels in
+  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
+  let (template_map, arity_sort) = dest_ind_body ind_body in
+  let template_params = List.map snd template_map in
+  let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
+  let uenv = Info.make poly_cstr template_map in
   
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
 
@@ -134,10 +121,11 @@ let translate_constructors info env label mind_body i =
     
     let cons_name = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let cons_type = Terms.translate_types info env uenv cons_type in
-    let parameterized_type = Tsorts.add_univ_params univ_poly_context cons_type in
-    debug "Cons_type: %a" Dedukti.pp_term parameterized_type;
+    let template_type = Tsorts.add_sort_params template_params cons_type in
+    let univ_type     = Tsorts.add_sort_params univ_poly_params template_type in
+    debug "Cons_type: %a" Dedukti.pp_term univ_type;
     
-    Dedukti.print info.out (Dedukti.declaration false cons_name parameterized_type);
+    Dedukti.print info.out (Dedukti.declaration false cons_name univ_type);
   done
   
 
@@ -192,13 +180,11 @@ let translate_match info env label mind_body i =
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
   
   (* Compute universe parameters names and corresponding local environnement *)
-  let univ_poly_context, uenv =
-    match ind_body.mind_arity with
-    | RegularArity  ria -> [], Info.empty ()
-    | TemplateArity ta  ->
-      let param_levels = Utils.filter_some ta.template_param_levels in
-      Tsorts.get_level_vars param_levels,
-      Info.add_poly_univ_lvl_list (Info.empty ()) param_levels in
+  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
+  let (template_map, arity_sort) = dest_ind_body ind_body in
+  let template_params = List.map snd template_map in
+  let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
+  let uenv = Info.make poly_cstr template_map in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
   
@@ -324,29 +310,33 @@ let translate_match info env label mind_body i =
     Array.init n_cons
       (fun j ->
          Dedukti.pies cons_real_contexts'.(j)
-           (Dedukti.Coq.coq_term return_sort_var'
+           (Dedukti.Translator.coq_term return_sort_var'
               (Dedukti.apps return_type_var'
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
   if n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
   
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
-  let univ_poly_context' = List.map (fun x -> (x, Dedukti.Coq.coq_Sort)) univ_poly_context in
+  let template_poly_context' =
+    List.map (fun x -> (x, Dedukti.Translator.coq_Sort)) template_params in
+  let univ_poly_context' =
+    List.map (fun x -> (x, Dedukti.Translator.coq_Sort)) univ_poly_params in
   let common_context' =
-    (return_sort_name', Dedukti.Coq.coq_Sort) ::
+    (return_sort_name', Dedukti.Translator.coq_Sort) ::
     params_context' @   (* Shouldn't this be first ? *)
     (return_type_name',
      Dedukti.pies
        arity_real_context'
-       (Dedukti.arr ind_applied' (Dedukti.Coq.coq_U return_sort_var'))
+       (Dedukti.arr ind_applied' (Dedukti.Translator.coq_U return_sort_var'))
     ) ::
     cases_context' in
   let match_function_context' =
     univ_poly_context' @
+    template_poly_context' @
     common_context' @
     arity_real_context' @
     [matched_name', ind_applied'] in
-  let match_function_type' = Dedukti.Coq.coq_term return_sort_var'
+  let match_function_type' = Dedukti.Translator.coq_term return_sort_var'
     (Dedukti.app
        (Dedukti.apply_context return_type_var' arity_real_context')
        matched_var') in
@@ -358,7 +348,8 @@ let translate_match info env label mind_body i =
 
   let match_function_applied' =
     Dedukti.apps match_function_var'
-      (List.map Dedukti.var univ_poly_context @
+      (List.map Dedukti.var univ_poly_params @
+       List.map Dedukti.var template_params @
        return_sort_var' ::
        params' @
        return_type_var' ::
@@ -366,7 +357,7 @@ let translate_match info env label mind_body i =
   let case_rules = Array.init n_cons
       (fun j ->
          let case_rule_context' =
-           univ_poly_context' @ common_context' @ cons_real_contexts'.(j) in
+           univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
          let case_rule_left' =
            Dedukti.apps
              match_function_applied'

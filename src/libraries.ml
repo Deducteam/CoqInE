@@ -36,9 +36,9 @@ let translate_qualified_library qualid =
   in
   begin
     (*    try*)
-      (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_header);
+      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_header);
       Modules.translate_module_body info (Global.env ()) module_body;
-      (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_footer)
+      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_footer)
 (*  with
   | e ->
     flush_and_close ();

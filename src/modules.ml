@@ -5,6 +5,15 @@ open Declarations
 open Debug
 open Info
 
+
+let dest_const_univ universes =
+  match universes with
+  | Monomorphic_const univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
+  | Polymorphic_const univ_ctxt ->
+    let uctxt = Univ.AUContext.repr univ_ctxt in
+    Univ.UContext.instance uctxt, Univ.UContext.constraints uctxt
+
+
 (** Constant definitions have a type and a body.
     - The type can be non-polymorphic (normal type) or
       a polymorphic arity (universe polymorphism).
@@ -15,20 +24,11 @@ let translate_constant_body info env label const =
   let label' = Cname.translate_element_name info env label in
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
-  let ucontext = match const.const_universes with
-    | Monomorphic_const ctxt (* Univ.ContextSet.t *) ->
-      debug "Constant regular body: %s" label';
-      Univ.ContextSet.to_context ctxt
-    | Polymorphic_const ctxt (* Univ.AUContext.t *) ->
-      debug "Constant template body: %s" label';
-      Univ.AUContext.repr ctxt
-  in
-  let instance, constraints = Univ.UContext.dest ucontext in
-  let lvl_names   = Univ.Instance.to_array instance in
-  let constraints = Univ.Constraint.elements constraints in
-  (* TODO: do something with the constraints and level instances *)
+  let poly_inst, poly_cstr = dest_const_univ const.const_universes in
+  (* TODO: do something with the poly_inst *)
+  let uenv = Info.make poly_cstr [] in
+  
   let const_type = const.const_type in
-  let uenv = Info.empty () in
   let const_type' = Terms.translate_types info env uenv const_type in
   match const.const_body with
   | Undef inline ->

@@ -137,24 +137,21 @@ let print out instruction =
   end;
   Format.pp_print_newline out ()
 
-let printc out instruction =
-  begin match instruction with
-  | Comment(c) -> Format.fprintf out "(; %s ;)" c
+let printc out = function
+  | Comment(c) -> Format.fprintf out "(; %s ;)@." c
   | Declaration(definable, x, a) ->
-     Format.fprintf out "@[<v2>%s%a :@ %a.@]" (if definable then "def " else "") print_var x print_term a
+    Format.fprintf out "@[<v2>%s%a :@ %a.@]@."
+      (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
-      Format.fprintf out "%s %a : %a := %a."
-         (if opaque then "thm" else "def")
-         print_var x print_term a print_term t
+    Format.fprintf out "%s %a : %a := %a.@."
+      (if opaque then "thm" else "def") print_var x print_term a print_term t
   | UDefinition(opaque, x, t) ->
-      Format.fprintf out "%s %a := %a."
-         (if opaque then "thm" else "def")
-         print_var x print_term t
+    Format.fprintf out "%s %a := %a.@."
+      (if opaque then "thm" else "def") print_var x print_term t
   | Rewrite(context, left, right) ->
-    Format.fprintf out "[ %a] %a --> %a." print_context context print_term left print_term right
+    Format.fprintf out "[ %a] %a --> %a.@."
+      print_context context print_term left print_term right
   | _ -> assert false
-  end;
-  Format.pp_print_newline out ()
 
 
 
@@ -167,7 +164,7 @@ type coq_universe =
   | Max of coq_universe list
 
 
-module type CoqTraductor =
+module type CoqTranslator =
 sig
   val coq_Sort  : term
   val coq_univ_index : int -> term
@@ -192,8 +189,7 @@ end
 
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 
-
-module CoqStd : CoqTraductor =
+module CoqStd : CoqTranslator =
 struct
 
   let coqify = add_prefix "Coq"
@@ -223,7 +219,7 @@ struct
 end
 
 
-module CoqShort : CoqTraductor =
+module CoqShort : CoqTranslator =
 struct
 
   let coqify = add_prefix "Coq"
@@ -236,8 +232,8 @@ struct
     then var ("n" ^ (string_of_int i))
     else app (coq_var "s") (coq_univ_index (i-1))
 
-  let coq_prop   =      coq_var "prop"
-  let coq_set    =      coq_var "set"
+  let coq_prop   = coq_var "prop"
+  let coq_set    = coq_var "set"
   let coq_univ i =
     if i <= 9
     then var (string_of_int i)
@@ -273,7 +269,7 @@ struct
     add "n0" (coq_var "z");
     for i = 1 to 9 do
       add ("n" ^ (string_of_int i))
-        (var ("n" ^ (string_of_int (i-1))));
+        (app (coq_var "s") (var ("n" ^ (string_of_int (i-1)))));
     done;
     for i = 0 to 9 do
       add (string_of_int i)
@@ -292,4 +288,4 @@ struct
   let coq_footer = CoqStd.coq_footer
 end
 
-module Coq : CoqTraductor = CoqStd
+module Translator : CoqTranslator = CoqShort
