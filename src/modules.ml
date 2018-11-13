@@ -25,11 +25,13 @@ let translate_constant_body info env label const =
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
-  (* TODO: do something with the poly_inst *)
+  let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let uenv = Info.make poly_cstr [] in
   
   let const_type = const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in
+  let const_type' = Tsorts.add_sort_params univ_poly_params const_type' in
+  
   match const.const_body with
   | Undef inline ->
       (* For now assume inline is None. *)
