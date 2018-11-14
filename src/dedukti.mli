@@ -39,9 +39,14 @@ val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val udefinition : bool -> var -> term -> instruction
 val rewrite : (var * term) list * term * term -> instruction
+
 val apply_context : term -> (var * term) list -> term
 
+(** Prints out instructions *)
 val print  : instruction printer
+
+(** Prints out instructions in a condensed way
+  (for prelude declarations, comments, etc) *)
 val printc : instruction printer
 
 val pp_term : term printer
@@ -51,9 +56,10 @@ type coq_universe =
   | Set
   | Atom of string
   | Succ of coq_universe * int
-  | Max of coq_universe list
+  | Max  of coq_universe list
 
-module type CoqTraductor =
+
+module type CoqTranslator =
 sig
   val coq_Sort  : term
   val coq_univ_index : int -> term
@@ -74,5 +80,4 @@ sig
   val coq_footer : instruction list
 end
 
-module Coq : CoqTraductor
-
+module Translator : CoqTranslator

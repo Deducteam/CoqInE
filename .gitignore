@@ -27,7 +27,9 @@ CoqMakefile
 # Generated .aux files
 src/.*.aux
 test/.*.aux
-debug/.*.aux
+
+debug/*.aux
+*/debug.out
 
 # Debuging files
 */*.out

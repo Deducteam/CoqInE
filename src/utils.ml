@@ -13,17 +13,15 @@ let list_chop n l =
   in
   chop_aux n [] l
 
-
-let str_starts_with p =
-  let p_l = String.length p in
-  let rec f i res =
-    if i >= p_l
-    then res
-    else
-      let c = String.get p i in
-      fun x -> res x && String.get x i = c
+(* Returns true if str2 starts with str1.
+   e.g. str1="ti" and str2="titi"  *)
+let str_starts_with str1 str2 =
+  let l1 = String.length str1 in
+  let l2 = String.length str2 in
+  let rec check i =
+    i >= l1 || (i < l2 && String.get str1 i = String.get str2 i && check (i+1))
   in
-  f 0 (fun x -> true)
+  check 0
 
 let filter_some l =
   let aux acc = function

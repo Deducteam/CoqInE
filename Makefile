@@ -5,7 +5,11 @@ CAMLFLAGS="-bin-annot -annot"
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 
-.PHONY: all plugin install test debug clean
+DKFOLDER = /home/gferey/git/dedukti/acu
+DKCHECK = $(DKFOLDER)/dkcheck.native
+DKDEP = $(DKFOLDER)/dkdep.native
+
+.PHONY: all plugin install test debug clean fullclean
 
 all: .merlin plugin test
 
@@ -14,6 +18,9 @@ plugin: CoqMakefile
 
 install: CoqMakefile
 	make -f CoqMakefile - install
+
+uninstall: CoqMakefile
+	make -f CoqMakefile - uninstall
 
 .merlin: CoqMakefile
 	make -f CoqMakefile .merlin
@@ -29,6 +36,8 @@ clean: CoqMakefile
 	make -C test clean
 	make -C debug clean
 	rm CoqMakefile
+
+fullclean: clean
 	rm src/*.cmt
 	rm src/*.cmti
 	rm src/*.annot

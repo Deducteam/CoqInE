@@ -135,25 +135,21 @@ let print out instruction =
   end;
   Format.pp_print_newline out ()
 
-let printc out instruction =
-  begin match instruction with
-  | Comment(c) -> Format.fprintf out "(; %s ;)" c
+let printc out = function
+  | Comment(c) -> Format.fprintf out "(; %s ;)@." c
   | Declaration(definable, x, a) ->
-     Format.fprintf out "@[<v2>%s%a :@ %a.@]" (if definable then "def " else "") print_var x print_term a
+    Format.fprintf out "@[<v2>%s%a :@ %a.@]@."
+      (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
-      Format.fprintf out "%s %a : %a := %a."
-         (if opaque then "thm" else "def")
-         print_var x print_term a print_term t
+    Format.fprintf out "%s %a : %a := %a.@."
+      (if opaque then "thm" else "def") print_var x print_term a print_term t
   | UDefinition(opaque, x, t) ->
-      Format.fprintf out "%s %a := %a."
-         (if opaque then "thm" else "def")
-         print_var x print_term t
+    Format.fprintf out "%s %a := %a.@."
+      (if opaque then "thm" else "def") print_var x print_term t
   | Rewrite(context, left, right) ->
-    Format.fprintf out "[ %a] %a --> %a." print_context context print_term left print_term right
+    Format.fprintf out "[ %a] %a --> %a.@."
+      print_context context print_term left print_term right
   | _ -> assert false
-  end;
-  Format.pp_print_newline out ()
-
 
 
 
@@ -165,8 +161,7 @@ type coq_universe =
   | Max of coq_universe list
 
 
-
-module type CoqTraductor =
+module type CoqTranslator =
 sig
   val coq_Sort  : term
   val coq_univ_index : int -> term
@@ -182,23 +177,25 @@ sig
   val coq_sort  : term -> term
   val coq_prod  : term -> term -> term -> term -> term
   val coq_cast  : term -> term -> term -> term -> term -> term
-    
+
   val coq_header : instruction list
   val coq_footer : instruction list
 end
 
-let coqify name = Printf.sprintf "Coq.%s" name
-    
-let coq_var  x = Var (coqify x)
 
 
+let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 
-module CoqStd : CoqTraductor =
+module CoqStd : CoqTranslator =
 struct
+
+  let coqify = add_prefix "Coq"
+  let coq_var  x = Var (coqify x)
+
   let coq_Sort = coq_var "Sort"
-      
+
   let coq_univ_index i = Utils.iterate i (app (coq_var "s")) (coq_var "z")
-             
+
   let coq_prop   = coq_var "prop"
   let coq_set    = coq_var "set"
   let coq_univ i = app (coq_var "type") (coq_univ_index i)
@@ -219,29 +216,33 @@ struct
 end
 
 
-module CoqShort : CoqTraductor =
+module CoqShort : CoqTranslator =
 struct
+
+  let coqify = add_prefix "Coq"
+  let coq_var  x = Var (coqify x)
+
   let coq_Sort = coq_var "Sort"
-      
+
   let rec coq_univ_index i =
     if i <= 9
     then var ("n" ^ (string_of_int i))
     else app (coq_var "s") (coq_univ_index (i-1))
-        
-  let coq_prop   =      coq_var "prop"
-  let coq_set    =      coq_var "set"
+
+  let coq_prop   = coq_var "prop"
+  let coq_set    = coq_var "set"
   let coq_univ i =
     if i <= 9
     then var (string_of_int i)
     else app (coq_var "type") (coq_univ_index i)
-        
+
   let coq_axiom s          = app  (coq_var "axiom") s
   let rec coq_axioms s i   = if i == 0 then s else coq_axiom (coq_axioms s (i-1))
   let coq_rule s1 s2       = apps (coq_var "rule" ) [s1; s2]
   let coq_sup  s1 s2       = apps (coq_var "sup"  ) [s1; s2]
-      
+
   let coq_U s = app (coq_var "U") s
-  let coq_term s  a = apps (coq_var "T"    ) [s; a]
+  let coq_term s  a = apps (coq_var "T") [s; a]
   let coq_sort = function
     | Var "0" -> var "u0"
     | Var "1" -> var "u1"
@@ -258,14 +259,14 @@ struct
     | s -> CoqStd.coq_sort s
   let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [s1; s2; a; b]
   let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [s1; s2; a; b; t]
-  
+
   let coq_header =
     let res = ref CoqStd.coq_header in
     let add n t = res := (udefinition false n t) :: !res in
     add "n0" (coq_var "z");
     for i = 1 to 9 do
       add ("n" ^ (string_of_int i))
-        (var ("n" ^ (string_of_int (i-1))));
+        (app (coq_var "s") (var ("n" ^ (string_of_int (i-1)))));
     done;
     for i = 0 to 9 do
       add (string_of_int i)
@@ -280,8 +281,8 @@ struct
     add "_set"  (CoqStd.coq_sort coq_set );
     add "_prop" (CoqStd.coq_sort coq_prop);
     List.rev !res
-      
-  let coq_footer = [ comment "End of translation." ]
+
+  let coq_footer = CoqStd.coq_footer
 end
 
-module Coq : CoqTraductor = CoqStd
+module Translator : CoqTranslator = CoqShort

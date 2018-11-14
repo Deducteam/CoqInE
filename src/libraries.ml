@@ -4,28 +4,19 @@ open Parameters
 open Pp
 open Debug
 
-let destination = ref "."
-
-let set_destination dest =
-  message "Setting destination: %s" dest;
-  destination := dest
-
-let set_debug dest =
-  message "Setting debug to: %s" dest;
-  Parameters.enable_debug ();
-  debug_to_file dest
 
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
   let libname = Libnames.pr_qualid qualid in
-  message "Exporting %a" pp_std_ppcmds libname;
+  message "Exporting %a" pp_t libname;
   if (libname = (str "Top.Debuglib")) then debug_start ();
-  debug "Exporting %a" pp_std_ppcmds (Libnames.pr_qualid qualid);
+  debug_start ();
+  debug "Exporting %a" pp_t (Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
-  let filename = Filename.concat !destination (Name.translate_dir_path dir_path) in
+  let filename = get_destination_path (Cname.translate_dir_path dir_path) in
   let out = open_out (filename ^ ".dk") in
   let formatter = Format.formatter_of_out_channel out in
   let info = Info.init formatter dir_path in
@@ -35,13 +26,13 @@ let translate_qualified_library qualid =
   in
   begin
     try
-      (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_header);
+      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_header);
       Modules.translate_module_body info (Global.env ()) module_body;
-      (Debug.pp_list "" Dedukti.printc) formatter (Dedukti.Coq.coq_footer)
-  with
-  | e ->
-    flush_and_close ();
-    raise e
+      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_footer)
+    with
+    | e ->
+      flush_and_close ();
+      raise e
   end;
   debug_stop ();
   flush_and_close ()
@@ -49,17 +40,22 @@ let translate_qualified_library qualid =
 
 (** Translates the given library *)
 let translate_library reference =
-  let loc, qualid = Libnames.qualid_of_reference reference in
+  let cast_qualid = Libnames.qualid_of_reference reference in
+  let qualid = cast_qualid.CAst.v in
   let lib_loc, lib_path, lib_phys_path = Library.locate_qualified_library qualid in
   Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] None;
   Tsorts.set_universes (Global.universes ());
   translate_qualified_library qualid
+
+let translate_universes () =
+  ()
 
 (** Translate all loaded libraries. **)
 let translate_all () =
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
   Tsorts.set_universes (Global.universes ());
+  translate_universes ();
   List.iter translate_qualified_library qualids
 
 

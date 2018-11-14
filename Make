@@ -8,7 +8,7 @@ src/dedukti.mli
 src/debug.mli
 src/error.mli
 src/info.mli
-src/name.mli
+src/cname.mli
 src/tsorts.mli
 src/terms.mli
 src/inductives.mli
@@ -20,7 +20,7 @@ src/dedukti.ml
 src/debug.ml
 src/error.ml
 src/info.ml
-src/name.ml
+src/cname.ml
 src/univparse.ml4
 src/tsorts.ml
 src/terms.ml

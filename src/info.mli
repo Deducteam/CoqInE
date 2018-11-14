@@ -1,20 +1,24 @@
 (** Information about the translation *)
 
+
+(** Universe and constraints environment.
+  Contains information about:
+  - locally bounded universe variables from universe polymorphism
+  - template polymorphic named variables
+  - local constraints
+*)
 type env
 
-val empty : unit -> env
+val make : Univ.Constraint.t -> (string*Dedukti.var) list -> env
+val is_template_polymorphic : env -> string -> bool
+val translate_template_arg : env -> string -> Dedukti.var
 
-val add_poly_univ_str : env -> string       -> env
-val add_poly_univ_lvl : env -> Univ.Level.t -> env
-val add_poly_univ_lvl_list : env -> Univ.Level.t list -> env
 
-val is_poly_univ_str : env -> string       -> bool
-val is_poly_univ_lvl : env -> Univ.Level.t -> bool
 
 type info = {
   out : Format.formatter;
-  library : Names.dir_path;
-  module_path : Names.module_path;
+  library : Names.DirPath.t;
+  module_path : Names.ModPath.t;
 }
 
-val init : Format.formatter -> Names.dir_path -> info
+val init : Format.formatter -> Names.DirPath.t -> info

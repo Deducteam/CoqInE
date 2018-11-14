@@ -1,5 +1,11 @@
 Set Printing All.
+
 Set Printing Universes.
+
+(*
+Print Universes.
+Print Sorted Universes.
+*)
 
 (* Simple types *)
 Definition xType0 : Type := Set.
@@ -8,23 +14,11 @@ Inductive  xSet   : Set  := I.
 Inductive  xProp  : Prop := T.
 
 (* Simple template polymorphic inductive type *)
-Inductive exp (A:Type) (B:Type) : Type :=
-  tst : forall f: A -> B, exp A B.
+Inductive exp (A:Type) (B:Type) : Type := tst : forall f: A -> B, exp A B.
 
-Print exp.
-Print exp_rect.
-
-Definition test := exp_rect xSet xSet.
-Print test.
-
-
-Print Universes.
+Definition test := fun (P:forall e : exp xSet xSet, Type) => exp_rect xSet xSet P.
 
 Definition exp_i := exp_rect xSet xSet.
-Print exp_i.
-Print exp_rect.
-
-Print Sorted Universes.
 
 (* Applied to various parameters. *)
 Definition expType0 := @exp xType0 xType0.

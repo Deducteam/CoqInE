@@ -1,32 +1,33 @@
 
-open Debug
+module StringMap = Map.Make(
+  struct
+    type t = string
+    let compare = String.compare
+  end)
 
-module StringSet = Set.Make(String)
+type env =
+  {
+    template_params : Dedukti.var StringMap.t;
+    constraints : Univ.Constraint.t
+  }
 
-type env = StringSet.t
+let make (constraints:Univ.Constraint.t) (params:(string * Dedukti.var) list) =
+  let aux map (k,v) = StringMap.add k v map in
+  {
+    template_params = List.fold_left aux StringMap.empty params;
+    constraints = constraints
+  }
 
-let empty () = StringSet.empty
+let is_template_polymorphic (e:env) a = StringMap.mem a e.template_params
 
-let add_poly_univ_str env v =
-  debug "Adding polymorphic universe: %s" v;
-  StringSet.add v env
-
-let is_poly_univ_str env v =
-  StringSet.mem v env
-
-let add_poly_univ_lvl env lvl =
-  add_poly_univ_str env (Univ.Level.to_string lvl)
-
-let rec add_poly_univ_lvl_list = List.fold_left add_poly_univ_lvl
+let translate_template_arg (e:env) a = StringMap.find a e.template_params
 
 
-let is_poly_univ_lvl env l =
-  is_poly_univ_str env (Univ.Level.to_string l)
 
 type info = {
   out : Format.formatter;
-  library : Names.dir_path;
-  module_path : Names.module_path;
+  library : Names.DirPath.t;
+  module_path : Names.ModPath.t;
   }
 
 let init out dir_path =

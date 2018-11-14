@@ -8,14 +8,15 @@ let message fmt =
 
 let debug_out = ref err_formatter
 
-let debug_to_file fn = debug_out := formatter_of_out_channel (open_out fn)
+let debug_to_file fn =
+  message "Setting debug to: %s" fn;
+  Parameters.enable_debug ();
+  debug_out := formatter_of_out_channel (open_out fn)
 
 let debug fmt =
   if Parameters.is_debug_on ()
   then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
   else ifprintf err_formatter fmt
-
-let string_of fp = Format.asprintf "%a" fp
 
 let format_of_sep str fmt () : unit =
   Format.fprintf fmt "%s" str
@@ -24,10 +25,9 @@ let pp_list sep pp fmt l = Format.pp_print_list ~pp_sep:(format_of_sep sep) pp f
 
 let pp_array sep pp fmt a = pp_list sep pp fmt (Array.to_list a)
 
-let pp_std_ppcmds = pp_with
+let pp_t = pp_with
 
-let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_std_ppcmds (f x)
-
+let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
 let pp_coq_term  = printer_of_std_ppcmds Printer.safe_pr_constr
 let pp_coq_type  = printer_of_std_ppcmds Printer.pr_type
@@ -75,4 +75,3 @@ let pp_coq_env fmt e =
 
 let pp_globname fmt n =
   fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)
-
