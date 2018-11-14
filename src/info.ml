@@ -1,7 +1,4 @@
 
-open Debug
-
-
 module StringMap = Map.Make(
   struct
     type t = string
@@ -24,7 +21,6 @@ let make (constraints:Univ.Constraint.t) (params:(string * Dedukti.var) list) =
 let is_template_polymorphic (e:env) a = StringMap.mem a e.template_params
 
 let translate_template_arg (e:env) a = StringMap.find a e.template_params
-
 
 
 

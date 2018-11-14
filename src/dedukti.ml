@@ -19,8 +19,6 @@ type instruction =
   | UDefinition of bool * var * term
   | Rewrite of (var * term) list * term * term
 
-type 'a printer = Format.formatter -> 'a -> unit
-
 let var x = Var(x)
 
 let arr a b = Pie(("", a), b)
