@@ -18,6 +18,9 @@ Dedukti Show Universes.
 Dedukti Show Sorted Universes.
 *)
 
+(*
 Require Debuglib.
+Dedukti Export Library Debuglib.
+*)
 
 Dedukti Export All.

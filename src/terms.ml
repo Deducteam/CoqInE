@@ -347,13 +347,11 @@ let rec translate_constr ?expected_type info env uenv t =
     let params = List.map (Reduction.whd_all env) params in
     
     debug "params: %a" (pp_list ", " pp_coq_term) params;
-    let params_types = List.map (fun t -> infer_type env t) params in
     let _, univ_params =
       infer_template_polymorph_ind_applied info env uenv
-        case_info.ci_ind (Array.of_list params_types)
+        case_info.ci_ind (Array.of_list params)
     in
 
-    
     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
     (* Translate params using expected types to make sure we use proper casts. *)

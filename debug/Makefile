@@ -40,7 +40,7 @@ depend: Coq.dk
 	$(DKDEP) *.dk > .depend
 
 # Check and compile the generated [.dk]
-check: Coq.dko Top__Debuglib.dko $(DKOS)
+check: Coq.dko $(DKOS)
 
 Coq.dko: depend Coq.dk
 	$(DKCHECK) -e -nl Coq.dk
