@@ -47,8 +47,8 @@ let set_universes universes =
   Feedback.msg_info (str "Saving universes");
   let register constraint_type j k =
     match constraint_type with
-      | Univ.Eq -> Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k)
-      | Univ.Lt | Univ.Le -> () in
+    | Univ.Eq -> Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k)
+    | Univ.Lt | Univ.Le -> () in
   UGraph.dump_universes register universes
 
 (** Translate an atom universe according to the solutions in the universe table. *)

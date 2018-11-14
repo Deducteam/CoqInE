@@ -19,6 +19,9 @@ plugin: CoqMakefile
 install: CoqMakefile
 	make -f CoqMakefile - install
 
+uninstall: CoqMakefile
+	make -f CoqMakefile - uninstall
+
 .merlin: CoqMakefile
 	make -f CoqMakefile .merlin
 

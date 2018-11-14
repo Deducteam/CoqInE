@@ -1,5 +1,7 @@
 (** Dedukti syntax and pretty-printing functions *)
 
+open Debug
+
 type var = string
 
 type term =
@@ -18,8 +20,6 @@ type instruction =
   | Definition of bool * var * term * term
   | UDefinition of bool * var * term
   | Rewrite of (var * term) list * term * term
-
-type 'a printer = Format.formatter -> 'a -> unit
 
 val var : var -> term
 val arr : term -> term -> term
@@ -42,7 +42,11 @@ val rewrite : (var * term) list * term * term -> instruction
 
 val apply_context : term -> (var * term) list -> term
 
+(** Prints out instructions *)
 val print  : instruction printer
+
+(** Prints out instructions in a condensed way
+  (for prelude declarations, comments, etc) *)
 val printc : instruction printer
 
 val pp_term : term printer

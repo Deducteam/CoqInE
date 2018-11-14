@@ -23,6 +23,12 @@ let  enable_constraints () = constraints_flag := true
 let disable_constraints () = constraints_flag := false
 let is_constraints_on () = !constraints_flag
 
+let float_univ_flag = ref true
+let  enable_float_univ () = float_univ_flag := true
+let disable_float_univ () = float_univ_flag := false
+let is_float_univ_on () = !float_univ_flag
+
+
 let destination = ref "."
 
 let set_destination dest = destination := dest

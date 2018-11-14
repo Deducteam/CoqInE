@@ -2,6 +2,11 @@ Set Printing All.
 
 Set Printing Universes.
 
+(*
+Print Universes.
+Print Sorted Universes.
+*)
+
 (* Simple types *)
 Definition xType0 : Type := Set.
 Definition xType1 : Type := xType0.
@@ -22,9 +27,6 @@ Print test.
 Definition exp_i := exp_rect xSet xSet.
 Print exp_i.
 Print exp_rect.
-
-(* Print Universes. *)
-(* Print Sorted Universes. *)
 
 (* Applied to various parameters. *)
 Definition expType0 := @exp xType0 xType0.

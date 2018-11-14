@@ -155,7 +155,6 @@ let printc out = function
 
 
 
-
 type coq_universe =
   | Prop
   | Set

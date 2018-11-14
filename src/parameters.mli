@@ -46,6 +46,16 @@ val is_constraints_on : unit -> bool
 (** Is constraints translation on ? *)
 
 
+val  enable_float_univ : unit -> unit
+(** Enables floating universe translation *)
+
+val disable_float_univ : unit -> unit
+(** Disables floating universe translation *)
+
+val is_float_univ_on : unit -> bool
+(** Is floating universe translation on ? *)
+
+
 val set_destination : string -> unit
 (** Sets the folder in which generated files should be output *)
 

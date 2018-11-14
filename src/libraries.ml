@@ -47,11 +47,15 @@ let translate_library reference =
   Tsorts.set_universes (Global.universes ());
   translate_qualified_library qualid
 
+let translate_universes () =
+  ()
+
 (** Translate all loaded libraries. **)
 let translate_all () =
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
   Tsorts.set_universes (Global.universes ());
+  translate_universes ();
   List.iter translate_qualified_library qualids
 
 
