@@ -12,7 +12,7 @@ let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 let translate_sort info env uenv = function
   | Term.Prop Null -> Translator.coq_prop
   | Term.Prop Pos  -> Translator.coq_set
-  | Term.Type i    -> Tsorts.translate_universe info env uenv i
+  | Term.Type i    -> Tsorts.translate_universe uenv i
 
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
@@ -198,7 +198,7 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
     (* Do we really need to apply safe_subst to arity ? *)
     Universes.subst_univs_constr subst arity,
     List.map
-      (Tsorts.translate_universe info env uenv)
+      (Tsorts.translate_universe uenv)
       (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
 (* This is inspired from Inductive.type_of_constructor  *)
@@ -216,7 +216,7 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
     Universes.subst_univs_constr subst type_c,
     List.map
-      (Tsorts.translate_universe info env uenv)
+      (Tsorts.translate_universe uenv)
       (List.map safe_subst
          (Utils.filter_some ar.template_param_levels))
 
@@ -297,31 +297,25 @@ let rec translate_constr ?expected_type info env uenv t =
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
     if Utils.str_starts_with "fix_" name || Utils.str_starts_with "Little__fix_" name
-    then Tsorts.instantiate_univ_params name univ_instance
+    then Dedukti.var name
     else
-      let globname = Globnames.ConstRef kn in
-      let types, univ_ctxt = Global.type_of_global_in_context env globname in
-      if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
-      then debug "Something suspicious is going on with thoses universes...";
-      Tsorts.instantiate_univ_params name univ_instance
+      let cb = Environ.lookup_constant kn env in
+      let univ_ctxt = Declareops.constant_polymorphic_context cb in
+      Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
 
   | Ind (kn, univ_instance) ->
     let name = Cname.translate_inductive info env kn in
     debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
-    let globname = Globnames.IndRef kn in
-    let types, univ_ctxt = Global.type_of_global_in_context env globname in
-    if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
-    then debug "Something suspicious is going on with thoses universes...";
-    Tsorts.instantiate_univ_params name univ_instance
+    let (mib, oib) = Inductive.lookup_mind_specif env kn in
+    let univ_ctxt = Declareops.inductive_polymorphic_context mib in
+    Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
 
   | Construct (kn, univ_instance) ->
     let name = Cname.translate_constructor info env kn in
     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
-    let globname = Globnames.ConstructRef kn in
-    let types, univ_ctxt = Global.type_of_global_in_context env globname in
-    if Univ.AUContext.size univ_ctxt <> Univ.Instance.length univ_instance
-    then debug "Something suspicious is going on with thoses universes...";
-    Tsorts.instantiate_univ_params name univ_instance
+    let (mib,oib) = Inductive.lookup_mind_specif env (Names.inductive_of_constructor kn) in
+    let univ_ctxt = Declareops.inductive_polymorphic_context mib in
+    Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
 
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
      let n = Array.length names in
@@ -410,7 +404,7 @@ and lift_let info env uenv x u a =
   let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
   let a_closed' = translate_types  info global_env uenv a_closed in
   let u_closed' = translate_constr info global_env uenv u_closed in
-  Dedukti.print info.out (Dedukti.definition false y' a_closed' u_closed');
+  Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
   let yconst = make_const info.module_path y in
   let env = push_const_decl env (yconst, Some(u_closed), a_closed) in
   env, apply_rel_context (Constr.mkConst yconst) rel_context
@@ -471,9 +465,9 @@ and lift_fix info env uenv names types bodies rec_indices =
   let types3_closed' = Array.map (translate_types info global_env uenv)
                                  types3_closed in
   for i = 0 to n - 1 do
-    Dedukti.print info.out (Dedukti.declaration true fix_names1'.(i) types1_closed'.(i));
-    Dedukti.print info.out (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
-    Dedukti.print info.out (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
+    Dedukti.print info.fmt (Dedukti.declaration true fix_names1'.(i) types1_closed'.(i));
+    Dedukti.print info.fmt (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
+    Dedukti.print info.fmt (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
   let fix_terms1 = Array.init n (fun i -> Constr.mkConst (const1.(i))) in
   let fix_terms2 = Array.init n (fun i -> Constr.mkConst (const2.(i))) in
@@ -533,9 +527,9 @@ and lift_fix info env uenv names types bodies rec_indices =
       body')
     ]) in
   for i = 0 to n - 1 do
-    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules1.(i));
-    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules2.(i));
-    List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite fix_rules3.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules1.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules2.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules3.(i));
   done;
   Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
   env, fix_declarations1

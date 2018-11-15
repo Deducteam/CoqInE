@@ -15,10 +15,19 @@ val translate_template_arg : env -> string -> Dedukti.var
 
 
 
-type info = {
-  out : Format.formatter;
-  library : Names.DirPath.t;
-  module_path : Names.ModPath.t;
-}
+type info = private
+  {
+    out         : out_channel;
+    fmt         : Format.formatter;
+    library     : Names.DirPath.t;
+    module_path : Names.ModPath.t;
+  }
 
-val init : Format.formatter -> Names.DirPath.t -> info
+(** Creates an info for given module written into given file *)
+val init : Names.ModPath.t -> string -> info
+
+(** Updates the info to match a certain label inside the current module *)
+val update : info -> Names.Label.t -> info
+
+(** Flushes out the output channel and close it *)
+val close : info -> unit

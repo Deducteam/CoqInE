@@ -14,7 +14,8 @@ type term =
   | Cmt of string * term
 
 type instruction =
-    Comment of string
+  | EmptyLine
+  | Comment of string
   | Command of string * string list
   | Declaration of bool * var * term
   | Definition of bool * var * term * term
@@ -61,23 +62,41 @@ type coq_universe =
 
 module type CoqTranslator =
 sig
-  val coq_Sort  : term
+  val coq_Sort       : term
   val coq_univ_index : int -> term
-  val coq_prop  : term
-  val coq_set   : term
-  val coq_univ  : int -> term
-  val coq_axiom : term -> term
-  val coq_axioms: term -> int -> term
-  val coq_rule  : term -> term -> term
-  val coq_sup   : term -> term -> term
-  val coq_U     : term -> term
-  val coq_term  : term -> term -> term
-  val coq_sort  : term -> term
-  val coq_prod  : term -> term -> term -> term -> term
-  val coq_cast  : term -> term -> term -> term -> term -> term
+  val coq_prop       : term
+  val coq_set        : term
+  val coq_Sort       : term
+  val coq_univ       : int -> term
+
+  val coq_var_univ_name : int -> var
+  (** Translates a "var" universe level's name  *)
+
+  val coq_univ_name : string -> var
+  (** Template (local) Coq universe name translation
+      e.g.  Coq.Arith.0 --> Coq__Arith__0  *)
+
+  val coq_global_univ : string -> term
+  (** Global universe name translation to Dedukti variable
+      e.g.  Coq.Arith.0 --> Var "U.Coq__Arith__0"  *)
+
+  val coq_axiom    : term -> term
+  val coq_axioms   : term -> int -> term
+  val coq_rule     : term -> term -> term
+  val coq_sup      : term -> term -> term
+  val coq_U        : term -> term
+  val coq_term     : term -> term -> term
+  val coq_sort     : term -> term
+  val coq_prod     : term -> term -> term -> term -> term
+  val coq_cast     : term -> term -> term -> term -> term -> term
     
+  val cstr_leq : term -> term -> term
+  val cstr_le  : term -> term -> term
+
   val coq_header : instruction list
   val coq_footer : instruction list
 end
+
+module PatternTranslator : CoqTranslator
 
 module Translator : CoqTranslator

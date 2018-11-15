@@ -4,7 +4,6 @@ open Parameters
 open Pp
 open Debug
 
-
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
@@ -16,26 +15,17 @@ let translate_qualified_library qualid =
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
-  let filename = get_destination_path (Cname.translate_dir_path dir_path) in
-  let out = open_out (filename ^ ".dk") in
-  let formatter = Format.formatter_of_out_channel out in
-  let info = Info.init formatter dir_path in
-  let flush_and_close () =
-    Format.pp_print_flush formatter ();
-    close_out out
-  in
+  let filename = Cname.translate_dir_path dir_path in
+  let info = Info.init module_path filename in
   begin
     try
-      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_header);
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header);
       Modules.translate_module_body info (Global.env ()) module_body;
-      (pp_list "" Dedukti.printc) formatter (Dedukti.Translator.coq_footer)
-    with
-    | e ->
-      flush_and_close ();
-      raise e
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_footer)
+    with e -> Info.close info; raise e
   end;
   debug_stop ();
-  flush_and_close ()
+  Info.close info
 
 
 (** Translates the given library *)
@@ -48,7 +38,16 @@ let translate_library reference =
   translate_qualified_library qualid
 
 let translate_universes () =
-  ()
+  (* U.dk is the file for universe definitions  *)
+  let info = Info.init Names.ModPath.initial "U" in
+  begin
+    try
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header);
+      Tunivs.translate_all_universes info (Global.universes ())
+    with e -> Info.close info; raise e
+  end;
+  Info.close info
+
 
 (** Translate all loaded libraries. **)
 let translate_all () =

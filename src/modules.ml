@@ -36,15 +36,15 @@ let translate_constant_body info env label const =
   | Undef inline ->
       (* For now assume inline is None. *)
       assert (inline = None);
-      Dedukti.print info.out (Dedukti.declaration false label' const_type')
+      Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
   | Def constr_substituted ->
       let constr = Mod_subst.force_constr constr_substituted in
       let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
-      Dedukti.print info.out (Dedukti.definition false label' const_type' constr')
+      Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
       let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
       let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
-      Dedukti.print info.out (Dedukti.definition true label' const_type' constr')
+      Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
@@ -116,7 +116,6 @@ and translate_structure_field_body info env (label, sfb) =
        -> Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
      )
   | SFBmodule mb ->
-      let info = {info with module_path = Names.MPdot(info.module_path, label)} in
-      translate_module_body info env mb
+      translate_module_body (Info.update info label) env mb
   | SFBmodtype(_) -> ()
 

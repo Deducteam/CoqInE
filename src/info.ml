@@ -24,15 +24,30 @@ let translate_template_arg (e:env) a = StringMap.find a e.template_params
 
 
 
-type info = {
-  out : Format.formatter;
-  library : Names.DirPath.t;
-  module_path : Names.ModPath.t;
+type info =
+  {
+    out         : out_channel;
+    fmt         : Format.formatter;
+    library     : Names.DirPath.t;
+    module_path : Names.ModPath.t;
   }
 
-let init out dir_path =
+let init module_path filename =
+  let filename = Parameters.get_destination_path filename in
+  let out = open_out (filename ^ ".dk") in
   {
     out = out;
-    library = dir_path;
-    module_path = Names.MPfile(dir_path);
+    fmt = Format.formatter_of_out_channel out;
+    library =
+      if module_path = Names.ModPath.initial then Names.DirPath.initial
+      else Nametab.dirpath_of_module module_path;
+    module_path = module_path;
   }
+
+let update info label =
+  {info with module_path = Names.MPdot(info.module_path, label)}
+
+let close info =
+  Format.pp_print_flush info.fmt ();
+  close_out info.out
+  

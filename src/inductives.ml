@@ -68,7 +68,7 @@ let translate_inductive info env label mind_body i =
   debug "Arity sort: %a" pp_coq_type (Constr.mkSort arity_sort);
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
-  Dedukti.print info.out (Dedukti.declaration false name' arity')
+  Dedukti.print info.fmt (Dedukti.declaration false name' arity')
 
 
 
@@ -125,7 +125,7 @@ let translate_constructors info env label mind_body i =
     let univ_type     = Tsorts.add_sort_params univ_poly_params template_type in
     debug "Cons_type: %a" Dedukti.pp_term univ_type;
     
-    Dedukti.print info.out (Dedukti.declaration false cons_name univ_type);
+    Dedukti.print info.fmt (Dedukti.declaration false cons_name univ_type);
   done
   
 
@@ -342,7 +342,7 @@ let translate_match info env label mind_body i =
        matched_var') in
 
   (* Printing out the match definition. *)
-  Dedukti.print info.out
+  Dedukti.print info.fmt
     (Dedukti.declaration true match_function_name'
        (Dedukti.pies match_function_context' match_function_type'));
 
@@ -367,4 +367,4 @@ let translate_match info env label mind_body i =
       ) in
   
   (* Printing out the match rewrite rules. *)
-  List.iter (Dedukti.print info.out) (List.map Dedukti.rewrite (Array.to_list case_rules))
+  List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite (Array.to_list case_rules))

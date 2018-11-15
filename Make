@@ -9,6 +9,7 @@ src/debug.mli
 src/error.mli
 src/info.mli
 src/cname.mli
+src/tunivs.mli
 src/tsorts.mli
 src/terms.mli
 src/inductives.mli
@@ -22,6 +23,7 @@ src/error.ml
 src/info.ml
 src/cname.ml
 src/univparse.ml4
+src/tunivs.ml
 src/tsorts.ml
 src/terms.ml
 src/inductives.ml

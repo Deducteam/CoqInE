@@ -29,8 +29,12 @@ let pp_t = pp_with
 
 let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
-let pp_coq_term  = printer_of_std_ppcmds Printer.safe_pr_constr
-let pp_coq_type  = printer_of_std_ppcmds Printer.pr_type
+let pp_coq_term  = 
+  let (sigma, env) = Pfedit.get_current_context () in
+  printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
+let pp_coq_type  =
+  let (sigma, env) = Pfedit.get_current_context () in
+  printer_of_std_ppcmds (Printer.pr_type_env env sigma)
 let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
 let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
