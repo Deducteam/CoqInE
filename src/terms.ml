@@ -112,7 +112,6 @@ let push_const_decl env (c, m, const_type) =
     | None -> Error.error (Pp.str "compile_constant_body failed")
   in
   (** TODO : Double check the following *)
-  (*    let const_universes = (Univ.UContext.make (Univ.Instance.empty, Univ.Constraint.empty)) in *)
   let body = {
     const_hyps = [];
     const_body = const_body;
@@ -128,19 +127,6 @@ let push_const_decl env (c, m, const_type) =
       }
   } in
   Environ.add_constant c body env
-
-let check_globname env n =
-  try
-    let (types, univ_ctxt as r) = Global.type_of_global_in_context env n in
-    debug "Checking name %a: %a" pp_globname n pp_coq_type types;
-    r
-  with | e -> debug "Error while checking name %a !" pp_globname n; raise e
-
-let sort_as_univ = function
-| Term.Type u -> u
-| Term.Prop Null -> Univ.Universe.type0m
-| Term.Prop Pos -> Univ.Universe.type0
-
 
 (* This is exactly Inductive.cons_subst *)
 let cons_subst u su subst =
@@ -162,7 +148,7 @@ let make_subst env =
       let args = match args with _::args -> args | [] -> [] in
       make subst (sign, exp, args)
     | d::sign, Some u::exp, a::args ->
-      let s = sort_as_univ (snd (Reduction.dest_arity env (Lazy.force a))) in
+      let s = Sorts.univ_of_sort (snd (Reduction.dest_arity env (Lazy.force a))) in
       make (cons_subst u s subst) (sign, exp, args)
     | Context.Rel.Declaration.LocalAssum (na,t) :: sign, Some u::exp, [] ->
       make (remember_subst u subst) (sign, exp, [])

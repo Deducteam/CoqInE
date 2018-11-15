@@ -1,6 +1,5 @@
 (** Translation of Coq sorts *)
 
-open Pp
 open Dedukti
 open Debug
 

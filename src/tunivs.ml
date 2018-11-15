@@ -1,12 +1,10 @@
 (** Translation of Coq universe levels *)
 
-open Pp
 open Dedukti
 open Debug
 
-
 (** Get all global universes names together with their concrete levels *)
-let get_universes_levels universes =
+let get_universes_levels (universes:UGraph.t) =
   let universes = UGraph.sort_universes universes in
   let res = ref [] in
   let register constraint_type j k =
@@ -22,7 +20,7 @@ let get_universes_levels universes =
 module StringSet = Set.Make(struct type t = string let compare = String.compare end)
 
 (** Returns all global universes names and all constraints on these universes *)
-let get_universes_constraints universes =
+let get_universes_constraints (universes:UGraph.t) =
   let defined_univs = ref StringSet.empty in
   let reg u =
     if      u = "Set"  then Translator.coq_set
@@ -49,7 +47,7 @@ let get_universes_constraints universes =
 
 (** Instructions for universe declaration as constant symbols and
   reduction rules on "sup" operator *)
-let universe_encoding_float_noconstr universes =
+let universe_encoding_float_noconstr (universes:UGraph.t) =
   (* This generates far too many constraints: takes a long time to typecheck. *)
   let unames, cstr = get_universes_constraints universes in
   let register inst (j, jd, constraint_type, k, kd) =
@@ -68,12 +66,11 @@ let universe_encoding_float_noconstr universes =
       (Dedukti.rewrite ([], pat1, kd)) ::
       (Dedukti.rewrite ([], pat2, kd)) :: inst in
   let decl_u u = Dedukti.declaration false (Translator.coq_univ_name u) Translator.coq_Sort in
-  let inst = List.fold_left register [] cstr in
-  List.rev_append (List.map decl_u unames) (EmptyLine :: inst)
+  (List.map decl_u unames) @ EmptyLine :: (List.fold_left register [] cstr)
 
 (** Instructions for universe declaration as constant symbols and
   constant constraints constructors. *)
-let universe_encoding_float_constr universes =
+let universe_encoding_float_constr (universes:UGraph.t) =
   let unames, cstr = get_universes_constraints universes in
   let counter = ref 0 in
   let decl cstr_type =
@@ -88,19 +85,18 @@ let universe_encoding_float_constr universes =
     | Univ.Le -> (decl (Translator.cstr_leq jd kd)) :: inst
     | Univ.Lt -> (decl (Translator.cstr_le  jd kd)) :: inst in
   let decl_u u = Dedukti.declaration false (Translator.coq_univ_name u) Translator.coq_Sort in
-  let inst = List.fold_left register [] cstr in
-  List.rev_append (List.map decl_u unames) (EmptyLine :: inst)
+  (List.map decl_u unames) @ EmptyLine :: (List.fold_left register [] cstr)
 
 (** Instructions for universes declaration as defined symbols
   reducing to their concrete levels. *)
-let universe_encoding_nofloat universes =
+let universe_encoding_nofloat (universes:UGraph.t) =
   let univ_levels = get_universes_levels universes in
   List.map (fun (name, lvl) ->
       Dedukti.definition false name Translator.coq_Sort
         (Translator.coq_univ lvl)) univ_levels
 
 
-let translate_all_universes info universes =
+let translate_all_universes (info:Info.info) (universes:UGraph.t) =
   message "Translating global universes";
   (pp_list "" Dedukti.printc) info.Info.fmt
     (match Parameters.is_float_univ_on (), Parameters.is_constraints_on () with
