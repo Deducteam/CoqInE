@@ -1,14 +1,31 @@
 
-(** Sets debugging output to file at given path *)
 val debug_to_file : string -> unit
+(** Sets debugging output to file at given path *)
+
+val  enable_debug : unit -> unit
+(** Enables debugging *)
+
+val disable_debug : unit -> unit
+(** Disables debugging *)
+
+
+val debug_start : unit -> unit
+(** Starts debugging *)
+
+val debug_stop  : unit -> unit
+(** Stops debugging *)
+
+val is_debug_on : unit -> bool
+(** Is debugging on ? *)
+
+
+val debug   : ('a, Format.formatter, unit, unit) format4 -> 'a
+(** Prints to debug channel *)
+
+val message : ('a, Format.formatter, unit, unit) format4 -> 'a
+(** Prints to standard output *)
 
 type 'a printer = Format.formatter -> 'a -> unit
-
-(** Prints to debug channel *)
-val debug   : ('a, Format.formatter, unit, unit) format4 -> 'a
-
-(** Prints to standard output *)
-val message : ('a, Format.formatter, unit, unit) format4 -> 'a
 
 val pp_list  : string -> 'a printer -> 'a list  printer
 val pp_array : string -> 'a printer -> 'a array printer

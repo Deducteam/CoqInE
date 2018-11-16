@@ -1,6 +1,5 @@
 (** Translation of Coq libraries *)
 
-open Parameters
 open Pp
 open Debug
 

@@ -1,5 +1,7 @@
 (** Dedukti syntax and pretty-printing functions *)
 
+open Encoding
+
 type var = string
 
 type term =
@@ -155,6 +157,7 @@ let printc out = function
   | _ -> assert false
 
 
+
 type cic_universe =
   | Prop
   | Set
@@ -166,10 +169,14 @@ type cic_universe =
   | Max of cic_universe list
   | Rule of cic_universe * cic_universe
 
+(* Note:
+  Succ(Prop,0) = Prop
+  Succ(Prop,1) = Axiom(Prop) = Type_0
+  ... *)
+let mk_type i = Succ (Prop, i+1)
 
 module type CoqTranslator =
 sig
-  val coq_Sort  : term
   val coq_univ_index : int -> term
   val coq_prop  : term
   val coq_set   : term
@@ -178,19 +185,20 @@ sig
   val coq_var_univ_name : int -> var
   val coq_univ_name : string -> var
   val coq_global_univ : string -> term
-  val coq_universe   : cic_universe -> term
+  val coq_universe         : cic_universe -> term
+  val coq_pattern_universe : cic_universe -> term
   val coq_axiom : term -> term
   val coq_axioms: term -> int -> term
   val coq_rule  : term -> term -> term
-  val coq_sup   : term -> term -> term
+  val coq_sup   : term list -> term
   val coq_U     : cic_universe -> term
   val coq_term  : cic_universe -> term -> term
   val coq_sort  : cic_universe -> term
   val coq_prod  : cic_universe -> cic_universe -> term -> term -> term
   val coq_cast  : cic_universe -> cic_universe -> term -> term -> term -> term
 
-  val cstr_leq : term -> term -> term
-  val cstr_le  : term -> term -> term
+  val cstr_leq : cic_universe -> cic_universe -> term
+  val cstr_le  : cic_universe -> cic_universe -> term
 
   val coq_header : instruction list
   val coq_footer : instruction list
@@ -200,6 +208,12 @@ end
 
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 
+
+let coq_var  x = Var (add_prefix (enc_system_module ()) x)
+let univ_var x = Var (add_prefix (enc_universe_module ()) x)
+
+
+
 module CoqStd : CoqTranslator =
 struct
   let coq_univ_name s = String.concat "__" (String.split_on_char '.' s)
@@ -208,35 +222,45 @@ struct
 
   let coq_global_univ u = Var ("U." ^ (coq_univ_name u))
 
-  let coq_var  x = Var (add_prefix "Coq" x)
-  let univ_var x = Var (add_prefix "U"   x)
 
-  let coq_Sort = coq_var "Sort"
-  let coq_axiom s          = app  (coq_var "axiom") s
-  let coq_axioms s i = Utils.iterate i coq_axiom s
-  let coq_rule s1 s2       = apps (coq_var "rule" ) [s1; s2]
-  let coq_sup  s1 s2       = apps (coq_var "sup"  ) [s1; s2]
-
+  let coq_Sort       = coq_var "Sort"
+  let coq_nat n = Utils.iterate n (app (coq_var "s")) (coq_var "z")
+  let coq_type_i i   = app  (coq_var "type") (coq_nat i)
+  let coq_prop       = coq_var "prop"
+  let coq_set        = coq_var "set"
   let coq_univ_index i = Utils.iterate i (app (coq_var "s")) (coq_var "z")
-
-  let coq_prop   = coq_var "prop"
-  let coq_set    = coq_var "set"
-  let coq_univ i = app (coq_var "type") (coq_univ_index i)
+  let coq_univ i     = app (coq_var "type") (coq_univ_index i)
+  let coq_axiom s    = app  (coq_var "axiom") s
+  let coq_axioms s i = Utils.iterate i coq_axiom s
+  let coq_rule s1 s2 = apps (coq_var "rule" ) [s1; s2]
+  let rec coq_sup  = function
+    | [] -> coq_prop
+    | [u] -> u
+    | (u :: u_list) -> apps (coq_var "sup") [u; coq_sup u_list]
 
   let rec cu = function
-    | Set     -> coq_set
-    | Prop    -> coq_prop
+    | Set           -> coq_set
+    | Prop          -> coq_prop
     | LocalNamed name -> var name
-    | Local n -> var ("s" ^ string_of_int n)
+    | Local n       -> var ("s" ^ string_of_int n)
     | Template name -> var (coq_univ_name name)
-    | Global name -> coq_global_univ name
-    | Succ (u,i) -> coq_axioms (cu u) i
-    | Max []  -> coq_prop
-    | Max [u] -> cu u
-    | Max (u :: u_list) -> coq_sup (cu u) (cu (Max u_list))
-    | Rule (s1,s2) -> coq_rule (cu s1) (cu s2)
+    | Global name   -> coq_global_univ name
+    | Succ (u   ,0) -> cu u
+    | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
+    | Succ (Set ,i) -> coq_type_i i
+    | Succ (Prop,i) -> coq_type_i i
+    | Succ (u,i)    -> coq_axioms (cu u) i
+    | Max u_list    -> coq_sup (List.map cu u_list)
+    | Rule (s1,s2)  -> coq_rule (cu s1) (cu s2)
+  let coq_universe u = cu u
 
-  let coq_universe = cu
+  let rec cpu = function
+    | Succ (u   ,0) -> cpu u
+    | Succ (u,i)    -> coq_axioms (cu u) i
+    | Max u_list    -> coq_sup (List.map cpu u_list)
+    | Rule (s1,s2)  -> coq_rule (cpu s1) (cpu s2)
+    | u -> cu u
+  let coq_pattern_universe u = cpu u
 
   let coq_U    s        = app  (coq_var "U"    ) (cu s)
   let coq_term s  a     = apps (coq_var "T"    ) [cu s; a]
@@ -244,8 +268,8 @@ struct
   let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [cu s1; cu s2; a; b]
   let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [cu s1; cu s2; a; b; t]
 
-  let cstr_leq s1 s2 = apps (coq_var "Cumul") [s1          ; s2]
-  let cstr_le  s1 s2 = apps (coq_var "Cumul") [coq_axiom s1; s2]
+  let cstr_leq s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
+  let cstr_le  s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
 
   let coq_header = [ comment "This file was automatically generated by Coqine." ]
   let coq_footer = [ comment "End of translation." ]
@@ -256,8 +280,6 @@ module CoqShort : CoqTranslator =
 struct
   include CoqStd
 
-  let coqify = add_prefix "Coq"
-  let coq_var  x = Var (coqify x)
 
   let rec coq_univ_index i =
     if i <= 9
@@ -269,10 +291,14 @@ struct
     else app (coq_var "type") (coq_univ_index i)
 
   let coq_U univ = app (coq_var "U") (coq_universe univ)
-  let coq_sort = function
-    | Succ (Prop, i) when i <= 9 -> var ("u" ^ (string_of_int i))
+  let rec coq_sort = function
+    | Succ (s, 0) -> coq_sort s
     | Set  -> var "_set"
     | Prop -> var "_prop"
+    | Max []  -> coq_prop
+    | Max [u] -> coq_sort u
+    | Succ (Prop, i) when i > 0 && i <= 9 -> var ("u" ^ (string_of_int i))
+    | Succ (Set , i) when i <= 9 -> var ("u" ^ (string_of_int i))
     | s -> CoqStd.coq_sort s
 
   let coq_header =

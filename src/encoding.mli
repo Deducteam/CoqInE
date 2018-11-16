@@ -1,20 +1,9 @@
 
-val  enable_debug : unit -> unit
-(** Enables debugging *)
 
-val disable_debug : unit -> unit
-(** Disables debugging *)
-
-
-val debug_start : unit -> unit
-(** Starts debugging *)
-
-val debug_stop  : unit -> unit
-(** Stops debugging *)
-
-val is_debug_on : unit -> bool
-(** Is debugging on ? *)
-
+val set_encoding : string -> unit
+(** Selects a given encoding in the following list:
+  - default
+*)
 
 val  enable_polymorphism : unit -> unit
 (** Enables (true) polymorphism translation *)
@@ -56,8 +45,7 @@ val is_float_univ_on : unit -> bool
 (** Is floating universe translation on ? *)
 
 
-val set_destination : string -> unit
-(** Sets the folder in which generated files should be output *)
+val enc_system_module   : unit -> string
+val enc_universe_module : unit -> string
 
-val get_destination_path : string -> string
-(** Returns path in output folder from relative path *)
+

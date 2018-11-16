@@ -1,19 +1,8 @@
-(** Information about the translation *)
+(** General information about the translation *)
 
 
-(** Universe and constraints environment.
-  Contains information about:
-  - locally bounded universe variables from universe polymorphism
-  - template polymorphic named variables
-  - local constraints
-*)
-type env
-
-val make : Univ.Constraint.t -> (string*Dedukti.var) list -> env
-val is_template_polymorphic : env -> string -> bool
-val translate_template_arg : env -> string -> Dedukti.var
-
-
+val set_destination : string -> unit
+(** Sets the folder in which generated files should be output *)
 
 type info = private
   {
@@ -31,3 +20,16 @@ val update : info -> Names.Label.t -> info
 
 (** Flushes out the output channel and close it *)
 val close : info -> unit
+
+
+(** Universe and constraints environment.
+  Contains information about:
+  - locally bounded universe variables from universe polymorphism
+  - template polymorphic named variables
+  - local constraints
+*)
+type env
+
+val make : Univ.Constraint.t -> (string*Dedukti.var) list -> env
+val is_template_polymorphic : env -> string -> bool
+val translate_template_arg : env -> string -> Dedukti.var

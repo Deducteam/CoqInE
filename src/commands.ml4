@@ -42,7 +42,7 @@ END
 
 VERNAC COMMAND EXTEND DeduktiSetDestination CLASSIFIED AS QUERY
 | [ "Dedukti" "Set" "Destination" string(dest) ] ->
-  [ Parameters.set_destination dest ]
+  [ Info.set_destination dest ]
 END
 
 VERNAC COMMAND EXTEND DeduktiSetDebug CLASSIFIED AS QUERY
@@ -52,50 +52,50 @@ END
 
 VERNAC COMMAND EXTEND DeduktiEnableDebug CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Debug" ] ->
-  [ Parameters.enable_debug () ]
+  [ Debug.enable_debug () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisableDebug CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Debug" ] ->
-  [ Parameters.disable_debug () ]
+  [ Debug.disable_debug () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiEnablePolymorphism CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Universes" ] ->
-  [ Parameters.enable_polymorphism () ]
+  [ Encoding.enable_polymorphism () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisablePolymorphism CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Universes" ] ->
-  [ Parameters.disable_polymorphism () ]
+  [ Encoding.disable_polymorphism () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiEnableTemplate CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Template" ] ->
-  [ Parameters.enable_templ_polymorphism () ]
+  [ Encoding.enable_templ_polymorphism () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisableTemplate CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Template" ] ->
-  [ Parameters.disable_templ_polymorphism () ]
+  [ Encoding.disable_templ_polymorphism () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiEnableConstraints CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Constraints" ] ->
-  [ Parameters.enable_constraints () ]
+  [ Encoding.enable_constraints () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisableConstraints CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Constraints" ] ->
-  [ Parameters.disable_constraints () ]
+  [ Encoding.disable_constraints () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiEnableFloatUniv CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Floating" "Universes" ] ->
-  [ Parameters.enable_float_univ () ]
+  [ Encoding.enable_float_univ () ]
 END
 
 VERNAC COMMAND EXTEND DeduktiDisableFloatUniv CLASSIFIED AS QUERY
 | [ "Dedukti" "Disable" "Floating" "Universes" ] ->
-  [ Parameters.disable_float_univ () ]
+  [ Encoding.disable_float_univ () ]
 END

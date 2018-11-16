@@ -2,8 +2,8 @@
 -I src
 CONSTRUCTORS_PLUGIN = "src/coqine_plugin.cma"
 CONSTRUCTORS_PLUGINOPT = "src/coqine_plugin.cmxs"
-src/parameters.mli
 src/utils.mli
+src/encoding.mli
 src/dedukti.mli
 src/debug.mli
 src/error.mli
@@ -17,6 +17,7 @@ src/modules.mli
 src/libraries.mli
 src/parameters.ml
 src/utils.ml
+src/encoding.ml
 src/dedukti.ml
 src/debug.ml
 src/error.ml

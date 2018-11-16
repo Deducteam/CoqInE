@@ -66,18 +66,21 @@ type cic_universe =
   | Rule     of cic_universe * cic_universe
   (** *)
 
-(** Note: in Coq cumulativity (subtyping) and axioms are not the same:
+val mk_type : int -> cic_universe
+(** [mk_type i] represents Type_i *)
+
+(*
+Note: in Coq cumulativity (subtyping) and axioms are not the same:
   Set  : Type_0 : Type_1 : ...
   Prop : Type_0
 but
   Prop < Set < Type_0 < Type_1 < ...
-! This hierarchy could change starting v8.10 !
+! This hierarchy is supposed to change starting v8.10 !
 *)
 
 
 module type CoqTranslator =
 sig
-  val coq_Sort       : term
   val coq_univ_index : int -> term
   val coq_prop       : term
   val coq_set        : term
@@ -98,18 +101,21 @@ sig
   val coq_universe   : cic_universe -> term
   (** Translate a universe level *)
   
+  val coq_pattern_universe : cic_universe -> term
+  (** Translate a universe level as a rule rhs pattern *)
+
   val coq_axiom    : term -> term
   val coq_axioms   : term -> int -> term
   val coq_rule     : term -> term -> term
-  val coq_sup      : term -> term -> term
+  val coq_sup   : term list -> term
   val coq_U        : cic_universe -> term
   val coq_term     : cic_universe -> term -> term
   val coq_sort     : cic_universe -> term
   val coq_prod     : cic_universe -> cic_universe -> term -> term -> term
   val coq_cast     : cic_universe -> cic_universe -> term -> term -> term -> term
-    
-  val cstr_leq : term -> term -> term
-  val cstr_le  : term -> term -> term
+
+  val cstr_leq : cic_universe -> cic_universe -> term
+  val cstr_le  : cic_universe -> cic_universe -> term
 
   val coq_header : instruction list
   val coq_footer : instruction list

@@ -2,6 +2,8 @@ open Declarations
 open Debug
 open Info
 
+module T = Dedukti.Translator
+
 (** Return a map of template parameters and a sort for given declaration. *)
 let dest_ind_body (ind_body:Declarations.one_inductive_body) =
   let arity_context = ind_body.mind_arity_ctxt in
@@ -310,7 +312,7 @@ let translate_match info env label mind_body i =
     Array.init n_cons
       (fun j ->
          Dedukti.pies cons_real_contexts'.(j)
-           (Dedukti.Translator.coq_term return_sort'
+           (T.coq_term return_sort'
               (Dedukti.apps return_type_var'
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
@@ -318,16 +320,16 @@ let translate_match info env label mind_body i =
   
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
-    List.map (fun x -> (x, Dedukti.Translator.coq_Sort)) template_params in
+    List.map (fun x -> (x, T.coq_Sort)) template_params in
   let univ_poly_context' =
-    List.map (fun x -> (x, Dedukti.Translator.coq_Sort)) univ_poly_params in
+    List.map (fun x -> (x, T.coq_Sort)) univ_poly_params in
   let common_context' =
-    (return_sort_name', Dedukti.Translator.coq_Sort) ::
+    (return_sort_name', T.coq_Sort) ::
     params_context' @   (* Shouldn't this be first ? *)
     (return_type_name',
      Dedukti.pies
        arity_real_context'
-       (Dedukti.arr ind_applied' (Dedukti.Translator.coq_U return_sort'))
+       (Dedukti.arr ind_applied' (T.coq_U return_sort'))
     ) ::
     cases_context' in
   let match_function_context' =
@@ -336,7 +338,7 @@ let translate_match info env label mind_body i =
     common_context' @
     arity_real_context' @
     [matched_name', ind_applied'] in
-  let match_function_type' = Dedukti.Translator.coq_term return_sort'
+  let match_function_type' = T.coq_term return_sort'
     (Dedukti.app
        (Dedukti.apply_context return_type_var' arity_real_context')
        matched_var') in

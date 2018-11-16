@@ -24,6 +24,14 @@ let translate_template_arg (e:env) a = StringMap.find a e.template_params
 
 
 
+let destination = ref "."
+
+let set_destination dest = destination := dest
+
+let get_destination_path path = Filename.concat !destination path
+
+
+
 type info =
   {
     out         : out_channel;
@@ -33,7 +41,7 @@ type info =
   }
 
 let init module_path filename =
-  let filename = Parameters.get_destination_path filename in
+  let filename = get_destination_path filename in
   let out = open_out (filename ^ ".dk") in
   {
     out = out;
