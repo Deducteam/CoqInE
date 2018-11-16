@@ -6,7 +6,7 @@ val instantiate_univ_params :
 
 val set_universes : UGraph.t -> unit
 
-val translate_universe : Info.env -> Univ.Universe.t -> Dedukti.term
+val translate_universe : Info.env -> Univ.Universe.t -> Dedukti.cic_universe
 
 val translate_template_params : Univ.Level.t option list -> (string * Dedukti.var) list
 

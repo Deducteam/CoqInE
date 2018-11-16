@@ -35,16 +35,18 @@ let translate_atom uenv a =
     try Translator.coq_univ (Hashtbl.find universe_table a)
     with Not_found -> failwith (Printf.sprintf "Unable to parse atom: %s" a)
 
-let evaluate_universe uenv i =
-  let rec evaluate = function
-    | Set -> Translator.coq_set
-    | Prop -> Translator.coq_prop
-    | Atom a -> translate_atom uenv a
-    | Succ (u,i) -> Translator.coq_axioms (evaluate u) i
-    | Max []  -> Translator.coq_prop
-    | Max [i] -> evaluate i
-    | Max (i :: j_list) -> Translator.coq_sup (evaluate i) (evaluate (Max(j_list))) in
-  evaluate i
+(** Translates a universe level *)
+let translate_level_to_univ uenv l =
+  if Univ.Level.is_prop l then Dedukti.Prop
+  else if Univ.Level.is_set l then Dedukti.Set
+  else
+    match Univ.Level.var_index l with
+    | None ->
+      let name = Univ.Level.to_string l in
+      if Info.is_template_polymorphic uenv name
+      then Dedukti.Template name
+      else Dedukti.Global name
+    | Some n -> Dedukti.Local n
 
 (** Translates a universe level *)
 let translate_level uenv l =
@@ -67,10 +69,16 @@ let instantiate_univ_params uenv name univ_ctxt univ_instance =
     (Dedukti.var name)
     levels
 
-let translate_universe uenv i =
-  debug "Translating universe : %a" pp_coq_univ i;
-  let i_str = Pp.string_of_ppcmds (Univ.pr_uni i) in
-  evaluate_universe uenv (Univparse.translate_universe i_str)
+let translate_universe uenv u =
+  debug "Translating universe : %a" pp_coq_univ u;
+  let translate (lvl, i) =
+    let univ = translate_level_to_univ uenv lvl in
+    if i = 0 then univ else Dedukti.Succ (univ,i)
+  in
+  match Univ.Universe.map translate u with
+  | []     -> Dedukti.Prop
+  | [l]    -> l
+  | levels -> Dedukti.Max levels
 
 let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Parameters.is_polymorphism_on ()

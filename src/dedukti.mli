@@ -52,12 +52,27 @@ val printc : instruction printer
 
 val pp_term : term printer
 
-type coq_universe =
-  | Prop
-  | Set
-  | Atom of string
-  | Succ of coq_universe * int
-  | Max  of coq_universe list
+type cic_universe =
+  | Prop (** Impredicative Prop *)
+  | Set  (** Set *)
+  | LocalNamed of string
+  (** Special variable for match *)
+  | Local    of int
+  (** Locally bounded universe polymorphic variable. *)
+  | Template of string             (** "Coq.Module.index" *)
+  | Global   of string             (** "Coq.Module.index" *)
+  | Succ     of cic_universe * int (** l + n *)
+  | Max      of cic_universe list  (** sup {u | u \in l} *)
+  | Rule     of cic_universe * cic_universe
+  (** *)
+
+(** Note: in Coq cumulativity (subtyping) and axioms are not the same:
+  Set  : Type_0 : Type_1 : ...
+  Prop : Type_0
+but
+  Prop < Set < Type_0 < Type_1 < ...
+! This hierarchy could change starting v8.10 !
+*)
 
 
 module type CoqTranslator =
@@ -80,15 +95,18 @@ sig
   (** Global universe name translation to Dedukti variable
       e.g.  Coq.Arith.0 --> Var "U.Coq__Arith__0"  *)
 
+  val coq_universe   : cic_universe -> term
+  (** Translate a universe level *)
+  
   val coq_axiom    : term -> term
   val coq_axioms   : term -> int -> term
   val coq_rule     : term -> term -> term
   val coq_sup      : term -> term -> term
-  val coq_U        : term -> term
-  val coq_term     : term -> term -> term
-  val coq_sort     : term -> term
-  val coq_prod     : term -> term -> term -> term -> term
-  val coq_cast     : term -> term -> term -> term -> term -> term
+  val coq_U        : cic_universe -> term
+  val coq_term     : cic_universe -> term -> term
+  val coq_sort     : cic_universe -> term
+  val coq_prod     : cic_universe -> cic_universe -> term -> term -> term
+  val coq_cast     : cic_universe -> cic_universe -> term -> term -> term -> term
     
   val cstr_leq : term -> term -> term
   val cstr_le  : term -> term -> term

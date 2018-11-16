@@ -10,8 +10,8 @@ let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
 let translate_sort info env uenv = function
-  | Term.Prop Null -> Translator.coq_prop
-  | Term.Prop Pos  -> Translator.coq_set
+  | Term.Prop Null -> Dedukti.Prop
+  | Term.Prop Pos  -> Dedukti.Set
   | Term.Type i    -> Tsorts.translate_universe uenv i
 
 (** Infer and translate the sort of [a].
@@ -21,20 +21,20 @@ let rec infer_translate_sort info env uenv a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
-  | SortType(s) -> Translator.coq_axiom (translate_sort info env uenv s)
+  | SortType(s) -> Dedukti.Succ ((translate_sort info env uenv s),1)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info env ~default:"_" x in
     let s1' = infer_translate_sort info env uenv a in
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
     let s2' = infer_translate_sort info new_env uenv b in
-    Translator.coq_rule s1' s2'
+    Dedukti.Rule (s1',s2')
   | LetInType(x, u, a, b) ->
     (* No need to lift the let here. *)
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     infer_translate_sort info new_env uenv b
   | AtomicType(_) -> translate_sort info env uenv (infer_sort env a)
-                       
+
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
   let abstract_rel_declaration t c =
@@ -272,7 +272,8 @@ let rec translate_constr ?expected_type info env uenv t =
         Environ.constant_type_in env (cst,u), []
       | _ -> infer_type env f, []
     in
-    let f' = Dedukti.apps (translate_constr info env uenv f) univ_params in
+    let univ_params' = List.map Translator.coq_universe univ_params in
+    let f' = Dedukti.apps (translate_constr info env uenv f) univ_params' in
     let translate_app (f', type_f) u =
       let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
       let u' = translate_constr ~expected_type:c info env uenv u in
@@ -331,6 +332,7 @@ let rec translate_constr ?expected_type info env uenv t =
       infer_template_polymorph_ind_applied info env uenv
         case_info.ci_ind (Array.of_list params)
     in
+    let univ_params' = List.map Translator.coq_universe univ_params in
 
     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
@@ -341,6 +343,7 @@ let rec translate_constr ?expected_type info env uenv t =
       (param' :: params', Vars.subst1 param d) in
     let match_function' = Dedukti.var match_function_name in
     let return_sort' = translate_sort info env uenv return_sort in
+    let return_sort' = Translator.coq_universe return_sort' in 
     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
     debug "params': %a" (pp_list ", " pp_term) params';
     let return_type' = translate_constr info env uenv return_type in
@@ -348,7 +351,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let reals' = List.map (translate_constr info env uenv) reals in
     let matched' = translate_constr info env uenv matched in
     Dedukti.apps match_function'
-      (univ_params @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+      (univ_params' @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
       
   (* Not supported cases: *)
   | Meta metavariable  -> Error.not_supported "Meta"
@@ -363,21 +366,21 @@ and translate_types info env uenv a =
   | SortType(s) -> Translator.coq_U (translate_sort info env uenv s)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
-      let x = Cname.fresh_name info ~default:"_" env x in
-      let x' = Cname.translate_name x in
-      let a' = translate_types info env uenv a in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
-      let b' = translate_types info new_env uenv b in
-      Dedukti.pie (x', a') b'
+    let x = Cname.fresh_name info ~default:"_" env x in
+    let x' = Cname.translate_name x in
+    let a' = translate_types info env uenv a in
+    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
+    let b' = translate_types info new_env uenv b in
+    Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
     let env, u = lift_let info env uenv x u a in
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     translate_constr info new_env uenv b
   | AtomicType(_) ->
-      (* Fall back on the usual translation of types. *)
-      let s' = infer_translate_sort info env uenv a in
-      let a' = translate_constr info env uenv a in
-      Translator.coq_term s' a'
+    (* Fall back on the usual translation of types. *)
+    let s' = infer_translate_sort info env uenv a in
+    let a' = translate_constr info env uenv a in
+    Translator.coq_term s' a'
 
 and lift_let info env uenv x u a =
   let y = Cname.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info env x in

@@ -246,7 +246,7 @@ let translate_match info env label mind_body i =
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Cname.fresh_of_string info params_env "s" in
   let return_sort_name' = Cname.translate_identifier return_sort_name in
-  let return_sort_var' = Dedukti.var return_sort_name' in
+  let return_sort' = Dedukti.LocalNamed return_sort_name' in
   let params_env = Cname.push_identifier return_sort_name params_env in
   
   (* Create a fresh variable P and add it to the environment *)
@@ -310,7 +310,7 @@ let translate_match info env label mind_body i =
     Array.init n_cons
       (fun j ->
          Dedukti.pies cons_real_contexts'.(j)
-           (Dedukti.Translator.coq_term return_sort_var'
+           (Dedukti.Translator.coq_term return_sort'
               (Dedukti.apps return_type_var'
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
@@ -327,7 +327,7 @@ let translate_match info env label mind_body i =
     (return_type_name',
      Dedukti.pies
        arity_real_context'
-       (Dedukti.arr ind_applied' (Dedukti.Translator.coq_U return_sort_var'))
+       (Dedukti.arr ind_applied' (Dedukti.Translator.coq_U return_sort'))
     ) ::
     cases_context' in
   let match_function_context' =
@@ -336,7 +336,7 @@ let translate_match info env label mind_body i =
     common_context' @
     arity_real_context' @
     [matched_name', ind_applied'] in
-  let match_function_type' = Dedukti.Translator.coq_term return_sort_var'
+  let match_function_type' = Dedukti.Translator.coq_term return_sort'
     (Dedukti.app
        (Dedukti.apply_context return_type_var' arity_real_context')
        matched_var') in
@@ -350,7 +350,7 @@ let translate_match info env label mind_body i =
     Dedukti.apps match_function_var'
       (List.map Dedukti.var univ_poly_params @
        List.map Dedukti.var template_params @
-       return_sort_var' ::
+       Dedukti.var return_sort_name' ::
        params' @
        return_type_var' ::
        Array.to_list cases') in

@@ -5,10 +5,10 @@ val infer_type : Environ.env -> Constr.t -> Constr.types
 val infer_sort : Environ.env -> Constr.types -> Sorts.t
 
 val translate_sort :
-  Info.info -> Environ.env -> Info.env -> Sorts.t -> Dedukti.term
+  Info.info -> Environ.env -> Info.env -> Sorts.t -> Dedukti.cic_universe
 
 val infer_translate_sort :
-  Info.info -> Environ.env -> Info.env -> Constr.types -> Dedukti.term
+  Info.info -> Environ.env -> Info.env -> Constr.types -> Dedukti.cic_universe
 
 val abstract_rel_context :
   Context.Rel.Declaration.t list -> Constr.t -> Constr.t
