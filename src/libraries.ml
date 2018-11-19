@@ -18,9 +18,9 @@ let translate_qualified_library qualid =
   let info = Info.init module_path filename in
   begin
     try
-      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header);
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header ());
       Modules.translate_module_body info (Global.env ()) module_body;
-      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_footer)
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_footer ())
     with e -> Info.close info; raise e
   end;
   debug_stop ();
@@ -41,7 +41,7 @@ let translate_universes () =
   let info = Info.init Names.ModPath.initial "U" in
   begin
     try
-      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header);
+      (pp_list "" Dedukti.printc) info.Info.fmt (Dedukti.Translator.coq_header ());
       Tunivs.translate_all_universes info (Global.universes ())
     with e -> Info.close info; raise e
   end;

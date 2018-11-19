@@ -320,11 +320,11 @@ let translate_match info env label mind_body i =
   
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
-    List.map (fun x -> (x, T.coq_Sort)) template_params in
+    List.map (fun x -> (x, T.coq_Sort())) template_params in
   let univ_poly_context' =
-    List.map (fun x -> (x, T.coq_Sort)) univ_poly_params in
+    List.map (fun x -> (x, T.coq_Sort())) univ_poly_params in
   let common_context' =
-    (return_sort_name', T.coq_Sort) ::
+    (return_sort_name', T.coq_Sort()) ::
     params_context' @   (* Shouldn't this be first ? *)
     (return_type_name',
      Dedukti.pies

@@ -12,7 +12,7 @@ let get_universes_levels (universes:UGraph.t) =
     match constraint_type with
     | Univ.Eq ->
       let closed_univ = Scanf.sscanf k "Type.%d" (fun x -> x) in
-      res := (T.coq_univ_name j, closed_univ):: !res
+      res := (T.coq_univ_name j, Dedukti.mk_type closed_univ):: !res
     | Univ.Lt | Univ.Le -> () in
   UGraph.dump_universes register universes;
   !res
@@ -57,7 +57,7 @@ let universe_encoding_float_noconstr (universes:UGraph.t) =
     | Univ.Le -> (rw (Dedukti.Max [jd; kd]) kd) :: inst
     | Univ.Lt -> (rw (Dedukti.Max [jd; kd]) kd) ::
                  (rw (Dedukti.Max [Dedukti.Succ(jd,1); kd]) kd) :: inst in
-  let decl_u u = Dedukti.declaration false (T.coq_univ_name u) T.coq_Sort in
+  let decl_u u = Dedukti.declaration false (T.coq_univ_name u) (T.coq_Sort ()) in
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 
 (** Instructions for universe declaration as constant symbols and
@@ -76,17 +76,15 @@ let universe_encoding_float_constr (universes:UGraph.t) =
                  (decl (T.cstr_leq kd jd)) :: inst
     | Univ.Le -> (decl (T.cstr_leq jd kd)) :: inst
     | Univ.Lt -> (decl (T.cstr_le  jd kd)) :: inst in
-  let decl_u u = Dedukti.declaration false (T.coq_univ_name u) T.coq_Sort in
+  let decl_u u = Dedukti.declaration false (T.coq_univ_name u) (T.coq_Sort ()) in
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 
 (** Instructions for universes declaration as defined symbols
   reducing to their concrete levels. *)
 let universe_encoding_nofloat (universes:UGraph.t) =
-  let univ_levels = get_universes_levels universes in
-  List.map (fun (name, lvl) ->
-      Dedukti.definition false name T.coq_Sort
-        (T.coq_univ lvl)) univ_levels
-
+  let get_definition (name, lvl) =
+    Dedukti.definition false name (T.coq_Sort ()) (T.coq_universe lvl) in
+  List.map get_definition (get_universes_levels universes)
 
 let translate_all_universes (info:Info.info) (universes:UGraph.t) =
   message "Translating global universes";

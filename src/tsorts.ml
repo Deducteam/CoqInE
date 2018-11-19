@@ -6,7 +6,7 @@ module T = Dedukti.Translator
 
 (** Prepend template universe parameters before type *)
 let add_sort_params params t =
-  List.fold_right (function u -> Dedukti.pie (u, T.coq_Sort)) params t
+  List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
 
 (** Maping from the string reresentation of global named universes to
     concrete levels. *)

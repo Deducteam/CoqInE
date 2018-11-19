@@ -54,20 +54,22 @@ val pp_term : term printer
 
 type cic_universe =
   | Prop (** Impredicative Prop *)
-  | Set  (** Set *)
+  | Set  (** Predicative   Set *)
   | LocalNamed of string
   (** Special variable for match *)
   | Local    of int
   (** Locally bounded universe polymorphic variable. *)
-  | Template of string             (** "Coq.Module.index" *)
-  | Global   of string             (** "Coq.Module.index" *)
+  | Template of string
+  (** Locally bounded template polymorphic universe  "Coq.Module.index"  *)
+  | Global   of string
+  (** Global universe "Coq.Module.index" *)
   | Succ     of cic_universe * int (** l + n *)
   | Max      of cic_universe list  (** sup {u | u \in l} *)
   | Rule     of cic_universe * cic_universe
-  (** *)
+  (** Universe *)
 
 val mk_type : int -> cic_universe
-(** [mk_type i] represents Type_i *)
+(** [mk_type i] represents Type_i = Set + (i+1) = Prop + (i+1)  *)
 
 (*
 Note: in Coq cumulativity (subtyping) and axioms are not the same:
@@ -79,13 +81,10 @@ but
 *)
 
 
-module type CoqTranslator =
+module Translator :
 sig
-  val coq_univ_index : int -> term
-  val coq_prop       : term
-  val coq_set        : term
-  val coq_Sort       : term
-  val coq_univ       : int -> term
+  val coq_Sort : unit -> term
+  (** Term representing the type of sorts. *)
 
   val coq_var_univ_name : int -> var
   (** Translates a "var" universe level's name  *)
@@ -100,27 +99,19 @@ sig
 
   val coq_universe   : cic_universe -> term
   (** Translate a universe level *)
-  
+
   val coq_pattern_universe : cic_universe -> term
   (** Translate a universe level as a rule rhs pattern *)
 
-  val coq_axiom    : term -> term
-  val coq_axioms   : term -> int -> term
-  val coq_rule     : term -> term -> term
-  val coq_sup   : term list -> term
-  val coq_U        : cic_universe -> term
-  val coq_term     : cic_universe -> term -> term
-  val coq_sort     : cic_universe -> term
-  val coq_prod     : cic_universe -> cic_universe -> term -> term -> term
-  val coq_cast     : cic_universe -> cic_universe -> term -> term -> term -> term
+  val coq_U    : cic_universe -> term
+  val coq_term : cic_universe -> term -> term
+  val coq_sort : cic_universe -> term
+  val coq_prod : cic_universe -> cic_universe -> term -> term -> term
+  val coq_cast : cic_universe -> cic_universe -> term -> term -> term -> term
 
   val cstr_leq : cic_universe -> cic_universe -> term
   val cstr_le  : cic_universe -> cic_universe -> term
 
-  val coq_header : instruction list
-  val coq_footer : instruction list
+  val coq_header : unit -> instruction list
+  val coq_footer : unit -> instruction list
 end
-
-module PatternTranslator : CoqTranslator
-
-module Translator : CoqTranslator

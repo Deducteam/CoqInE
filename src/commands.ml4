@@ -60,42 +60,7 @@ VERNAC COMMAND EXTEND DeduktiDisableDebug CLASSIFIED AS QUERY
   [ Debug.disable_debug () ]
 END
 
-VERNAC COMMAND EXTEND DeduktiEnablePolymorphism CLASSIFIED AS QUERY
-| [ "Dedukti" "Enable" "Universes" ] ->
-  [ Encoding.enable_polymorphism () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiDisablePolymorphism CLASSIFIED AS QUERY
-| [ "Dedukti" "Disable" "Universes" ] ->
-  [ Encoding.disable_polymorphism () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiEnableTemplate CLASSIFIED AS QUERY
-| [ "Dedukti" "Enable" "Template" ] ->
-  [ Encoding.enable_templ_polymorphism () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiDisableTemplate CLASSIFIED AS QUERY
-| [ "Dedukti" "Disable" "Template" ] ->
-  [ Encoding.disable_templ_polymorphism () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiEnableConstraints CLASSIFIED AS QUERY
-| [ "Dedukti" "Enable" "Constraints" ] ->
-  [ Encoding.enable_constraints () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiDisableConstraints CLASSIFIED AS QUERY
-| [ "Dedukti" "Disable" "Constraints" ] ->
-  [ Encoding.disable_constraints () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiEnableFloatUniv CLASSIFIED AS QUERY
-| [ "Dedukti" "Enable" "Floating" "Universes" ] ->
-  [ Encoding.enable_float_univ () ]
-END
-
-VERNAC COMMAND EXTEND DeduktiDisableFloatUniv CLASSIFIED AS QUERY
-| [ "Dedukti" "Disable" "Floating" "Universes" ] ->
-  [ Encoding.disable_float_univ () ]
+VERNAC COMMAND EXTEND DeduktiSetEncoding CLASSIFIED AS QUERY
+| [ "Dedukti" "Set" "Encoding" string(enc) ] ->
+  [ Encoding.set_encoding enc ]
 END
