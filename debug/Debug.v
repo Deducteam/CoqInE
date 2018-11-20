@@ -1,8 +1,12 @@
 Require Coqine.
 
-Dedukti Set Destination "".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
+Dedukti Set Destination "out".
+
+Dedukti Set Encoding "readable".
+
+
 
 Require Coq.Init.Notations
         Coq.Init.Logic
@@ -10,19 +14,8 @@ Require Coq.Init.Notations
         Coq.Init.Wf
         Coq.Init.Logic_Type.
 
-Print Universes.
-
-(*
-
-
-Dedukti Show Universes.
-
-Dedukti Show Sorted Universes.
-*)
-
 (*
 Require Debuglib.
-Dedukti Export Library Debuglib.
 *)
 
 Dedukti Export All.

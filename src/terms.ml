@@ -1,18 +1,18 @@
 (** Translation of Coq terms *)
 
-open Declarations
-open Term
 open Debug
+open Translator
 open Info
 
-module T = Dedukti.Translator
+open Declarations
+open Term
 
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
 let translate_sort info env uenv = function
-  | Term.Prop Null -> Dedukti.Prop
-  | Term.Prop Pos  -> Dedukti.Set
+  | Term.Prop Null -> Translator.Prop
+  | Term.Prop Pos  -> Translator.Set
   | Term.Type i    -> Tsorts.translate_universe uenv i
 
 (** Infer and translate the sort of [a].
@@ -22,14 +22,14 @@ let rec infer_translate_sort info env uenv a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
-  | SortType(s) -> Dedukti.Succ ((translate_sort info env uenv s),1)
+  | SortType(s) -> Translator.Succ ((translate_sort info env uenv s),1)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info env ~default:"_" x in
     let s1' = infer_translate_sort info env uenv a in
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
     let s2' = infer_translate_sort info new_env uenv b in
-    Dedukti.Rule (s1',s2')
+    Translator.Rule (s1',s2')
   | LetInType(x, u, a, b) ->
     (* No need to lift the let here. *)
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in

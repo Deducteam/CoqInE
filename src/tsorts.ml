@@ -1,8 +1,7 @@
 (** Translation of Coq sorts *)
 
 open Debug
-
-module T = Dedukti.Translator
+open Translator
 
 (** Prepend template universe parameters before type *)
 let add_sort_params params t =
@@ -27,19 +26,19 @@ let set_universes universes =
 
 (** Translates a universe level *)
 let translate_level uenv l =
-  if Univ.Level.is_prop l then Dedukti.Prop
-  else if Univ.Level.is_set l then Dedukti.Set
+  if Univ.Level.is_prop l then Translator.Prop
+  else if Univ.Level.is_set l then Translator.Set
   else
     match Univ.Level.var_index l with
-    | Some n -> Dedukti.Local n
+    | Some n -> Translator.Local n
     | None ->
       let name = Univ.Level.to_string l in
       if Info.is_template_polymorphic uenv name
-      then Dedukti.Template name
+      then Translator.Template name
       else if Encoding.is_float_univ_on ()
-      then Dedukti.Global name
+      then Translator.Global name
       else
-        try Dedukti.mk_type (Hashtbl.find universe_table name)
+        try Translator.mk_type (Hashtbl.find universe_table name)
         with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
 let instantiate_univ_params uenv name univ_ctxt univ_instance =
@@ -58,12 +57,12 @@ let translate_universe uenv u =
   debug "Translating universe : %a" pp_coq_univ u;
   let translate (lvl, i) =
     let univ = translate_level uenv lvl in
-    if i = 0 then univ else Dedukti.Succ (univ,i)
+    if i = 0 then univ else Translator.Succ (univ,i)
   in
   match Univ.Universe.map translate u with
-  | []     -> Dedukti.Prop
+  | []     -> Translator.Prop
   | [l]    -> l
-  | levels -> Dedukti.Max levels
+  | levels -> Translator.Max levels
 
 let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Encoding.is_polymorphism_on ()

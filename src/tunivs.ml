@@ -1,8 +1,7 @@
 (** Translation of Coq universe levels *)
 
 open Debug
-
-module T = Dedukti.Translator
+open Translator
 
 (** Get all global universes names together with their concrete levels *)
 let get_universes_levels (universes:UGraph.t) =
@@ -12,7 +11,7 @@ let get_universes_levels (universes:UGraph.t) =
     match constraint_type with
     | Univ.Eq ->
       let closed_univ = Scanf.sscanf k "Type.%d" (fun x -> x) in
-      res := (T.coq_univ_name j, Dedukti.mk_type closed_univ):: !res
+      res := (T.coq_univ_name j, Translator.mk_type closed_univ):: !res
     | Univ.Lt | Univ.Le -> () in
   UGraph.dump_universes register universes;
   !res
@@ -24,22 +23,22 @@ module StringSet = Set.Make(struct type t = string let compare = String.compare 
 let get_universes_constraints (universes:UGraph.t) =
   let defined_univs = ref StringSet.empty in
   let reg u =
-    if      u = "Set"  then Dedukti.Set
-    else if u = "Prop" then Dedukti.Prop
+    if      u = "Set"  then Translator.Set
+    else if u = "Prop" then Translator.Prop
     else if Utils.str_starts_with "Type." u
     then
       let closed_univ = Scanf.sscanf u "Type.%d" (fun x -> x) in
-      Dedukti.mk_type closed_univ
+      Translator.mk_type closed_univ
     else begin
       if not (StringSet.mem u !defined_univs)
       then defined_univs := StringSet.add u !defined_univs;
-      Dedukti.Global u
+      Translator.Global u
     end
   in
   let res = ref [] in
   let register constraint_type j k =
     match reg j, reg k with
-    | Dedukti.Prop, Dedukti.Set -> () (* ignore the Prop < Set constraint *)
+    | Translator.Prop, Translator.Set -> () (* ignore the Prop < Set constraint *)
     | jd, kd -> res := (j, jd, constraint_type, k, kd) :: !res in
   UGraph.dump_universes register universes;
   (StringSet.elements !defined_univs, List.rev !res)
@@ -54,9 +53,9 @@ let universe_encoding_float_noconstr (universes:UGraph.t) =
   let register inst (j, jd, constraint_type, k, kd) =
     match constraint_type with
     | Univ.Eq -> (rw jd                     kd) :: inst
-    | Univ.Le -> (rw (Dedukti.Max [jd; kd]) kd) :: inst
-    | Univ.Lt -> (rw (Dedukti.Max [jd; kd]) kd) ::
-                 (rw (Dedukti.Max [Dedukti.Succ(jd,1); kd]) kd) :: inst in
+    | Univ.Le -> (rw (Translator.Max [jd; kd]) kd) :: inst
+    | Univ.Lt -> (rw (Translator.Max [jd; kd]) kd) ::
+                 (rw (Translator.Max [Translator.Succ(jd,1); kd]) kd) :: inst in
   let decl_u u = Dedukti.declaration false (T.coq_univ_name u) (T.coq_Sort ()) in
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 

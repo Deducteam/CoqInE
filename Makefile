@@ -1,17 +1,17 @@
 VERBOSE?=
 
-CAMLFLAGS="-bin-annot -annot"
-
 COQ_MAKEFILE = coq_makefile
 COQTOP = coqtop
 
-DKFOLDER = /home/gferey/git/dedukti/acu
+DKFOLDER = /home/gferey/git/dedukti/master
 DKCHECK = $(DKFOLDER)/dkcheck.native
 DKDEP = $(DKFOLDER)/dkdep.native
 
+CAMLFLAGS="-bin-annot -annot"
+
 .PHONY: all plugin install test debug clean fullclean
 
-all: .merlin plugin test
+all: .merlin plugin debug_default
 
 plugin: CoqMakefile
 	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
@@ -28,7 +28,22 @@ uninstall: CoqMakefile
 test: plugin
 	make -C test
 
-debug: plugin 
+debug_default: plugin
+	make -C debug clean
+	cp dedukti/0_original.dk debug/Coq.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' debug/Debug.v 
+	make -C debug
+
+debug_readable: plugin
+	make -C debug clean
+	cp dedukti/0_original_short.dk debug/C.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v 
+	make -C debug
+
+debug_ac: plugin
+	make -C debug clean
+	cp dedukti/0_ac.dk debug/Coq.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"AC\"\.' debug/Debug.v 
 	make -C debug
 
 clean: CoqMakefile

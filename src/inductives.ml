@@ -1,8 +1,8 @@
-open Declarations
 open Debug
+open Translator
 open Info
 
-module T = Dedukti.Translator
+open Declarations
 
 (** Return a map of template parameters and a sort for given declaration. *)
 let dest_ind_body (ind_body:Declarations.one_inductive_body) =
@@ -248,7 +248,7 @@ let translate_match info env label mind_body i =
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Cname.fresh_of_string info params_env "s" in
   let return_sort_name' = Cname.translate_identifier return_sort_name in
-  let return_sort' = Dedukti.LocalNamed return_sort_name' in
+  let return_sort' = Translator.LocalNamed return_sort_name' in
   let params_env = Cname.push_identifier return_sort_name params_env in
   
   (* Create a fresh variable P and add it to the environment *)

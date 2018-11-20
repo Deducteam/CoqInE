@@ -1,52 +1,53 @@
 
-module Enc :
-sig
-  type t =
-    {
-      polymorphism_flag : bool;
-      (** Is (true) polymorphism translation on ? *)
-      
-      templ_polymorphism_flag : bool;
-      (** Is template polymorphism translation on ? *)
+type t =
+  {
+    polymorphism_flag : bool;
+    (** Is (true) polymorphism translation on ? *)
 
-      constraints_flag : bool;
-      (** Constraints translation ? *)
-      
-      float_univ_flag : bool;
-      (** Is floating universe translation on ? *)
+    templ_polymorphism_flag : bool;
+    (** Is template polymorphism translation on ? *)
 
-      readable_translation_flag : bool;
-      (** Is (pseudo-)readable translation mode on ? *)
+    constraints_flag : bool;
+    (** Constraints translation ? *)
 
-      (* Module names *)
-      system_module   : string;
-      universe_module : string;
+    float_univ_flag : bool;
+    (** Is floating universe translation on ? *)
 
-      (* Translation constants *)
-      t_Sort : string;
-    }
+    readable_translation_flag : bool;
+    (** Is (pseudo-)readable translation mode on ? *)
 
-  (* Some encodings *)
-  val default          : t (** Ali's encoding *)
-  val readable_default : t (** Ali's encoding with short names *)
-  val polymorph        : t (** Polymorphism *)
+    encoding_name : string;
 
-  val set : t -> unit
-  (** Sets current encoding *)
+    (* Module names *)
+    system_module   : string;
+    universe_module : string;
 
-  val get : unit -> t
-  (** Gets current encoding *)
-end
-
+    (* Encoding's symbol names *)
+    t_Sort : string;
+    t_univ : string;
+    t_Univ : string;
+    t_Term : string;
+  }
+  
+(* Some encodings *)
+val default          : t (** Ali's encoding *)
+val readable_default : t (** Ali's encoding with short names *)
+val polymorph        : t (** Polymorphism *)
+  
+val set : t -> unit
+(** Sets current encoding *)
+  
+val get : unit -> t
+(** Gets current encoding *)
 
 val set_encoding : string -> unit
 (** Selects a given encoding in the following list:
-  - default
+    - default
 *)
-
+  
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)
-
+  
 val is_templ_polymorphism_on : unit -> bool
 (** Is template polymorphism translation on ? *)
 
