@@ -73,21 +73,19 @@ let rec convertible info env uenv a b =
   match Term.kind_of_type a, Term.kind_of_type b with
   | SortType(s1), SortType(s2) -> convertible_sort info env uenv s1 s2
   | CastType(_), _
-  | _, CastType(_) ->
-     Error.not_supported "CastType"
+  | _, CastType(_) -> Error.not_supported "CastType"
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
-     convertible info env uenv a1 a2 &&
-       let nenv = Environ.push_rel (Context.Rel.Declaration.LocalAssum (x1, a1)) env in
-      convertible info nenv uenv b1 b2
+    convertible info env uenv a1 a2 &&
+    let nenv = Environ.push_rel (Context.Rel.Declaration.LocalAssum (x1, a1)) env in
+    convertible info nenv uenv b1 b2
   | LetInType(_), _
   | _, LetInType(_) ->
       assert false
   | AtomicType(_), AtomicType(_) ->
-      begin try
-        let _ = Reduction.default_conv Reduction.CONV env a b in true
-      with
-      | Reduction.NotConvertible -> false
-      end
+    begin
+      try let _ = Reduction.default_conv Reduction.CONV env a b in true
+      with Reduction.NotConvertible -> false
+    end
   | _ -> false
 
 (** This table holds the translations of fixpoints, so that we avoid
@@ -207,7 +205,7 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
       (List.map safe_subst
          (Utils.filter_some ar.template_param_levels))
 
-
+  
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
@@ -215,27 +213,23 @@ let rec translate_constr ?expected_type info env uenv t =
     match expected_type with
     | None   -> t
     | Some a ->
-        let b = infer_type env t in
-        if convertible info env uenv a b then t
-        else Constr.mkCast(t, Term.VMcast, a) in
+      let b = infer_type env t in
+      if convertible info env uenv a b then t
+      else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
   | Rel i ->
-      (* If it's a let definition, replace by its value. *)
-      let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
-      begin match u with
+    (* If it's a let definition, replace by its value. *)
+    let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
+    begin match u with
       | Some u -> translate_constr info env uenv (Vars.lift i u)
       | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
-      end
+    end
   | Var x -> Dedukti.var (Cname.translate_identifier x)
   | Sort s -> T.coq_sort (translate_sort info env uenv s)
   | Cast(t, _, b) ->
-      let a = infer_type env t in
-      let s1' = infer_translate_sort info env uenv a in
-      let s2' = infer_translate_sort info env uenv b in
-      let a' = translate_constr info env uenv a in
-      let b' = translate_constr info env uenv b in
-      let t' = translate_constr info env uenv t in
-      T.coq_cast s1' s2' a' b' t'
+    let a = infer_type env t in
+    let t' = translate_constr info env uenv t in
+    translate_cast info uenv t' env a env b
 
   | Prod(x, a, b) ->
       let x = Cname.fresh_name ~default:"_" info env x in
@@ -359,6 +353,38 @@ let rec translate_constr ?expected_type info env uenv t =
   | Evar pexistential  -> Error.not_supported "Evar"
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Proj (_,_)         -> Error.not_supported "Proj"
+
+and translate_cast info uenv t' enva a envb b =
+  if Encoding.is_cast_on () then
+    let s1' = infer_translate_sort info enva uenv a in
+    let s2' = infer_translate_sort info envb uenv b in
+    let a' = translate_constr info enva uenv a in
+    let b' = translate_constr info envb uenv b in
+    T.coq_cast s1' s2' a' b' t'
+  else
+    match Term.kind_of_type a, Term.kind_of_type b with
+    | SortType sa, SortType sb ->
+      T.coq_lift (translate_sort info enva uenv sa) (translate_sort info envb uenv sb) t'
+    | CastType(_), _
+    | _, CastType(_) -> Error.not_supported "CastType"
+    | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
+      (* TODO: should we check for useless casts (b1~ b2) ? *)
+      let (x,tA),t =
+        match t' with
+        | Dedukti.Lam ((x,tA),t) -> ((x,tA), t)
+        | _ -> (* We eta-expand the translation t' of t here *)
+          let tA = translate_types info enva uenv a1 in
+          (* We assume a1 and a2 are convertible.
+             Otherwise Coq's typechking would have failed. *)
+          let x = Cname.fresh_name info enva x1 in
+          let x = Cname.translate_name x in
+          let t = Dedukti.app t' (Dedukti.var x)  in
+          ((x,tA), t)
+      in
+      let nenva = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x1, a1)) enva in
+      let nenvb = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x2, a2)) envb in
+      Dedukti.lam (x,tA) (translate_cast info uenv t nenva b1 nenvb b2)
+    | _ -> t'
 
 (** Translate the Coq type [a] as a Dedukti type. *)
 and translate_types info env uenv a =

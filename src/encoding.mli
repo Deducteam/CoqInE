@@ -16,6 +16,9 @@ type t =
     readable_translation_flag : bool;
     (** Is (pseudo-)readable translation mode on ? *)
 
+    cast_flag : bool;
+    (** Use casts or lifted lambdas ? *)
+    
     encoding_name : string;
 
     (* Module names *)
@@ -59,3 +62,6 @@ val is_float_univ_on : unit -> bool
 
 val is_readable_on : unit -> bool
 (** Is (pseudo-)readable translation mode on ? *)
+
+val is_cast_on : unit -> bool
+(** Use casts or lifted lambdas ? *)

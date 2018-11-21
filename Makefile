@@ -30,19 +30,19 @@ test: plugin
 
 debug_default: plugin
 	make -C debug clean
-	cp dedukti/0_original.dk debug/Coq.dk
+	cp encodings/0_original.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' debug/Debug.v 
 	make -C debug
 
 debug_readable: plugin
 	make -C debug clean
-	cp dedukti/0_original_short.dk debug/C.dk
+	cp encodings/0_original_short.dk debug/C.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v 
 	make -C debug
 
 debug_ac: plugin
 	make -C debug clean
-	cp dedukti/0_ac.dk debug/Coq.dk
+	cp encodings/0_ac.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"AC\"\.' debug/Debug.v 
 	make -C debug
 

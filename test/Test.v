@@ -3,7 +3,9 @@
 
 Require Coqine.
 
-Dedukti Set Destination "".
+Dedukti Set Destination "out".
+
+Dedukti Set Encoding "default".
 
 Require
   Identity

@@ -57,6 +57,7 @@ sig
   val coq_sort : cic_universe -> term
   val coq_prod : cic_universe -> cic_universe -> term -> term -> term
   val coq_cast : cic_universe -> cic_universe -> term -> term -> term -> term
+  val coq_lift : cic_universe -> cic_universe -> term -> term
 
   val cstr_leq : cic_universe -> cic_universe -> term
   val cstr_le  : cic_universe -> cic_universe -> term

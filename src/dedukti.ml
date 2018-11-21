@@ -113,43 +113,27 @@ let print_context_var out (v, ty) =
 let print_context out context =
   Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_context_var) context
 
-let print out instruction =
-  Format.pp_print_newline out ();
-  begin match instruction with
-  | Comment(c) ->
-      Format.fprintf out "(; %s ;)" c
+let _print fmt = function
+  | Comment(c) -> Format.fprintf fmt "(; %s ;)" c
   | Command(cmd, args) ->
-      let print_args out = List.iter (Format.fprintf out " %s") in
-      Format.fprintf out "@[#%s%a.@]" cmd print_args args
+    let print_args fmt' = List.iter (Format.fprintf fmt' " %s") in
+    Format.fprintf fmt "@[#%s%a.@]" cmd print_args args
   | Declaration(definable, x, a) ->
-     Format.fprintf out "@[<v2>%s%a :@ %a.@]" (if definable then "def " else "") print_var x print_term a
-  | Definition(opaque, x, a, t) ->
-      Format.fprintf out "@[<v2>%s %a :@ @ %a :=@ @ %a.@]"
-         (if opaque then "thm" else "def")
-         print_var x print_term a print_term t
-  | UDefinition(opaque, x, t) ->
-      Format.fprintf out "@[<v2>%s %a@ @ :=@ @ %a.@]"
-         (if opaque then "thm" else "def")
-         print_var x print_term t
-  | Rewrite(context, left, right) ->
-    Format.fprintf out "@[<v2>[ %a]@ @ %a -->@ @ %a.@]" print_context context print_term left print_term right
-  | EmptyLine -> Format.fprintf out "@."
-  end;
-  Format.pp_print_newline out ()
-
-let printc out = function
-  | EmptyLine -> Format.fprintf out "@."
-  | Comment(c) -> Format.fprintf out "(; %s ;)@." c
-  | Declaration(definable, x, a) ->
-    Format.fprintf out "@[<v2>%s%a :@ %a.@]@."
+    Format.fprintf fmt "@[<v2>%s%a :@ %a.@]"
       (if definable then "def " else "") print_var x print_term a
   | Definition(opaque, x, a, t) ->
-    Format.fprintf out "%s %a : %a := %a.@."
-      (if opaque then "thm" else "def") print_var x print_term a print_term t
+    Format.fprintf fmt "@[<v2>%s %a :@ @ %a :=@ @ %a.@]"
+      (if opaque then "thm" else "def")
+      print_var x print_term a print_term t
   | UDefinition(opaque, x, t) ->
-    Format.fprintf out "%s %a := %a.@."
-      (if opaque then "thm" else "def") print_var x print_term t
+    Format.fprintf fmt "@[<v2>%s %a@ @ :=@ @ %a.@]"
+      (if opaque then "thm" else "def")
+      print_var x print_term t
   | Rewrite(context, left, right) ->
-    Format.fprintf out "[ %a] %a --> %a.@."
+    Format.fprintf fmt "@[<v2>[ %a]@ @ %a -->@ @ %a.@]"
       print_context context print_term left print_term right
-  | _ -> assert false
+  | EmptyLine -> Format.fprintf fmt ""
+
+let printc fmt instruction = Format.fprintf fmt "%a@." _print instruction
+
+let print fmt instruction = Format.fprintf fmt "@.%a@." _print instruction
