@@ -55,7 +55,7 @@ debug_named: plugin
 
 debug_poly: plugin
 	make -C debug clean
-	cp encodings/1b_cumul_const_short.dk debug/C.dk
+	cp encodings/1_cumul_mixed_short.dk debug/C.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"polymorph\"\.' debug/Debug.v 
 	make -C debug
 
