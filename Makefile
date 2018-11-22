@@ -40,10 +40,23 @@ debug_readable: plugin
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v 
 	make -C debug
 
+# Not implemented yet
 debug_ac: plugin
 	make -C debug clean
 	cp encodings/0_ac.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"AC\"\.' debug/Debug.v 
+	make -C debug
+
+debug_named: plugin
+	make -C debug clean
+	cp encodings/0_original.dk debug/Coq.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"named\"\.' debug/Debug.v 
+	make -C debug
+
+debug_poly: plugin
+	make -C debug clean
+	cp encodings/0_ac.dk debug/Coq.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"polymorph\"\.' debug/Debug.v 
 	make -C debug
 
 clean: CoqMakefile

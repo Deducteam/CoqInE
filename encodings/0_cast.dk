@@ -1,0 +1,183 @@
+(; Original system by A. Assaf
+--> see 0_original.dk
+
+When the encoded CTS doesn't allow the eta rule   (x:A -> f x) ~ f
+then the [lift]/[max] operators alone are not enough.
+Indeed for A a given type, we have the subtyping relation:
+  A -> U 0   <   A -> U 1
+so we would like to lift an encoded symbol
+  p : [A -> U_0] = [A] -> U (type 0)
+to    [A -> U_1] = [A] -> U (type 1)
+the only way to do this using [lift] is to consider
+  x : [A] => lift (type 0) (type 1) (p x)
+which implictely eta-expands p in the translation.
+This can be proven ousound.
+This is fixed introducing [cast] and [join] operators
+
+Consider now that in CiC:
+  A : U_0
+  p : A -> U_0   <   A -> U_1
+The encoding becomes:
+  [a] : U (type 0)
+  [p] : Term (type 0) [a] -> U (type 0)
+and to consider the lifting of [p] to [A -> U 1] we use:
+  cast (type 1) (type 2)
+    (prod (type 0) (type 1) [a] (x => u 0) )
+    (prod (type 0) (type 2) [a] (x => u 1) )
+    [p]
+which has indeed type   Term 0 [a] -> U (type 1)   =   [A -> U_1]
+--> see example in this encoding at the end of the file
+
+Note: Coq does have the eta rule.
+;)
+
+
+(;-----------------------  Natural numbers  -----------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
+
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+prop : Sort.
+set  : Sort.
+type : Nat -> Sort.
+
+(; Universe successors ;)
+def axiom : Sort -> Sort.
+[ ] axiom prop     --> axiom set
+[ ] axiom set      --> type z
+[i] axiom (type i) --> type (s i).
+
+(; Universe product rules ;)
+def rule : Sort -> Sort -> Sort.
+[   ] rule prop     set      --> set
+[s1 ] rule s1       prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+(; Universe pseudo-cumulativity rules ;)
+def sup : Sort -> Sort -> Sort.
+[   ] sup prop     prop     --> prop
+[   ] sup set      set      --> set
+[   ] sup prop     set      --> type z
+[   ] sup set      prop     --> type z
+[i  ] sup set      (type i) --> type i
+[i  ] sup prop     (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i  ] sup (type i) prop     --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+Univ : s1 : Sort -> Type.
+def Term : s1 : Sort -> a : Univ s1 -> Type.
+
+univ : s1 : Sort -> Univ (axiom s1).
+def lift : s1 : Sort -> s2 : Sort -> Univ s1 -> Univ (sup s1 s2).
+def prod : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
+
+[s1]
+    Term _ (univ s1)
+--> Univ s1.
+
+[s1,a]
+    Term _ (lift s1 _ a)
+--> Term s1 a.
+
+[s1,s2,a,b]
+    Term _ (prod s1 s2 a b)
+--> x : Term s1 a -> Term s2 (b x).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s1] sup s1 s1 --> s1.
+[s1,s2,s3] sup (sup s1 s2) s3  --> sup s1 (sup s2 s3).
+[s1,s2   ] axiom (sup s1 s2)   --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+
+[s1,a]
+    lift s1 s1 a
+--> a.
+
+[s1,s2,s3,a]
+    lift _ s3 (lift s1 s2 a)
+--> lift s1 (sup s2 s3) a.
+
+[s1,s2,s3,a,b]
+    prod _ s2 (lift s1 s3 a) (x => b x)
+--> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a (x => b x)).
+
+[s1,s2,s3,a,b]
+    prod s1 _ a (x => lift s2 s3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
+
+
+(;------------------  Join and its canonicity rules ---------------;)
+
+def join : s1 : Sort -> s2 : Sort -> Univ s1 -> Univ s2 -> Univ (sup s1 s2).
+
+[i]
+    join _ _ i i
+--> i.
+
+[s1,s2]
+    join _ _ (univ s1) (univ s2)
+--> univ (sup s1 s2).
+
+(;[s1, s2, s3, s4, a, b];)
+(;    join {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b);)
+(;--> lift (sup s1 s3) (sup s2 s4) (join s1 s3 a b).;)
+
+[s1,s2,s3,a,b,c]
+    join _ _ (prod s1 s2 a b) (prod s1 s3 a c)
+--> prod s1 (sup s2 s3) a (x : Term s1 a => join s2 s3 (b x) (c x)).
+
+
+(;------------------  Cast and its canonicity rules ---------------;)
+
+def cast : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> b : Univ s2 ->
+           Term s1 a -> Term (sup s1 s2) (join s1 s2 a b).
+
+[s1,s2,m]
+    cast _ _ (univ s1) (univ s2) m
+--> lift s1 s2 m.
+
+(;[s1, s2, s3, s4, a, b, m];)
+(;cast {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b) m;)
+(;--> cast s1 s3 a b m.;)
+
+[s1,s2,s3,a,b,c,m]
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m
+--> x : Term s1 a => cast s2 s3 (b x) (c x) (m x).
+
+
+(;------------------------  Note example --------------------------;)
+(;
+_a : Univ (type z).
+_p : Term (type z) _a -> Univ (type z).
+
+#ASSERT
+  cast (type (s z)) (type (s (s z)))
+    (prod (type z) (type    (s z) ) _a (x => univ (type z    ) ))
+    (prod (type z) (type (s (s z))) _a (x => univ (type (s z)) ))
+    _p
+	:
+  x:(Term (type z) _a) -> Univ (type (s z))	.
+
+;)

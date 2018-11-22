@@ -1,0 +1,99 @@
+(; System for CiC inspired from Assaf.
+New features for this system include:
+  - new [Cumul] type constructor
+  - reduction of [Cumul] to [True]
+  - new [lift'] operator (should be private)
+  - no [max] operator anymore
+  - associated canonicity rules removed
+
+The canonicity rules required to
+- build an inhabitant of [Cumul s1 s3] from [Cumul s1 s2] and [Cumul s2 s3]
+- build an inhabitant of [Cumul (rule s1 s2) (rule s3 s2)] from [Cumul s1 s3]
+- build an inhabitant of [Cumul (rule s1 s2) (rule s1 s3)] from [Cumul s2 s3]
+which was not possible because it would not reduce to [I].
+
+The solution chosen here is to have the [lift] operator "forget" about the proof
+it is given and reduce to a [lift'] operator which doesn't need any proof.
+The canonicity rules now use [lift'] and well typed.
+
+Note: This solution works well for closed universes because we have the guarantee
+that [Cumul i j] is going to reduce to [True] for closed universe levels [i] and [j].
+However any system allowing any form of abstraction over universes (polymorphism)
+would require ways to build inhabitants of [Cumul s1' s2'] from abstract inhabitants
+of [Cumul s1 s2].
+--> See 1b_cumul_const.dk
+;)
+
+
+(;-----------------------  Natural numbers  -----------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+def m : Nat -> Nat -> Nat.
+[i]    m i     z     --> i.
+[j]    m z     j     --> j.
+[i, j] m (s i) (s j) --> s (m i j).
+
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+prop : Sort.
+type : Nat -> Sort.
+
+(; Universe successors ;)
+def succ : Sort -> Sort.
+[]  succ prop     --> type z.
+[i] succ (type i) --> type (s i).
+
+(; Universe product rules ;)
+def rule : Sort -> Sort -> Sort.
+[s]    rule s        prop     --> prop.
+[s]    rule prop     s        --> s.
+[i, j] rule (type i) (type j) --> type (m i j).
+
+
+(;-------------------------  Predicates  --------------------------;)
+
+True : Type.
+I : True.
+
+def Cumul : Sort -> Sort -> Type.
+[s] Cumul prop s --> True.
+[i] Cumul (type z) (type i) --> True.
+[i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+Univ : s : Sort -> Type.
+def Term : s : Sort -> a : Univ s -> Type.
+
+univ : s : Sort -> Univ (succ s).
+
+(; should be private ;)
+def lift : s1 : Sort -> s2 : Sort -> Cumul s1 s2 -> Univ s1 -> Univ s2.
+def lift' : s1 : Sort -> s2 : Sort -> Univ s1 -> Univ s2.
+def prod : s1 : Sort -> s2 : Sort -> a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
+
+[s] Term _ (univ s) --> Univ s.
+[s1, s2, a] Term _ (lift' s1 s2 a) --> Term s1 a.
+[s1, s2, a, b]
+  Term _ (prod s1 s2 a b) --> x : Term s1 a -> Term s2 (b x).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s, a] lift' s s a --> a.
+
+[s1, s2, s3, a] lift' _ s3 (lift' s1 s2 a) --> lift' s1 s3 a.
+
+[s1, s2, s3, a, b]
+  prod _ s2 (lift' s1 s3 a) b -->
+  lift' (rule s1 s2) (rule s3 s2) (prod s1 s2 a b).
+
+[s1, s2, s3, a, b]
+  prod s1 _ a (x => lift' s2 s3 (b x)) -->
+  lift' (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).

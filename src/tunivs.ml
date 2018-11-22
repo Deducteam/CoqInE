@@ -80,7 +80,7 @@ let universe_encoding_float_constr (universes:UGraph.t) =
 
 (** Instructions for universes declaration as defined symbols
   reducing to their concrete levels. *)
-let universe_encoding_nofloat (universes:UGraph.t) =
+let universe_encoding_named (universes:UGraph.t) =
   let get_definition (name, lvl) =
     Dedukti.definition false name (T.coq_Sort ()) (T.coq_universe lvl) in
   List.map get_definition (get_universes_levels universes)
@@ -88,7 +88,14 @@ let universe_encoding_nofloat (universes:UGraph.t) =
 let translate_all_universes (info:Info.info) (universes:UGraph.t) =
   message "Translating global universes";
   (pp_list "" Dedukti.printc) info.Info.fmt
-    (match Encoding.is_float_univ_on (), Encoding.is_constraints_on () with
-     | true , true  -> universe_encoding_float_constr   universes
-     | true , false -> universe_encoding_float_noconstr universes
-     | false, _     -> universe_encoding_nofloat universes)
+    (
+      if Encoding.is_float_univ_on ()
+      then
+        if Encoding.is_constraints_on ()
+        then universe_encoding_float_constr   universes
+        else universe_encoding_float_noconstr universes
+      else
+      if Encoding.is_named_univ_on ()
+      then universe_encoding_named universes
+      else []
+    )

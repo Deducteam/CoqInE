@@ -7,12 +7,15 @@ type t =
     templ_polymorphism_flag : bool;
     (** Is template polymorphism translation on ? *)
 
-    constraints_flag : bool;
-    (** Constraints translation ? *)
-
     float_univ_flag : bool;
     (** Is floating universe translation on ? *)
 
+    constraints_flag : bool;
+    (** Constraints translation ? Only has meaning when float is true. *)
+
+    named_univ_flag : bool;
+    (** Should we use universe names or value ? Only has meaning when float is false. *)
+    
     readable_translation_flag : bool;
     (** Is (pseudo-)readable translation mode on ? *)
 
@@ -35,8 +38,9 @@ type t =
 (* Some encodings *)
 val default          : t (** Ali's encoding *)
 val readable_default : t (** Ali's encoding with short names *)
+val named_univ       : t (** Ali's encoding with named universes *)
 val polymorph        : t (** Polymorphism *)
-  
+
 val set : t -> unit
 (** Sets current encoding *)
   
@@ -54,11 +58,14 @@ val is_polymorphism_on : unit -> bool
 val is_templ_polymorphism_on : unit -> bool
 (** Is template polymorphism translation on ? *)
 
-val is_constraints_on : unit -> bool
-(** Is constraints translation on ? *)
-
 val is_float_univ_on : unit -> bool
 (** Is floating universe translation on ? *)
+
+val is_constraints_on : unit -> bool
+(** Constraints translation ? Only has meaning when float is true. *)
+
+val is_named_univ_on : unit -> bool
+(** Should we use universe names or value ? Only has meaning when float is false. *)
 
 val is_readable_on : unit -> bool
 (** Is (pseudo-)readable translation mode on ? *)

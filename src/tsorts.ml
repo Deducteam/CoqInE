@@ -35,7 +35,7 @@ let translate_level uenv l =
       let name = Univ.Level.to_string l in
       if Info.is_template_polymorphic uenv name
       then Translator.Template name
-      else if Encoding.is_float_univ_on ()
+      else if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
       then Translator.Global name
       else
         try Translator.mk_type (Hashtbl.find universe_table name)

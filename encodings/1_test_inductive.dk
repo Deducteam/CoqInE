@@ -1,0 +1,148 @@
+(; Original system by A. Assaf
+
+Note: this is not confluent as showed by the following unjoinable critical pair:
+  -->  rule (max s t) (max u v)
+  -->  max (rule s (max u v)) (rule t (max u v))
+  -->  max (max (rule s u) (rule s v)) (max (rule t u) (rule t v))
+and
+  -->  rule (max s t) (max u v)
+  -->  max (rule (max s t) u) (rule (max s t) v)
+  -->  max (max (rule s u) (rule t u)) (max (rule s v) (rule t v))
+This was mentionned in Ali's manuscript.
+Efforts to fix this problem have led to a system using a [lift] from i to i+j rather
+than i to max(i,j). However, the only way to recover confluence was to consider a
+system modulo (non-terminating) AC rewriting.
+--> see 0_ac.dk
+
+Note: this is not confluent as showed by the following unjoinable critical pair:
+  Term s a  <--  Term s' (lift s s a)  -->  Term s' a
+This was not mentionned in Ali's manuscript and is still an issue in the AC encoding.
+
+Note: Some rules require previously defined rules to typecheck.
+This is allowed in Saillard's formalization of Dedukti but not in Dowek's.
+--> see 2_predicate.dk
+--> see 2b_predicate.dk
+for encodings type-checkable in the Lambda Pi (no rule).
+;)
+
+
+(;-----------------------  Natural numbers  -----------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
+
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+prop : Sort.
+set  : Sort.
+type : Nat -> Sort.
+
+(; Universe successors ;)
+def axiom : Sort -> Sort.
+[ ] axiom prop     --> axiom set
+[ ] axiom set      --> type z
+[i] axiom (type i) --> type (s i).
+
+(; Universe product rules ;)
+def rule : Sort -> Sort -> Sort.
+[   ] rule prop     set      --> set
+[s1 ] rule s1       prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+(; Universe pseudo-cumulativity rules ;)
+def sup : Sort -> Sort -> Sort.
+[   ] sup prop     prop     --> prop
+[   ] sup set      set      --> set
+[   ] sup prop     set      --> type z
+[   ] sup set      prop     --> type z
+[i  ] sup set      (type i) --> type i
+[i  ] sup prop     (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i  ] sup (type i) prop     --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+Univ : s1 : Sort -> Type.
+def Term : s1 : Sort -> a : Univ s1 -> Type.
+
+univ : s1 : Sort -> Univ (axiom s1).
+def lift : s1 : Sort -> s2 : Sort -> Univ s1 -> Univ (sup s1 s2).
+def prod : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
+
+[s1]
+    Term _ (univ s1)
+--> Univ s1.
+
+[s1,a]
+    Term _ (lift s1 _ a)
+--> Term s1 a.
+
+[s1,s2,a,b]
+    Term _ (prod s1 s2 a b)
+--> x : Term s1 a -> Term s2 (b x).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s1] sup s1 s1 --> s1.
+[s1,s2,s3] sup (sup s1 s2) s3  --> sup s1 (sup s2 s3).
+[s1,s2   ] axiom (sup s1 s2)   --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+
+[s1,a]
+    lift s1 s1 a
+--> a.
+
+[s1,s2,s3,a]
+    lift _ s3 (lift s1 s2 a)
+--> lift s1 (sup s2 s3) a.
+
+[s1,s2,s3,a,b]
+    prod _ s2 (lift s1 s3 a) (x => b x)
+--> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a (x => b x)).
+
+[s1,s2,s3,a,b]
+    prod s1 _ a (x => lift s2 s3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
+
+
+(;---------------------  Inductive constructions ------------------;)
+
+
+Inductive : s : Sort -> Type.
+
+TypeLst : s : Sort -> Type.
+nil  : s : Sort -> TypeLst s.
+cons : s : Sort -> Univ s -> TypeLst s -> TypeLst s.
+
+
+inductive : s : Sort -> params : TypeLst s -> Inductive s.
+
+def code : s : Sort -> Inductive s -> Univ s.
+
+
+
+(; Example ;)
+_list : Inductive (type z).
+def list := code (type z) _list.
+
+
+
+
+
+
