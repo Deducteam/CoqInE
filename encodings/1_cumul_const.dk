@@ -35,28 +35,45 @@ Nat : Type.
 z : Nat.
 s : Nat -> Nat.
 
-def m : Nat -> Nat -> Nat.
-[i]    m i     z     --> i.
-[j]    m z     j     --> j.
-[i, j] m (s i) (s j) --> s (m i j).
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
 
 
 (;---------------------------  Sorts  -----------------------------;)
 
 Sort : Type.
 prop : Sort.
+set  : Sort.
 type : Nat -> Sort.
 
 (; Universe successors ;)
-def succ : Sort -> Sort.
-[]  succ prop     --> type z.
-[i] succ (type i) --> type (s i).
+def axiom : Sort -> Sort.
+[ ] axiom prop     --> axiom set
+[ ] axiom set      --> type z
+[i] axiom (type i) --> type (s i).
 
 (; Universe product rules ;)
 def rule : Sort -> Sort -> Sort.
-[s]    rule s        prop     --> prop.
-[s]    rule prop     s        --> s.
-[i, j] rule (type i) (type j) --> type (m i j).
+[   ] rule prop     set      --> set
+[s1 ] rule s1       prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+(; Universe pseudo-cumulativity rules ;)
+def sup : Sort -> Sort -> Sort.
+[   ] sup prop     prop     --> prop
+[   ] sup set      set      --> set
+[   ] sup prop     set      --> type z
+[   ] sup set      prop     --> type z
+[i  ] sup set      (type i) --> type i
+[i  ] sup prop     (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i  ] sup (type i) prop     --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
 
 
 (;-------------------------  Predicates  --------------------------;)
@@ -64,6 +81,8 @@ def rule : Sort -> Sort -> Sort.
 Cumul : Sort -> Sort -> Type.
 
 cumul_prop : s : Sort -> Cumul prop s.
+
+cumul_set  : n : Nat -> Cumul set (type n).
 
 cumul_type_z :
   i : Nat ->
@@ -90,6 +109,12 @@ cumul_rule_2 :
   Cumul s2 s3 ->
   Cumul (rule s1 s2) (rule s1 s3).
 
+(; The following constructor is probably no used by the translator. ;)
+cumul_axiom :
+  s1 : Sort -> s2 : Sort ->
+  Cumul s1 s2 ->
+  Cumul (axiom s1) (axiom s2).
+
 (; The following "refl" constructor is actually not required by the encoding.
 It would allow to 0-lift a term which seems acceptable but not necessarily useful. ;)
 cumul_refl : s : Sort -> Cumul s s.
@@ -97,32 +122,42 @@ cumul_refl : s : Sort -> Cumul s s.
 
 (;---------------------  Types and terms  -------------------------;)
 
-Univ : s : Sort -> Type.
+Univ : Sort -> Type.
 def Term : s : Sort -> a : Univ s -> Type.
 
-univ : s : Sort -> Univ (succ s).
+univ : s : Sort -> Univ (axiom s).
 
 def lift : s1 : Sort -> s2 : Sort -> Cumul s1 s2 -> Univ s1 -> Univ s2.
 def prod : s1 : Sort -> s2 : Sort -> a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
 
-[s] Term _ (univ s) --> Univ s.
-[s1, s2, a] Term _ (lift s1 s2 _ a) --> Term s1 a.
-[s1, s2, a, b]
-  Term _ (prod s1 s2 a b) --> x : Term s1 a -> Term s2 (b x).
+[s]
+    Term _ (univ s)
+--> Univ s.
+
+(; ;)
+[s,a]
+    Term _ (lift s _ _ a)
+--> Term s a.
+
+[s1,s2,a,b]
+    Term _ (prod s1 s2 a b)
+--> x : Term s1 a -> Term s2 (b x).
 
 
 (;---------------------  Canonicity rules -------------------------;)
 
-[s, a] lift s s _ a --> a.
+[s, a]
+    lift s s _ a
+--> a.
 
 [s1, s2, s3, 1c2, 2c3, a]
-  lift _ s3 2c3 (lift s1 s2 1c2 a) -->
-  lift s1 s3 (cumul_trans s1 s2 s3 1c2 2c3) a.
+    lift _ s3 2c3 (lift s1 s2 1c2 a)
+--> lift s1 s3 (cumul_trans s1 s2 s3 1c2 2c3) a.
 
 [s1, s2, s3, 1c3, a, b]
-  prod _ s2 (lift s1 s3 1c3 a) b -->
-  lift (rule s1 s2) (rule s3 s2) (cumul_rule_1 s1 s2 s3 1c3) (prod s1 s2 a b).
+    prod _ s2 (lift s1 s3 1c3 a) b
+--> lift (rule s1 s2) (rule s3 s2) (cumul_rule_1 s1 s2 s3 1c3) (prod s1 s2 a b).
 
 [s1, s2, s3, 2c3, a, b]
-  prod s1 _ a (x => lift s2 s3 2c3 (b x)) -->
-  lift (rule s1 s2) (rule s1 s3) (cumul_rule_2 s1 s2 s3 2c3) (prod s1 s2 a (x => b x)).
+    prod s1 _ a (x => lift s2 s3 2c3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (cumul_rule_2 s1 s2 s3 2c3) (prod s1 s2 a (x => b x)).

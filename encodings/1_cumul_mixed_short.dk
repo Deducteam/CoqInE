@@ -1,0 +1,125 @@
+(; System for CiC inspired from Assaf.
+--> See 1_cumul_const.dk
+;)
+
+
+(;-----------------------  Natural numbers  -----------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
+
+
+(;---------------------------  Sorts  -----------------------------;)
+
+S : Type.
+prop : S.
+set  : S.
+type : Nat -> S.
+
+(; Universe successors ;)
+def axiom : S -> S.
+[ ] axiom prop     --> axiom set
+[ ] axiom set      --> type z
+[i] axiom (type i) --> type (s i).
+
+(; Universe product rules ;)
+def rule : S -> S -> S.
+[   ] rule prop     set      --> set
+[s1 ] rule s1       prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+(; Universe pseudo-cumulativity rules ;)
+def sup : S -> S -> S.
+[   ] sup prop     prop     --> prop
+[   ] sup set      set      --> set
+[   ] sup prop     set      --> type z
+[   ] sup set      prop     --> type z
+[i  ] sup set      (type i) --> type i
+[i  ] sup prop     (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i  ] sup (type i) prop     --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;-------------------------  Predicates  --------------------------;)
+
+True : Type.
+I : True.
+
+def Cumul : S -> S -> Type.
+[s]        Cumul prop         s            --> True
+[i]        Cumul set          (type i)     --> True
+[i]        Cumul (type z)     (type i)     --> True
+[s]        Cumul s            s            --> True
+[i,j]      Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j)
+
+[s1,s2,s3] Cumul (rule s1 s2) (rule s1 s3) --> Cumul s2 s3
+[s1,s2,s3] Cumul (rule s1 s3) (rule s2 s3) --> Cumul s1 s2
+
+[s1,s2   ] Cumul s1           (sup s1 s2)  --> True
+[s1,s2   ] Cumul s1           (sup s2 s1)  --> True
+[s1,s2,s3] Cumul (sup s1 s2)  (sup s1 s3)  --> Cumul s1 s3
+[s1,s2,s3] Cumul (sup s2 s1)  (sup s1 s3)  --> Cumul s1 s3
+[s1,s2,s3] Cumul (sup s1 s2)  (sup s3 s1)  --> Cumul s1 s3
+[s1,s2,s3] Cumul (sup s2 s1)  (sup s3 s1)  --> Cumul s1 s3
+
+[s       ] Cumul s            (axiom s)    --> True
+[s1,s2   ] Cumul (axiom s1)   (axiom s2)   --> Cumul s1 s2.
+
+cumul_trans :
+  s1 : S -> s2 : S -> s3 : S ->
+  Cumul s1 s2 ->
+  Cumul s2 s3 ->
+  Cumul s1 s3.
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+U : S -> Type.
+def T : s : S -> a : U s -> Type.
+
+u : s : S -> U (axiom s).
+
+def lift : s1 : S -> s2 : S -> Cumul s1 s2 -> U s1 -> U s2.
+def prod : s1 : S -> s2 : S -> a : U s1 -> b : (T s1 a -> U s2) -> U (rule s1 s2).
+
+[s]
+    T _ (u s)
+--> U s.
+
+(; ;)
+[s,a]
+    T _ (lift s _ _ a)
+--> T s a.
+
+[s1,s2,a,b]
+    T _ (prod s1 s2 a b)
+--> x : T s1 a -> T s2 (b x).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s, a]
+    lift s s _ a
+--> a.
+
+[s1, s2, s3, 1c2, 2c3, a]
+    lift _ s3 2c3 (lift s1 s2 1c2 a)
+--> lift s1 s3 (cumul_trans s1 s2 s3 1c2 2c3) a.
+
+[s1, s2, s3, cstr, a, b]
+    prod _ s2 (lift s1 s3 cstr a) b
+--> lift (rule s1 s2) (rule s3 s2) cstr (prod s1 s2 a b).
+
+[s1, s2, s3, cstr, a, b]
+    prod s1 _ a (x => lift s2 s3 cstr (b x))
+--> lift (rule s1 s2) (rule s1 s3) cstr (prod s1 s2 a (x => b x)).

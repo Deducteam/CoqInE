@@ -7,7 +7,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "default".
+Dedukti Set Encoding "polymorph".
 
 
 Require Coq.Init.Notations

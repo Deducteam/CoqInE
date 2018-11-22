@@ -54,11 +54,10 @@ let named_univ =
   }
 
 let polymorph =
-  { default with
+  { readable_default with
     polymorphism_flag         = true;
     templ_polymorphism_flag   = true;
     constraints_flag          = true;
-    readable_translation_flag = true;
     encoding_name = "polymorphism";
   }
 

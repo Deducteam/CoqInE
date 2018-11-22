@@ -75,21 +75,21 @@ def sup : Sort -> Sort -> Sort.
 
 (;---------------------  Types and terms  -------------------------;)
 
-Univ : s1 : Sort -> Type.
-def Term : s1 : Sort -> a : Univ s1 -> Type.
+Univ : Sort -> Type.
+def Term : s : Sort -> a : Univ s -> Type.
 
-univ : s1 : Sort -> Univ (axiom s1).
+univ : s : Sort -> Univ (axiom s).
 def lift : s1 : Sort -> s2 : Sort -> Univ s1 -> Univ (sup s1 s2).
 def prod : s1 : Sort -> s2 : Sort ->
            a : Univ s1 -> (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
 
-[s1]
-    Term _ (univ s1)
---> Univ s1.
+[s]
+    Term _ (univ s)
+--> Univ s.
 
-[s1,a]
-    Term _ (lift s1 _ a)
---> Term s1 a.
+[s,a]
+    Term _ (lift s _ a)
+--> Term s a.
 
 [s1,s2,a,b]
     Term _ (prod s1 s2 a b)
@@ -98,14 +98,14 @@ def prod : s1 : Sort -> s2 : Sort ->
 
 (;---------------------  Canonicity rules -------------------------;)
 
-[s1] sup s1 s1 --> s1.
+[s] sup s s --> s.
 [s1,s2,s3] sup (sup s1 s2) s3  --> sup s1 (sup s2 s3).
 [s1,s2   ] axiom (sup s1 s2)   --> sup (axiom s1) (axiom s2).
 [s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
 [s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
 
-[s1,a]
-    lift s1 s1 a
+[s,a]
+    lift s s a
 --> a.
 
 [s1,s2,s3,a]
