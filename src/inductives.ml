@@ -59,7 +59,8 @@ let translate_inductive info env label mind_body i =
   let (template_map, arity_sort) = dest_ind_body ind_body in
   let template_params = List.map snd template_map in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
-  let uenv = Info.make poly_cstr template_map in
+  let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
+  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
   
   debug "Translate the regular inductive type.";
   (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
@@ -102,7 +103,8 @@ let translate_constructors info env label mind_body i =
   let (template_map, arity_sort) = dest_ind_body ind_body in
   let template_params = List.map snd template_map in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
-  let uenv = Info.make poly_cstr template_map in
+  let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
+  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
   
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
 
@@ -186,7 +188,8 @@ let translate_match info env label mind_body i =
   let (template_map, arity_sort) = dest_ind_body ind_body in
   let template_params = List.map snd template_map in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
-  let uenv = Info.make poly_cstr template_map in
+  let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
+  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
   

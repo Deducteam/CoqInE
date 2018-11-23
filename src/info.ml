@@ -8,20 +8,28 @@ module StringMap = Map.Make(
 type env =
   {
     template_params : Dedukti.var StringMap.t;
-    constraints : Univ.Constraint.t
+    constraints : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list
   }
 
-let make (constraints:Univ.Constraint.t) (params:(string * Dedukti.var) list) =
+let make
+    (template_args    : (string * Dedukti.var) list)
+    (nb_polymorphic_args : int)
+    (constraints_args : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list) =
+  
   let aux map (k,v) = StringMap.add k v map in
+  let template_params = List.fold_left aux StringMap.empty template_args in
+  (* TODO: implement here a mechanism that processes polymorphic constraints *)
   {
-    template_params = List.fold_left aux StringMap.empty params;
-    constraints = constraints
+    template_params = template_params;
+    constraints = constraints_args
   }
 
 let is_template_polymorphic (e:env) a = StringMap.mem a e.template_params
 
 let translate_template_arg (e:env) a = StringMap.find a e.template_params
 
+
+let dummy = make [] 0 []
 
 
 let destination = ref "."

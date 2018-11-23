@@ -23,7 +23,10 @@ val fresh_name :
   Info.info -> Environ.env ->
   ?prefix:string -> ?default:string -> Names.Name.t -> Names.Name.t
 
+(** Name of the match function for the inductive type *)
 val match_function : Names.Id.t -> Names.Id.t
+
+val constraint_name : int -> string
 
 val is_alpha : char -> bool
 

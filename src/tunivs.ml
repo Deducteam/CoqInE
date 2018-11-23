@@ -71,10 +71,10 @@ let universe_encoding_float_constr (universes:UGraph.t) =
   in
   let register inst (j, jd, constraint_type, k, kd) =
     match constraint_type with
-    | Univ.Eq -> (decl (T.cstr_leq jd kd)) ::
-                 (decl (T.cstr_leq kd jd)) :: inst
-    | Univ.Le -> (decl (T.cstr_leq jd kd)) :: inst
-    | Univ.Lt -> (decl (T.cstr_le  jd kd)) :: inst in
+    | Univ.Eq -> (decl (T.cstr_le jd kd)) ::
+                 (decl (T.cstr_le kd jd)) :: inst
+    | Univ.Le -> (decl (T.cstr_le jd kd)) :: inst
+    | Univ.Lt -> (decl (T.cstr_lt  jd kd)) :: inst in
   let decl_u u = Dedukti.declaration false (T.coq_univ_name u) (T.coq_Sort ()) in
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 

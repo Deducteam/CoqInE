@@ -59,8 +59,8 @@ sig
   val coq_cast : cic_universe -> cic_universe -> term -> term -> term -> term
   val coq_lift : cic_universe -> cic_universe -> term -> term
 
-  val cstr_leq : cic_universe -> cic_universe -> term
-  val cstr_le  : cic_universe -> cic_universe -> term
+  val cstr_le : cic_universe -> cic_universe -> term
+  val cstr_lt : cic_universe -> cic_universe -> term
 
   val coq_header : unit -> instruction list
   val coq_footer : unit -> instruction list

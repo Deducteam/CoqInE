@@ -4,9 +4,6 @@ val infer_type : Environ.env -> Constr.t -> Constr.types
 
 val infer_sort : Environ.env -> Constr.types -> Sorts.t
 
-val translate_sort :
-  Info.info -> Environ.env -> Info.env -> Sorts.t -> Translator.cic_universe
-
 val infer_translate_sort :
   Info.info -> Environ.env -> Info.env -> Constr.types -> Translator.cic_universe
 
@@ -18,9 +15,6 @@ val generalize_rel_context :
 
 val apply_rel_context :
   Constr.t -> Context.Rel.Declaration.t list -> Constr.t
-
-val convertible_sort :
-  Info.info -> Environ.env -> Info.env -> Sorts.t -> Sorts.t -> bool
 
 val convertible :
   Info.info -> Environ.env -> Info.env -> Constr.t -> Constr.t -> bool

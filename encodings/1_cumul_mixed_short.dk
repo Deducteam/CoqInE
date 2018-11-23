@@ -81,6 +81,22 @@ cumul_trans :
   Cumul s2 s3 ->
   Cumul s1 s3.
 
+cumul_sup_1 :
+  s1 : S -> s2 : S -> s3 : S ->
+  Cumul s1 s2 ->
+  Cumul s1 (sup s2 s3).
+
+cumul_sup_2 :
+  s1 : S -> s2 : S -> s3 : S ->
+  Cumul s1 s3 ->
+  Cumul s1 (sup s2 s3).
+
+cumul_sup :
+  s1 : S -> s2 : S -> s3 : S ->
+  Cumul s1 s3 ->
+  Cumul s2 s3 ->
+  Cumul (sup s1 s2) s3.
+
 
 (;---------------------  Types and terms  -------------------------;)
 

@@ -24,7 +24,7 @@ let set_universes universes =
     UGraph.dump_universes register universes
   end
 
-(** Translates a universe level *)
+(** Translates a universe level in a given local universe environment  *)
 let translate_level uenv l =
   if Univ.Level.is_prop l then Translator.Prop
   else if Univ.Level.is_set l then Translator.Set
@@ -64,16 +64,40 @@ let translate_universe uenv u =
   | [l]    -> l
   | levels -> Translator.Max levels
 
+let translate_sort uenv = function
+  | Term.Prop Sorts.Null -> Translator.Prop
+  | Term.Prop Sorts.Pos  -> Translator.Set
+  | Term.Type i    -> translate_universe uenv i
+
+let convertible_sort uenv s1 s2 =
+  translate_sort uenv s1 = translate_sort uenv s2
+
+let translate_local_level l =
+  assert (not (Univ.Level.is_small l));
+  match Univ.Level.var_index l with
+  | None -> assert false
+  | Some n -> T.coq_var_univ_name n
+
 let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
     let params = Array.to_list (Univ.Instance.to_array uctxt) in
-    let aux l = assert (not (Univ.Level.is_small l));
-      match Univ.Level.var_index l with
-      | None -> assert false
-      | Some n -> T.coq_var_univ_name n
+    List.map translate_local_level params
+  else []
+
+let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
+  if Encoding.is_polymorphism_on ()
+  then
+    let aux n cstr =
+      let (i, c, j) = cstr in
+      let cstr_type = match c with
+      | Univ.Lt -> T.cstr_lt (translate_level Info.dummy i) (translate_level Info.dummy j)
+      | Univ.Le -> T.cstr_le (translate_level Info.dummy i) (translate_level Info.dummy j)
+      | Univ.Eq -> Error.not_supported "Eq constraints" in
+      let cstr_name = Dedukti.var (Cname.constraint_name n) in
+      (cstr_name, cstr_type, cstr)
     in
-    List.map aux params
+    List.mapi aux (Univ.Constraint.elements uctxt)
   else []
 
 (** Extract template parameters levels and return an assoc list:
@@ -84,8 +108,10 @@ let translate_template_params (ctxt:Univ.Level.t option list) : (string * Dedukt
     let params = Utils.filter_some ctxt in
     let aux l = assert (not (Univ.Level.is_small l));
       match Univ.Level.var_index l with
-      | None -> let coq_name = Univ.Level.to_string l in
-        (coq_name, T.coq_univ_name coq_name)
+      | None ->
+        let coq_name = Univ.Level.to_string l in
+        let dedukti_name = T.coq_univ_name coq_name in
+        (coq_name, dedukti_name)
       | Some n -> assert false
     in
     List.map aux params

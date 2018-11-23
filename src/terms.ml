@@ -10,11 +10,6 @@ open Term
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
-let translate_sort info env uenv = function
-  | Term.Prop Null -> Translator.Prop
-  | Term.Prop Pos  -> Translator.Set
-  | Term.Type i    -> Tsorts.translate_universe uenv i
-
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
@@ -22,7 +17,7 @@ let rec infer_translate_sort info env uenv a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
-  | SortType(s) -> Translator.Succ ((translate_sort info env uenv s),1)
+  | SortType(s) -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info env ~default:"_" x in
@@ -34,7 +29,7 @@ let rec infer_translate_sort info env uenv a =
     (* No need to lift the let here. *)
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     infer_translate_sort info new_env uenv b
-  | AtomicType(_) -> translate_sort info env uenv (infer_sort env a)
+  | AtomicType(_) -> Tsorts.translate_sort uenv (infer_sort env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
@@ -64,14 +59,11 @@ let apply_rel_context t context =
   let args, _ = List.fold_left apply_rel_declaration ([], 1) context in
   Term.applistc t args
 
-let convertible_sort info env uenv s1 s2 =
-  translate_sort info env uenv s1 = translate_sort info env uenv s2
-
 let rec convertible info env uenv a b =
   let a = Reduction.whd_all env a in
   let b = Reduction.whd_all env b in
   match Term.kind_of_type a, Term.kind_of_type b with
-  | SortType(s1), SortType(s2) -> convertible_sort info env uenv s1 s2
+  | SortType(s1), SortType(s2) -> Tsorts.convertible_sort uenv s1 s2
   | CastType(_), _
   | _, CastType(_) -> Error.not_supported "CastType"
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
@@ -190,7 +182,6 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
 let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   assert (i <= Array.length mip.mind_consnames);
-  
   match mip.mind_arity with
   | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
   | TemplateArity ar ->
@@ -225,7 +216,7 @@ let rec translate_constr ?expected_type info env uenv t =
       | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
     end
   | Var x -> Dedukti.var (Cname.translate_identifier x)
-  | Sort s -> T.coq_sort (translate_sort info env uenv s)
+  | Sort s -> T.coq_sort (Tsorts.translate_sort uenv s)
   | Cast(t, _, b) ->
     let a = infer_type env t in
     let t' = translate_constr info env uenv t in
@@ -337,7 +328,7 @@ let rec translate_constr ?expected_type info env uenv t =
       let param' = translate_constr ~expected_type:c info env uenv param in
       (param' :: params', Vars.subst1 param d) in
     let match_function' = Dedukti.var match_function_name in
-    let return_sort' = translate_sort info env uenv return_sort in
+    let return_sort' = Tsorts.translate_sort uenv return_sort in
     let return_sort' = T.coq_universe return_sort' in 
     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
     debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
@@ -364,7 +355,9 @@ and translate_cast info uenv t' enva a envb b =
   else
     match Term.kind_of_type a, Term.kind_of_type b with
     | SortType sa, SortType sb ->
-      T.coq_lift (translate_sort info enva uenv sa) (translate_sort info envb uenv sb) t'
+      T.coq_lift
+        (Tsorts.translate_sort uenv sa)
+        (Tsorts.translate_sort uenv sb) t'
     | CastType(_), _
     | _, CastType(_) -> Error.not_supported "CastType"
     | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
@@ -390,7 +383,7 @@ and translate_cast info uenv t' enva a envb b =
 and translate_types info env uenv a =
   (* Specialize on the type to get a nicer and more compact translation. *)
   match Term.kind_of_type a with
-  | SortType(s) -> T.coq_U (translate_sort info env uenv s)
+  | SortType(s) -> T.coq_U (Tsorts.translate_sort uenv s)
   | CastType(a, b) -> Error.not_supported "CastType"
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info ~default:"_" env x in

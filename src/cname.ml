@@ -59,9 +59,12 @@ let fresh_name info env ?prefix ?default name =
   | Names.Anonymous, Some(d)  ->
     Names.Name(fresh_identifier info env ?prefix (Names.Id.of_string d))
 
-(** Name of the match function for the inductive type *)
 let match_function identifier =
   Names.Id.of_string (String.concat "_" ["match"; Names.Id.to_string identifier])
+
+(** Name of the match function for the inductive type *)
+let constraint_name index = "cstr_" ^ (string_of_int index)
+
 
 (** Escaping *)
 

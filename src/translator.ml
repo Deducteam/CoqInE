@@ -87,8 +87,8 @@ struct
   let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [cu s1; cu s2; a; b; t]
   let coq_lift s1 s2 t     = apps (coq_var "lift" ) [cu s1; cu s2; t]
 
-  let cstr_leq s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
-  let cstr_le  s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
+  let cstr_le s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
+  let cstr_lt s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
 
 end
 
@@ -161,8 +161,8 @@ struct
   let short_cast s1 s2 a b t = apps (coq_var "cast" ) [scu s1; scu s2; a; b; t]
   let short_lift s1 s2 t     = apps (coq_var "lift" ) [scu s1; scu s2; t]
 
-  let short_leq s1 s2 = apps (coq_var "Cumul") [scu s1                ; scu s2]
-  let short_le  s1 s2 = apps (coq_var "Cumul") [Std.coq_axiom (scu s1); scu s2]
+  let short_le s1 s2 = apps (coq_var "Cumul") [scu s1                ; scu s2]
+  let short_lt s1 s2 = apps (coq_var "Cumul") [Std.coq_axiom (scu s1); scu s2]
 
 end
 
@@ -185,8 +185,8 @@ struct
   let coq_prod     s = if a () then Std.coq_prod s else Short.short_prod s
   let coq_cast     s = if a () then Std.coq_cast s else Short.short_cast s
   let coq_lift     s = if a () then Std.coq_lift s else Short.short_lift s
-  let cstr_leq     s = if a () then Std.cstr_leq s else Short.short_leq  s
   let cstr_le      s = if a () then Std.cstr_le  s else Short.short_le   s
+  let cstr_lt      s = if a () then Std.cstr_lt  s else Short.short_lt   s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s
   let coq_footer  () = coq_footer
 end
