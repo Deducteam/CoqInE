@@ -1,0 +1,53 @@
+(;-----------------------------------------------------------------;)
+(;-------------------------  Coq encoding  ------------------------;)
+(;-----------------------------------------------------------------;)
+
+(;-------------------------  Nat definition  ----------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
+
+
+(;----------------------  CTS Sorts definition  -------------------;)
+
+prop : Sort.
+set  : Sort.
+type : Nat -> Sort.
+
+
+(;---------------------  CTS Axiom definition  --------------------;)
+
+[ ] axiom prop     --> axiom set
+[ ] axiom set      --> type z
+[i] axiom (type i) --> type (s i).
+
+
+(;-----------------------  CTS Rule definition  -------------------;)
+
+[   ] rule prop     set      --> set
+[s1 ] rule s1       prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+
+(;-------------------  CTS Cumulativity definition  ---------------;)
+
+[   ] sup prop     prop     --> prop
+[   ] sup set      set      --> set
+[   ] sup prop     set      --> type z
+[   ] sup set      prop     --> type z
+[i  ] sup set      (type i) --> type i
+[i  ] sup prop     (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i  ] sup (type i) prop     --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+

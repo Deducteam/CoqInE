@@ -1,0 +1,53 @@
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;----------------------------  Axiom  ----------------------------;)
+
+[s]
+    Term _ (univ s)
+--> Univ s.
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+[s1,s2,a,b]
+    Term _ (prod s1 s2 a b)
+--> x : Term s1 a -> Term s2 (b x).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s,a]
+    Term _ (lift s _ a)
+--> Term s a.
+
+
+(;-------------------------  Subtyping ----------------------------;)
+
+[s] sup s s --> s.
+[s1,s2,s3] sup (sup s1 s2) s3  --> sup s1 (sup s2 s3).
+[s1,s2   ] axiom (sup s1 s2)   --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s,a]
+    lift s s a
+--> a.
+
+[s1,s2,s3,a]
+    lift _ s3 (lift s1 s2 a)
+--> lift s1 (sup s2 s3) a.
+
+[s1,s2,s3,a,b]
+    prod _ s2 (lift s1 s3 a) (x => b x)
+--> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a (x => b x)).
+
+[s1,s2,s3,a,b]
+    prod s1 _ a (x => lift s2 s3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
+
+

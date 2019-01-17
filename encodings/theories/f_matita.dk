@@ -1,0 +1,38 @@
+(;-----------------------------------------------------------------;)
+(;---------------  Matita functionnal encoding  -------------------;)
+(;-----------------------------------------------------------------;)
+
+(;----------------------  CTS Sorts definition  -------------------;)
+
+Nat : Type.
+z : Nat.
+s : Nat -> Nat.
+
+prop : Sort.
+type : Nat -> Sort.
+
+
+(;---------------------  CTS Axiom definition  --------------------;)
+
+[ ] axiom prop     --> type z
+[i] axiom (type i) --> type (s i).
+
+
+(;-----------------------  CTS Rule definition  -------------------;)
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i z --> i
+[  j] max z j --> j
+[i,j] max (s i) (s j) --> s (s (max i j)).
+
+[i  ] rule i    prop         --> prop
+[  j] rule prop j            --> j
+[i,j] rule (type i) (type j) --> type (max i j).
+
+
+(;-------------------  CTS Cumulativity definition  ---------------;)
+
+[]    Cumul prop         _            --> true
+[]    Cumul (type z)     (type _)     --> true
+[i,j] Cumul (type (s i)) (type (s j)) -->
+      Cumul (type i)     (type j).

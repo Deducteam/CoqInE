@@ -1,0 +1,36 @@
+(;-----------------------------------------------------------------;)
+(;----------------------  PUBLIC DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+(; Type for encoded type codes ;)
+Univ : s : Sort -> Type.
+
+(; Type decoding function ;)
+def Term : s : Sort -> a : Univ s -> Type.
+
+
+(;-----------------------  CTS functions  -------------------------;)
+
+def axiom : Sort -> Sort.
+def rule  : Sort -> Sort -> Sort.
+def sup   : Sort -> Sort -> Sort.
+
+
+(;--------------------  Term public constructors  -----------------;)
+
+def univ : s : Sort -> Univ (axiom s).
+
+def prod : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
+
+def lift : s1 : Sort -> s2 : Sort ->
+           Univ s1 -> Univ (sup s1 s2).
+
+

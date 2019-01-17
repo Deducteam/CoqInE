@@ -15,9 +15,11 @@
 *.depend
 .merlin
 
+*.dko
+
 debug/**/*.dk
 test/**/*.dk
-*.dko
+encodings/_build
 
 # emacs tmp files
 *~

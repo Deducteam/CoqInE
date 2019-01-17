@@ -9,7 +9,7 @@ DKDEP = $(DKFOLDER)/dkdep.native
 
 CAMLFLAGS="-bin-annot -annot"
 
-.PHONY: all plugin install test debug clean fullclean
+.PHONY: all plugin install uninstall test clean fullclean debug_default debug_readable debug_ac debug_named debug_poly
 
 all: .merlin plugin debug_default
 

@@ -134,5 +134,9 @@ def cast : s1 : S -> s2 : S ->
 (;--> cast s1 s3 a b m.;)
 
 [s1,s2,s3,a,b,c,m]
-    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) (x => m x)
+--> x : T s1 a => cast s2 s3 (b x) (c x) (m x).
+
+[s1,s2,s3,a,b,c,m,x]
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m x
 --> x : T s1 a => cast s2 s3 (b x) (c x) (m x).

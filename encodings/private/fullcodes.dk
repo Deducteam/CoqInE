@@ -1,0 +1,63 @@
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+
+Code : Type.
+def D : Code -> Type.
+
+cprod : A : Code -> (D A -> Code) -> Code.
+cu : s : Sort -> Code.
+
+[s]   D (cu s)      --> Univ s.
+[a,b] D (cprod a b) --> x : D a -> D (b x).
+
+
+def u : t : Code -> Code -> D t.
+def c : t : Code -> D t -> Code.
+
+[s,t] Term s t --> D (c (cu s) t).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[  t] c _ (u _ t) --> t.
+[s,t] u s (c s t) --> t.
+
+[A,B,A',B',b]
+  u (cprod A' B') (c (cprod A B) (x => b x)) -->
+  x : D A' => u (B' x) (c (B (u A (c A' x))) (b (u A (c A' x)))).
+
+[A,B,A',B',b,a]
+  u (cprod A' B') (c (cprod A B) b) a -->
+  u (B' a) (c (B (u A (c A' a))) (b (u A (c A' a)))).
+
+
+(;----------------------------  Axiom  ----------------------------;)
+
+[s,s',p] univ s s' p --> u (cu s') (cu s).
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+[s1,s2,s3,p,a,b]
+  prod s1 s2 s3 p a b -->
+  u (cu s3) (cprod (c (cu s1) a) (x : D (c (cu s1) a) => c (cu s2) (b x))).
+
+
+(;-------------------------  Subtyping ----------------------------;)
+
+def forall : c : Code -> (D c -> Bool) -> Bool.
+[] forall _ (x => true) --> true.
+
+def ST : Code -> Code -> Bool.
+[s1, s2] ST (cu s1)     (cu s2)      --> Cumul s1 s2
+[a,b,b'] ST (cprod a b) (cprod a b') --> forall a (x : D a => ST (b x) (b' x)).
+[A]      ST A           A            --> true.
+
+[sa,sb,a,b] SubType sa sb a b --> ST (c (cu sa) a) (c (cu sb) b).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cu s2) b) (c (c (cu s1) a) t).

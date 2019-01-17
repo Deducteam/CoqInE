@@ -109,7 +109,7 @@ cumul_rule_2 :
   Cumul s2 s3 ->
   Cumul (rule s1 s2) (rule s1 s3).
 
-(; The following constructor is probably no used by the translator. ;)
+(; The following constructor is probably useless. ;)
 cumul_axiom :
   s1 : Sort -> s2 : Sort ->
   Cumul s1 s2 ->

@@ -1,0 +1,59 @@
+(;-----------------------------------------------------------------;)
+(;----------------------  PUBLIC DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+sinf : Sort.
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+(; Type for encoded type codes ;)
+Univ : s : Sort -> Type.
+
+(; Type decoding function ;)
+def Term : s : Sort -> a : Univ s -> Type.
+
+
+(;-------------------  CTS predicates and functions  --------------;)
+
+Bool : Type.
+eps : Bool -> Type.
+true : Bool.
+I : eps true.
+
+def axiom : Sort -> Sort.
+def rule  : Sort -> Sort -> Sort.
+def Cumul : Sort -> Sort -> Bool.
+
+cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+              Cumul s1 s2 -> Cumul s2 s3 -> Cumul s1 s3.
+
+cumul_rule_1 : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+               Cumul s1 s3 ->  Cumul (rule s1 s2) (rule s3 s2).
+
+cumul_rule_2 : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+               Cumul s2 s3 -> Cumul (rule s1 s2) (rule s1 s3).
+
+(; The following constructor is probably useless. ;)
+cumul_axiom : s1 : Sort -> s2 : Sort ->
+              Cumul s1 s2 -> Cumul (axiom s1) (axiom s2).
+
+
+(;--------------------  Term public constructors  -----------------;)
+
+def univ : s : Sort -> Univ (axiom s).
+
+def prod : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ (rule s1 s2).
+
+def SubType : s : Sort -> s' : Sort -> Univ s -> Univ s' -> Bool.
+
+def cast : s : Sort -> s' : Sort ->
+           a : Univ s -> b  : Univ s' ->
+           p : eps (SubType s s' a b) ->
+           Term s a -> Term s' b.
+
+
