@@ -10,7 +10,7 @@ mkdir $BUILD
 if [ "$1" = "original" ]; then
 	cat interfaces/original.dk private/original.dk theories/original.dk > $BUILD/Coq.dk
 elif [ "$1" = "original_cast" ]; then
-	cat interfaces/original_cast.dk private/original_cast.dk theories/original_cast.dk > $BUILD/Coq.dk
+	cat interfaces/original_cast.dk private/original_cast.dk theories/original.dk > $BUILD/Coq.dk
 elif [ "$1" = "predicates" ]; then
 	cat interfaces/predicates.dk private/predicates.dk theories/predicates.dk > $BUILD/Coq.dk
 elif [ "$1" = "functionnal" ]; then

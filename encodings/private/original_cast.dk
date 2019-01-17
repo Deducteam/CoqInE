@@ -1,0 +1,93 @@
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;----------------------------  Axiom  ----------------------------;)
+
+[s]
+    Term _ (univ s)
+--> Univ s.
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+[s1,s2,a,b]
+    Term _ (prod s1 s2 a b)
+--> x : Term s1 a -> Term s2 (b x).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s,a]
+    Term _ (lift s _ a)
+--> Term s a.
+
+
+(;-------------------------  Subtyping ----------------------------;)
+
+[s] sup s s --> s.
+[s1,s2,s3] sup (sup s1 s2) s3  --> sup s1 (sup s2 s3).
+[s1,s2   ] axiom (sup s1 s2)   --> sup (axiom s1) (axiom s2).
+[s1,s2,s3] rule s1 (sup s2 s3) --> sup (rule s1 s2) (rule s1 s3).
+[s1,s2,s3] rule (sup s1 s2) s3 --> sup (rule s1 s3) (rule s2 s3).
+
+
+(;---------------------  Lift canonicity rules --------------------;)
+
+[s,a]
+    lift s s a
+--> a.
+
+[s1,s2,s3,a]
+    lift _ s3 (lift s1 s2 a)
+--> lift s1 (sup s2 s3) a.
+
+[s1,s2,s3,a,b]
+    prod _ s2 (lift s1 s3 a) (x => b x)
+--> lift (rule s1 s2) (rule s3 s2) (prod s1 s2 a (x => b x)).
+
+[s1,s2,s3,a,b]
+    prod s1 _ a (x => lift s2 s3 (b x))
+--> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
+
+
+(;---------------------  Join canonicity rules --------------------;)
+
+[i]
+    join _ _ i i
+--> i.
+
+[s1,s2]
+    join _ _ (univ s1) (univ s2)
+--> univ (sup s1 s2).
+
+(;[s1, s2, s3, s4, a, b];)
+(;    join {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b);)
+(;--> lift (sup s1 s3) (sup s2 s4) (join s1 s3 a b).;)
+
+[s1,s2,s3,a,b,c]
+    join _ _ (prod s1 s2 a b) (prod s1 s3 a c)
+--> prod s1 (sup s2 s3) a (x : Term s1 a => join s2 s3 (b x) (c x)).
+
+
+(;---------------------  Cast canonicity rules --------------------;)
+
+[s1,s2,m]
+    cast _ _ (univ s1) (univ s2) m
+--> lift s1 s2 m.
+
+(;
+[s1, s2, s3, s4, a, b, m]
+    cast {sup s1 s2} {sup s3 s4} (lift s1 s2 a) (lift s3 s4 b) m
+--> cast s1 s3 a b m.
+;)
+
+[s1,s2,s3,a,b,c,m]
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) (x => m x)
+--> x : Term s1 a => cast s2 s3 (b x) (c x) (m x).
+
+[s1,s2,s3,a,b,c,m,x]
+    cast _ _ (prod s1 s2 a b) (prod s1 s3 a c) m x
+--> cast s2 s3 (b x) (c x) (m x).
+
+

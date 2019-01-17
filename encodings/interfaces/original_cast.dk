@@ -36,8 +36,8 @@ def lift : s1 : Sort -> s2 : Sort ->
 def join : s1 : Sort -> s2 : Sort ->
            Univ s1 -> Univ s2 -> Univ (sup s1 s2).
 
-def cast : s1 : S -> s2 : S ->
-           a : U s1 -> b : U s2 ->
-           T s1 a -> T (sup s1 s2) (join s1 s2 a b).
+def cast : s1 : Sort -> s2 : Sort ->
+           a : Univ s1 -> b : Univ s2 ->
+           Term s1 a -> Term (sup s1 s2) (join s1 s2 a b).
 
 

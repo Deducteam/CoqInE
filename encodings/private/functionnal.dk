@@ -15,11 +15,11 @@
 def forall : s : Sort -> a : Univ s -> (Term s a -> Bool) -> Bool.
 [] forall _ _ (x => true) --> true.
 
-[s1, s2] SubType _ _ (univ s1)        (univ s2)        --> Cumul s1 s2
-[s1,s2,s2',a,b,b']
-         SubType _ _ (prod s1 s2 a b) (prod s1 s2' a b') -->
-         forall s1 a (x => SubType s2 s2' (b x) (b' x)).
 [a]      SubType _ _ a a --> true.
+[s1, s2] SubType _ _ (univ s1) (univ s2) --> Cumul s1 s2
+[s1,s2,s2',a,b,b']
+         SubType _ _ (prod s1 s2 a b) (prod s1 s2' a b')
+-->      forall s1 a (x => SubType s2 s2' (b x) (b' x)).
 
 (;---------------------------  Casts  -----------------------------;)
 
