@@ -30,32 +30,37 @@ test: plugin
 
 debug_default: plugin
 	make -C debug clean
-	cp encodings/0_original.dk debug/Coq.dk
+	sh encodings/gen.sh original
+	cp encodings/_build/Coq.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' debug/Debug.v 
 	make -C debug
 
 debug_readable: plugin
 	make -C debug clean
-	cp encodings/0_original_short.dk debug/C.dk
+	sh encodings/gen.sh original short
+	cp encodings/_build/C.dk debug/C.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v 
 	make -C debug
 
 # Not implemented yet
 debug_ac: plugin
 	make -C debug clean
-	cp encodings/0_ac.dk debug/Coq.dk
+	sh encodings/gen.sh ac
+	cp encodings/_build/Coq.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"AC\"\.' debug/Debug.v 
 	make -C debug
 
 debug_named: plugin
 	make -C debug clean
-	cp encodings/0_original.dk debug/Coq.dk
+	sh encodings/gen.sh original
+	cp encodings/_build/Coq.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"named\"\.' debug/Debug.v 
 	make -C debug
 
 debug_poly: plugin
 	make -C debug clean
-	cp encodings/1_cumul_mixed_short.dk debug/C.dk
+	sh encodings/gen.sh constructors
+	cp encodings/_build/Coq.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"polymorph\"\.' debug/Debug.v 
 	make -C debug
 

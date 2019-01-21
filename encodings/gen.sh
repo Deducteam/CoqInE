@@ -1,24 +1,23 @@
 DKCHECK="dkcheck -nl -e"
 
-BUILD=_build
-
+CURDIR=`dirname $0`
+BUILD=$CURDIR/_build
 
 rm -rf $BUILD
 mkdir $BUILD
 
-
 if [ "$1" = "original" ]; then
-	cat interfaces/original.dk private/original.dk theories/original.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/original.dk $CURDIR/private/original.dk $CURDIR/theories/original.dk > $BUILD/Coq.dk
 elif [ "$1" = "original_cast" ]; then
-	cat interfaces/original_cast.dk private/original_cast.dk theories/original.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/original_cast.dk $CURDIR/private/original_cast.dk $CURDIR/theories/original.dk > $BUILD/Coq.dk
 elif [ "$1" = "predicates" ]; then
-	cat interfaces/predicates.dk private/predicates.dk theories/predicates.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/predicates.dk $CURDIR/private/predicates.dk $CURDIR/theories/predicates.dk > $BUILD/Coq.dk
 elif [ "$1" = "functionnal" ]; then
-	cat interfaces/functionnal.dk private/functionnal.dk theories/functionnal.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/functionnal.dk $CURDIR/private/functionnal.dk $CURDIR/theories/functionnal.dk > $BUILD/Coq.dk
 elif [ "$1" = "constructors" ]; then
-	cat interfaces/constructors.dk private/constructors.dk theories/constructors.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/constructors.dk $CURDIR/private/constructors.dk $CURDIR/theories/constructors.dk > $BUILD/Coq.dk
 elif [ "$1" = "full_constructors" ]; then
-	cat interfaces/full_constructors.dk private/full_constructors.dk theories/full_constructors.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/full_constructors.dk $CURDIR/private/full_constructors.dk $CURDIR/theories/full_constructors.dk > $BUILD/Coq.dk
 elif [ "$1" = "clean" ]; then
 	rm -rf $BUILD
 fi

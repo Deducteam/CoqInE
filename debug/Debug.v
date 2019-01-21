@@ -7,7 +7,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "readable".
+Dedukti Set Encoding "default".
 
 
 
