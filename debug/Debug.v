@@ -7,6 +7,8 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
+From Coq Require Import ssreflect.
+
 Dedukti Set Encoding "default".
 
 
