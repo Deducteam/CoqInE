@@ -112,7 +112,11 @@ and translate_structure_field_body info env (label, sfb) =
      | Declarations.Finite   (** = inductive *)
        -> translate_mutual_inductive_body info env label mib
      | Declarations.CoFinite (** = coinductive   *)
-       -> Error.warning (str "Ignoring coinductive " ++ Names.Label.print label)
+       ->
+       begin
+         Error.warning (str "Ignoring coinductive " ++ Names.Label.print label);
+         translate_mutual_inductive_body info env label mib
+       end
      | Declarations.BiFinite (** = non-recursive *)
        -> Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
      )
