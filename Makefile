@@ -59,8 +59,8 @@ debug_named: plugin
 
 debug_poly: plugin
 	make -C debug clean
-	sh encodings/gen.sh constructors
-	cp encodings/_build/Coq.dk debug/Coq.dk
+	sh encodings/gen.sh constructors short
+	cp encodings/_build/C.dk debug/C.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"polymorph\"\.' debug/Debug.v 
 	make -C debug
 

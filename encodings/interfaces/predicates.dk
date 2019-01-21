@@ -17,7 +17,7 @@ Univ : s : Sort -> Type.
 def Term : s : Sort -> a : Univ s -> Type.
 
 
-(;-----------------------  CTS predicates  -------------------;)
+(;------------------------  CTS predicates  -----------------------;)
 
 Bool : Type.
 eps : Bool -> Type.

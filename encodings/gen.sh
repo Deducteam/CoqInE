@@ -15,7 +15,7 @@ elif [ "$1" = "predicates" ]; then
 elif [ "$1" = "functionnal" ]; then
 	cat $CURDIR/interfaces/functionnal.dk $CURDIR/private/functionnal.dk $CURDIR/theories/functionnal.dk > $BUILD/Coq.dk
 elif [ "$1" = "constructors" ]; then
-	cat $CURDIR/interfaces/constructors.dk $CURDIR/private/constructors.dk $CURDIR/theories/constructors.dk > $BUILD/Coq.dk
+	cat $CURDIR/interfaces/constructors.dk $CURDIR/private/functionnal.dk $CURDIR/theories/functionnal.dk > $BUILD/Coq.dk
 elif [ "$1" = "full_constructors" ]; then
 	cat $CURDIR/interfaces/full_constructors.dk $CURDIR/private/full_constructors.dk $CURDIR/theories/full_constructors.dk > $BUILD/Coq.dk
 elif [ "$1" = "clean" ]; then
