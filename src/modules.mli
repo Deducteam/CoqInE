@@ -17,6 +17,9 @@ val translate_constant_body :
 val translate_mutual_inductive_body :
   Info.info -> Environ.env -> Names.Label.t -> Declarations.mutual_inductive_body -> unit
 
+val translate_mutual_coinductive_body :
+  Info.info -> Environ.env -> Names.Label.t -> Declarations.mutual_inductive_body -> unit
+
 val translate_module_body :
   Info.info -> Environ.env -> Declarations.module_body -> unit
 

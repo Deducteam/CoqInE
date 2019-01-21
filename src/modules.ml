@@ -64,6 +64,19 @@ let translate_mutual_inductive_body info env label mind_body =
     Inductives.translate_match info env label mind_body i
   done
 
+(** Translate the body of mutual inductive definitions [mind]. *)
+let translate_mutual_coinductive_body info env label mind_body =
+  debug "CoInductive body: %s" (Cname.translate_element_name info env label);
+  (* First declare all the inductive types. Constructors of one inductive type
+     can refer to other inductive types in the same block. *)
+  for i = 0 to pred mind_body.mind_ntypes do
+    Inductives.translate_inductive info env label mind_body i
+  done;
+  (* Then declare all the constructors. *)
+  for i = 0 to pred mind_body.mind_ntypes do
+    Inductives.translate_constructors info env label mind_body i
+  done
+
 let identifiers_of_mutual_inductive_body mind_body =
   let identifiers_of_inductive_body ind_body =
     ind_body.mind_typename :: Array.to_list ind_body.mind_consnames in
@@ -115,7 +128,7 @@ and translate_structure_field_body info env (label, sfb) =
        ->
        begin
          Error.warning (str "Ignoring coinductive " ++ Names.Label.print label);
-         translate_mutual_inductive_body info env label mib
+         translate_mutual_coinductive_body info env label mib
        end
      | Declarations.BiFinite (** = non-recursive *)
        -> Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
