@@ -2,6 +2,9 @@ Set Printing All.
 
 Set Printing Universes.
 
+Inductive option (A : Type) : Type :=
+  Some : forall _ : A, option A | None : option A.
+
 (*
 Print Universes.
 Print Sorted Universes.

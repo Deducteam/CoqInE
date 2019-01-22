@@ -22,6 +22,8 @@ let dest_const_univ universes =
 
 let translate_constant_body info env label const =
   let label' = Cname.translate_element_name info env label in
+  debug "Constant body: %s" label';
+  
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
@@ -35,21 +37,22 @@ let translate_constant_body info env label const =
   
   match const.const_body with
   | Undef inline ->
-      (* For now assume inline is None. *)
-      assert (inline = None);
-      Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
+    (* For now assume inline is None. *)
+    assert (inline = None);
+    Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
   | Def constr_substituted ->
-      let constr = Mod_subst.force_constr constr_substituted in
-      let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
-      Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
+    let constr = Mod_subst.force_constr constr_substituted in
+    let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
+    Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
-      let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
-      let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
-      Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
+    let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
+    let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
+    Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  debug "Inductive body: %s" (Cname.translate_element_name info env label);
+  let label' = Cname.translate_element_name info env label in
+  debug "Inductive body: %s" label';
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
@@ -118,7 +121,7 @@ and translate_structure_body info env sb =
 
 and translate_structure_field_body info env (label, sfb) =
   match sfb with
-  | SFBconst cb  -> translate_constant_body info env label cb
+  | SFBconst cb -> translate_constant_body info env label cb
   | SFBmind mib ->
      (
      match mib.mind_finite with

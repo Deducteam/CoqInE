@@ -19,6 +19,9 @@ val is_debug_on : unit -> bool
 (** Is debugging on ? *)
 
 
+val errdebug : ('a, Format.formatter, unit, unit) format4 -> 'a
+(** Prints to error channel *)
+
 val debug   : ('a, Format.formatter, unit, unit) format4 -> 'a
 (** Prints to debug channel *)
 

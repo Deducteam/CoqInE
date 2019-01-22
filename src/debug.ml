@@ -27,6 +27,9 @@ let debug fmt =
   then kfprintf (fun _ -> pp_print_newline !debug_out ()) !debug_out fmt
   else ifprintf err_formatter fmt
 
+let errdebug fmt =
+  kfprintf (fun _ -> pp_print_newline err_formatter ()) err_formatter fmt
+
 let format_of_sep str fmt () : unit =
   Format.fprintf fmt "%s" str
 

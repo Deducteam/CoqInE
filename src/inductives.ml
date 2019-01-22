@@ -323,9 +323,11 @@ let translate_match info env label mind_body i =
   
   let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
-    List.map (fun x -> (x, T.coq_Sort())) template_params in
+    if Encoding.is_templ_polymorphism_on ()
+    then List.map (fun x -> (x, T.coq_Sort())) template_params else [] in
   let univ_poly_context' =
-    List.map (fun x -> (x, T.coq_Sort())) univ_poly_params in
+    if Encoding.is_polymorphism_on ()
+    then List.map (fun x -> (x, T.coq_Sort())) univ_poly_params else [] in
   let common_context' =
     (return_sort_name', T.coq_Sort()) ::
     params_context' @   (* Shouldn't this be first ? *)

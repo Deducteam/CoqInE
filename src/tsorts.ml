@@ -48,10 +48,13 @@ let instantiate_univ_params uenv name univ_ctxt univ_instance =
   let levels = Univ.Instance.to_array univ_instance in
   let levels = Array.init nb_params (fun i -> levels.(i)) in 
   if Array.length levels > 0 then debug "Instantiating: %a" pp_coq_inst univ_instance;
-  Array.fold_left
-    (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
-    (Dedukti.var name)
-    levels
+  if Encoding.is_polymorphism_on ()
+  then
+    Array.fold_left
+      (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+      (Dedukti.var name)
+      levels
+  else Dedukti.var name
 
 let translate_universe uenv u =
   debug "Translating universe : %a" pp_coq_univ u;

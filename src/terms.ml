@@ -173,10 +173,12 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
     let arity = Term.mkArity (List.rev ctx,s) in
     
     (* Do we really need to apply safe_subst to arity ? *)
-    Universes.subst_univs_constr subst arity,
-    List.map
-      (Tsorts.translate_universe uenv)
-      (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+    if Encoding.is_templ_polymorphism_on () then
+      Universes.subst_univs_constr subst arity,
+      List.map
+        (Tsorts.translate_universe uenv)
+        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+    else arity, []
 
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
@@ -190,12 +192,13 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     
     let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
-    Universes.subst_univs_constr subst type_c,
-    List.map
-      (Tsorts.translate_universe uenv)
-      (List.map safe_subst
-         (Utils.filter_some ar.template_param_levels))
-
+    if Encoding.is_templ_polymorphism_on () then
+      Universes.subst_univs_constr subst type_c,
+      List.map
+        (Tsorts.translate_universe uenv)
+        (List.map safe_subst
+           (Utils.filter_some ar.template_param_levels))
+    else type_c, []
   
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
@@ -278,10 +281,11 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | Ind (kn, univ_instance) ->
     let name = Cname.translate_inductive info env kn in
-    debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
     let (mib, oib) = Inductive.lookup_mind_specif env kn in
     let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-    Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
+    let res = Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance in
+    debug "Printing inductive: %s@@{%a} : %a" name pp_coq_inst univ_instance Dedukti.pp_term res;
+    res
 
   | Construct (kn, univ_instance) ->
     let name = Cname.translate_constructor info env kn in
