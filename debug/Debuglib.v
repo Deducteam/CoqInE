@@ -5,6 +5,11 @@ Set Printing Universes.
 Inductive option (A : Type) : Type :=
   Some : forall _ : A, option A | None : option A.
 
+
+Record myrec := mkMyrec { A : Type; a : A; f : A -> A}.
+
+Definition recex : myrec := mkMyrec nat 0 (fun x => x).
+
 (*
 Print Universes.
 Print Sorted Universes.

@@ -49,6 +49,8 @@ struct
   let coq_set  ()    = coq_var "set"
   let coq_type i     = app (coq_var "type") (coq_nat i)
 
+  let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
+
   let coq_axiom s    = app  (coq_var "axiom") s
   let coq_axioms s i = Utils.iterate i coq_axiom s
   let coq_rule s1 s2 = apps (coq_var "rule" ) [s1; s2]
@@ -161,6 +163,8 @@ struct
   let short_cast s1 s2 a b t = apps (coq_var "cast" ) [scu s1; scu s2; a; b; t]
   let short_lift s1 s2 t     = apps (coq_var "lift" ) [scu s1; scu s2; t]
 
+  let short_proj i t = app (app (coq_var "proj") (short_nat i)) t
+
   let short_le s1 s2 = apps (coq_var "Cumul") [scu s1                ; scu s2]
   let short_lt s1 s2 = apps (coq_var "Cumul") [Std.coq_axiom (scu s1); scu s2]
 
@@ -185,6 +189,7 @@ struct
   let coq_prod     s = if a () then Std.coq_prod s else Short.short_prod s
   let coq_cast     s = if a () then Std.coq_cast s else Short.short_cast s
   let coq_lift     s = if a () then Std.coq_lift s else Short.short_lift s
+  let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
   let cstr_le      s = if a () then Std.cstr_le  s else Short.short_le   s
   let cstr_lt      s = if a () then Std.cstr_lt  s else Short.short_lt   s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s

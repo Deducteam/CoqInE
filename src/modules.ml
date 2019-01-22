@@ -69,6 +69,7 @@ let translate_mutual_inductive_body info env label mind_body =
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
+  Error.warning (str "Translating coinductive " ++ Names.Label.print label);
   debug "CoInductive body: %s" (Cname.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
@@ -79,6 +80,9 @@ let translate_mutual_coinductive_body info env label mind_body =
   for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_constructors info env label mind_body i
   done
+
+let translate_mutual_biinductive_body info env label mind_body =
+  Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
 
 let identifiers_of_mutual_inductive_body mind_body =
   let identifiers_of_inductive_body ind_body =
@@ -123,20 +127,12 @@ and translate_structure_field_body info env (label, sfb) =
   match sfb with
   | SFBconst cb -> translate_constant_body info env label cb
   | SFBmind mib ->
-     (
-     match mib.mind_finite with
-     | Declarations.Finite   (** = inductive *)
-       -> translate_mutual_inductive_body info env label mib
-     | Declarations.CoFinite (** = coinductive   *)
-       ->
-       begin
-         Error.warning (str "Ignoring coinductive " ++ Names.Label.print label);
-         translate_mutual_coinductive_body info env label mib
-       end
-     | Declarations.BiFinite (** = non-recursive *)
-       -> Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
-     )
+     (match mib.mind_finite with
+       | Declarations.Finite   -> translate_mutual_inductive_body
+       | Declarations.CoFinite -> translate_mutual_coinductive_body
+       | Declarations.BiFinite -> translate_mutual_biinductive_body
+     ) info env label mib
   | SFBmodule mb ->
-      translate_module_body (Info.update info label) env mb
+    translate_module_body (Info.update info label) env mb
   | SFBmodtype(_) -> ()
 

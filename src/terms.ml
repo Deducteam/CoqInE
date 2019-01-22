@@ -311,14 +311,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
     let n_params = mind_body.Declarations.mind_nparams   in
     let n_reals  =  ind_body.Declarations.mind_nrealargs in
-
-    let pind, ind_args =
-      match mind_body.mind_finite with
-      | Declarations.Finite   -> Inductive.find_inductive   env (infer_type env matched)
-      | Declarations.CoFinite -> Inductive.find_coinductive env (infer_type env matched)
-      | Declarations.BiFinite ->
-        (Error.warning (Pp.str "Non-recursive  not found !"); assert false)
-    in
+    let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
     
     let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
     let params, reals = Utils.list_chop n_params ind_args in
@@ -349,7 +342,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let matched' = translate_constr info env uenv matched in
     Dedukti.apps match_function'
       (univ_params' @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
-      
+
   (* Not supported cases: *)
   | Proj (p,t) ->
     begin
@@ -357,7 +350,7 @@ let rec translate_constr ?expected_type info env uenv t =
       let cb = Environ.lookup_constant kn env in (* Constant body *)
       let pb = Option.get cb.const_proj       in (* Projection body *)
       let n = pb.proj_arg in (* Index of the projection *)
-      Error.not_supported "Proj"
+      T.coq_proj n (translate_constr info env uenv t)
     end
   (* Not supported cases: *)
   | Meta metavariable  -> Error.not_supported "Meta"
