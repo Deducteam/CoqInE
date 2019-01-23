@@ -37,6 +37,7 @@ val pp_t : Pp.t printer
 val pp_coq_term    : Constr.t                  printer
 val pp_coq_type    : Constr.types              printer
 val pp_coq_id      : Names.Id.t                printer
+val pp_coq_label   : Names.Label.t             printer
 val pp_coq_name    : Names.Name.t              printer
 val pp_coq_sort    : Sorts.t                   printer
 val pp_coq_decl    : Context.Rel.Declaration.t printer

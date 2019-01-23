@@ -53,6 +53,7 @@ let pp_coq_type  =
 let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
 let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
+let pp_coq_label = printer_of_std_ppcmds Names.Label.print
 
 let pp_coq_lvl_arr = pp_array " " pp_coq_level
 

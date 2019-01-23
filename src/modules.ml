@@ -69,7 +69,7 @@ let translate_mutual_inductive_body info env label mind_body =
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
-  Error.warning (str "Translating coinductive " ++ Names.Label.print label);
+  Error.warning "Translating coinductive %a" pp_coq_label label;
   debug "CoInductive body: %s" (Cname.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
@@ -82,7 +82,10 @@ let translate_mutual_coinductive_body info env label mind_body =
   done
 
 let translate_mutual_biinductive_body info env label mind_body =
-  Error.warning (str "Ignoring non-recursive " ++ Names.Label.print label)
+  
+  Error.warning "Ignoring non-recursive %a" pp_coq_label label
+
+(*----------------------  Dead code  ----------------------
 
 let identifiers_of_mutual_inductive_body mind_body =
   let identifiers_of_inductive_body ind_body =
@@ -99,7 +102,7 @@ let identifiers_of_structure_field_body (label, struct_field_body) =
 
 let identifiers_of_structure_body structure_body =
   List.concat (List.map identifiers_of_structure_field_body structure_body)
-
+*)
 
               
 (** Modules are organised into:
@@ -111,28 +114,28 @@ let identifiers_of_structure_body structure_body =
       definition, inductive, ... **)
 let rec translate_module_body info env mb =
   match mb.mod_expr with
-  | Abstract    -> Error.not_supported "Abstract"
-  | Algebraic _ -> Error.not_supported "Algebraic"
+  | Abstract       -> Error.not_supported "Abstract"
+  | Algebraic _    -> Error.not_supported "Algebraic"
   | Struct mod_sig -> translate_module_signature info env mod_sig
   | FullStruct     -> translate_module_signature info env mb.mod_type
 
 and translate_module_signature info env  = function
-  | NoFunctor   struct_body -> translate_structure_body info env struct_body
-  | MoreFunctor _           -> Error.not_supported "Functor"
+  | NoFunctor struct_body -> translate_structure_body info env struct_body
+  | MoreFunctor _         -> Error.not_supported "Functor"
 
 and translate_structure_body info env sb =
   List.iter (translate_structure_field_body info env) sb
 
 and translate_structure_field_body info env (label, sfb) =
+  let label' = Cname.translate_element_name info env label in
+  debug "Structure field body: %s" label';
   match sfb with
   | SFBconst cb -> translate_constant_body info env label cb
   | SFBmind mib ->
      (match mib.mind_finite with
        | Declarations.Finite   -> translate_mutual_inductive_body
        | Declarations.CoFinite -> translate_mutual_coinductive_body
-       | Declarations.BiFinite -> translate_mutual_biinductive_body
+       | Declarations.BiFinite -> translate_mutual_inductive_body
      ) info env label mib
-  | SFBmodule mb ->
-    translate_module_body (Info.update info label) env mb
-  | SFBmodtype(_) -> ()
-
+  | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
+  | SFBmodtype _  -> ()

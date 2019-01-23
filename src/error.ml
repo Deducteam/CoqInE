@@ -8,5 +8,8 @@ let error message =
 let not_supported feature =
   error (str feature ++ str " not supported")
 
-let warning message =
-  Feedback.msg_warning message
+let warn msg =
+  Debug.debug "Warning: %s" msg;
+  Feedback.msg_warning (str msg)
+
+let warning fmt = Format.kasprintf warn fmt

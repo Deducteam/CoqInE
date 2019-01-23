@@ -1,5 +1,6 @@
 (** Translation of Coq modules *)
 
+(*----------------------  Dead code  ----------------------
 
 val identifiers_of_mutual_inductive_body :
   Declarations.mutual_inductive_body -> Names.Id.t list
@@ -9,7 +10,7 @@ val identifiers_of_structure_field_body :
 
 val identifiers_of_structure_body :
   (Names.Label.t * Declarations.structure_field_body) list -> Names.Id.t list
-
+*)
 
 val translate_constant_body :
   Info.info -> Environ.env -> Names.Label.t -> Declarations.constant_body -> unit

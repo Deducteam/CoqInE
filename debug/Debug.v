@@ -9,14 +9,7 @@ Dedukti Set Destination "out".
 
 Dedukti Set Encoding "default".
 
-
-
-Require Coq.Init.Notations
-        Coq.Init.Logic
-        Coq.Init.Datatypes
-        Coq.Init.Wf
-        Coq.Init.Logic_Type.
-
-Require Debuglib.
+Require Import GeoCoq.Tarski_dev.Ch02_cong.
+Require Import Debuglib.
 
 Dedukti Export All.

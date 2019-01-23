@@ -30,7 +30,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [Debug.v]
 generate : compile $(OUTFOLDER)
-	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Debug
+	$(COQTOP) -batch -debug  -R ../src Coqine -R . Top    -l Debug
 	mv ./*.dk $(OUTFOLDER)/
 
 # Generate the dependencies of [.dk] files
