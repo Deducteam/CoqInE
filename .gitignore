@@ -20,6 +20,7 @@
 debug/**/*.dk
 test/**/*.dk
 encodings/_build
+debug/GeoCoq
 
 # emacs tmp files
 *~
