@@ -2,6 +2,12 @@ Set Printing All.
 
 Set Printing Universes.
 
+Require Import Coq.Init.Notations.
+Require Import Coq.Init.Logic.
+Require Import Coq.Init.Datatypes.
+Require Import Coq.Init.Peano.
+
+
 Inductive option (A : Type) : Type :=
   Some : forall _ : A, option A | None : option A.
 

@@ -28,12 +28,8 @@ encodings/_build
 CoqMakefile
 
 # Generated .aux files
-src/.*.aux
-test/.*.aux
+*.aux
 
-debug/*.aux
-*/debug.out
-
-# Debuging files
-*/*.out
+# Debugging files
+*.out
 *.conf

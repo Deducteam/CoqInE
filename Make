@@ -16,7 +16,6 @@ src/terms.mli
 src/inductives.mli
 src/modules.mli
 src/libraries.mli
-src/parameters.ml
 src/utils.ml
 src/dedukti.ml
 src/encoding.ml

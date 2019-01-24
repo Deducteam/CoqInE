@@ -10,6 +10,11 @@ Dedukti Set Destination "out".
 Dedukti Set Encoding "default".
 
 Require Import GeoCoq.Tarski_dev.Ch02_cong.
+
+(*
+Require Import ssr.ssreflect.
+ *)
+
 Require Import Debuglib.
 
 Dedukti Export All.

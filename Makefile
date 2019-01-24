@@ -1,11 +1,9 @@
-VERBOSE?=
-
-COQ_MAKEFILE = coq_makefile
-COQTOP = coqtop
-
-DKFOLDER = /home/gferey/git/dedukti/master
-DKCHECK = $(DKFOLDER)/dkcheck.native
-DKDEP = $(DKFOLDER)/dkdep.native
+# Variables
+COQ_MAKEFILE ?= coq_makefile
+COQTOP       ?= coqtop
+DKCHECK      ?= dkcheck
+DKDEP        ?= dkdep
+VERBOSE      ?=
 
 CAMLFLAGS="-bin-annot -annot"
 
@@ -16,7 +14,7 @@ all: .merlin plugin debug_default
 plugin: CoqMakefile
 	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
 
-install: CoqMakefile
+install: CoqMakefile plugin
 	make -f CoqMakefile - install
 
 uninstall: CoqMakefile
@@ -26,20 +24,24 @@ uninstall: CoqMakefile
 	make -f CoqMakefile .merlin
 
 test: plugin
+	make -C test clean
+	sh encodings/gen.sh original
+	cp encodings/_build/Coq.dk test/Coq.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' test/Test.v
 	make -C test
 
 debug_default: plugin
 	make -C debug clean
 	sh encodings/gen.sh original
 	cp encodings/_build/Coq.dk debug/Coq.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' debug/Debug.v 
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"default\"\.' debug/Debug.v
 	make -C debug
 
 debug_readable: plugin
 	make -C debug clean
 	sh encodings/gen.sh original short
 	cp encodings/_build/C.dk debug/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v 
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable\"\.' debug/Debug.v
 	make -C debug
 
 # Not implemented yet
