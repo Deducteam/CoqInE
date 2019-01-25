@@ -113,6 +113,9 @@ let translate_dir_path dir_path =
 let translate_label label =
   escape (Names.Label.to_string label)
 
+let translate_label_path labels =
+  escape (String.concat "." (List.map Names.Label.to_string labels))
+
 let translate_mod_bound_id mod_bound_id =
   escape (Names.MBId.to_string mod_bound_id)
 
@@ -124,15 +127,14 @@ let dir_path_of_labels labels =
 (** Translate the path corresponding to [module_path] followed by [labels]. *)
 let rec translate_module_path info env module_path labels =
   match module_path with
-  | Names.MPfile(dir_path) ->
-      let prefix = translate_dir_path dir_path in
-      let suffix = translate_dir_path (dir_path_of_labels (labels)) in
-      if dir_path = info.library then suffix
-      else String.concat "." [prefix; suffix]
+  | Names.MPfile dir_path ->
+    let labels_path = translate_label_path labels in
+    if dir_path = info.library then labels_path
+    else (translate_dir_path dir_path) ^ "." ^ labels_path
   | Names.MPbound(mod_bound_id) ->
-      failwith "Not implemented: MPbound"
+    failwith "Not implemented: MPbound"
   | Names.MPdot(module_path, label) ->
-      translate_module_path info env module_path (label :: labels)
+    translate_module_path info env module_path (label :: labels)
 
 (** Translate the name of the structure element in the current module path. *)
 let translate_element_name info env label =

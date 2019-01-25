@@ -33,11 +33,8 @@ let dummy = make [] 0 []
 
 
 let destination = ref "."
-
 let set_destination dest = destination := dest
-
 let get_destination_path path = Filename.concat !destination path
-
 
 
 type info =
@@ -49,8 +46,8 @@ type info =
   }
 
 let init module_path filename =
-  let filename = get_destination_path filename in
-  let out = open_out (filename ^ ".dk") in
+  let filename = get_destination_path (filename ^ ".dk") in
+  let out = open_out filename in
   {
     out = out;
     fmt = Format.formatter_of_out_channel out;

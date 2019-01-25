@@ -50,6 +50,16 @@ VERNAC COMMAND EXTEND DeduktiSetDebug CLASSIFIED AS QUERY
   [ Debug.debug_to_file dest ]
 END
 
+VERNAC COMMAND EXTEND DeduktiAddDebug CLASSIFIED AS QUERY
+| [ "Dedukti" "Add" "Debug" string(lib) ] ->
+  [ Debug.add_debug_lib lib ]
+END
+
+VERNAC COMMAND EXTEND DeduktiFilterSymb CLASSIFIED AS QUERY
+| [ "Dedukti" "Filter" "Out" string(symb) ] ->
+  [ Modules.filter_out symb ]
+END
+
 VERNAC COMMAND EXTEND DeduktiEnableDebug CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Debug" ] ->
   [ Debug.enable_debug () ]

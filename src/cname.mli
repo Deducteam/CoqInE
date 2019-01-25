@@ -47,8 +47,6 @@ val translate_label : Names.Label.t -> string
 
 val translate_mod_bound_id : Names.MBId.t -> string
 
-val dir_path_of_labels : Names.Label.t list -> Names.DirPath.t
-
 val translate_module_path :
   Info.info -> 'a -> Names.ModPath.t -> Names.Label.t list -> string
 

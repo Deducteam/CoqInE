@@ -107,13 +107,13 @@ end
 module Short =
 struct
 
-  let nat_name u = "n" ^ (string_of_int u)
+  let nat_name u = "_n" ^ (string_of_int u)
   let nat_var  u = (var (nat_name u))
 
-  let sort_name u = string_of_int u
+  let sort_name u = "_" ^ (string_of_int u)
   let sort_var  u = (var (sort_name u))
 
-  let code_name u = "u" ^ (string_of_int u)
+  let code_name u = "_u" ^ (string_of_int u)
   let code_var  u = (var (code_name u))
 
   (* Redefining headers first then overriding previous definitions. *)

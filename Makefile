@@ -44,11 +44,18 @@ debug_readable: plugin
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original\"\.' debug/Debug.v
 	make -C debug
 
-debug_cast: plugin
+debug_named_cast: plugin
 	make -C debug clean
 	sh encodings/gen.sh original_cast
 	cp encodings/_build/Coq.dk debug/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"named original_cast\"\.' debug/Debug.v
+	make -C debug
+
+debug_cast: plugin
+	make -C debug clean
+	sh encodings/gen.sh original_cast short
+	cp encodings/_build/C.dk debug/C.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original_cast\"\.' debug/Debug.v
 	make -C debug
 
 debug_named: plugin

@@ -9,8 +9,7 @@ open Translator
 let translate_qualified_library qualid =
   let libname = Libnames.pr_qualid qualid in
   message "Exporting %a" pp_t libname;
-  if (libname = (str "Top.Debuglib")) then debug_start ();
-  debug_start ();
+  if is_debug_lib libname then debug_start ();
   debug "Exporting %a" pp_t (Libnames.pr_qualid qualid);
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
@@ -18,11 +17,11 @@ let translate_qualified_library qualid =
   let filename = Cname.translate_dir_path dir_path in
   let info = Info.init module_path filename in
   begin
-    (*    try *)
+    try 
       (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
       Modules.translate_module_body info (Global.env ()) module_body;
       (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
-      (*    with e -> Info.close info; raise e *)
+    with e -> Info.close info; raise e
   end;
   debug_stop ();
   Info.close info

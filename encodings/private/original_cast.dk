@@ -72,6 +72,11 @@
 
 (;---------------------  Cast canonicity rules --------------------;)
 
+
+[a,m]
+    cast _ _ a a m
+--> m.
+
 [s1,s2,m]
     cast _ _ (univ s1) (univ s2) m
 --> lift s1 s2 m.

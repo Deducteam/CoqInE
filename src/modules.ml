@@ -6,6 +6,10 @@ open Debug
 open Info
 
 
+let symb_filter = ref []
+let filter_out symb = symb_filter := symb :: !symb_filter
+let not_filtered symb = not (List.mem symb !symb_filter)
+
 let dest_const_univ universes =
   match universes with
   | Monomorphic_const univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
@@ -21,19 +25,20 @@ let dest_const_univ universes =
       an opaque definition (a theorem). **)
 
 let translate_constant_body info env label const =
-  let label' = Cname.translate_element_name info env label in
-  debug "Constant body: %s" label';
-  
+  debug "Translating constant body: %s" (Names.Label.to_string label);
+
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
   let uenv = Info.make [] (List.length univ_poly_params) poly_cstr  in
-  
+
   let const_type = const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in
   let const_type' = Tsorts.add_sort_params univ_poly_params const_type' in
+
+  let label' = Cname.translate_element_name info env label in
   
   match const.const_body with
   | Undef inline ->
@@ -51,8 +56,7 @@ let translate_constant_body info env label const =
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  let label' = Cname.translate_element_name info env label in
-  debug "Inductive body: %s" label';
+  debug "Translating inductive body: %s" (Names.Label.to_string label);
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
@@ -70,7 +74,7 @@ let translate_mutual_inductive_body info env label mind_body =
 (** Pseudo-translate the body of mutual coinductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
-  debug "CoInductive body: %s" (Cname.translate_element_name info env label);
+  debug "Translating co-inductive body: %s" (Names.Label.to_string label);
   (* First declare all the inductive types. Constructors of one inductive type
      may refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
@@ -133,15 +137,17 @@ and translate_structure_body info env sb =
   List.iter (translate_structure_field_body info env) sb
 
 and translate_structure_field_body info env (label, sfb) =
-  let label' = Cname.translate_element_name info env label in
-  debug "Structure field body: %s" label';
-  match sfb with
-  | SFBconst cb -> translate_constant_body info env label cb
-  | SFBmind mib ->
-     (match mib.mind_finite with
+  let full_name = (Names.ModPath.to_string info.module_path) ^ "." ^
+                  (Names.Label.to_string label) in
+  debug "Structure field body: %s" full_name;
+  if not_filtered full_name
+  then match sfb with
+    | SFBconst cb -> translate_constant_body info env label cb
+    | SFBmind mib ->
+      (match mib.mind_finite with
        | Declarations.Finite   -> translate_mutual_inductive_body
        | Declarations.CoFinite -> translate_mutual_coinductive_body
        | Declarations.BiFinite -> translate_record_body
-     ) info env label mib
-  | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
-  | SFBmodtype _  -> ()
+      ) info env label mib
+    | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
+    | SFBmodtype _  -> ()

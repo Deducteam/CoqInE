@@ -9,6 +9,13 @@ val disable_debug : unit -> unit
 (** Disables debugging *)
 
 
+val add_debug_lib : string -> unit
+(** Add library name to debug list *)
+
+val is_debug_lib  : Pp.t -> bool
+(** Should debug be enabled for given library ? *)
+
+
 val debug_start : unit -> unit
 (** Starts debugging *)
 

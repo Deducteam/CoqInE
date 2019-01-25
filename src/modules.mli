@@ -12,6 +12,9 @@ val identifiers_of_structure_body :
   (Names.Label.t * Declarations.structure_field_body) list -> Names.Id.t list
 *)
 
+val filter_out : string -> unit
+(** Disable translation of given symbol. *)
+
 val translate_constant_body :
   Info.info -> Environ.env -> Names.Label.t -> Declarations.constant_body -> unit
 
