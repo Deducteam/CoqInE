@@ -57,7 +57,7 @@ let instantiate_univ_params uenv name univ_ctxt univ_instance =
   else Dedukti.var name
 
 let translate_universe uenv u =
-  debug "Translating universe : %a" pp_coq_univ u;
+  (* debug "Translating universe : %a" pp_coq_univ u; *)
   let translate (lvl, i) =
     let univ = translate_level uenv lvl in
     if i = 0 then univ else Translator.Succ (univ,i)

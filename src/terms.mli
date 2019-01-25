@@ -20,7 +20,7 @@ val convertible :
   Info.info -> Environ.env -> Info.env -> Constr.t -> Constr.t -> bool
 
 val fixpoint_table :
-  (Names.Name.t array * Constr.types array * Constr.t array,
+  (Environ.env * (Names.Name.t array * Constr.types array * Constr.t array),
    Environ.env * Context.Rel.Declaration.t array)
   Hashtbl.t
 

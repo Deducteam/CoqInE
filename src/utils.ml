@@ -23,6 +23,9 @@ let str_starts_with str1 str2 =
   in
   check 0
 
+let truncate str l =
+  String.sub str l (String.length str - l)
+
 let filter_some l =
   let aux acc = function
   | None   -> acc

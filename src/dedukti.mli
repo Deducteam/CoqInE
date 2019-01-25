@@ -8,7 +8,7 @@ type term =
     Type
   | Var of var
   | Pie of (var * term) * term
-  | Lam of (var * term) * term
+  | Lam of (var * term option) * term
   | App of term * term
   | Dot of term
   | Cmt of string * term
@@ -23,9 +23,11 @@ type instruction =
   | Rewrite of (var * term) list * term * term
 
 val var : var -> term
+val wildcard : term
 val arr : term -> term -> term
 val pie : var * term -> term -> term
 val lam : var * term -> term -> term
+val ulam : var -> term -> term
 val app : term -> term -> term
 val dot : term -> term
 val cmt : string -> term -> term
@@ -33,6 +35,7 @@ val vars : var list -> term list
 val arrs : term list -> term -> term
 val pies : (var * term) list -> term -> term
 val lams : (var * term) list -> term -> term
+val ulams : var list -> term -> term
 val apps : term -> term list -> term
 val comment : string -> instruction
 val command : string -> string list -> instruction

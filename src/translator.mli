@@ -59,6 +59,10 @@ sig
   val coq_cast : cic_universe -> cic_universe -> term -> term -> term -> term
   val coq_lift : cic_universe -> cic_universe -> term -> term
 
+  val coq_pattern_lifted_from_sort : term -> term -> term
+  (** [coq_pattern_lifted_from_sort s t] Returns a pattern matching a term lifted from
+      sort pattern [s] (for instance a variable). *)
+
   val coq_proj : int -> term -> term
 
   val cstr_le : cic_universe -> cic_universe -> term

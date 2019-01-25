@@ -67,12 +67,12 @@ let translate_mutual_inductive_body info env label mind_body =
     Inductives.translate_match info env label mind_body i
   done
 
-(** Translate the body of mutual inductive definitions [mind]. *)
+(** Pseudo-translate the body of mutual coinductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
   debug "CoInductive body: %s" (Cname.translate_element_name info env label);
   (* First declare all the inductive types. Constructors of one inductive type
-     can refer to other inductive types in the same block. *)
+     may refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_inductive info env label mind_body i
   done;
@@ -80,10 +80,16 @@ let translate_mutual_coinductive_body info env label mind_body =
   for i = 0 to pred mind_body.mind_ntypes do
     Inductives.translate_constructors info env label mind_body i
   done
+  (* No match function defined *)
 
-let translate_mutual_biinductive_body info env label mind_body =
-  
-  Error.warning "Ignoring non-recursive %a" pp_coq_label label
+(** Translate the body of non-recursive definitions when it's a record. *)
+let translate_record_body info env label mind_body =
+  match mind_body.mind_record with
+  | None   -> Error.not_supported "Non-recursive translation"
+  | Some _ ->
+    debug "Translating record: %a" pp_coq_label label;
+    translate_mutual_inductive_body info env label mind_body
+
 
 (*----------------------  Dead code  ----------------------
 
@@ -135,7 +141,7 @@ and translate_structure_field_body info env (label, sfb) =
      (match mib.mind_finite with
        | Declarations.Finite   -> translate_mutual_inductive_body
        | Declarations.CoFinite -> translate_mutual_coinductive_body
-       | Declarations.BiFinite -> translate_mutual_inductive_body
+       | Declarations.BiFinite -> translate_record_body
      ) info env label mib
   | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
   | SFBmodtype _  -> ()

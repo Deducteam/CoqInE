@@ -85,12 +85,20 @@ struct
   let coq_U    s           = app  (coq_var (get()).t_Univ ) (cu s)
   let coq_term s  a        = apps (coq_var (get()).t_Term ) [cu s; a]
   let coq_sort s           = app  (coq_var (get()).t_univ ) (cu s)
-  let coq_prod s1 s2 a b   = apps (coq_var "prod" ) [cu s1; cu s2; a; b]
-  let coq_cast s1 s2 a b t = apps (coq_var "cast" ) [cu s1; cu s2; a; b; t]
-  let coq_lift s1 s2 t     = apps (coq_var "lift" ) [cu s1; cu s2; t]
 
-  let cstr_le s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
-  let cstr_lt s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
+  let coq_prod cu s1 s2 a b   = apps (coq_var (get()).t_prod ) [cu s1; cu s2; a; b]
+  let coq_cast cu s1 s2 a b t = apps (coq_var (get()).t_cast )
+      (if (get()).pred_cast_flag
+       then [cu s1; cu s2; coq_var (get()).t_I; a; b; t]
+       else [cu s1; cu s2;                      a; b; t])
+  let coq_lift cu s1 s2 t = apps (coq_var (get()).t_lift)
+      (if (get()).pred_lift_flag
+       then [cu s1; cu s2; coq_var  (get()).t_I; t]
+       else [cu s1; cu s2;                       t])
+
+  
+  let cstr_le cu s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
+  let cstr_lt cu s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
 
 end
 
@@ -159,14 +167,8 @@ struct
     | Set  -> var "_set"
     | Prop -> var "_prop"
     | u -> app (coq_var (get()).t_univ) (scu u)
-  let short_prod s1 s2 a b   = apps (coq_var "prod" ) [scu s1; scu s2; a; b]
-  let short_cast s1 s2 a b t = apps (coq_var "cast" ) [scu s1; scu s2; a; b; t]
-  let short_lift s1 s2 t     = apps (coq_var "lift" ) [scu s1; scu s2; t]
 
   let short_proj i t = app (app (coq_var "proj") (short_nat i)) t
-
-  let short_le s1 s2 = apps (coq_var "Cumul") [scu s1                ; scu s2]
-  let short_lt s1 s2 = apps (coq_var "Cumul") [Std.coq_axiom (scu s1); scu s2]
 
 end
 
@@ -186,12 +188,21 @@ struct
   let coq_U        s = if a () then Std.coq_U    s else Short.short_U    s
   let coq_term     s = if a () then Std.coq_term s else Short.short_term s
   let coq_sort     s = if a () then Std.coq_sort s else Short.short_sort s
-  let coq_prod     s = if a () then Std.coq_prod s else Short.short_prod s
-  let coq_cast     s = if a () then Std.coq_cast s else Short.short_cast s
-  let coq_lift     s = if a () then Std.coq_lift s else Short.short_lift s
+
+  let coq_prod     s = Std.coq_prod (if a () then Std.cu else Short.scu) s
+  let coq_cast     s = Std.coq_cast (if a () then Std.cu else Short.scu) s
+  let coq_lift     s = Std.coq_lift (if a () then Std.cu else Short.scu) s
+  let cstr_le      s = Std.cstr_le  (if a () then Std.cu else Short.scu) s
+  let cstr_lt      s = Std.cstr_lt  (if a () then Std.cu else Short.scu) s
+
+  let coq_pattern_lifted_from_sort s t =
+    if (get()).lift_flag
+    then apps (coq_var (get()).t_lift) [s;wildcard;t]
+    else
+      let p = app (coq_var (get()).t_univ) s in
+      apps (coq_var (get()).t_cast) [wildcard;wildcard;p;wildcard;t]
+
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
-  let cstr_le      s = if a () then Std.cstr_le  s else Short.short_le   s
-  let cstr_lt      s = if a () then Std.cstr_lt  s else Short.short_lt   s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s
   let coq_footer  () = coq_footer
 end

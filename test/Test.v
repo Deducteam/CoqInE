@@ -5,7 +5,7 @@ Require Coqine.
 
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "default".
+Dedukti Set Encoding "original_cast".
 
 Require
   Identity

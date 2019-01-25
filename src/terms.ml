@@ -295,15 +295,21 @@ let rec translate_constr ?expected_type info env uenv t =
     Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
 
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
-     let n = Array.length names in
-     let env, fix_declarations =
-       try Hashtbl.find fixpoint_table rec_declaration
-       with Not_found -> lift_fix info env uenv names types bodies rec_indices in
-     let new_env =
-       Array.fold_left
-         (fun env declaration -> Environ.push_rel declaration env)
-         env fix_declarations in
-     translate_constr info new_env uenv (Constr.mkRel (n - i))
+    let n = Array.length names in
+    debug "Translating fixpoints (%i):" n;
+    for i = 0 to n - 1 do
+      debug "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
+    done;
+    let n = Array.length names in
+    let env, fix_declarations =
+      (* try Hashtbl.find fixpoint_table rec_declaration *)
+      try Hashtbl.find fixpoint_table (env, rec_declaration)
+      with Not_found -> lift_fix info env uenv names types bodies rec_indices in
+    let new_env =
+      Array.fold_left
+        (fun env declaration -> Environ.push_rel declaration env)
+        env fix_declarations in
+    translate_constr info new_env uenv (Constr.mkRel (n - i))
        
   | Case(case_info, return_type, matched, branches) ->
     debug "Test";
@@ -358,6 +364,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
 
 and translate_cast info uenv t' enva a envb b =
+  debug "Casting %a from %a to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
   if Encoding.is_cast_on () then
     let s1' = infer_translate_sort info enva uenv a in
     let s2' = infer_translate_sort info envb uenv b in
@@ -376,7 +383,7 @@ and translate_cast info uenv t' enva a envb b =
       (* TODO: should we check for useless casts (b1~ b2) ? *)
       let (x,tA),t =
         match t' with
-        | Dedukti.Lam ((x,tA),t) -> ((x,tA), t)
+        | Dedukti.Lam ((x,Some tA),t) -> ((x,tA), t)
         | _ -> (* We eta-expand the translation t' of t here *)
           let tA = translate_types info enva uenv a1 in
           (* We assume a1 and a2 are convertible.
@@ -388,7 +395,7 @@ and translate_cast info uenv t' enva a envb b =
       in
       let nenva = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x1, a1)) enva in
       let nenvb = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x2, a2)) envb in
-      Dedukti.lam (x,tA) (translate_cast info uenv t nenva b1 nenvb b2)
+      Dedukti.lam (x, tA) (translate_cast info uenv t nenva b1 nenvb b2)
     | _ -> t'
 
 (** Translate the Coq type [a] as a Dedukti type. *)
@@ -494,7 +501,7 @@ and lift_fix info env uenv names types bodies rec_indices =
   let fix_terms2 = Array.init n (fun i -> Constr.mkConst (const2.(i))) in
   let fix_terms3 = Array.init n (fun i -> Constr.mkConst (const3.(i))) in
   let fix_rules1 = Array.init n (fun i ->
-    let env, context' = translate_rel_context info (global_env) uenv (contexts.(i) @ rel_context) in
+    let env, context' = translate_rel_context info global_env uenv (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in
     let fix_term2' = translate_constr info env uenv fix_terms2.(i) in
     let ind_args' = List.map (translate_constr info env uenv) (List.map (Vars.lift 1) ind_args.(i)) in
@@ -552,7 +559,7 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules2.(i));
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules3.(i));
   done;
-  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
+  Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
   env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list

@@ -21,7 +21,16 @@ type t =
 
     cast_flag : bool;
     (** Use casts or lifted lambdas ? *)
-    
+
+    lift_flag : bool;
+    (** May use lifts or only casts ? *)
+
+    pred_univ_flag            : bool;
+    pred_prod_flag            : bool;
+    pred_lift_flag            : bool;
+    pred_cast_flag            : bool;
+    (** Predicate symbols ? *)
+
     encoding_name : string;
 
     (* Module names *)
@@ -30,16 +39,22 @@ type t =
 
     (* Encoding's symbol names *)
     t_Sort : string;
-    t_univ : string;
     t_Univ : string;
     t_Term : string;
+    t_univ : string;
+    t_prod : string;
+    t_lift : string;
+    t_cast : string;
+    t_I    : string;
   }
   
 (* Some encodings *)
-val default          : t (** Ali's encoding *)
-val readable_default : t (** Ali's encoding with short names *)
-val named_univ       : t (** Ali's encoding with named universes *)
-val polymorph        : t (** Polymorphism *)
+val original      : t (** Ali's original encoding *)
+val original_cast : t (** Ali's original encoding with cast instead of lifted lambdas *)
+val polymorph     : t (** Polymorphism implementation *)
+
+val named    : t -> t (** Encoding using named (rewritten) floating universe *)
+val readable : t -> t (** Encoding with shorter names and aliases for concrete universes *)
 
 val set : t -> unit
 (** Sets current encoding *)
@@ -48,10 +63,8 @@ val get : unit -> t
 (** Gets current encoding *)
 
 val set_encoding : string -> unit
-(** Selects a given encoding in the following list:
-    - default
-*)
-  
+(** Selects an encoding from its name *)
+
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)
   

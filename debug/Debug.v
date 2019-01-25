@@ -7,7 +7,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "default".
+Dedukti Set Encoding "named original_cast".
 
 Require Import GeoCoq.Tarski_dev.Ch02_cong.
 

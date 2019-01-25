@@ -214,18 +214,18 @@ let translate_match info env label mind_body i =
   (* match_I :
        s1 : Sort -> ... -> sr : Sort ->
        p1 : ||P1|| -> ... -> pr : ||Pr|| ->
-       
+     
        s : Sort ->
        P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
             ||I s1 ... sr p1 ... pr x1 ... xn|| ->
             type s) ->
-       
+     
        case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
                   term s (P |u11| ... |u1n| (|c1 s1 ... sr p1 ... pr y11 ... y1k1|))) -> ...
        ... ->
        case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
                   term s (P |uj1| ... |ujn| (|c1 s1 ... sr p1 ... pr yj1 ... yjkj|))) -> ...
-                  
+     
        |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
        x : ||I s1 ... sr p1 ... pr x1 ... xn|| ->
        Term s (P |x1| ... |xn| x)
@@ -328,14 +328,15 @@ let translate_match info env label mind_body i =
   let univ_poly_context' =
     if Encoding.is_polymorphism_on ()
     then List.map (fun x -> (x, T.coq_Sort())) univ_poly_params else [] in
+  let return_sort_binding = (return_sort_name', T.coq_Sort()) in
+  let return_type_type = Dedukti.pies
+      arity_real_context'
+      (Dedukti.arr ind_applied' (T.coq_U return_sort')) in
+  let return_type_binding = (return_type_name', return_type_type) in
   let common_context' =
-    (return_sort_name', T.coq_Sort()) ::
+    return_sort_binding ::
     params_context' @   (* Shouldn't this be first ? *)
-    (return_type_name',
-     Dedukti.pies
-       arity_real_context'
-       (Dedukti.arr ind_applied' (T.coq_U return_sort'))
-    ) ::
+    return_type_binding ::
     cases_context' in
   let match_function_context' =
     univ_poly_context' @
@@ -374,4 +375,43 @@ let translate_match info env label mind_body i =
       ) in
   
   (* Printing out the match rewrite rules. *)
-  List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite (Array.to_list case_rules))
+  List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite (Array.to_list case_rules));
+
+  
+  (* Translate the rule for lift elimination in match polymorphism *)
+  (* match_I s1 ... sr p1  ... pr _ A1 ... An (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
+     -->
+     match_I s1 ... sr p1  ... pr s A1 ... An (x1 => ... => xn => x => P x1 ... xn x)
+  *)
+  let new_sort_name = "s'" in (* TODO: change that to ensure no conflicts *)
+  let new_sort = Dedukti.var new_sort_name in
+  let local_ctxt_names = List.map fst arity_real_context' @ ["x"]  in
+  let local_ctxt       = List.map Dedukti.var local_ctxt_names in
+  let pattern = T.coq_pattern_lifted_from_sort new_sort
+      (Dedukti.apps return_type_var' local_ctxt) in
+  let pattern_match =
+    Dedukti.apps match_function_var'
+      (List.map Dedukti.var univ_poly_params @
+       List.map Dedukti.var template_params @
+       Dedukti.var return_sort_name' ::
+       List.map (fun x -> Dedukti.var (fst x)) params_context' @
+       [Dedukti.ulams local_ctxt_names pattern]) in
+  let lhs_match =
+    Dedukti.apps match_function_var'
+      (List.map Dedukti.var univ_poly_params @
+       List.map Dedukti.var template_params @
+       Dedukti.var new_sort_name ::
+       List.map (fun x -> Dedukti.var (fst x)) params_context' @
+       [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
+  
+  let context =
+    univ_poly_context' @
+    template_poly_context' @
+    return_sort_binding ::
+    params_context' @
+    [return_type_binding; (new_sort_name, T.coq_Sort())] in
+  
+  (* Printing out the rule for lift elimination *)
+  Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
+  
+
