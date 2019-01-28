@@ -51,7 +51,7 @@ CoqMakefile: Make
 .PHONY: test
 test: plugin
 	make -C $(TESTDIR) clean
-	sh encodings/gen.sh original
+	sh encodings/gen.sh original_cast
 	cp encodings/_build/Coq.dk $(TESTDIR)/Coq.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"original_cast\"\.' $(TESTDIR)/main.v
 	make -C $(TESTDIR)
