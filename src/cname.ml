@@ -119,11 +119,6 @@ let translate_label_path labels =
 let translate_mod_bound_id mod_bound_id =
   escape (Names.MBId.to_string mod_bound_id)
 
-let dir_path_of_labels labels =
-  let identifiers = List.map Names.Label.to_id labels in
-  (* Reverse the order of ids as dirpath elements are given in reverse order. *)
-  Names.DirPath.make (List.rev identifiers)
-
 (** Translate the path corresponding to [module_path] followed by [labels]. *)
 let rec translate_module_path info env module_path labels =
   match module_path with

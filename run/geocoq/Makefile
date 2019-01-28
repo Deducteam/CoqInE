@@ -1,3 +1,5 @@
+# Generic Makefile to run Coqine
+
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
@@ -6,11 +8,12 @@ DKDEP        ?= dkdep
 VERBOSE      ?=
 
 OUTFOLDER = out
+COQINEPATH=../../src
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
 
-.PHONY: all	test compile debug generate depend check clean GeoCoq
+.PHONY: all	compile generate depend check clean
 
 .SUFFIXES: .dk .dko
 
@@ -20,19 +23,16 @@ all: compile generate depend
 	make check  # Call make again so that it include the updated depend file
 	rm CoqMakefile
 
-GeoCoq:
-	bash geocoq.sh
-
 # Compile the local [.v] files that are not part of the stdlib
-compile: GeoCoq CoqMakefile
+compile: CoqMakefile
 	make -f CoqMakefile
 
 $(OUTFOLDER):
 	mkdir $(OUTFOLDER)
 
-# Generate the [.dk] files by executing [Debug.v]
-generate : compile $(OUTFOLDER)
-	$(COQTOP) -batch -debug  -R ../src Coqine -R . Top -l Debug
+# Generate the [.dk] files by executing [main.v]
+generate: compile $(OUTFOLDER)
+	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 
 # Generate the dependencies of [.dk] files
 depend:
@@ -42,15 +42,17 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) -errors-in-snf -e -nl $<
+	$(DKCHECK) -I $(OUTFOLDER) -e -nl $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	rm -rf $(OUTFOLDER) .depend .*.aux *.vo
+	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dk *.dko GeoCoq Make
 	rm -f CoqMakefile
-	rm -f debug.out
 
 CoqMakefile: Make
-	$(COQ_MAKEFILE) -f Make > CoqMakefile
+	$(COQ_MAKEFILE) -f Make -o CoqMakefile
+
+Make: geocoq.sh
+	bash geocoq.sh
 
 -include .depend

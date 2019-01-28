@@ -17,10 +17,19 @@
 
 *.dko
 
-debug/**/*.dk
-test/**/*.dk
+run/debug/**/*.dk
+run/test/**/*.dk
+run/geocoq/**/*.dk
+
+run/debug/out
+run/test/out
+run/geocoq/out
+
+run/geocoq/GeoCoq
+run/geocoq/Make
+
+
 encodings/_build
-debug/GeoCoq
 
 # emacs tmp files
 *~

@@ -1,3 +1,5 @@
+# Generic Makefile to run Coqine
+
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
@@ -6,11 +8,12 @@ DKDEP        ?= dkdep
 VERBOSE      ?=
 
 OUTFOLDER = out
+COQINEPATH=../../src
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
 
-.PHONY:	test compile generate depend check clean
+.PHONY: all	compile generate depend check clean
 
 .SUFFIXES: .dk .dko
 
@@ -27,9 +30,9 @@ compile: CoqMakefile
 $(OUTFOLDER):
 	mkdir $(OUTFOLDER)
 
-# Generate the [.dk] files by executing [Test.v]
+# Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
-	$(COQTOP) -batch -debug -R ../src Coqine -R . Top -l Test
+	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 
 # Generate the dependencies of [.dk] files
 depend:
@@ -39,14 +42,15 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) -e -nl $<
+	$(DKCHECK) -I $(OUTFOLDER) -errors-in-snf -e -nl $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	rm -rf $(OUTFOLDER) .depend .*.aux *.vo
+	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dk *.dko
 	rm -f CoqMakefile
+	rm -f debug.out
 
 CoqMakefile: Make
-	$(COQ_MAKEFILE) -f Make > CoqMakefile
+	$(COQ_MAKEFILE) -f Make -o CoqMakefile
 
 -include .depend

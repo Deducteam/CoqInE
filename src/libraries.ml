@@ -1,6 +1,5 @@
 (** Translation of Coq libraries *)
 
-open Pp
 open Debug
 open Translator
 

@@ -1,7 +1,0 @@
-# -arg -nois
-Debuglib.v
-GeoCoq/Utils/general_tactics.v
-GeoCoq/Axioms/tarski_axioms.v
-GeoCoq/Tarski_dev/Definitions.v
-GeoCoq/Tactics/finish.v
-GeoCoq/Tarski_dev/Ch02_cong.v

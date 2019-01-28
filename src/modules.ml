@@ -1,6 +1,5 @@
 (** Translation of Coq modules *)
 
-open Pp
 open Declarations
 open Debug
 open Info

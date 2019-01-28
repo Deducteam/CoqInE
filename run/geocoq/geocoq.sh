@@ -2,7 +2,7 @@ GEOCOQ_DIR=/home/gferey/git/GeoCoq
 
 CURDIR=`dirname $0`
 
-GEOCOQ_FILES=(
+GEOCOQ_FILES2=(
 Utils/general_tactics.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
@@ -112,8 +112,119 @@ Tarski_dev/Annexes/quadrilaterals.v
 Meta_theory/Parallel_postulates/parallel_postulates.v
 )
 
+
+GEOCOQ_FILES=(
+Utils/general_tactics.v
+Tactics/finish.v
+Utils/arity.v
+Utils/all_equiv.v
+Axioms/tarski_axioms.v
+Tarski_dev/Definitions.v
+Axioms/parallel_postulates.v
+Axioms/continuity_axioms.v
+Tarski_dev/Ch02_cong.v
+Meta_theory/Parallel_postulates/playfair_existential_playfair.v
+Tarski_dev/Ch03_bet.v
+Tarski_dev/Ch04_cong_bet.v
+Tactics/Coinc/tactics_axioms.v
+Tarski_dev/Ch04_col.v
+Utils/sets.v
+Tactics/Coinc/Permutations.v
+Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
+Tactics/Coinc/CoincR.v
+Tactics/Coinc/ColR.v
+Tarski_dev/Ch05_bet_le.v
+Tarski_dev/Ch06_out_lines.v
+Meta_theory/Parallel_postulates/tarski_s_euclid_remove_degenerated_cases.v
+Meta_theory/Models/tarski_to_coinc_theory_for_col.v
+Tarski_dev/Annexes/coplanar.v
+Meta_theory/Models/tarski_to_col_theory.v
+Tarski_dev/Tactics/ColR.v
+Tarski_dev/Tactics/CoincR_for_col.v
+Tarski_dev/Ch07_midpoint.v
+Tarski_dev/Ch08_orthogonality.v
+Tarski_dev/Ch09_plane.v
+Meta_theory/Continuity/grad.v
+Meta_theory/Models/tarski_to_coinc_theory_for_cop.v
+Meta_theory/Dimension_axioms/upper_dim_2.v
+Tarski_dev/Tactics/CoincR_for_cop.v
+Tarski_dev/Ch10_line_reflexivity.v
+Tarski_dev/Ch10_line_reflexivity_2.v
+Tarski_dev/Ch11_angles.v
+Tarski_dev/Annexes/perp_bisect.v
+Meta_theory/Parallel_postulates/par_perp_perp_playfair.v
+Meta_theory/Parallel_postulates/thales_converse_postulate_weak_triangle_circumscription_principle.v
+Tarski_dev/Ch12_parallel.v
+Tarski_dev/Annexes/suma.v
+Tarski_dev/Ch13_1.v
+Meta_theory/Parallel_postulates/SPP_tarski.v
+Meta_theory/Parallel_postulates/midpoint_playfair.v
+Meta_theory/Parallel_postulates/playfair_alternate_interior_angles.v
+Meta_theory/Parallel_postulates/playfair_bis_playfair.v
+Meta_theory/Parallel_postulates/proclus_bis_proclus.v
+Meta_theory/Parallel_postulates/weak_inverse_projection_postulate_weak_tarski_s_parallel_postulate.v
+Meta_theory/Parallel_postulates/alternate_interior_angles_proclus.v
+Meta_theory/Parallel_postulates/original_euclid_original_spp.v
+Meta_theory/Parallel_postulates/par_perp_2_par_par_perp_perp.v
+Meta_theory/Parallel_postulates/TCP_tarski.v
+Meta_theory/Parallel_postulates/alternate_interior_angles_triangle.v
+Meta_theory/Parallel_postulates/bachmann_s_lotschnittaxiom_weak_inverse_projection_postulate.v
+Meta_theory/Parallel_postulates/bachmann_s_lotschnittaxiom_weak_triangle_circumscription_principle.v
+Meta_theory/Parallel_postulates/SPP_ID.v
+Meta_theory/Parallel_postulates/euclid_5_original_euclid.v
+Meta_theory/Parallel_postulates/par_perp_perp_TCP.v
+Meta_theory/Parallel_postulates/proclus_SPP.v
+Meta_theory/Parallel_postulates/tarski_euclid.v
+Meta_theory/Parallel_postulates/par_perp_perp_par_perp_2_par.v
+Meta_theory/Parallel_postulates/par_trans_playfair.v
+Meta_theory/Parallel_postulates/playfair_par_trans.v
+Meta_theory/Parallel_postulates/tarski_playfair.v
+Meta_theory/Parallel_postulates/weak_inverse_projection_postulate_bachmann_s_lotschnittaxiom.v
+Meta_theory/Parallel_postulates/weak_tarski_s_parallel_postulate_weak_inverse_projection_postulate.v
+Tarski_dev/Annexes/quadrilaterals.v
+Meta_theory/Parallel_postulates/par_trans_NID.v
+Tarski_dev/Annexes/saccheri.v
+Meta_theory/Parallel_postulates/original_spp_inverse_projection_postulate.v
+Meta_theory/Parallel_postulates/consecutive_interior_angles_alternate_interior_angles.v
+Meta_theory/Parallel_postulates/playfair_midpoint.v
+Meta_theory/Parallel_postulates/alternate_interior_angles_consecutive_interior_angles.v
+Meta_theory/Parallel_postulates/triangle_playfair_bis.v
+Meta_theory/Parallel_postulates/alternate_interior_angles_playfair_bis.v
+Meta_theory/Parallel_postulates/bachmann_s_lotschnittaxiom_legendre_s_parallel_postulate.v
+Meta_theory/Parallel_postulates/inverse_projection_postulate_proclus_bis.v
+Meta_theory/Parallel_postulates/weak_triangle_circumscription_principle_bachmann_s_lotschnittaxiom.v
+Meta_theory/Parallel_postulates/proclus_aristotle.v
+Meta_theory/Continuity/aristotle.v
+Meta_theory/Parallel_postulates/rectangle_existence_rah.v
+Meta_theory/Parallel_postulates/rah_posidonius_postulate.v
+Meta_theory/Continuity/archimedes.v
+Meta_theory/Parallel_postulates/thales_converse_postulate_thales_existence.v
+Meta_theory/Parallel_postulates/rah_triangle.v
+Meta_theory/Parallel_postulates/rah_rectangle_principle.v
+Meta_theory/Parallel_postulates/existential_playfair_rah.v
+Meta_theory/Parallel_postulates/existential_saccheri_rah.v
+Meta_theory/Parallel_postulates/existential_triangle_rah.v
+Meta_theory/Parallel_postulates/playfair_universal_posidonius_postulate.v
+Meta_theory/Parallel_postulates/triangle_existential_triangle.v
+Meta_theory/Parallel_postulates/rah_thales_postulate.v
+Meta_theory/Parallel_postulates/thales_postulate_thales_converse_postulate.v
+Tarski_dev/Annexes/defect.v
+Meta_theory/Parallel_postulates/posidonius_postulate_rah.v
+Meta_theory/Parallel_postulates/rah_existential_saccheri.v
+Meta_theory/Parallel_postulates/rah_similar.v
+Meta_theory/Parallel_postulates/rectangle_principle_rectangle_existence.v
+Meta_theory/Parallel_postulates/similar_rah.v
+Meta_theory/Parallel_postulates/thales_existence_rah.v
+Meta_theory/Continuity/angle_archimedes.v
+Meta_theory/Parallel_postulates/universal_posidonius_postulate_par_perp_perp.v
+Meta_theory/Parallel_postulates/legendre.v
+Meta_theory/Parallel_postulates/parallel_postulates.v
+Meta_theory/Parallel_postulates/szmielew.v
+)
+
 # Remove previous GeoCoq dependencies
-sed -i '/^GeoCoq/d' Make
+rm -f $CURDIR/Make
+echo "import.v" >> $CURDIR/Make
 
 rm -rf $CURDIR/GeoCoq
 mkdir  $CURDIR/GeoCoq

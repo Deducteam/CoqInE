@@ -187,18 +187,23 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
   match mip.mind_arity with
   | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
   | TemplateArity ar ->
-    let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
-    let ctx = List.rev mip.mind_arity_ctxt in
-    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
-    
     let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
     if Encoding.is_templ_polymorphism_on () then
-      Universes.subst_univs_constr subst type_c,
-      List.map
-        (Tsorts.translate_universe uenv)
-        (List.map safe_subst
-           (Utils.filter_some ar.template_param_levels))
-    else type_c, []
+      begin
+        let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
+        let ctx = List.rev mip.mind_arity_ctxt in
+        let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+        Universes.subst_univs_constr subst type_c,
+        List.map
+          (Tsorts.translate_universe uenv)
+          (List.map safe_subst
+             (Utils.filter_some ar.template_param_levels))
+      end
+    else
+      begin
+        debug "Inferring Templ Poly: %a" pp_coq_term type_c;
+        (type_c, [])
+      end
   
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
@@ -581,5 +586,7 @@ and translate_rel_context info env uenv context =
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)
 
+(** Translating Constrs as Dedukti patterns *)
 let translate_args info env uenv ts =
+  (* TODO: improve this to have patterns *)
   List.map (translate_constr info env uenv) ts

@@ -55,3 +55,4 @@ val translate_rel_context :
 
 val translate_args :
   Info.info -> Environ.env -> Info.env -> Constr.t list -> Dedukti.term list
+(** Translating Constrs as Dedukti patterns *)
