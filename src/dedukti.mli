@@ -12,6 +12,8 @@ type term =
   | App of term * term
   | Dot of term
   | Cmt of string * term
+  | Bracket of term
+  | Wildcard
 
 type instruction =
   | EmptyLine
@@ -23,7 +25,6 @@ type instruction =
   | Rewrite of (var * term) list * term * term
 
 val var : var -> term
-val wildcard : term
 val arr : term -> term -> term
 val pie : var * term -> term -> term
 val lam : var * term -> term -> term
@@ -31,6 +32,8 @@ val ulam : var -> term -> term
 val app : term -> term -> term
 val dot : term -> term
 val cmt : string -> term -> term
+val wildcard : term
+val bracket : term -> term
 val vars : var list -> term list
 val arrs : term list -> term -> term
 val pies : (var * term) list -> term -> term

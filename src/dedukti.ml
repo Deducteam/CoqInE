@@ -10,6 +10,8 @@ type term =
   | App of term * term
   | Dot of term (* Dot patterns *)
   | Cmt of string * term (* Comment annotations *)
+  | Bracket of term
+  | Wildcard
 
 type instruction =
   | EmptyLine
@@ -21,8 +23,6 @@ type instruction =
   | Rewrite of (var * term) list * term * term
 
 let var x = Var(x)
-
-let wildcard = var "_"
 
 let arr a b = Pie(("", a), b)
 
@@ -37,6 +37,10 @@ let app a b = App(a, b)
 let dot a = Dot(a)
 
 let cmt s a = Cmt(s, a)
+
+let wildcard = Wildcard
+
+let bracket t = Bracket t
 
 let vars xs = List.map var xs
 
@@ -95,6 +99,8 @@ and print_atomic out term =
   | Var(x)    -> Format.fprintf out "%a" print_var x
   | Dot(a)    -> Format.fprintf out "{%a}" print_term a
   | Cmt(s, a) -> Format.fprintf out "(; %s ;) (%a)" s print_term a
+  | Bracket(t)-> Format.fprintf out "{%a}" print_term t
+  | Wildcard  -> Format.fprintf out "_"
   | _         -> Format.fprintf out "(%a)" print_term term
 
 and print_binding out (v, ty) =

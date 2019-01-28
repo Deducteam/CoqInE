@@ -7,10 +7,15 @@ Require Import Coq.Init.Logic.
 Require Import Coq.Init.Datatypes.
 Require Import Coq.Init.Peano.
 
-Definition G : Type -> Type := fun x => x.
 
-Inductive F : Type -> Type :=
-  | cons : forall A : Type, F (G A).
+Inductive iter (A : Type) (f : A -> Type) : Type -> Type :=
+  | nil  : forall a : A, iter A f (f a).
+
+Definition g (A:Type) : A -> A := fun x => x.
+
+Inductive eq_g (A:Type) (a:A) : A -> Prop :=
+| refl_g : eq_g A a (g A a).
+
 
 Inductive option (A : Type) : Type :=
   Some : forall _ : A, option A | None : option A.

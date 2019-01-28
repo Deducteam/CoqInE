@@ -212,23 +212,24 @@ let translate_match info env label mind_body i =
   
   (* Translate the match function. *)
   (* match_I :
-       s1 : Sort -> ... -> sr : Sort ->
-       p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+     s : Sort ->
      
-       s : Sort ->
-       P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
-            ||I s1 ... sr p1 ... pr x1 ... xn|| ->
-            type s) ->
+     s1 : Sort -> ... -> sr : Sort ->
+     p1 : ||P1|| -> ... -> pr : ||Pr|| ->
      
-       case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
-                  term s (P |u11| ... |u1n| (|c1 s1 ... sr p1 ... pr y11 ... y1k1|))) -> ...
-       ... ->
-       case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
-                  term s (P |uj1| ... |ujn| (|c1 s1 ... sr p1 ... pr yj1 ... yjkj|))) -> ...
+     P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
+          ||I s1 ... sr p1 ... pr x1 ... xn|| ->
+          type s) ->
      
-       |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
-       x : ||I s1 ... sr p1 ... pr x1 ... xn|| ->
-       Term s (P |x1| ... |xn| x)
+     case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
+                term s (P |u11| ... |u1n| (|c1 s1 ... sr p1 ... pr y11 ... y1k1|))) -> ...
+     ... ->
+     case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
+                term s (P |uj1| ... |ujn| (|c1 s1 ... sr p1 ... pr yj1 ... yjkj|))) -> ...
+     
+     |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
+     x : ||I s1 ... sr p1 ... pr x1 ... xn|| ->
+     Term s (P |x1| ... |xn| x)
    *)
   let params_context = mind_body.mind_params_ctxt in
   let arity_real_context, _ = Utils.list_chop ind_body.mind_nrealdecls arity_context in
@@ -350,6 +351,26 @@ let translate_match info env label mind_body i =
        matched_var') in
 
   (* Printing out the match definition. *)
+  (* match_I :
+     s : Sort ->
+     
+     s1 : Sort -> ... -> sr : Sort ->
+     p1 : ||P1|| -> ... -> pr : ||Pr|| ->
+     
+     P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
+          ||I s1 ... sr p1 ... pr x1 ... xn|| ->
+          type s) ->
+     
+     case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
+                term s (P |u11| ... |u1n| (|c1 s1 ... sr p1 ... pr y11 ... y1k1|))) -> ...
+     ... ->
+     case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
+                term s (P |uj1| ... |ujn| (|c1 s1 ... sr p1 ... pr yj1 ... yjkj|))) -> ...
+     
+     |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
+     x : ||I s1 ... sr p1 ... pr x1 ... xn|| ->
+     Term s (P |x1| ... |xn| x)
+   *)
   Dedukti.print info.fmt
     (Dedukti.declaration true match_function_name'
        (Dedukti.pies match_function_context' match_function_type'));
@@ -362,26 +383,43 @@ let translate_match info env label mind_body i =
        params' @
        return_type_var' ::
        Array.to_list cases') in
-  let case_rules = Array.init n_cons
-      (fun j ->
-         let case_rule_context' =
-           univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
-         let case_rule_left' =
-           Dedukti.apps
-             match_function_applied'
-             (cons_ind_real_args'.(j) @ [cons_applieds'.(j)]) in
-         let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
-         (case_rule_context', case_rule_left', case_rule_right')
-      ) in
   
   (* Printing out the match rewrite rules. *)
-  List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite (Array.to_list case_rules));
-
-  
+  (* match_I :
+       s
+       s1 ... sr 
+       p1 ... pr
+       P
+       case_c1
+       ...
+       case_cj
+       a1 .. an
+       (ci s1 ... sr p1 ... pr y11 ... y1k1)
+       -->
+       case_ci y11 ... y1k1
+  *)
+  for j = 0 to n_cons-1 do
+    let case_rule_context' =
+      univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
+    (* Note: a1 ... an are patterns in coq (expected return type parameters)
+       They should however be translated as brackets patterns. Well-typedness of
+       redices matching this left-hand side ensures the terms matched to a1 ... an
+       always have the expected shape.
+    *)
+    let brackets = List.map Dedukti.bracket cons_ind_real_args'.(j) in
+    let case_rule_left' =
+      Dedukti.apps
+        match_function_applied'
+        (brackets @ [cons_applieds'.(j)]) in
+    let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
+    let rw_rule = Dedukti.rewrite (case_rule_context', case_rule_left', case_rule_right') in
+    Dedukti.print info.fmt rw_rule
+  done;
+    
   (* Translate the rule for lift elimination in match polymorphism *)
-  (* match_I s1 ... sr p1  ... pr _ A1 ... An (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
+  (* match_I s1 ... sr p1  ... pr _ a1 ... an (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
      -->
-     match_I s1 ... sr p1  ... pr s A1 ... An (x1 => ... => xn => x => P x1 ... xn x)
+     match_I s1 ... sr p1  ... pr s a1 ... an (x1 => ... => xn => x => P x1 ... xn x)
   *)
   let new_sort_name = "s'" in (* TODO: change that to ensure no conflicts *)
   let new_sort = Dedukti.var new_sort_name in
