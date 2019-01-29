@@ -33,16 +33,20 @@ cd CoqInE
 make
 ```
 
-Adding the following lines to your `~\.coqrc` file can help solve some issues (`/path/to/coqine` should be replaced with the actual path to your CoqInE repository folder).
+Adding the following line to your `~\.coqrc` file can help solve some issues (`/path/to/coqine` should be replaced with the actual path to your CoqInE repository folder).
 ```
-Add Rec LoadPath "/path/to/coqine/master/dedukti/" as Coqine.
 Add ML Path "/path/to/coqine/master/src".
 ```
 
 
 ### Using CoqInE (TODO)
 
-Generated `.dk` files are in the `test` folder.
+Examples of library translations are located in the `run` folder.
+* To build debug files: `make debug`
+* To build test files: `make test`
+* To build part of the [GeoCoq](https://github.com/GeoCoq/GeoCoq) library: `make geocoq`
+
+Generated `.dk` files are in the corresponding `out` folder.
 
 
 #### Documentation

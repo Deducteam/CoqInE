@@ -12,9 +12,20 @@ TESTDIR=$(RUNDIR)/test
 GEOCOQDIR=$(RUNDIR)/geocoq
 DEBUGDIR=$(RUNDIR)/debug
 
+COQ_VERSION   := $(shell $(COQTOP) -print-version)
+CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
+
 .PHONY: all plugin install uninstall clean fullclean
 
-all: .merlin plugin debug_cast
+all: check-version .merlin plugin debug_cast
+
+check-version:
+ifeq ("$(CHECK_VERSION)","")
+	$(warning "Incorrect Coq version !")
+	$(warning "Found: $(COQ_VERSION).")
+	$(warning "Expected: 8.8.x")
+	$(error "To ignore this, use:  make CHECK_VERSION=ignore")
+endif
 
 plugin: CoqMakefile
 	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
