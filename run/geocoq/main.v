@@ -7,12 +7,16 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "readable original_cast".
+Dedukti Add Debug "Coq.Classes.CRelationClasses".
+
+Dedukti Set Encoding "readable template_cast".
 
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".
 Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
 
-
 Require Import import.
+
+Require Import Tactics.Coinc.tactics_axioms.
+
 
 Dedukti Export All.

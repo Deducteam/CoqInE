@@ -116,9 +116,6 @@ let translate_constructors info env label mind_body i =
   for j = 0 to n_cons - 1 do
     let cons_name = ind_body.mind_consnames.(j) in
     let cons_type = ind_body.mind_user_lc.(j) in
-    debug "Cons_type: %a" pp_coq_type cons_type;
-    
-    
     (* Substitute the inductive types as specified in the Coq code. *)
     let cons_type = Vars.substl ind_subst cons_type in
     debug "Cons_type: %a" pp_coq_type cons_type;
@@ -359,7 +356,7 @@ let translate_match info env label mind_body i =
      
      P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
           ||I s1 ... sr p1 ... pr x1 ... xn|| ->
-          type s) ->
+          Univ s) ->
      
      case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
                 term s (P |u11| ... |u1n| (|c1 s1 ... sr p1 ... pr y11 ... y1k1|))) -> ...

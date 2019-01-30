@@ -60,6 +60,12 @@ let original_cast =
     encoding_name = "original_cast";
   }
 
+let template_cast =
+  { original_cast with
+    templ_polymorphism_flag = true; (* Template polymorphism *)
+    encoding_name = "template_cast";
+  }
+
 let polymorph =
   { original with
     polymorphism_flag         = true;
@@ -102,6 +108,7 @@ let rec get_encoding e =
   else match e with
     | "original"      -> original
     | "original_cast" -> original_cast
+    | "template_cast" -> template_cast
     | "polymorph"     -> polymorph
     | invalid_name -> failwith (Format.sprintf "Unknown encoding: %s" invalid_name)
 let set_encoding e = set (get_encoding e)

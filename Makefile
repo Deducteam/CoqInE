@@ -73,7 +73,7 @@ geocoq: plugin
 	make -C $(GEOCOQDIR) clean
 	sh encodings/gen.sh original_cast short
 	cp encodings/_build/C.dk $(GEOCOQDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original_cast\"\.' $(GEOCOQDIR)/main.v
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable template_cast\"\.' $(GEOCOQDIR)/main.v
 	make -C $(GEOCOQDIR)
 
 .PHONY: debug
@@ -110,6 +110,14 @@ debug_cast: plugin
 	sh encodings/gen.sh original_cast short
 	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
 	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original_cast\"\.' $(DEBUGDIR)/main.v
+	make -C $(DEBUGDIR)
+
+.PHONY: debug_cast
+debug_template: plugin
+	make -C $(DEBUGDIR) clean
+	sh encodings/gen.sh original_cast short
+	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable template_cast\"\.' $(DEBUGDIR)/main.v
 	make -C $(DEBUGDIR)
 
 .PHONY: debug_named

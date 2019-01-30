@@ -2,27 +2,27 @@ GEOCOQ_DIR=/home/gferey/git/GeoCoq
 
 CURDIR=`dirname $0`
 
-GEOCOQ_FILES2=(
+GEOCOQ_FILES=(
 Utils/general_tactics.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
 Tactics/finish.v
 Tarski_dev/Ch02_cong.v
-)
-OTHER_FILES=(
 Tarski_dev/Ch03_bet.v
 Tarski_dev/Ch04_cong_bet.v
 Tarski_dev/Ch04_col.v
+Tactics/Coinc/tactics_axioms.v
+)
+OTHER_FILES=(
+Utils/arity.v
+Utils/sets.v
+Tactics/Coinc/ColR.v
+Meta_theory/Models/tarski_to_col_theory.v
+Tarski_dev/Tactics/ColR.v
 Utils/all_equiv.v
 Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
-Utils/arity.v
-Tactics/Coinc/tactics_axioms.v
-Utils/sets.v
-Meta_theory/Models/tarski_to_col_theory.v
-Tactics/Coinc/ColR.v
-Tarski_dev/Tactics/ColR.v
 Tarski_dev/Ch07_midpoint.v
 Tarski_dev/Ch08_orthogonality.v
 Tarski_dev/Annexes/coplanar.v
@@ -112,8 +112,7 @@ Tarski_dev/Annexes/quadrilaterals.v
 Meta_theory/Parallel_postulates/parallel_postulates.v
 )
 
-
-GEOCOQ_FILES=(
+GEOCOQ_FILES2=(
 Utils/general_tactics.v
 Tactics/finish.v
 Utils/arity.v
@@ -224,6 +223,7 @@ Meta_theory/Parallel_postulates/szmielew.v
 
 # Remove previous GeoCoq dependencies
 rm -f $CURDIR/Make
+# echo "-args -nois" >> $CURDIR/Make
 echo "import.v" >> $CURDIR/Make
 
 rm -rf $CURDIR/GeoCoq
@@ -234,3 +234,8 @@ for i in "${GEOCOQ_FILES[@]}"; do
     cp $GEOCOQ_DIR/$i $CURDIR/GeoCoq/$i
 	echo "GeoCoq/$i" >> $CURDIR/Make
 done
+
+sed "s/\.v/\./" Make > import.v
+sed -i "s/\//\./g" import.v
+sed -i "s/GeoCoq/Require Import GeoCoq/" import.v
+sed -i "/\.Ch/!d" import.v

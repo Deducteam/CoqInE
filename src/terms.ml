@@ -276,7 +276,9 @@ let rec translate_constr ?expected_type info env uenv t =
   | Const (kn, univ_instance) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
-    if Utils.str_starts_with "fix_" name || Utils.str_starts_with "Little__fix_" name
+    if Utils.str_starts_with "fix_" name ||
+       Utils.str_starts_with "Little__fix_" name ||
+       not (Encoding.is_polymorphism_on ())
     then Dedukti.var name
     else
       let cb = Environ.lookup_constant kn env in
@@ -287,7 +289,14 @@ let rec translate_constr ?expected_type info env uenv t =
     let name = Cname.translate_inductive info env kn in
     let (mib, oib) = Inductive.lookup_mind_specif env kn in
     let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-    let res = Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance in
+    let res =
+      if Encoding.is_polymorphism_on ()
+      then (debug "Polymorphic."; Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance)
+      else if Environ.template_polymorphic_pind (kn, univ_instance) env
+           && Encoding.is_templ_polymorphism_on ()
+      then (debug "Template."; Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance)
+      else Dedukti.var name
+    in
     debug "Printing inductive: %s@@{%a} : %a" name pp_coq_inst univ_instance Dedukti.pp_term res;
     res
 
@@ -296,7 +305,9 @@ let rec translate_constr ?expected_type info env uenv t =
     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
     let (mib,oib) = Inductive.lookup_mind_specif env (Names.inductive_of_constructor kn) in
     let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-    Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
+    if Encoding.is_polymorphism_on ()
+    then Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
+    else Dedukti.var name
 
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
     let n = Array.length names in
