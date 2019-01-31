@@ -102,10 +102,10 @@ let set enc = current_encoding := enc
 let get () = !current_encoding
 let rec get_encoding e =
   if Utils.str_starts_with "readable " e
-  then readable (get_encoding (String.trim (Utils.truncate e 9)))
+  then readable (get_encoding (Utils.truncate e 9))
   else if Utils.str_starts_with "named " e
-  then named (get_encoding (String.trim (Utils.truncate e 6)))
-  else match e with
+  then named (get_encoding (Utils.truncate e 6))
+  else match String.trim e with
     | "original"      -> original
     | "original_cast" -> original_cast
     | "template_cast" -> template_cast

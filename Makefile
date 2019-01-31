@@ -67,7 +67,7 @@ run: plugin
 	sh encodings/gen.sh $(ENCODING_FLAGS)
 	make -C $(RUNDIR) clean
 	cp encodings/_build/*.dk $(RUNDIR)/
-	sed -i -e "/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"\." $(RUNDIR)/main.v
+	sed -i -e "/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"." $(RUNDIR)/main.v
 	make -C $(RUNDIR)
 
 .PHONY: test
