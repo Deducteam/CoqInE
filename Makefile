@@ -87,7 +87,7 @@ geocoq: run
 
 .PHONY: template_geocoq
 template_geocoq: ENCODING_FLAGS:=original_cast short
-template_geocoq: COQINE_FLAGS:=readable template_cast
+template_geocoq: COQINE_FLAGS:=readable original_cast
 template_geocoq: geocoq
 
 .PHONY: debug_default

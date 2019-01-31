@@ -21,7 +21,7 @@ DKOS = $(DKS:.dk=.dko)
 #	precalculated, so we need to call make twice.
 all: compile generate depend
 	make check  # Call make again so that it include the updated depend file
-	rm CoqMakefile
+#	rm CoqMakefile
 
 # Compile the local [.v] files that are not part of the stdlib
 compile: CoqMakefile

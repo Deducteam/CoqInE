@@ -3,10 +3,8 @@
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
-#DKCHECK      ?= dkcheck
-DKCHECK      ?= /home/gferey/git/dedukti/eta/dkcheck.native -eta
-#DKDEP        ?= dkdep
-DKDEP        ?= /home/gferey/git/dedukti/eta/dkdep.native
+DKCHECK      ?= dkcheck
+DKDEP        ?= dkdep
 VERBOSE      ?=
 
 OUTFOLDER = out
