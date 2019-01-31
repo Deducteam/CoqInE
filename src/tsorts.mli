@@ -1,8 +1,11 @@
 
 val add_sort_params : Dedukti.var list -> Dedukti.term -> Dedukti.term
 
-val instantiate_univ_params :
+val instantiate_poly_univ_params :
   Info.env -> Dedukti.var -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term
+
+val instantiate_template_univ_params :
+  Info.env -> Dedukti.var -> Context.Rel.Declaration.t list -> Univ.Instance.t -> Dedukti.term
 
 val set_universes : UGraph.t -> unit
 

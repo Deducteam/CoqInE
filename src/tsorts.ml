@@ -41,17 +41,29 @@ let translate_level uenv l =
         try Translator.mk_type (Hashtbl.find universe_table name)
         with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
-let instantiate_univ_params uenv name univ_ctxt univ_instance =
+let instantiate_poly_univ_params uenv name univ_ctxt univ_instance =
   let nb_params = Univ.AUContext.size univ_ctxt in
+  debug "Instantiating %i polymorphic universes %s: %a" nb_params name pp_coq_inst univ_instance;
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   let levels = Univ.Instance.to_array univ_instance in
   let levels = Array.init nb_params (fun i -> levels.(i)) in 
-  if Array.length levels > 0 then debug "Instantiating: %a" pp_coq_inst univ_instance;
   Array.fold_left
     (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
     (Dedukti.var name)
     levels
+
+let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
+  let nb_params = List.length univ_ctxt in
+  debug "Instantiating %i template universes %s: %a" nb_params name pp_coq_inst univ_instance;
+  let levels = Univ.Instance.to_array univ_instance in
+  let levels = Array.init nb_params (fun i -> levels.(i)) in 
+  Array.fold_left
+    (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+    (Dedukti.var name)
+    levels
+
+
 
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)

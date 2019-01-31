@@ -280,34 +280,70 @@ let rec translate_constr ?expected_type info env uenv t =
        Utils.str_starts_with "Little__fix_" name ||
        not (Encoding.is_polymorphism_on ())
     then Dedukti.var name
-    else
+    else if Encoding.is_polymorphism_on () &&
+         Environ.polymorphic_constant kn env
+    then
       let cb = Environ.lookup_constant kn env in
       let univ_ctxt = Declareops.constant_polymorphic_context cb in
-      Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
+      Tsorts.instantiate_poly_univ_params uenv name univ_ctxt univ_instance
+    else Dedukti.var name
 
   | Ind (kn, univ_instance) ->
     let name = Cname.translate_inductive info env kn in
     let (mib, oib) = Inductive.lookup_mind_specif env kn in
-    let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-    let res =
-      if Encoding.is_polymorphism_on ()
-      then (debug "Polymorphic."; Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance)
-      else if Environ.template_polymorphic_pind (kn, univ_instance) env
-           && Encoding.is_templ_polymorphism_on ()
-      then (debug "Template."; Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance)
-      else Dedukti.var name
+    let indtype, res =
+      if Encoding.is_polymorphism_on () &&
+         Environ.polymorphic_ind kn env
+      then
+        begin
+          let univ_ctxt = Declareops.inductive_polymorphic_context mib in
+          "polymorphic",
+          Tsorts.instantiate_poly_univ_params uenv name univ_ctxt univ_instance
+        end
+      else if Encoding.is_templ_polymorphism_on () &&
+              Environ.template_polymorphic_ind kn env
+      then
+        begin
+          let univ_ctx = List.rev oib.mind_arity_ctxt in
+          "template",
+          Tsorts.instantiate_template_univ_params uenv name univ_ctx univ_instance
+        end
+      else "", Dedukti.var name
     in
-    debug "Printing inductive: %s@@{%a} : %a" name pp_coq_inst univ_instance Dedukti.pp_term res;
+    debug "Printing %s inductive type: %s@@{%a} : %a" indtype name
+      pp_coq_inst univ_instance
+      Dedukti.pp_term res;
     res
 
   | Construct (kn, univ_instance) ->
     let name = Cname.translate_constructor info env kn in
     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
-    let (mib,oib) = Inductive.lookup_mind_specif env (Names.inductive_of_constructor kn) in
-    let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-    if Encoding.is_polymorphism_on ()
-    then Tsorts.instantiate_univ_params uenv name univ_ctxt univ_instance
-    else Dedukti.var name
+    let ind = Names.inductive_of_constructor kn in
+    let (mib,oib) = Inductive.lookup_mind_specif env ind in
+    
+    let indtype, res =
+      if Encoding.is_polymorphism_on () &&
+         Environ.polymorphic_ind ind env
+      then
+        begin
+          let univ_ctxt = Declareops.inductive_polymorphic_context mib in
+          "polymorphic",
+          Tsorts.instantiate_poly_univ_params uenv name univ_ctxt univ_instance
+        end
+      else if Encoding.is_templ_polymorphism_on () &&
+              Environ.template_polymorphic_ind ind env
+      then
+        begin
+          let univ_ctx = List.rev oib.mind_arity_ctxt in
+          "template",
+          Tsorts.instantiate_template_univ_params uenv name univ_ctx univ_instance
+        end
+      else "", Dedukti.var name
+    in
+    debug "Printing %s inductive constructor: %s@@{%a} : %a" indtype name
+      pp_coq_inst univ_instance
+      Dedukti.pp_term res;
+    res
 
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
     let n = Array.length names in

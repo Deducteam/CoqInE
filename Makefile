@@ -17,7 +17,7 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
 .PHONY: all plugin install uninstall clean fullclean
 
-all: check-version .merlin plugin debug_cast
+all: check-version .merlin plugin debug_template
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
