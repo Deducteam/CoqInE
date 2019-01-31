@@ -9,7 +9,7 @@ Dedukti Set Destination "out".
 
 Dedukti Add Debug "Coq.Classes.CRelationClasses".
 
-Dedukti Set Encoding "readable template_cast".
+Dedukti Set Encoding "original_cast".
 
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".
 Dedukti Filter Out "Coq.Init.Logic.rew_ex2".

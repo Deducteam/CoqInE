@@ -59,79 +59,73 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
+ENCODING_FLAGS ?= original_cast # Configuration for the encoding generation
+COQINE_FLAGS   ?= original_cast # Configuration for the translator
+
+.PHONY: run
+run: plugin
+	sh encodings/gen.sh $(ENCODING_FLAGS)
+	make -C $(RUNDIR) clean
+	cp encodings/_build/*.dk $(RUNDIR)/
+	sed -i -e '/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"\.' $(RUNDIR)/main.v
+	make -C $(RUNDIR)
+
 .PHONY: test
-test: plugin
-	make -C $(TESTDIR) clean
-	sh encodings/gen.sh original_cast
-	cp encodings/_build/Coq.dk $(TESTDIR)/Coq.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"original_cast\"\.' $(TESTDIR)/main.v
-	make -C $(TESTDIR)
+test: RUNDIR:=$(TESTDIR)
+test: run
+
+.PHONY: debug
+debug: RUNDIR:=$(DEBUGDIR)
+debug: run
 
 # This target requires geocoq. Set correct path in run/geocoq/Makefile.
 .PHONY: geocoq
-geocoq: plugin
-	make -C $(GEOCOQDIR) clean
-	sh encodings/gen.sh original_cast short
-	cp encodings/_build/C.dk $(GEOCOQDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable template_cast\"\.' $(GEOCOQDIR)/main.v
-	make -C $(GEOCOQDIR)
+geocoq: RUNDIR:=$(GEOCOQDIR)
+geocoq: run
 
-.PHONY: debug
-debug: debug_cast
+
+
+.PHONY: template_geocoq
+template_geocoq: ENCODING_FLAGS:=original_cast short
+template_geocoq: COQINE_FLAGS:=readable template_cast
+template_geocoq: geocoq
 
 .PHONY: debug_default
-debug_default: FLAGS:=original
-debug_default: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original
-	cp encodings/_build/Coq.dk $(DEBUGDIR)/Coq.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"original\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+debug_default: ENCODING_FLAGS:=original
+debug_default: COQINE_FLAGS:=original
+debug_default: debug
 
 .PHONY: debug_readable
-debug_readable: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original short
-	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+debug_readable: ENCODING_FLAGS:=original short
+debug_readable: COQINE_FLAGS:=readable original
+debug_readable: debug
 
 .PHONY: debug_named_cast
-debug_named_cast: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original_cast
-	cp encodings/_build/Coq.dk $(DEBUGDIR)/Coq.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"named original_cast\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+debug_named_cast: ENCODING_FLAGS:=original_cast
+debug_named_cast: COQINE_FLAGS:=named original_cast
+debug_named_cast: debug
 
 .PHONY: debug_cast
-debug_cast: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original_cast short
-	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable original_cast\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+debug_cast: ENCODING_FLAGS:=original_cast short
+debug_cast: COQINE_FLAGS:=readable original_cast
+debug_cast: debug
 
-.PHONY: debug_cast
-debug_template: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original_cast short
-	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable template_cast\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+.PHONY: debug_template
+debug_template: ENCODING_FLAGS:=original_cast short
+debug_template: COQINE_FLAGS:=readable template_cast
+debug_template: debug
 
 .PHONY: debug_named
-debug_named: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh original
-	cp encodings/_build/Coq.dk $(DEBUGDIR)/Coq.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"named original\"\.' $(DEBUGDIR)/main.v 
-	make -C $(DEBUGDIR)
+debug_named: ENCODING_FLAGS:=original
+debug_named: COQINE_FLAGS:=named original
+debug_named: debug
+
+.PHONY: debug_named
+debug_named: ENCODING_FLAGS:=original
+debug_named: COQINE_FLAGS:=named original
+debug_named: debug
 
 .PHONY: debug_poly
-debug_poly: plugin
-	make -C $(DEBUGDIR) clean
-	sh encodings/gen.sh constructors short
-	cp encodings/_build/C.dk $(DEBUGDIR)/C.dk
-	sed -i -e '/Encoding/c\Dedukti Set Encoding \"readable polymorph\"\.' $(DEBUGDIR)/main.v
-	make -C $(DEBUGDIR)
+debug_poly: ENCODING_FLAGS:=constructors short
+debug_poly: COQINE_FLAGS:=readable polymorph
+debug_poly: debug
