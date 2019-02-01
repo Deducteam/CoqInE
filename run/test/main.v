@@ -7,6 +7,5 @@ Dedukti Set Destination "out".
 
 Dedukti Set Encoding "original_cast ".
 
-Require Import import.
 
 Dedukti Export All.

@@ -1,5 +1,6 @@
 
-Require
+Require Import
+  Test.Debuglib
   Test.Identity
 (*
   Test.Polymorph

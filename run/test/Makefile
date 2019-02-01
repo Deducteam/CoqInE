@@ -33,6 +33,10 @@ $(OUTFOLDER):
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
 	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	rm $(OUTFOLDER)/Coq__Init__Specif.dk
+	rm $(OUTFOLDER)/Coq__Init__Tactics.dk
+	rm $(OUTFOLDER)/Coq__Init__Peano.dk
+	rm $(OUTFOLDER)/Coq__Init__Nat.dk
 
 # Generate the dependencies of [.dk] files
 depend:
