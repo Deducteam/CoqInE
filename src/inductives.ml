@@ -31,13 +31,38 @@ let dest_ind_univ universes =
 
 
 
+let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl with
+  | Context.Rel.Declaration.LocalDef _ -> None
+  | Context.Rel.Declaration.LocalAssum (name, tp) ->
+    let rec aux acc t = match Constr.kind t with
+      | Term.Prod(x,a,t) -> aux (Cname.translate_name x::acc) t
+      | Term.Sort (Sorts.Type u) ->
+        (match Univ.Universe.level u with
+         | None -> None
+         | Some lvl ->
+           let lvl_name = Univ.Level.to_string lvl in
+           if Info.is_template_polymorphic uenv lvl_name
+           then Some (List.rev acc, lvl_name)
+           else None
+        )
+      | _ -> None
+    in
+    aux [] tp
+
+
 (** An inductive definition is organised into:
     - [mutual_inductive_body] : a block of (co)inductive type definitions,
       containing a context of common parameter and list of [inductive_body]
     - [inductive_body] : a single inductive type definition,
       containing a name, an arity, and a list of constructor names and types **)
 
-(** Translate the i-th inductive type in [mind_body]. *)
+(** Translate the i-th inductive type in [mind_body].
+    I : s1 : Sort -> ... -> sr : Sort ->
+        p1 : ||P1|| ->
+        ... ->
+        pr : ||Pr|| ->
+        x1 : A1 -> ... -> xn : An -> s
+*)
 let translate_inductive info env label mind_body i =
   (* An inductive definition is organised into:
      - [mutual_inductive_body] : a block of (co)inductive type definitions,
@@ -54,7 +79,7 @@ let translate_inductive info env label mind_body i =
   let name' = Cname.translate_element_name info env (Names.Label.of_id name) in
   debug "--- %s ---" name';
   debug "%a" pp_coq_ctxt arity_context;
-
+  
   let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
   let (template_map, arity_sort) = dest_ind_body ind_body in
   let template_params = List.map snd template_map in
@@ -63,28 +88,91 @@ let translate_inductive info env label mind_body i =
   let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
   
   debug "Translate the regular inductive type.";
-  (* I : ||p1 : P1 -> ... -> pr : Pr -> x1 : A1 -> ... -> xn : An -> s|| *)
+  (*  I : s1 : Sort -> ... -> sr : Sort ->
+          p1 : ||P1|| ->
+          ... ->
+          pr : ||Pr|| ->
+          a1 : A1 -> ... -> an : An -> s
+  *)
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort arity_sort) arity_context in
+  debug "Arity context: %a" pp_coq_ctxt arity_context;
   let arity' = Terms.translate_types info env uenv arity in
   let arity' = Tsorts.add_sort_params template_params arity' in
   let arity' = Tsorts.add_sort_params univ_poly_params arity' in
   debug "Arity sort: %a" pp_coq_type (Constr.mkSort arity_sort);
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
-  Dedukti.print info.fmt (Dedukti.declaration false name' arity')
+  (* Printing out the type declaration. *)
+  Dedukti.print info.fmt (Dedukti.declaration false name' arity');
+
+  let print_param_lift_elim decl =
+    (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
+    (* I s1 ... si' ... sr
+         p1  ... (x1 => ... => xk => lift _ (u si) (pj x1 ... xk)) ... pr
+         a1 ...  ... an
+       -->
+       lift s(s1 ... si ... sr) s(s1 ... si' ... sr)
+         (I s1 ... si ... sr
+            p1  ... (x1 => ... => xk => pj x1 ... xk) ... pr
+            a1 ... an)
+    *)
+    match is_template_parameter uenv decl with
+    | None -> () (* When parameter in not template polymorphic: no rule *)
+    | Some (locals, template_var) ->
+      begin
+        let inductive' = Dedukti.var name' in
+        let new_sort = template_var ^ "'" in
+        let applied_param = 
+          Dedukti.apps (decl) (List.map Dedukti.var locals) in
+        let lifted_param_pat = Dedukti.ulams locals
+            (T.coq_pattern_lifted_from_sort (Dedukti.var new_sort) applied_param) in
+        let replace_pat s =
+          if not true then s else
+            begin
+            end
+        in
+        let arity_pat = List.map
+          
+        in
+        let pattern_match =
+          Dedukti.apps inductive'
+            (List.map Dedukti.var univ_poly_params @
+             List.map Dedukti.var template_params @
+             params_pat @
+             [lifted_param_pat]) in
+        let lifted_param_lhs = Dedukti.ulams locals decl in
+        let lhs_match =
+          Dedukti.apps match_function_var'
+            (List.map Dedukti.var univ_poly_params @
+             List.map Dedukti.var template_params @
+             List.map (fun x -> Dedukti.var (fst x)) params_context' @
+             [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
+        
+        let context =
+          univ_poly_context' @
+          template_poly_context' @
+          return_sort_binding ::
+          params_context' @
+          [return_type_binding; (new_sort_name, T.coq_Sort())] in
+        
+        (* Printing out the rule for lift elimination *)
+        Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
+      end
+  in
+  List.map print_param_lift_elim arity_context
+  
 
 
 
 (** Translate the constructors of the i-th inductive type in [mind_body].
-    cj : ( s1:Sort -> |p1| : Type(s1)   |   |p1| : ||P1||             ) ->
-         ( s2:Sort -> |p2| : Type(s2)   |   |p1| : ||P1||(s1)         ) ->
-         ( s3:Sort -> |p3| : Type(s3)   |   |p1| : ||P1||(s1,s2)      ) ->
+    cj : s1 : Sort -> ... -> sr : Sort ->
+         |p1| : ||P1|| ->
+         ... -> 
+         |pn| : ||Pn|| ->
+         yj1  : ||B1||(s1,...,sr) ->
          ... ->
-         ( sr:Sort -> |pr| : Type(sr)   |   |pr| : ||Pr||(s1,...sr-1) ) ->
-         yj1  : B1(s1,...,sr) ->
-         ... ->
-         yjkj : Bjkj(s1,...,sr) ->
-         I [s1] ... [sr]  p1 ... pr  yj1 ... yjkj
+         yjkj : ||Bjkj||(s1,...,sr) ->
+         I s1 ... sr  p1 ... pr  x1(yj...)  ... xn(yj...)
 *)
 let translate_constructors info env label mind_body i =
   (* Body of the current inductive type *)
@@ -412,7 +500,7 @@ let translate_match info env label mind_body i =
     let rw_rule = Dedukti.rewrite (case_rule_context', case_rule_left', case_rule_right') in
     Dedukti.print info.fmt rw_rule
   done;
-    
+  
   (* Translate the rule for lift elimination in match polymorphism *)
   (* match_I s1 ... sr p1  ... pr _ a1 ... an (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
      -->

@@ -1,5 +1,6 @@
 
 val add_sort_params : Dedukti.var list -> Dedukti.term -> Dedukti.term
+(** Prepend universe parameters before type *)
 
 val instantiate_poly_univ_params :
   Info.env -> Dedukti.var -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term

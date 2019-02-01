@@ -5,7 +5,6 @@ open Translator
 
 open Declarations
 
-(** Prepend template universe parameters before type *)
 let add_sort_params params t =
   List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
 
@@ -108,7 +107,6 @@ let instantiate_ind_univ_params env uenv name ind univ_instance =
   res
   
 
-
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)
   let translate (lvl, i) =
@@ -137,8 +135,8 @@ let translate_local_level l =
 let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
-    let params = Array.to_list (Univ.Instance.to_array uctxt) in
-    List.map translate_local_level params
+    let params_lst = Array.to_list (Univ.Instance.to_array uctxt) in
+    List.map translate_local_level params_lst
   else []
 
 let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
@@ -163,12 +161,13 @@ let translate_template_params (ctxt:Univ.Level.t option list) : (string * Dedukt
   then
     let params = Utils.filter_some ctxt in
     let aux l = assert (not (Univ.Level.is_small l));
-      match Univ.Level.var_index l with
-      | None ->
+      match Univ.Level.name l with
+      | Some (d,n) ->
         let coq_name = Univ.Level.to_string l in
         let dedukti_name = T.coq_univ_name coq_name in
         (coq_name, dedukti_name)
-      | Some n -> assert false
+      | None -> assert false
+      (* No small levels (Prop/Set) or (true) polymorphism variables in template params. *)
     in
     List.map aux params
   else []
