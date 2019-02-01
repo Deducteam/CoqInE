@@ -276,12 +276,13 @@ let rec translate_constr ?expected_type info env uenv t =
   | Const (kn, univ_instance) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
-    if Utils.str_starts_with "fix_" name ||
-       Utils.str_starts_with "Little__fix_" name ||
-       not (Encoding.is_polymorphism_on ())
+    if Utils.str_starts_with "Little__fix_" name
+    then Dedukti.var (Utils.truncate name 8)
+    else if Utils.str_starts_with "fix_" name ||
+            not (Encoding.is_polymorphism_on ())
     then Dedukti.var name
     else if Encoding.is_polymorphism_on () &&
-         Environ.polymorphic_constant kn env
+            Environ.polymorphic_constant kn env
     then
       let cb = Environ.lookup_constant kn env in
       let univ_ctxt = Declareops.constant_polymorphic_context cb in

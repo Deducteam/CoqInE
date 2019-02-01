@@ -90,6 +90,7 @@ let escape name =
     | '.' -> "__"
     | '_' -> "__"
 (*    | '\'' -> "_prime_"*)
+    | '\'' when Encoding.is_readable_on () -> Printf.sprintf "'"
     | _ -> Printf.sprintf "_%02X_" (Char.code c) in
   let rec escape i () name =
     if i = String.length name
