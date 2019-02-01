@@ -41,6 +41,10 @@ type 'a printer = formatter -> 'a -> unit
 
 let pp_list sep pp fmt l = Format.pp_print_list ~pp_sep:(format_of_sep sep) pp fmt l
 
+let pp_option none pp fmt = function
+  | None -> Format.fprintf fmt "%s" none
+  | Some x -> pp fmt x
+
 let pp_array sep pp fmt a = pp_list sep pp fmt (Array.to_list a)
 
 let pp_t = pp_with
@@ -75,9 +79,11 @@ let pp_coq_sort fmt = function
 
 let pp_coq_decl fmt = function
   | Context.Rel.Declaration.LocalAssum (name, t) ->
-    fprintf fmt "%a = %a" pp_coq_name name pp_coq_term t
+    fprintf fmt "%a : %a" pp_coq_name name pp_coq_term t
   | Context.Rel.Declaration.LocalDef (name, v, t) ->
     fprintf fmt "%a : %a = %a" pp_coq_name name pp_coq_term t pp_coq_term t
+
+let pp_coq_arity_ctxt fmt = pp_list " -> " pp_coq_decl fmt
 
 let pp_coq_named_decl fmt = function
   | Context.Named.Declaration.LocalAssum (id, t) ->

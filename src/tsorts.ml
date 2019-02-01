@@ -3,6 +3,8 @@
 open Debug
 open Translator
 
+open Declarations
+
 (** Prepend template universe parameters before type *)
 let add_sort_params params t =
   List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
@@ -54,15 +56,57 @@ let instantiate_poly_univ_params uenv name univ_ctxt univ_instance =
     levels
 
 let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
+  let nb_instance = Univ.Instance.length univ_instance in
   let nb_params = List.length univ_ctxt in
+  if nb_instance < nb_params
+  then debug "Something suspicious is going on with thoses universes...";
   debug "Instantiating %i template universes %s: %a" nb_params name pp_coq_inst univ_instance;
+  debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
+  
   let levels = Univ.Instance.to_array univ_instance in
-  let levels = Array.init nb_params (fun i -> levels.(i)) in 
-  Array.fold_left
+  let rec aux acc i = function
+    | None     :: tl -> aux              acc  (i+1) tl
+    | (Some a) :: tl when i < nb_instance ->
+      let lvl = if i < nb_instance then levels.(i) else a in
+      aux (lvl::acc) (i+1) tl
+    | _              -> List.rev acc
+  in
+  let levels = aux [] 0 univ_ctxt in
+  List.fold_left
     (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
     (Dedukti.var name)
     levels
 
+let instantiate_ind_univ_params env uenv name ind univ_instance =
+  let (mib,oib) = Inductive.lookup_mind_specif env ind in
+  let indtype, res =
+    if Encoding.is_polymorphism_on () &&
+       Environ.polymorphic_ind ind env
+    then
+      begin
+        let univ_ctxt = Declareops.inductive_polymorphic_context mib in
+        "polymorphic",
+        instantiate_poly_univ_params uenv name univ_ctxt univ_instance
+      end
+    else if Encoding.is_templ_polymorphism_on () &&
+            Environ.template_polymorphic_ind ind env
+    then
+      begin
+        let univ_ctx = 
+          match oib.mind_arity with
+          | RegularArity a -> assert false
+          | TemplateArity ar -> ar.template_param_levels
+        in
+        "template",
+        instantiate_template_univ_params uenv name univ_ctx univ_instance
+      end
+    else "", Dedukti.var name
+  in
+  debug "Printing %s inductive constructor: %s@@{%a} : %a" indtype name
+    pp_coq_inst univ_instance
+    Dedukti.pp_term res;
+  res
+  
 
 
 let translate_universe uenv u =

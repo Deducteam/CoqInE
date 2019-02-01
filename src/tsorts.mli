@@ -5,7 +5,10 @@ val instantiate_poly_univ_params :
   Info.env -> Dedukti.var -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term
 
 val instantiate_template_univ_params :
-  Info.env -> Dedukti.var -> Context.Rel.Declaration.t list -> Univ.Instance.t -> Dedukti.term
+  Info.env -> Dedukti.var -> Univ.Level.t option list -> Univ.Instance.t -> Dedukti.term
+
+val instantiate_ind_univ_params :
+  Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> Univ.Instance.t -> Dedukti.term
 
 val set_universes : UGraph.t -> unit
 
