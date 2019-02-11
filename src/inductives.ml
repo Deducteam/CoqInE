@@ -42,7 +42,7 @@ let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl wit
          | Some lvl ->
            let lvl_name = Univ.Level.to_string lvl in
            if Info.is_template_polymorphic uenv lvl_name
-           then Some (List.rev acc, lvl_name)
+           then Some (name, List.rev acc, lvl_name)
            else None
         )
       | _ -> None
@@ -105,7 +105,8 @@ let translate_inductive info env label mind_body i =
   (* Printing out the type declaration. *)
   Dedukti.print info.fmt (Dedukti.declaration false name' arity');
 
-  let print_param_lift_elim decl =
+  let print_param_lift_elim decl = ()
+    (*
     (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
     (* I s1 ... si' ... sr
          p1  ... (x1 => ... => xk => lift _ (u si) (pj x1 ... xk)) ... pr
@@ -118,12 +119,14 @@ let translate_inductive info env label mind_body i =
     *)
     match is_template_parameter uenv decl with
     | None -> () (* When parameter in not template polymorphic: no rule *)
-    | Some (locals, template_var) ->
+    | Some (consname,locals, template_var) ->
       begin
         let inductive' = Dedukti.var name' in
         let new_sort = template_var ^ "'" in
-        let applied_param = 
-          Dedukti.apps (decl) (List.map Dedukti.var locals) in
+        let consname = Cname.fresh_name ~default:"_" info env consname in
+        let consname' = Cname.translate_name consname in
+        let applied_param =
+          Dedukti.apps (Dedukti.var consname') (List.map Dedukti.var locals) in
         let lifted_param_pat = Dedukti.ulams locals
             (T.coq_pattern_lifted_from_sort (Dedukti.var new_sort) applied_param) in
         let replace_pat s =
@@ -131,7 +134,7 @@ let translate_inductive info env label mind_body i =
             begin
             end
         in
-        let arity_pat = List.map
+        let arity_pat = List.map replace_pat arity
           
         in
         let pattern_match =
@@ -158,8 +161,9 @@ let translate_inductive info env label mind_body i =
         (* Printing out the rule for lift elimination *)
         Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
       end
+      *)
   in
-  List.map print_param_lift_elim arity_context
+  List.iter print_param_lift_elim  mind_body.mind_params_ctxt
   
 
 
