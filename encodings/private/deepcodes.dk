@@ -24,7 +24,6 @@ def c : t : Code -> D t -> Code.
 (;---------------------  Canonicity rules -------------------------;)
 
 [  t] c _ (u _ t) --> t.
-[s,t] u s (c s t) --> t.
 
 [A,B,F] c (cPi A (x => B x)) (x => F x) --> cLam A (x => c (B x) (F x)).
 
@@ -32,13 +31,13 @@ def c : t : Code -> D t -> Code.
 
 [A,F,G] cApp (cLam A F) G --> F (u A G).
 
+(; If we linearise this and remove the next rule, this system is left linear ! ;)
 [A,B,F]
   u (cPi A (x => B x)) (cLam A (x => F x)) -->
   x : D A => u (B x) (F x).
 
-[A,B,A',B',b,a]
-  u (cPi A' B') (c (cPi A B) b) a -->
-  u (B' a) (c (B (u A (c A' a))) (b (u A (c A' a)))).
+(; Do we really need this rule ? ;)
+[s,t] u s (c s t) --> t.
 
 
 (;----------------------------  Axiom  ----------------------------;)
