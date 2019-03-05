@@ -8,7 +8,6 @@ def D : Code -> Type.
 
 cPi : A : Code -> (D A -> Code) -> Code.
 cU : s : Sort -> Code.
-cLam : c : Code -> (D c -> Code) -> Code.
 def cApp : Code -> Code -> Code.
 
 [s]   D (cU s)    --> Univ s.
@@ -25,11 +24,9 @@ def c : t : Code -> D t -> Code.
 
 [  t] c _ (u _ t) --> t.
 
-[A,B,F] c (cPi A (x => B x)) (x => F x) --> cLam A (x => c (B x) (F x)).
-
 [A,B,F,G] u (cPi A (x => B x)) F G --> u (B G) (cApp F (c A G)).
 
-[A,F,G] cApp (cLam A F) G --> F (u A G).
+[A,B,F,G] cApp (c (cPi A (x => B x)) F) G --> c (B (u A G)) (F (u A G)).
 
 (; If we linearise this and remove the next rule, this system is left linear ! ;)
 [A,B,F]
