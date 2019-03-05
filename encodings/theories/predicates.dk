@@ -47,3 +47,7 @@ type : Nat -> Sort.
 [i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
 
 
+def succ : Sort -> Sort.
+
+[] succ prop --> (type z).
+[i] succ (type i) --> (type (s i)).
