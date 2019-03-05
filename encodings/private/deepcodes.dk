@@ -1,0 +1,71 @@
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+
+Code : Type.
+def D : Code -> Type.
+
+cPi : A : Code -> (D A -> Code) -> Code.
+cU : s : Sort -> Code.
+cLam : c : Code -> (D c -> Code) -> Code.
+def cApp : Code -> Code -> Code.
+
+[s]   D (cU s)    --> Univ s.
+[a,b] D (cPi a b) --> x : D a -> D (b x).
+
+
+def u : t : Code -> Code -> D t.
+def c : t : Code -> D t -> Code.
+
+[s,t] Term s t --> D (c (cU s) t).
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[  t] c _ (u _ t) --> t.
+[s,t] u s (c s t) --> t.
+
+[A,B,F] c (cPi A (x => B x)) (x => F x) --> cLam A (x => c (B x) (F x)).
+
+[A,B,F,G] u (cPi A (x => B x)) F G --> u (B G) (cApp F (c A G)).
+
+[A,F,G] cApp (cLam A F) G --> F (u A G).
+
+[A,B,F]
+  u (cPi A (x => B x)) (cLam A (x => F x)) -->
+  x : D A => u (B x) (F x).
+
+[A,B,A',B',b,a]
+  u (cPi A' B') (c (cPi A B) b) a -->
+  u (B' a) (c (B (u A (c A' a))) (b (u A (c A' a)))).
+
+
+(;----------------------------  Axiom  ----------------------------;)
+
+[s,s',p] univ s s' p --> u (cU s') (cU s).
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+[s1,s2,s3,p,a,b]
+  prod s1 s2 s3 p a b -->
+  u (cU s3) (cPi (c (cU s1) a) (x : D (c (cU s1) a) => c (cU s2) (b x))).
+
+
+(;-------------------------  Subtyping ----------------------------;)
+
+def forall : c : Code -> (D c -> Bool) -> Bool.
+[] forall _ (x => true) --> true.
+
+def ST : Code -> Code -> Bool.
+[s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x : D a => ST (b x) (b' x)).
+[A]      ST A         A          --> true.
+
+[sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cU s2) b) (c (c (cU s1) a) t).

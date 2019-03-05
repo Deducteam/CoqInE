@@ -20,6 +20,8 @@ elif [ "$1" = "full_constructors" ]; then
 	cat $CURDIR/interfaces/full_constructors.dk $CURDIR/private/full_constructors.dk $CURDIR/theories/full_constructors.dk > $BUILD/Coq.dk
 elif [ "$1" = "fullcodes" ]; then
 	cat $CURDIR/interfaces/predicates.dk $CURDIR/private/fullcodes.dk $CURDIR/theories/predicates.dk > $BUILD/Coq.dk
+elif [ "$1" = "deepcodes" ]; then
+	cat $CURDIR/interfaces/predicates.dk $CURDIR/private/deepcodes.dk $CURDIR/theories/predicates.dk > $BUILD/Coq.dk
 elif [ "$1" = "clean" ]; then
 	rm -rf $BUILD
 fi
