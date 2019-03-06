@@ -1,0 +1,404 @@
+sa  : Sort. sa' : Sort. [] Axiom sa sa' --> true. def ua := univ sa sa' I.
+sb  : Sort. sb' : Sort. [] Axiom sb sb' --> true. def ub := univ sb sb' I.
+sc  : Sort. sc' : Sort. [] Axiom sc sc' --> true. def uc := univ sc sc' I.
+sd  : Sort. sd' : Sort. [] Axiom sd sd' --> true. def ud := univ sd sd' I.
+se  : Sort. se' : Sort. [] Axiom se se' --> true. def ue := univ se se' I.
+
+(;-----------------------------------------------------------------;)
+(;---------------------  INTERPRETATION CHECKS  -------------------;)
+(;-----------------------------------------------------------------;)
+
+(; Interpretation of univ  ;)
+#ASSERT Term sa' ua == Univ sa.
+
+(; Interpretation of prod ;)
+#ASSERT
+(
+  p : eps (Rule sa sb sc) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    Term sc (prod sa sb sc p ta tb)
+) == (
+  p : eps (Rule sa sb sc) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    (x:Term sa ta) -> Term sb (tb x)
+).
+
+(; Interpretation of cast ;)
+#ASSERT
+(
+  pab  : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+    Term sb (cast sa' sb' ua ub pab ta)
+) == (
+  pab  : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+    Term sa ta
+).
+
+(;-----------------------------------------------------------------;)
+(;------------------  SUBTYPING PREDICATES CHECKS  ----------------;)
+(;-----------------------------------------------------------------;)
+
+(; Identity subtyping  ;)
+#ASSERT
+(
+  ta : Univ sa =>
+  t : Term sa ta =>
+    cast sa sa ta ta I t
+) : (
+  ta : Univ sa ->
+  t : Term sa ta ->
+    Term sa ta
+).
+
+(; Univ subtyping  ;)
+#ASSERT
+(
+  pab  : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+    cast sa' sb' ua ub pab ta
+) : (
+  pab  : eps (Cumul sa sb) ->
+  ta : Univ sa ->
+    Univ sb
+).
+
+[] Cumul sb sc --> true.
+
+(; Prod subtyping - constant subtype codomains  ;)
+#ASSERT
+(
+  sb'' : Sort => pb' : eps (Rule sa sb' sb'') =>
+  sc'' : Sort => pc' : eps (Rule sa sc' sc'') =>
+  ta : Univ sa =>
+  f : (Term sa ta -> Univ sb) =>
+    cast sb'' sc''
+      (prod sa sb' sb'' pb' ta (x => ub))
+      (prod sa sc' sc'' pc' ta (x => uc))
+      I f
+) : (
+  sb'' : Sort -> pb' : eps (Rule sa sb' sb'') ->
+  sc'' : Sort -> pc' : eps (Rule sa sc' sc'') ->
+  ta : Univ sa ->
+  f : (Term sa ta -> Univ sb) ->
+    Term sa ta -> Univ sc
+).
+
+(; Prod subtyping - dependant convertible codomains  ;)
+#ASSERT
+(
+  sa'' : Sort => pa : eps (Axiom sa' sa'') =>
+  sc : Sort => pc : eps (Rule sa' sa sc) =>
+  sd : Sort => pd : eps (Rule sa' sb sd) =>
+  p : eps (Cumul sa sb) =>
+  f : (x : Univ sa -> Term sa x) =>
+    cast sc sd
+      (prod sa' sa sc pc ua
+        (x => x))
+      (prod sa' sb sd pd ua
+        (x => cast sa' sb' ua ub p x))
+      I f
+) : (
+  sa'' : Sort -> pa : eps (Axiom sa' sa'') ->
+  sc : Sort -> pc : eps (Rule sa' sa sc) ->
+  sd : Sort -> pd : eps (Rule sa' sb sd) ->
+  p : eps (Cumul sa sb) ->
+  f : (x : Univ sa -> Term sa x) ->
+  x : Univ sa -> Term sa x
+).
+
+(; Left-casted subtype ;)
+#ASSERT
+(
+  p : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+  t : Term sa ta =>
+    cast sa sb ta (cast sa' sb' ua ub p ta) I t
+) : (
+  p : eps (Cumul sa sb) ->
+  ta : Univ sa ->
+  Term sa ta -> Term sa ta
+).
+
+(; Right-casted subtype ;)
+#ASSERT
+(
+  p : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+  t : Term sa ta =>
+    cast sb sa (cast sa' sb' ua ub p ta) ta I t
+) : (
+  p : eps (Cumul sa sb) ->
+  ta : Univ sa ->
+  Term sa ta -> Term sa ta
+).
+
+(;-----------------------------------------------------------------;)
+(;--------------------  PROOF IRRELEVANCE CHECKS  -----------------;)
+(;-----------------------------------------------------------------;)
+
+(; Axiom proof irrelevance ;)
+#ASSERT
+(
+  pab  : eps (Axiom sa sb) =>
+  pab' : eps (Axiom sa sb) =>
+    univ sa sb pab
+) == (
+  pab  : eps (Axiom sa sb) =>
+  pab' : eps (Axiom sa sb) =>
+    univ sa sb pab'
+).
+
+(; Rule proof irrelevance ;)
+#ASSERT
+(
+  p  : eps (Rule sa sb sc) =>
+  p' : eps (Rule sa sb sc) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    prod sa sb sc p ta tb
+) == (
+  p  : eps (Rule sa sb sc) =>
+  p' : eps (Rule sa sb sc) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    prod sa sb sc p' ta tb
+).
+
+(; Cumul proof irrelevance ;)
+#ASSERT
+(
+  p  : eps (Cumul sa sb) =>
+  p' : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+    cast sa' sb' ua ub p ta
+) == (
+  p  : eps (Cumul sa sb) =>
+  p' : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+    cast sa' sb' ua ub p' ta
+).
+
+(;-----------------------------------------------------------------;)
+(;------------------------  CANONICITY CHECKS  --------------------;)
+(;-----------------------------------------------------------------;)
+
+(; Identity cast ;)
+#ASSERT
+(
+  a  : Univ sa =>
+  ta : Term sa a =>
+    cast sa sa a a I ta
+) == (
+  a  : Univ sa =>
+  ta : Term sa a =>
+    ta
+).
+
+(; Cast composition ;)
+#ASSERT
+(
+  pab : eps (Cumul sa sb) =>
+  pbc : eps (Cumul sb sc) =>
+  pac : eps (Cumul sa sc) =>
+  ta : Univ sa =>
+    cast sb' sc' ub uc pbc (cast sa' sb' ua ub pab ta)
+) == (
+  pab : eps (Cumul sa sb) =>
+  pbc : eps (Cumul sb sc) =>
+  pac : eps (Cumul sa sc) =>
+  ta : Univ sa =>
+    cast sa' sc' ua uc pac ta
+)
+.
+
+(; Universe cast ;)
+#ASSERT
+(
+  pbc : eps (Cumul sb sc) =>
+  axab : eps (Axiom sa sb) =>
+  axac : eps (Axiom sa sc) =>
+    cast sb' sc' ub uc pbc (univ sa sb axab)
+) == (
+  pbc : eps (Cumul sb sc) =>
+  axab : eps (Axiom sa sb) =>
+  axac : eps (Axiom sa sc) =>
+    univ sa sc axac
+).
+
+(; Product cast ;)
+#ASSERT
+(
+  pcd : eps (Cumul sc sd) =>
+  rabc : eps (Rule sa sb sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    cast sc' sd' uc ud pcd
+	  (prod sa sb sc rabc ta tb)
+) == (
+  pcd : eps (Cumul sc sd) =>
+  rabc : eps (Rule sa sb sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+    prod sa sb sd rabd ta tb
+).
+
+(; Product of casted domain ;)
+#ASSERT
+(
+  pab : eps (Cumul sa sb) =>
+  racd : eps (Rule sa sc sd) =>
+  rbcd : eps (Rule sb sc sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sc) =>
+	prod sb sc sd rbcd (cast sa' sb' ua ub pab ta) tb
+) == (
+  pab : eps (Cumul sa sb) =>
+  racd : eps (Rule sa sc sd) =>
+  rbcd : eps (Rule sb sc sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sc) =>
+	prod sa sc sd racd ta tb
+).
+
+(; Product of casted codomain ;)
+#ASSERT
+(
+  pbc : eps (Cumul sb sc) =>
+  racd : eps (Rule sa sc sd) =>
+  rabd : eps (Rule sa sb sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+	prod sa sc sd racd ta
+	  (x : Term sa ta => cast sb' sc' ub uc pbc (tb x))
+) == (
+  pbc : eps (Cumul sb sc) =>
+  racd : eps (Rule sa sc sd) =>
+  rabd : eps (Rule sa sb sd) =>
+  ta : Univ sa =>
+  tb : (Term sa ta -> Univ sb) =>
+	prod sa sb sd rabd ta (x => tb x)
+).
+
+(; Left-casted cast ;)
+#ASSERT
+(
+  pbc : eps (Cumul sb sc) =>
+  ta : Univ sa =>
+  tb : Univ sb =>
+  stab : eps (SubType sa sb ta tb) =>
+  t : Term sa ta =>
+    cast sa sc ta (cast sb' sc' ub uc pbc tb) stab t
+) == (
+  pbc : eps (Cumul sb sc) =>
+  ta : Univ sa =>
+  tb : Univ sb =>
+  stab : eps (SubType sa sb ta tb) =>
+  t : Term sa ta =>
+    cast sa sb ta tb stab t
+).
+
+(; Right-casted cast ;)
+#ASSERT
+(
+  pab : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+  tc : Univ sc =>
+  stac : eps (SubType sa sc ta tc) =>
+  t : Term sa ta =>
+    cast sb sc (cast sa' sb' ua ub pab ta) tc stac t
+) == (
+  pab : eps (Cumul sa sb) =>
+  ta : Univ sa =>
+  tc : Univ sc =>
+  stac : eps (SubType sa sc ta tc) =>
+  t : Term sa ta =>
+    cast sa sc ta tc stac t
+).
+
+(; Cast of a lambda ;)
+#ASSERT
+(
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+    cast sd se (prod sa sb sd rabd A B) (prod sa sc se race A C) pABC
+      (x : Term sa A => b x)
+) == (
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+    x : Term sa A => cast sb sc (B x) (C x) (pBC x) (b x)
+).
+
+(; Cast of an application ;)
+#ASSERT
+(
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+  a : Term sa A =>
+    cast sd se (prod sa sb sd rabd A B) (prod sa sc se race A C) pABC b a
+) == (
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+  a : Term sa A =>
+    cast sb sc (B a) (C a) (pBC a) (b a)
+).
+
+(; No eta expansion during cast ;)
+#ASSERTNOT
+(
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+    cast sd se (prod sa sb sd rabd A B) (prod sa sc se race A C) pABC
+      b
+) == (
+  A : Univ sa =>
+  B : (Term sa A -> Univ sb) =>
+  C : (Term sa A -> Univ sc) =>
+  rabd : eps (Rule sa sb sd) =>
+  race : eps (Rule sa sc se) =>
+  pABC : eps (SubType sd se (prod sa sb sd rabd A B) (prod sa sc se race A C)) =>
+  pBC  : (x : Term sa A ->
+          eps (SubType sb sc (B x) (C x))) =>
+  b : (x : Term sa A -> Term sb (B x)) =>
+    cast sd se (prod sa sb sd rabd A B) (prod sa sc se race A C) pABC
+      (x => b x)
+).
