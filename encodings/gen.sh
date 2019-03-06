@@ -38,15 +38,14 @@ elif [ "$1" = "deepcodes" ]; then
 	cat $CURDIR/interfaces/predicates.dk \
 		$CURDIR/private/deepcodes.dk \
 		$CURDIR/theories/predicates.dk > $BUILD/Coq.dk
-elif [ "$1" = "test1" ]; then
+elif [ "$1" = "deepcodes_test1" ]; then
 	cat $CURDIR/interfaces/predicates.dk \
 		$CURDIR/private/deepcodes.dk \
-		$CURDIR/theories/test.dk > $BUILD/Coq.dk
-elif [ "$1" = "test2" ]; then
+		$CURDIR/theories/test1.dk > $BUILD/Coq.dk
+elif [ "$1" = "deepcodes_test2" ]; then
 	cat $CURDIR/interfaces/predicates.dk \
 		$CURDIR/private/deepcodes.dk \
-		$CURDIR/theories/predicates.dk \
-		$CURDIR/theories/matita.dk > $BUILD/Coq.dk
+		$CURDIR/theories/predicates.dk $CURDIR/theories/test2.dk > $BUILD/Coq.dk
 else
 	echo "Unknown encoding: $1"
 fi
