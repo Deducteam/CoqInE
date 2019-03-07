@@ -105,8 +105,8 @@ let translate_inductive info env label mind_body i =
   (* Printing out the type declaration. *)
   Dedukti.print info.fmt (Dedukti.declaration false name' arity');
 
-  let print_param_lift_elim decl = ()
-    (*
+  (* Subtyping is extended to parameters of template polymorphic inductive types. *)
+  let print_param_ST_elim decl = () (*
     (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
     (* I s1 ... si' ... sr
          p1  ... (x1 => ... => xk => lift _ (u si) (pj x1 ... xk)) ... pr
@@ -161,9 +161,9 @@ let translate_inductive info env label mind_body i =
         (* Printing out the rule for lift elimination *)
         Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
       end
-      *)
+  *)
   in
-  List.iter print_param_lift_elim  mind_body.mind_params_ctxt
+  List.iter print_param_ST_elim mind_body.mind_params_ctxt
   
 
 
