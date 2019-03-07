@@ -4,16 +4,85 @@ open Info
 
 open Declarations
 
+type ind_infos =
+  {
+    mind_body : Declarations.mutual_inductive_body;
+
+    mind_univs : Declarations.abstract_inductive_universes;
+    
+    (* Number of mutual inductive types *)
+    nb_mutind : int;
+    
+    (* Index of the current inductive type *)
+    index : int;
+    
+    (* Body of the current inductive type *)
+    body : Declarations.one_inductive_body;
+    
+    (* Number of parameters common to all definitions *)
+    n_params : int;
+    
+    (* Number of constructors in the current type *)
+    n_cons : int;
+    
+    (* Constructor names array *)
+    cons_names : Names.Id.t array;
+    
+    
+    typename : Names.Id.t;
+    arity_context : Context.Rel.t;
+    arity : Declarations.inductive_arity;
+    template_map : (string * Dedukti.var) list;
+    arity_sort : Sorts.t;
+  }
+
+let get_infos mind_body index =
+  let nb_mutind  = mind_body.mind_ntypes in
+  let body       = mind_body.mind_packets.(index) in
+  let n_params   = mind_body.mind_nparams in
+  let mind_univs = mind_body.mind_universes in
+  let typename      = body.mind_typename in
+  let arity_context = body.mind_arity_ctxt in
+  let arity         = body.mind_arity in
+  let template_map, arity_sort =
+      match arity with
+        | RegularArity ria -> ([], ria.mind_sort)
+        | TemplateArity ta -> begin
+            debug "Template params levels:";
+            List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
+            debug "Template level: %a" pp_coq_univ ta.template_level;
+            debug "Arity context: %a"  pp_coq_ctxt arity_context;
+            Tsorts.translate_template_params ta.template_param_levels,
+            Term.Type ta.template_level
+          end
+  in
+  let cons_names = body.mind_consnames in
+  let n_cons = Array.length cons_names in
+  {
+    mind_body;
+    mind_univs;
+    nb_mutind;
+    index;
+    body;
+    typename;
+    arity_context;
+    arity;
+    template_map;
+    arity_sort;
+    n_params;
+    n_cons;
+    cons_names;
+  }
+
 (** Return a map of template parameters and a sort for given declaration. *)
 let dest_ind_body (ind_body:Declarations.one_inductive_body) =
   let arity_context = ind_body.mind_arity_ctxt in
   let arity         = ind_body.mind_arity in
   match arity with
   | RegularArity ria -> ([], ria.mind_sort)
-  | TemplateArity ta  -> begin
+  | TemplateArity ta -> begin
       debug "Template params levels:";
-      List.iter (function   None   -> debug "None"
-                          | Some u -> debug "%a" pp_coq_level u) ta.template_param_levels;
+      List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
       debug "Template level: %a" pp_coq_univ ta.template_level;
       debug "Arity context: %a"  pp_coq_ctxt arity_context;
       Tsorts.translate_template_params ta.template_param_levels,
@@ -28,7 +97,6 @@ let dest_ind_univ universes =
     Univ.UContext.instance uctxt,
     Univ.UContext.constraints uctxt
   | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
-
 
 
 let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl with
@@ -63,7 +131,8 @@ let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl wit
         pr : ||Pr|| ->
         x1 : A1 -> ... -> xn : An -> s
 *)
-let translate_inductive info env label mind_body i =
+let translate_inductive info env label ind  =
+  let mind_body = ind.mind_body in
   (* An inductive definition is organised into:
      - [mutual_inductive_body] : a block of (co)inductive type definitions,
        containing a context of common parameter and list of [inductive_body]
@@ -71,7 +140,7 @@ let translate_inductive info env label mind_body i =
        an arity, and a list of constructor names and types *)
   
   (* Body of the current inductive type *)
-  let ind_body = mind_body.mind_packets.(i) in
+  let ind_body = ind.body in
   
   let name          = ind_body.mind_typename in
   let arity_context = ind_body.mind_arity_ctxt in
@@ -103,9 +172,13 @@ let translate_inductive info env label mind_body i =
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
   (* Printing out the type declaration. *)
-  Dedukti.print info.fmt (Dedukti.declaration false name' arity');
+  Dedukti.print info.fmt (Dedukti.declaration false name' arity')
 
-  (* Subtyping is extended to parameters of template polymorphic inductive types. *)
+
+
+(** Subtyping is extended to parameters of template polymorphic inductive types. *)
+let translate_inductive_subtyping info env label ind  =
+  let mind_body = ind.mind_body in
   let print_param_ST_elim decl = () (*
     (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
     (* I s1 ... si' ... sr
@@ -119,7 +192,7 @@ let translate_inductive info env label mind_body i =
     *)
     match is_template_parameter uenv decl with
     | None -> () (* When parameter in not template polymorphic: no rule *)
-    | Some (consname,locals, template_var) ->
+    | Some (consname,locals,template_var) ->
       begin
         let inductive' = Dedukti.var name' in
         let new_sort = template_var ^ "'" in
@@ -135,7 +208,7 @@ let translate_inductive info env label mind_body i =
             end
         in
         let arity_pat = List.map replace_pat arity
-          
+
         in
         let pattern_match =
           Dedukti.apps inductive'
@@ -150,21 +223,20 @@ let translate_inductive info env label mind_body i =
              List.map Dedukti.var template_params @
              List.map (fun x -> Dedukti.var (fst x)) params_context' @
              [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
-        
+
         let context =
           univ_poly_context' @
           template_poly_context' @
           return_sort_binding ::
           params_context' @
           [return_type_binding; (new_sort_name, T.coq_Sort())] in
-        
+
         (* Printing out the rule for lift elimination *)
         Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
-      end
-  *)
+      end *)
   in
   List.iter print_param_ST_elim mind_body.mind_params_ctxt
-  
+
 
 
 
@@ -178,9 +250,9 @@ let translate_inductive info env label mind_body i =
          yjkj : ||Bjkj||(s1,...,sr) ->
          I s1 ... sr  p1 ... pr  x1(yj...)  ... xn(yj...)
 *)
-let translate_constructors info env label mind_body i =
-  (* Body of the current inductive type *)
-  let ind_body = mind_body.mind_packets.(i) in
+let translate_constructors info env label ind =
+  let mind_body = ind.mind_body in
+  let ind_body  = ind.body in
   
   let univ_instance =
     match mind_body.mind_universes with
@@ -246,12 +318,10 @@ let translate_constructors info env label mind_body i =
     term s (P |x1| ... |xn| x)
 
 *)
-let translate_match info env label mind_body i =
+let translate_match info env label ind =
+  let mind_body = ind.mind_body in
   (* Body of the current inductive type *)
-  let ind_body = mind_body.mind_packets.(i) in
-  
-  (* Number of mutual inductive types *)
-  let n_types = mind_body.mind_ntypes in
+  let ind_body = ind.body in
   
   (* Number of parameters common to all definitions *)
   let n_params = mind_body.mind_nparams in
@@ -281,13 +351,17 @@ let translate_match info env label mind_body i =
   let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-  
+  (*
   let ind_terms = Array.init n_types (fun i -> Constr.mkIndU((mind, i), univ_instance)) in
+  This is only used for ind_terms.(index), why build the whole array ?
+  *)
+  let ind_term = Constr.mkIndU((mind, ind.index), univ_instance) in
+  
   let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
   
   (* Constructor names start from 1. *)
   let cons_terms = Array.init n_cons
-      (fun j -> Constr.mkConstructU(((mind, i), j + 1), univ_instance)) in
+      (fun j -> Constr.mkConstructU(((mind, ind.index), j + 1), univ_instance)) in
   
   let indtype_name = ind_body.mind_typename in
   let match_function_name' = Cname.translate_identifier (Cname.match_function indtype_name) in
@@ -322,7 +396,7 @@ let translate_match info env label mind_body i =
    *)
   let params_context = mind_body.mind_params_ctxt in
   let arity_real_context, _ = Utils.list_chop ind_body.mind_nrealdecls arity_context in
-  let ind_applied = Terms.apply_rel_context ind_terms.(i) (arity_real_context @ params_context) in
+  let ind_applied = Terms.apply_rel_context ind_term (arity_real_context @ params_context) in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types    = Array.map snd cons_context_types in

@@ -56,34 +56,37 @@ let translate_constant_body info env label const =
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
   debug "Translating inductive body: %s" (Names.Label.to_string label);
+  let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
   (* First declare all the inductive types. Constructors of one inductive type
      can refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
-    Inductives.translate_inductive info env label mind_body i
+    Inductives.translate_inductive info env label inds.(i)
   done;
   (* Then declare all the constructors. *)
   for i = 0 to pred mind_body.mind_ntypes do
-    Inductives.translate_constructors info env label mind_body i
+    Inductives.translate_constructors info env label inds.(i)
   done;
   (* Then declare all the match functions. *)
   for i = 0 to pred mind_body.mind_ntypes do
-    Inductives.translate_match info env label mind_body i
+    Inductives.translate_match info env label inds.(i)
   done
 
 (** Pseudo-translate the body of mutual coinductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
+  let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
   debug "Translating co-inductive body: %s" (Names.Label.to_string label);
   (* First declare all the inductive types. Constructors of one inductive type
      may refer to other inductive types in the same block. *)
   for i = 0 to pred mind_body.mind_ntypes do
-    Inductives.translate_inductive info env label mind_body i
+    Inductives.translate_inductive info env label inds.(i)
   done;
   (* Then declare all the constructors. *)
   for i = 0 to pred mind_body.mind_ntypes do
-    Inductives.translate_constructors info env label mind_body i
+    Inductives.translate_constructors info env label inds.(i)
   done
-  (* No match function defined *)
+  (* No match function defined so we are done *)
+
 
 (** Translate the body of non-recursive definitions when it's a record. *)
 let translate_record_body info env label mind_body =

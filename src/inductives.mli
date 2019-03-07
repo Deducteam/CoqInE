@@ -1,4 +1,10 @@
 
+(** Structure with informations on an inductive construction *)
+type ind_infos
+
+(** Extract inductive infos from Coq representation *)
+val get_infos : Declarations.mutual_inductive_body -> int -> ind_infos
+
 (** Translate the i-th inductive type in [mind_body].
 Handles both regular inductive type (no polymorphism):
     I : p1 : ||P1|| -> ... -> pr : ||Pr|| ->
@@ -17,8 +23,11 @@ and template polymorphic inductive type:
     || x1 : A1 -> ... -> xn : An -> return_type||(s1,...,sr)
 *)
 val translate_inductive :
-  Info.info -> Environ.env ->
-  'a -> Declarations.mutual_inductive_body -> int -> unit
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
+
+(** Subtyping is extended to parameters of template polymorphic inductive types. *)
+val translate_inductive_subtyping :
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
 
 (** Translate the constructors of the i-th inductive type in [mind_body].
     cj : [s1:Sort] -> ... -> [sr:Sort] ->
@@ -29,8 +38,7 @@ val translate_inductive :
          I  s1 ... sr  p1 ... pr  yj1 ... yjkj
 *)
 val translate_constructors :
-  Info.info -> Environ.env ->
-  Names.Label.t -> Declarations.mutual_inductive_body -> int -> unit
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
 
 
 (** Translate the match function for the i-th inductive type in [mind_body].
@@ -55,5 +63,4 @@ val translate_constructors :
     term s (P |x1| ... |xn| x)
 *)
 val translate_match :
-  Info.info -> Environ.env ->
-  Names.Label.t -> Declarations.mutual_inductive_body -> int -> unit
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
