@@ -28,12 +28,22 @@ type ind_infos =
     (* Constructor names array *)
     cons_names : Names.Id.t array;
     
-    
     typename : Names.Id.t;
     arity_context : Context.Rel.t;
     arity : Declarations.inductive_arity;
-    template_map : (string * Dedukti.var) list;
+    
+    (* Local Coq levels that are template polymorphic (Named level only) *)
+    template_levels : Univ.Level.t list;
+    (* Names for template polymorphic coq levels *)
+    template_names  : Dedukti.var  list;
+    
     arity_sort : Sorts.t;
+    
+    (* Universe polymorphic instance (array of universe levels) *)
+    poly_inst : Univ.Instance.t;
+    
+    (* Universe polymorphic constraints *)
+    poly_cstr : Univ.Constraint.t;
   }
 
 let get_infos mind_body index =
@@ -44,20 +54,34 @@ let get_infos mind_body index =
   let typename      = body.mind_typename in
   let arity_context = body.mind_arity_ctxt in
   let arity         = body.mind_arity in
-  let template_map, arity_sort =
-      match arity with
-        | RegularArity ria -> ([], ria.mind_sort)
-        | TemplateArity ta -> begin
-            debug "Template params levels:";
-            List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
-            debug "Template level: %a" pp_coq_univ ta.template_level;
-            debug "Arity context: %a"  pp_coq_ctxt arity_context;
-            Tsorts.translate_template_params ta.template_param_levels,
-            Term.Type ta.template_level
-          end
-  in
-  let cons_names = body.mind_consnames in
+  let cons_names    = body.mind_consnames in
   let n_cons = Array.length cons_names in
+  
+  (* Compute a map of template parameters and a sort for given declaration. *)
+  let (template_levels, template_names), arity_sort =
+    match arity with
+    | RegularArity ria -> ([],[]), ria.mind_sort
+    | TemplateArity ta -> begin
+        debug "Template params levels:";
+        List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
+        debug "Template level: %a" pp_coq_univ ta.template_level;
+        debug "Arity context: %a"  pp_coq_ctxt arity_context;
+        Tsorts.translate_template_params ta.template_param_levels,
+        Term.Type ta.template_level
+      end
+  in
+
+  (* Compute universe polymorphic instance and associated constraints *)
+  let poly_inst, poly_cstr =
+    match mind_univs with
+    | Monomorphic_ind univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
+    | Polymorphic_ind univ_ctxt ->
+      let uctxt = Univ.AUContext.repr univ_ctxt in
+      Univ.UContext.instance uctxt,
+      Univ.UContext.constraints uctxt
+    | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
+  in
+  
   {
     mind_body;
     mind_univs;
@@ -67,55 +91,15 @@ let get_infos mind_body index =
     typename;
     arity_context;
     arity;
-    template_map;
+    template_levels;
+    template_names;
     arity_sort;
     n_params;
     n_cons;
     cons_names;
+    poly_inst;
+    poly_cstr;
   }
-
-(** Return a map of template parameters and a sort for given declaration. *)
-let dest_ind_body (ind_body:Declarations.one_inductive_body) =
-  let arity_context = ind_body.mind_arity_ctxt in
-  let arity         = ind_body.mind_arity in
-  match arity with
-  | RegularArity ria -> ([], ria.mind_sort)
-  | TemplateArity ta -> begin
-      debug "Template params levels:";
-      List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
-      debug "Template level: %a" pp_coq_univ ta.template_level;
-      debug "Arity context: %a"  pp_coq_ctxt arity_context;
-      Tsorts.translate_template_params ta.template_param_levels,
-      Term.Type ta.template_level
-    end
-
-let dest_ind_univ universes =
-  match universes with
-  | Monomorphic_ind univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
-  | Polymorphic_ind univ_ctxt ->
-    let uctxt = Univ.AUContext.repr univ_ctxt in
-    Univ.UContext.instance uctxt,
-    Univ.UContext.constraints uctxt
-  | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
-
-
-let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl with
-  | Context.Rel.Declaration.LocalDef _ -> None
-  | Context.Rel.Declaration.LocalAssum (name, tp) ->
-    let rec aux acc t = match Constr.kind t with
-      | Term.Prod(x,a,t) -> aux (Cname.translate_name x::acc) t
-      | Term.Sort (Sorts.Type u) ->
-        (match Univ.Universe.level u with
-         | None -> None
-         | Some lvl ->
-           let lvl_name = Univ.Level.to_string lvl in
-           if Info.is_template_polymorphic uenv lvl_name
-           then Some (name, List.rev acc, lvl_name)
-           else None
-        )
-      | _ -> None
-    in
-    aux [] tp
 
 
 (** An inductive definition is organised into:
@@ -132,7 +116,6 @@ let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl wit
         x1 : A1 -> ... -> xn : An -> s
 *)
 let translate_inductive info env label ind  =
-  let mind_body = ind.mind_body in
   (* An inductive definition is organised into:
      - [mutual_inductive_body] : a block of (co)inductive type definitions,
        containing a context of common parameter and list of [inductive_body]
@@ -140,21 +123,20 @@ let translate_inductive info env label ind  =
        an arity, and a list of constructor names and types *)
   
   (* Body of the current inductive type *)
-  let ind_body = ind.body in
-  
-  let name          = ind_body.mind_typename in
-  let arity_context = ind_body.mind_arity_ctxt in
+  let name          = ind.typename in
+  let arity_context = ind.arity_context in
   
   let name' = Cname.translate_element_name info env (Names.Label.of_id name) in
   debug "--- %s ---" name';
   debug "%a" pp_coq_ctxt arity_context;
   
-  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
-  let (template_map, arity_sort) = dest_ind_body ind_body in
-  let template_params = List.map snd template_map in
+  let poly_inst = ind.poly_inst in
+  let poly_cstr = ind.poly_cstr in
+  let arity_sort = ind.arity_sort in
+  let template_params = ind.template_names in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
+  let uenv = Info.make ind.template_levels ind.template_names (List.length univ_poly_params) poly_cstr  in
   
   debug "Translate the regular inductive type.";
   (*  I : s1 : Sort -> ... -> sr : Sort ->
@@ -176,9 +158,24 @@ let translate_inductive info env label ind  =
 
 
 
+let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl with
+  | Context.Rel.Declaration.LocalDef _ -> None
+  | Context.Rel.Declaration.LocalAssum (name, tp) ->
+    let rec aux acc t = match Constr.kind t with
+      | Term.Prod(x,a,t) -> aux (Cname.translate_name x::acc) t
+      | Term.Sort (Sorts.Type u) ->
+        (match Univ.Universe.level u with
+         | None -> None
+         | Some lvl ->
+           Utils.map_opt (fun lvl_name -> (name, List.rev acc, lvl_name))
+             (Info.try_translate_template_arg uenv lvl)
+        )
+      | _ -> None
+    in
+    aux [] tp
+
 (** Subtyping is extended to parameters of template polymorphic inductive types. *)
 let translate_inductive_subtyping info env label ind  =
-  let mind_body = ind.mind_body in
   let print_param_ST_elim decl = () (*
     (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
     (* I s1 ... si' ... sr
@@ -235,8 +232,7 @@ let translate_inductive_subtyping info env label ind  =
         Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
       end *)
   in
-  List.iter print_param_ST_elim mind_body.mind_params_ctxt
-
+  List.iter print_param_ST_elim ind.mind_body.mind_params_ctxt
 
 
 
@@ -251,35 +247,29 @@ let translate_inductive_subtyping info env label ind  =
          I s1 ... sr  p1 ... pr  x1(yj...)  ... xn(yj...)
 *)
 let translate_constructors info env label ind =
-  let mind_body = ind.mind_body in
-  let ind_body  = ind.body in
-  
   let univ_instance =
-    match mind_body.mind_universes with
+    match ind.mind_univs with
     | Monomorphic_ind univ_ctxt ->
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt)
     | Polymorphic_ind univ_ctxt ->
       Univ.AUContext.instance univ_ctxt (* Univ.abstract_universe_context *)
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
   
-  (* Compute universe parameters names and corresponding local environnement *)
-  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
-  let (template_map, arity_sort) = dest_ind_body ind_body in
-  let template_params = List.map snd template_map in
+  (* Get universe parameters names and corresponding local environnement *)
+  let poly_inst = ind.poly_inst in
+  let poly_cstr = ind.poly_cstr in
+  let template_params = ind.template_names in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
+  let uenv = Info.make ind.template_levels ind.template_names (List.length univ_poly_params) poly_cstr  in
   
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-
-  let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
   
-  (* Number of constructors in the current type *)
-  let n_cons = Array.length ind_body.mind_consnames in
+  let ind_subst = Inductive.ind_subst mind ind.mind_body univ_instance in
   
-  for j = 0 to n_cons - 1 do
-    let cons_name = ind_body.mind_consnames.(j) in
-    let cons_type = ind_body.mind_user_lc.(j) in
+  for j = 0 to ind.n_cons - 1 do
+    let cons_name = ind.body.mind_consnames.(j) in
+    let cons_type = ind.body.mind_user_lc.(j) in
     (* Substitute the inductive types as specified in the Coq code. *)
     let cons_type = Vars.substl ind_subst cons_type in
     debug "Cons_type: %a" pp_coq_type cons_type;
@@ -292,7 +282,7 @@ let translate_constructors info env label ind =
     
     Dedukti.print info.fmt (Dedukti.declaration false cons_name univ_type);
   done
-  
+
 
 (** Translate the match function for the i-th inductive type in [mind_body].
 
@@ -323,19 +313,10 @@ let translate_match info env label ind =
   (* Body of the current inductive type *)
   let ind_body = ind.body in
   
-  (* Number of parameters common to all definitions *)
-  let n_params = mind_body.mind_nparams in
-  
-  (* Constructor names *)
-  let cons_names = ind_body.mind_consnames in
-  
-  (* Number of constructors in the current type *)
-  let n_cons = Array.length cons_names in
-
   (* Instance (array of universe levels) corresponding to the mutually inductive
      universe parameters  *)
   let univ_instance =
-    match mind_body.mind_universes with
+    match ind.mind_univs with
     | Monomorphic_ind univ_ctxt ->
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt)
     | Polymorphic_ind univ_ctxt ->
@@ -343,12 +324,12 @@ let translate_match info env label ind =
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
   
   (* Compute universe parameters names and corresponding local environnement *)
-  let poly_inst, poly_cstr = dest_ind_univ mind_body.mind_universes in
-  let (template_map, arity_sort) = dest_ind_body ind_body in
-  let template_params = List.map snd template_map in
+  let poly_inst = ind.poly_inst in
+  let poly_cstr = ind.poly_cstr in
+  let template_params = ind.template_names in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let uenv = Info.make template_map (List.length univ_poly_params) poly_cstr  in
+  let uenv = Info.make ind.template_levels ind.template_names (List.length univ_poly_params) poly_cstr  in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
   (*
@@ -360,7 +341,7 @@ let translate_match info env label ind =
   let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
   
   (* Constructor names start from 1. *)
-  let cons_terms = Array.init n_cons
+  let cons_terms = Array.init ind.n_cons
       (fun j -> Constr.mkConstructU(((mind, ind.index), j + 1), univ_instance)) in
   
   let indtype_name = ind_body.mind_typename in
@@ -400,15 +381,15 @@ let translate_match info env label ind =
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types    = Array.map snd cons_context_types in
-  let cons_real_contexts = Array.init n_cons (fun j ->
+  let cons_real_contexts = Array.init ind.n_cons (fun j ->
     fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
   let cons_ind_args = Array.map (fun a -> snd (Inductive.find_inductive env a)) cons_types in
-  let cons_ind_real_args = Array.init n_cons (fun j ->
-    snd (Utils.list_chop n_params cons_ind_args.(j))) in
-  let cons_applieds = Array.init n_cons (fun j ->
+  let cons_ind_real_args = Array.init ind.n_cons (fun j ->
+    snd (Utils.list_chop ind.n_params cons_ind_args.(j))) in
+  let cons_applieds = Array.init ind.n_cons (fun j ->
       Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
   
-  if n_cons > 0 then debug "Test: %a" pp_coq_term cons_applieds.(0);
+  if ind.n_cons > 0 then debug "Test: %a" pp_coq_term cons_applieds.(0);
   let params_env, params_context' =
     Terms.translate_rel_context info (Global.env ()) uenv params_context in
   
@@ -434,7 +415,7 @@ let translate_match info env label ind =
          let params_env = Cname.push_identifier case_name params_env in
          (params_env, case_name' :: case_names'))
       (params_env, [])
-      cons_names in
+      ind.cons_names in
   let case_names' = Array.of_list (List.rev case_names') in
   
   let arity_real_env, arity_real_context' =
@@ -476,16 +457,16 @@ let translate_match info env label ind =
   
   (* Combine the above. *)
   let case_types' =
-    Array.init n_cons
+    Array.init ind.n_cons
       (fun j ->
          Dedukti.pies cons_real_contexts'.(j)
            (T.coq_term return_sort'
               (Dedukti.apps return_type_var'
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
-  if n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
+  if ind.n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
   
-  let cases_context' = Array.to_list (Array.init n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
+  let cases_context' = Array.to_list (Array.init ind.n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
     if Encoding.is_templ_polymorphism_on ()
     then List.map (fun x -> (x, T.coq_Sort())) template_params else [] in
@@ -561,7 +542,7 @@ let translate_match info env label ind =
        -->
        case_ci y11 ... y1k1
   *)
-  for j = 0 to n_cons-1 do
+  for j = 0 to ind.n_cons-1 do
     let case_rule_context' =
       univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
     (* Note: a1 ... an are patterns in coq (expected return type parameters)

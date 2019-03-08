@@ -31,7 +31,7 @@ let translate_constant_body info env label const =
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let uenv = Info.make [] (List.length univ_poly_params) poly_cstr  in
+  let uenv = Info.make [] [] (List.length univ_poly_params) poly_cstr  in
 
   let const_type = const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in

@@ -15,3 +15,4 @@ val filter_some : 'a option list -> 'a list
 val iterate : int -> ('a -> 'a) -> 'a -> 'a
 (** Compose a function n times *)
 
+val map_opt : ('a -> 'b) -> 'a option -> 'b option

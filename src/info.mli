@@ -31,11 +31,12 @@ val close : info -> unit
 type env
 
 val make :
-  (string*Dedukti.var) list ->
+  Univ.Level.t list -> Dedukti.var list ->
   int -> (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list ->
   env
 
-val is_template_polymorphic : env -> string -> bool
-val translate_template_arg : env -> string -> Dedukti.var
+val is_template_polymorphic    : env -> Univ.Level.t -> bool
+val translate_template_arg     : env -> Univ.Level.t -> Dedukti.var
+val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
 
 val dummy : env

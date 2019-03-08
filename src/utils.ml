@@ -36,3 +36,7 @@ let filter_some l =
 let rec iterate n f x = match n with
   | 0 -> x
   | n -> iterate (n-1) f (f x)
+
+let map_opt f = function
+  | None -> None
+  | Some x -> Some (f x)
