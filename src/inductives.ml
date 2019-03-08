@@ -4,16 +4,21 @@ open Info
 
 open Declarations
 
+
 type ind_infos =
   {
+    (* [mutual_inductive_body] : a block of (co)inductive type definitions,
+       containing a context of common parameter and list of [inductive_body] *)
     mind_body : Declarations.mutual_inductive_body;
 
+    (* [inductive_body] : a single inductive type definition,
+       containing a name, an arity, and a list of constructor names and types *)
     mind_univs : Declarations.abstract_inductive_universes;
     
-    (* Number of mutual inductive types *)
+    (* Total number of mutually inductive types *)
     nb_mutind : int;
     
-    (* Index of the current inductive type *)
+    (* Index of the current inductive type in the block *)
     index : int;
     
     (* Body of the current inductive type *)
@@ -102,18 +107,15 @@ let get_infos mind_body index =
   }
 
 
-(** An inductive definition is organised into:
-    - [mutual_inductive_body] : a block of (co)inductive type definitions,
-      containing a context of common parameter and list of [inductive_body]
-    - [inductive_body] : a single inductive type definition,
-      containing a name, an arity, and a list of constructor names and types **)
-
-(** Translate the i-th inductive type in [mind_body].
-    I : s1 : Sort -> ... -> sr : Sort ->
-        p1 : ||P1|| ->
-        ... ->
-        pr : ||Pr|| ->
-        x1 : A1 -> ... -> xn : An -> s
+(** Translate the type of the given inductive
+      I : s1 : Sort -> ... -> sk : Sort ->
+          p1 : ||P1|| ->
+          ... ->
+          pr : ||Pr|| ->
+          x1 : A1 -> ... -> xn : An -> s
+    where the s1 ... sr are either
+    - template polymorphic universe levels
+    - true polymorphic universe levels
 *)
 let translate_inductive info env label ind  =
   (* An inductive definition is organised into:
@@ -139,7 +141,7 @@ let translate_inductive info env label ind  =
   let uenv = Info.make ind.template_levels ind.template_names (List.length univ_poly_params) poly_cstr  in
   
   debug "Translate the regular inductive type.";
-  (*  I : s1 : Sort -> ... -> sr : Sort ->
+  (*  I : s1 : Sort -> ... -> sk : Sort ->
           p1 : ||P1|| ->
           ... ->
           pr : ||Pr|| ->
@@ -174,19 +176,31 @@ let is_template_parameter uenv (decl:Context.Rel.Declaration.t) = match decl wit
     in
     aux [] tp
 
-(** Subtyping is extended to parameters of template polymorphic inductive types. *)
-let translate_inductive_subtyping info env label ind  =
-  let print_param_ST_elim decl = () (*
-    (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
-    (* I s1 ... si' ... sr
-         p1  ... (x1 => ... => xk => lift _ (u si) (pj x1 ... xk)) ... pr
-         a1 ...  ... an
+(** Subtyping is extended to parameters of template or true polymorphic inductive types.
+    For all j such that the parameter pj has type
+      A1 -> ... -> Ak -> Type_si
+    where si is either
+    - a head-quantified template polymorphic parameter
+    - a head-quantified true polymorphic parameter with positive influence
+      on the return sort expression s.
+    we generate:
+      I s1 ... si' ... sk
+           p1 
+           ...
+           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+           ...
+           pr
+           a1 ...  ... an
        -->
-       lift s(s1 ... si ... sr) s(s1 ... si' ... sr)
-         (I s1 ... si ... sr
-            p1  ... (x1 => ... => xk => pj x1 ... xk) ... pr
+       lift s(s1 ... si ... sk) s(s1 ... si' ... sk)
+         (I s1 ... si ... sk
+            p1  ... (x1 => ... => xl => pj x1 ... xl) ... pr
             a1 ... an)
-    *)
+    Note: we might generate identity lifts which shouldn't be an issue.
+*)
+let translate_inductive_subtyping info env label ind  =
+  (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
+  let print_param_ST_elim decl = () (*
     match is_template_parameter uenv decl with
     | None -> () (* When parameter in not template polymorphic: no rule *)
     | Some (consname,locals,template_var) ->
@@ -237,14 +251,14 @@ let translate_inductive_subtyping info env label ind  =
 
 
 (** Translate the constructors of the i-th inductive type in [mind_body].
-    cj : s1 : Sort -> ... -> sr : Sort ->
+    cj : s1 : Sort -> ... -> sk : Sort ->
          |p1| : ||P1|| ->
-         ... -> 
-         |pn| : ||Pn|| ->
-         yj1  : ||B1||(s1,...,sr) ->
          ... ->
-         yjkj : ||Bjkj||(s1,...,sr) ->
-         I s1 ... sr  p1 ... pr  x1(yj...)  ... xn(yj...)
+         |pr| : ||Pr|| ->
+         y1  : ||Bj1||(s1,...,sr) ->
+         ... ->
+         ykj : ||Bjkj||(s1,...,sr) ->
+         I s1 ... sk  p1 ... pr  aj1(y1...ykj)  ... ajn(y1...ykj)
 *)
 let translate_constructors info env label ind =
   let univ_instance =
@@ -531,14 +545,16 @@ let translate_match info env label ind =
   (* Printing out the match rewrite rules. *)
   (* match_I :
        s
-       s1 ... sr 
+       s1 ... sr
        p1 ... pr
        P
        case_c1
        ...
        case_cj
-       a1 .. an
-       (ci s1 ... sr p1 ... pr y11 ... y1k1)
+       {ai1(y1...ykj)}
+       ...
+       {ain(y1...yki)}
+       (ci s1 ... sr p1 ... pr y11 ... y1ki)
        -->
        case_ci y11 ... y1k1
   *)
