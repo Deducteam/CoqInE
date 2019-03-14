@@ -6,46 +6,31 @@ BUILD=$CURDIR/_build
 rm -rf $BUILD
 mkdir $BUILD
 
+exportdk () {
+	cat $CURDIR/interfaces/$1.dk $CURDIR/private/$2.dk $CURDIR/theories/$3.dk > $BUILD/Coq.dk
+}
+
 if [ "$1" = "original" ]; then
-	cat $CURDIR/interfaces/original.dk \
-		$CURDIR/private/original.dk \
-		$CURDIR/theories/original.dk > $BUILD/Coq.dk
+	exportdk original original original
 elif [ "$1" = "original_cast" ]; then
-	cat $CURDIR/interfaces/original_cast.dk \
-		$CURDIR/private/original_cast.dk \
-		$CURDIR/theories/original.dk > $BUILD/Coq.dk
+	exportdk original_cast original_cast original
 elif [ "$1" = "predicates" ]; then
-	cat $CURDIR/interfaces/predicates.dk \
-		$CURDIR/private/predicates.dk \
-		$CURDIR/theories/predicates.dk > $BUILD/Coq.dk
+	exportdk predicates predicates predicates
 elif [ "$1" = "functionnal" ]; then
-	cat $CURDIR/interfaces/functionnal.dk \
-		$CURDIR/private/functionnal.dk \
-		$CURDIR/theories/functionnal.dk > $BUILD/Coq.dk
+	exportdk functionnal functionnal functionnal
 elif [ "$1" = "constructors" ]; then
-	cat $CURDIR/interfaces/constructors.dk \
-		$CURDIR/private/functionnal.dk \
-		$CURDIR/theories/functionnal.dk > $BUILD/Coq.dk
+	exportdk constructors functionnal functionnal
 elif [ "$1" = "full_constructors" ]; then
-	cat $CURDIR/interfaces/full_constructors.dk \
-		$CURDIR/private/full_constructors.dk \
-		$CURDIR/theories/full_constructors.dk > $BUILD/Coq.dk
+	exportdk full_constructors functionnal functionnal
 elif [ "$1" = "fullcodes" ]; then
-	cat $CURDIR/interfaces/predicates.dk \
-		$CURDIR/private/fullcodes.dk \
-		$CURDIR/theories/predicates.dk > $BUILD/Coq.dk
+	exportdk predicates fullcodes predicates
 elif [ "$1" = "deepcodes" ]; then
-	cat $CURDIR/interfaces/predicates.dk \
-		$CURDIR/private/deepcodes.dk \
-		$CURDIR/theories/predicates.dk > $BUILD/Coq.dk
+	exportdk predicates deepcodes predicates
 elif [ "$1" = "deepcodes_test1" ]; then
-	cat $CURDIR/interfaces/predicates.dk \
-		$CURDIR/private/deepcodes.dk \
-		$CURDIR/theories/test1.dk > $BUILD/Coq.dk
+	exportdk predicates deepcodes test1
 elif [ "$1" = "deepcodes_test2" ]; then
-	cat $CURDIR/interfaces/predicates.dk \
-		$CURDIR/private/deepcodes.dk \
-		$CURDIR/theories/predicates.dk $CURDIR/theories/test2.dk > $BUILD/Coq.dk
+	exportdk predicates deepcodes predicates
+	cat $CURDIR/theories/test2.dk >> $BUILD/Coq.dk
 else
 	echo "Unknown encoding: $1"
 fi

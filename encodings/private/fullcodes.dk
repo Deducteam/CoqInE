@@ -6,43 +6,38 @@
 Code : Type.
 def D : Code -> Type.
 
-cprod : A : Code -> (D A -> Code) -> Code.
-cu : s : Sort -> Code.
+cU : s : Sort -> Code.
+cPi  : A : Code -> (D A -> Code) -> Code.
+cLam : (Code -> Code) -> Code.
+def cApp : Code -> Code -> Code.
 
-[s]   D (cu s)      --> Univ s.
-[a,b] D (cprod a b) --> x : D a -> D (b x).
+[s]   D (cU s)    --> Univ s.
+[a,b] D (cPi a b) --> x : D a -> D (b x).
 
 
 def u : t : Code -> Code -> D t.
 def c : t : Code -> D t -> Code.
 
-[s,t] Term s t --> D (c (cu s) t).
+[s,t] Term s t --> D (c (cU s) t).
 
-
-(;---------------------  Canonicity rules -------------------------;)
-
-[  t] c _ (u _ t) --> t.
-[s,t] u s (c s t) --> t.
-
-[A,B,A',B',b]
-  u (cprod A' B') (c (cprod A B) (x => b x)) -->
-  x : D A' => u (B' x) (c (B (u A (c A' x))) (b (u A (c A' x)))).
-
-[A,B,A',B',b,a]
-  u (cprod A' B') (c (cprod A B) b) a -->
-  u (B' a) (c (B (u A (c A' a))) (b (u A (c A' a)))).
 
 
 (;----------------------------  Axiom  ----------------------------;)
 
-[s,s',p] univ s s' p --> u (cu s') (cu s).
+[s,s',p] univ s s' p --> u (cU s') (cU s).
 
 
 (;----------------------------  Rule  -----------------------------;)
 
 [s1,s2,s3,p,a,b]
   prod s1 s2 s3 p a b -->
-  u (cu s3) (cprod (c (cu s1) a) (x : D (c (cu s1) a) => c (cu s2) (b x))).
+  u (cU s3) (cPi (c (cU s1) a) (x : D (c (cU s1) a) => c (cU s2) (b x))).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cU s2) b) (c (c (cU s1) a) t).
+
 
 
 (;-------------------------  Subtyping ----------------------------;)
@@ -51,13 +46,25 @@ def forall : c : Code -> (D c -> Bool) -> Bool.
 [] forall _ (x => true) --> true.
 
 def ST : Code -> Code -> Bool.
-[s1, s2] ST (cu s1)     (cu s2)      --> Cumul s1 s2
-[a,b,b'] ST (cprod a b) (cprod a b') --> forall a (x : D a => ST (b x) (b' x)).
-[A]      ST A           A            --> true.
+[s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x : D a => ST (b x) (b' x)).
+[A]      ST A         A          --> true.
 
-[sa,sb,a,b] SubType sa sb a b --> ST (c (cu sa) a) (c (cu sb) b).
+[sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
 
 
-(;---------------------------  Casts  -----------------------------;)
 
-[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cu s2) b) (c (c (cu s1) a) t).
+(;---------------------  Canonicity rules -------------------------;)
+
+[s,t] u s (c s t) --> t.
+[  t] c _ (u _ t) --> t.
+
+[A,B,C,F]
+  u (cPi A (x => B x)) (c (cPi A (x => C x)) (x => F x)) -->
+  x : D A => u (B x) (c (C x) (F x)).
+
+[A,B,C,F,G]
+  u (cPi A (x => B x)) (c (cPi A (x => C x)) F) G -->
+  u (B G) (c (C G) (F G)).
+
+

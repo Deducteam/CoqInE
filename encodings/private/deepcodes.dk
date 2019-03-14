@@ -19,21 +19,6 @@ def c : t : Code -> D t -> Code.
 [s,t] Term s t --> D (c (cU s) t).
 
 
-(;---------------------  Canonicity rules -------------------------;)
-
-[s,t] u s (c s t) --> t.
-[  t] c _ (u _ t) --> t.
-
-[A,B,C,F]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) (x => F x)) -->
-  x : D A => u (B x) (c (C x) (F x)).
-
-[A,B,C,F,G]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) F) G -->
-  u (B G) (c (C G) (F G)).
-
-
-
 
 (;----------------------------  Axiom  ----------------------------;)
 
@@ -45,6 +30,12 @@ def c : t : Code -> D t -> Code.
 [s1,s2,s3,p,a,b]
   prod s1 s2 s3 p a b -->
   u (cU s3) (cPi (c (cU s1) a) (x : D (c (cU s1) a) => c (cU s2) (b x))).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cU s2) b) (c (c (cU s1) a) t).
+
 
 
 (;-------------------------  Subtyping ----------------------------;)
@@ -60,6 +51,18 @@ def ST : Code -> Code -> Bool.
 [sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
 
 
-(;---------------------------  Casts  -----------------------------;)
 
-[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cU s2) b) (c (c (cU s1) a) t).
+(;---------------------  Canonicity rules -------------------------;)
+
+[s,t] u s (c s t) --> t.
+[  t] c _ (u _ t) --> t.
+
+[A,B,C,F]
+  u (cPi A (x => B x)) (c (cPi A (x => C x)) (x => F x)) -->
+  x : D A => u (B x) (c (C x) (F x)).
+
+[A,B,C,F,G]
+  u (cPi A (x => B x)) (c (cPi A (x => C x)) F) G -->
+  u (B G) (c (C G) (F G)).
+
+
