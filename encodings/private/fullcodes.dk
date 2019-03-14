@@ -7,19 +7,21 @@ Code : Type.
 def D : Code -> Type.
 
 cU : s : Sort -> Code.
-cPi  : A : Code -> (D A -> Code) -> Code.
+cPi  : Code -> (Code -> Code) -> Code.
 cLam : (Code -> Code) -> Code.
 def cApp : Code -> Code -> Code.
-
-[s]   D (cU s)    --> Univ s.
-[a,b] D (cPi a b) --> x : D a -> D (b x).
-
 
 def u : t : Code -> Code -> D t.
 def c : t : Code -> D t -> Code.
 
-[s,t] Term s t --> D (c (cU s) t).
+[s]   D (cU s)    --> Univ s.
+[a,b] D (cPi a b) --> x : D a -> D (b (c a x)).
 
+
+
+(;----------------------------  Term  -----------------------------;)
+
+[s,t] Term s t --> D (c (cU s) t).
 
 
 (;----------------------------  Axiom  ----------------------------;)
@@ -31,7 +33,7 @@ def c : t : Code -> D t -> Code.
 
 [s1,s2,s3,p,a,b]
   prod s1 s2 s3 p a b -->
-  u (cU s3) (cPi (c (cU s1) a) (x : D (c (cU s1) a) => c (cU s2) (b x))).
+  u (cU s3) (cPi (c (cU s1) a) (x : Code => c (cU s2) (b (u (c (cU s1) a) x)))).
 
 
 (;---------------------------  Casts  -----------------------------;)
@@ -42,12 +44,12 @@ def c : t : Code -> D t -> Code.
 
 (;-------------------------  Subtyping ----------------------------;)
 
-def forall : c : Code -> (D c -> Bool) -> Bool.
+def forall : Code -> (Code -> Bool) -> Bool.
 [] forall _ (x => true) --> true.
 
 def ST : Code -> Code -> Bool.
 [s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
-[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x : D a => ST (b x) (b' x)).
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x:Code => ST (b x) (b' x)).
 [A]      ST A         A          --> true.
 
 [sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
@@ -62,19 +64,19 @@ def ST : Code -> Code -> Bool.
 
 [A,B,F]
   c (cPi A (x => B x)) (x => F x) -->
-  cLam (x:Code => c (B (u A x)) (F (u A x))).
+  cLam (x:Code => c (B x) (F (u A x))).
 
 [A,B,F]
   u (cPi A (x => B x)) (cLam (x => F x)) -->
-  x : D A => u (B x) (F (c A x)).
+  x : D A => u (B (c A x)) (F (c A x)).
 
 [A,B,F,U]
   u (cPi A (x => B x)) F U -->
-  u (B U) (cApp F (c A U)).
+  u (B (c A U)) (cApp F (c A U)).
 
 [A,B,F,U]
   cApp (c (cPi A (x => B x)) F) U -->
-  c (B (u A U)) (F (u A U)).
+  c (B U) (F (u A U)).
 
 [F,U]
   cApp (cLam F) U --> F U.
