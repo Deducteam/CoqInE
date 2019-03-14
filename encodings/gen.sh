@@ -24,6 +24,11 @@ elif [ "$1" = "full_constructors" ]; then
 	exportdk full_constructors functionnal functionnal
 elif [ "$1" = "fullcodes" ]; then
 	exportdk predicates fullcodes predicates
+elif [ "$1" = "fullcodes_test1" ]; then
+	exportdk predicates fullcodes test1
+elif [ "$1" = "fullcodes_test2" ]; then
+	exportdk predicates fullcodes predicates
+	cat $CURDIR/theories/test2.dk >> $BUILD/Coq.dk
 elif [ "$1" = "deepcodes" ]; then
 	exportdk predicates deepcodes predicates
 elif [ "$1" = "deepcodes_test1" ]; then

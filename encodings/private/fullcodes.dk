@@ -59,12 +59,24 @@ def ST : Code -> Code -> Bool.
 [s,t] u s (c s t) --> t.
 [  t] c _ (u _ t) --> t.
 
-[A,B,C,F]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) (x => F x)) -->
-  x : D A => u (B x) (c (C x) (F x)).
 
-[A,B,C,F,G]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) F) G -->
-  u (B G) (c (C G) (F G)).
+[A,B,F]
+  c (cPi A (x => B x)) (x => F x) -->
+  cLam (x:Code => c (B (u A x)) (F (u A x))).
+
+[A,B,F]
+  u (cPi A (x => B x)) (cLam (x => F x)) -->
+  x : D A => u (B x) (F (c A x)).
+
+[A,B,F,U]
+  u (cPi A (x => B x)) F U -->
+  u (B U) (cApp F (c A U)).
+
+[A,B,F,U]
+  cApp (c (cPi A (x => B x)) F) U -->
+  c (B (u A U)) (F (u A U)).
+
+[F,U]
+  cApp (cLam F) U --> F U.
 
 
