@@ -4,13 +4,13 @@
 
 
 Code : Type.
-def D : Code -> Type.
 
 cU : s : Sort -> Code.
 cPi  : Code -> (Code -> Code) -> Code.
 cLam : (Code -> Code) -> Code.
 def cApp : Code -> Code -> Code.
 
+def D : Code -> Type.
 def u : t : Code -> Code -> D t.
 def c : t : Code -> D t -> Code.
 
@@ -44,12 +44,12 @@ def c : t : Code -> D t -> Code.
 
 (;-------------------------  Subtyping ----------------------------;)
 
-def forall : Code -> (Code -> Bool) -> Bool.
-[] forall _ (x => true) --> true.
+def forall : (Code -> Bool) -> Bool.
+[] forall (x => true) --> true.
 
 def ST : Code -> Code -> Bool.
 [s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
-[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x:Code => ST (b x) (b' x)).
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall (x:Code => ST (b x) (b' x)).
 [A]      ST A         A          --> true.
 
 [sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
@@ -60,7 +60,6 @@ def ST : Code -> Code -> Bool.
 
 [s,t] u s (c s t) --> t.
 [  t] c _ (u _ t) --> t.
-
 
 [A,B,F]
   c (cPi A (x => B x)) (x => F x) -->

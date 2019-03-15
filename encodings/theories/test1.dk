@@ -402,3 +402,50 @@ se  : Sort. se' : Sort. [] Axiom se se' --> true. def ue := univ se se' I.
     cast sd se (prod sa sb sd rabd A B) (prod sa sc se race A C) pABC
       (x => b x)
 ).
+
+(; Beta-convertibles at the head are still convertible ;)
+(;
+  From
+    a : A
+    A < B
+    A < C
+    (B -> B)  <  (B < C)
+  We have
+    |- (x => x) : B -> C  (since (B -> B) < (B -> C) )
+    |- a : B              (since A < B)
+  Thus
+    |- (x => x) a : C     (by application rule)
+  Besides
+    |- a : C              (since A < C)
+  Translation of these two judgments should be beta equivalent
+;)
+#ASSERT
+(
+  A : Univ sa =>
+  a : Term sa A =>
+  B : Univ sb =>
+  C : Univ sc =>
+  stAB : eps (SubType sa sb A B) =>
+  stAC : eps (SubType sa sc A C) =>
+  rbbd : eps (Rule sb sb sd) =>
+  rbce : eps (Rule sb sc se) =>
+  pBBC : eps (SubType sd se (prod sb sb sd rbbd B (x => B)) (prod sb sc se rbce B (x => C))) =>
+    ( cast sd se
+        (prod sb sb sd rbbd B (x => B))
+        (prod sb sc se rbce B (x => C))
+        pBBC
+        (x : Term sb B => x)
+    )
+    (cast sa sb A B stAB a)
+) == (
+  A : Univ sa =>
+  a : Term sa A =>
+  B : Univ sb =>
+  C : Univ sc =>
+  stAB : eps (SubType sa sb A B) =>
+  stAC : eps (SubType sa sc A C) =>
+  rbbd : eps (Rule sb sb sd) =>
+  rbce : eps (Rule sb sc se) =>
+  pBBC : eps (SubType sd se (prod sb sb sd rbbd B (x => B)) (prod sb sc se rbce B (x => C))) =>
+    cast sa sc A C stAC a
+).
