@@ -81,3 +81,4 @@ def ST : Code -> Code -> Bool.
   cApp (cLam F) U --> F U.
 
 
+(; def delta_delta := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)). ;)
