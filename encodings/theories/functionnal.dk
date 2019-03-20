@@ -49,3 +49,13 @@ type : Nat -> Sort.
 [i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
 
 
+(;-----------------------  LUB wrt Cumulativity  ------------------;)
+
+[s  ] sup prop     s        --> s
+[s  ] sup s        prop     --> s
+[   ] sup set      set      --> set
+[i  ] sup set      (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+

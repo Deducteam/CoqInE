@@ -89,8 +89,8 @@ struct
   let coq_prod cu s1 s2 a b   = apps (coq_var (get()).t_prod ) [cu s1; cu s2; a; b]
   let coq_cast cu s1 s2 a b t = apps (coq_var (get()).t_cast )
       (if (get()).pred_cast_flag
-       then [cu s1; cu s2; coq_var (get()).t_I; a; b; t]
-       else [cu s1; cu s2;                      a; b; t])
+       then [cu s1; cu s2; a; b; coq_var (get()).t_I; t]
+       else [cu s1; cu s2; a; b;                      t])
   let coq_lift cu s1 s2 t = apps (coq_var (get()).t_lift)
       (if (get()).pred_lift_flag
        then [cu s1; cu s2; coq_var  (get()).t_I; t]
@@ -196,11 +196,27 @@ struct
   let cstr_lt      s = Std.cstr_lt  (if a () then Std.cu else Short.scu) s
 
   let coq_pattern_lifted_from_sort s t =
-    if (get()).lift_flag
-    then apps (coq_var (get()).t_lift) [s;wildcard;t]
-    else
-      let p = app (coq_var (get()).t_univ) s in
-      apps (coq_var (get()).t_cast) [wildcard;wildcard;p;wildcard;t]
+    match (get()).lifted_type_pattern with
+    | AsLift ->
+      apps (coq_var (get()).t_lift)
+        (if (get()).pred_lift_flag
+         then [var s;wildcard;t]
+         else [var s;wildcard;wildcard;t])
+    | AsCast ->
+      let p = app (coq_var (get()).t_univ) (var s) in
+      apps (coq_var (get()).t_cast)
+        (if (get()).pred_cast_flag
+         then [wildcard;wildcard;p;wildcard;wildcard;t]
+         else [wildcard;wildcard;p;wildcard;t])
+    | AsPrivateCast ->
+      let p = app (coq_var (get()).t_univ) (var s) in
+      apps (coq_var (get()).t_priv_cast)
+        [wildcard;wildcard;p;wildcard;t]
+    | AsUncodedCode ->
+      let p = app (coq_var (get()).t_univ) (var s) in
+      let c = coq_var (get()).t_priv_code in
+      let u = coq_var (get()).t_priv_uncode in
+      apps u [p;apps c [wildcard;t]]
 
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s

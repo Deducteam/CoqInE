@@ -31,6 +31,8 @@ def Cumul : Sort -> Sort -> Bool.
 cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
               eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
 
+def sup   : Sort -> Sort -> Sort.
+
 
 (;--------------------  Term public constructors  -----------------;)
 

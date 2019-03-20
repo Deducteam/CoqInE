@@ -39,4 +39,6 @@ val is_template_polymorphic    : env -> Univ.Level.t -> bool
 val translate_template_arg     : env -> Univ.Level.t -> Dedukti.var
 val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
 
+val replace_template_name : env -> Univ.Level.t -> Dedukti.var -> env
+
 val dummy : env

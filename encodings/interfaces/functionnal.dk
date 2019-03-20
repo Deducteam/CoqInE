@@ -28,6 +28,8 @@ def axiom : Sort -> Sort.
 def rule  : Sort -> Sort -> Sort.
 def Cumul : Sort -> Sort -> Bool.
 
+def sup   : Sort -> Sort -> Sort.
+
 
 (;--------------------  Term public constructors  -----------------;)
 

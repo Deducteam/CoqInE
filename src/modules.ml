@@ -63,31 +63,36 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then extend subtyping . *)
+  (* Then extend subtyping *)
   for i = 0 to pred ntypes do
     Inductives.translate_inductive_subtyping info env label inds.(i)
   done;
-  (* Then declare all the constructors. *)
+  (* Then declare all the constructors *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
   done;
-  (* Then declare all the match functions. *)
+  (* Then declare all the match functions *)
   for i = 0 to pred ntypes do
     Inductives.translate_match info env label inds.(i)
   done
 
 (** Pseudo-translate the body of mutual coinductive definitions [mind]. *)
 let translate_mutual_coinductive_body info env label mind_body =
+  let ntypes = mind_body.mind_ntypes in
   Error.warning "Translating coinductive %a" pp_coq_label label;
   let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
   debug "Translating co-inductive body: %s" (Names.Label.to_string label);
   (* First declare all the inductive types. Constructors of one inductive type
      may refer to other inductive types in the same block. *)
-  for i = 0 to pred mind_body.mind_ntypes do
+  for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then declare all the constructors. *)
-  for i = 0 to pred mind_body.mind_ntypes do
+  (* Then extend subtyping (I guess...) *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_inductive_subtyping info env label inds.(i)
+  done;
+  (* Then declare all the constructors *)
+  for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
   done
   (* No match function defined so we are done *)

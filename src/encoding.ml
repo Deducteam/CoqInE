@@ -1,4 +1,10 @@
 
+type lifted_type_pattern =
+  | AsLift
+  | AsCast
+  | AsPrivateCast
+  | AsUncodedCode
+
 type t =
   {
     polymorphism_flag         : bool;
@@ -9,6 +15,7 @@ type t =
     readable_translation_flag : bool;
     cast_flag                 : bool;
     lift_flag                 : bool;
+    lifted_type_pattern       : lifted_type_pattern;
     pred_univ_flag            : bool;
     pred_prod_flag            : bool;
     pred_lift_flag            : bool;
@@ -24,6 +31,9 @@ type t =
     t_lift : string;
     t_cast : string;
     t_I    : string;
+    t_priv_cast   : string;
+    t_priv_code   : string;
+    t_priv_uncode : string;
   }
 
 let original =
@@ -36,6 +46,7 @@ let original =
     readable_translation_flag = false;
     cast_flag                 = false;
     lift_flag                 = true;
+    lifted_type_pattern       = AsLift;
     pred_univ_flag            = false;
     pred_prod_flag            = false;
     pred_lift_flag            = false;
@@ -51,6 +62,9 @@ let original =
     t_lift = "lift";
     t_cast = "cast";
     t_I    = "I";
+    t_priv_cast   = "cast'";
+    t_priv_code   = "c";
+    t_priv_uncode = "u";
   }
 
 let original_cast =
@@ -71,8 +85,10 @@ let polymorph =
     polymorphism_flag         = true;
     templ_polymorphism_flag   = true;
     constraints_flag          = true;
-    cast_flag                 = true;
-    lift_flag                 = false;
+    lift_flag                 = false; (* Do not use lifts *)
+    cast_flag                 = true;  (* Use casts *)
+    pred_cast_flag            = true;  (* Casts take subtype predicate argument *)
+    lifted_type_pattern = AsPrivateCast; (* Casted type pattern *)
     encoding_name = "polymorphism";
   }
 

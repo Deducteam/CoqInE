@@ -1,4 +1,10 @@
 
+type lifted_type_pattern =
+  | AsLift
+  | AsCast
+  | AsPrivateCast
+  | AsUncodedCode
+
 type t =
   {
     polymorphism_flag : bool;
@@ -20,10 +26,15 @@ type t =
     (** Is (pseudo-)readable translation mode on ? *)
 
     cast_flag : bool;
-    (** Use casts or lifted lambdas ? *)
+    (** Are we allowed to use casts (for casted lambdas) ?
+        Or should we turn them into lifted lambdas instead ? *)
 
     lift_flag : bool;
-    (** May use lifts or only casts ? *)
+    (** Are we allowed to use lifts (for lifted type) ?
+        Or should we use casts instead ? *)
+
+    lifted_type_pattern : lifted_type_pattern;
+    (** What's the normal form of a lifted type ? To use in pattern. *)
 
     pred_univ_flag            : bool;
     pred_prod_flag            : bool;
@@ -46,6 +57,9 @@ type t =
     t_lift : string;
     t_cast : string;
     t_I    : string;
+    t_priv_cast   : string;
+    t_priv_code   : string;
+    t_priv_uncode : string;
   }
   
 (* Some encodings *)

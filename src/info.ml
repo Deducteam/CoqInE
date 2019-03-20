@@ -25,6 +25,9 @@ let make
     constraints = constraints_args
   }
 
+let replace_template_name uenv lvl new_name =
+  { uenv with template_params = StringMap.add lvl new_name uenv.template_params }
+
 let is_template_polymorphic (e:env) a = StringMap.mem a e.template_params
 
 let translate_template_arg (e:env) a = StringMap.find a e.template_params
