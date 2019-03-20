@@ -15,6 +15,10 @@ type term =
   | Bracket of term
   | Wildcard
 
+type context = (var * term) list
+
+type untyped_context = var list
+
 type instruction =
   | EmptyLine
   | Comment of string
@@ -22,7 +26,7 @@ type instruction =
   | Declaration of bool * var * term
   | Definition of bool * var * term * term
   | UDefinition of bool * var * term
-  | Rewrite of (var * term) list * term * term
+  | Rewrite of untyped_context * term * term
 
 val var : var -> term
 val arr : term -> term -> term
@@ -45,9 +49,10 @@ val command : string -> string list -> instruction
 val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val udefinition : bool -> var -> term -> instruction
-val rewrite : (var * term) list * term * term -> instruction
+val rewrite : untyped_context * term * term -> instruction
+val typed_rewrite : context * term * term -> instruction
 
-val apply_context : term -> (var * term) list -> term
+val apply_context : term -> context -> term
 
 (** Prints out instructions *)
 val print  : instruction printer

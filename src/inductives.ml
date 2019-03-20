@@ -58,7 +58,7 @@ type ind_infos =
     (* Universe polymorphic constraints *)
     poly_cstr : Univ.Constraint.t;
     
-    univ_poly_params : string list;
+    univ_poly_names : Dedukti.var list;
     univ_poly_cstr : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list;
     univ_poly_nb_params : int;
     univ_poly_env : Info.env;
@@ -104,9 +104,9 @@ let get_infos mind_body index =
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
   in
 
-  let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
+  let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let univ_poly_nb_params = List.length univ_poly_params in
+  let univ_poly_nb_params = List.length univ_poly_names in
   let univ_poly_env =
     Info.make template_levels template_names univ_poly_nb_params univ_poly_cstr  in
 
@@ -129,7 +129,7 @@ let get_infos mind_body index =
     cons_names;
     poly_inst;
     poly_cstr;
-    univ_poly_params;
+    univ_poly_names;
     univ_poly_cstr;
     univ_poly_nb_params;
     univ_poly_env;
@@ -154,13 +154,7 @@ let translate_inductive info env label ind  =
        an arity, and a list of constructor names and types *)
   
   (* Body of the current inductive type *)
-  let arity_context = ind.arity_context in
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
-  
-  let arity_sort = ind.arity_sort in
-  let template_params = ind.template_names in
-  let univ_poly_params = ind.univ_poly_params in
-  let uenv = ind.univ_poly_env in
   
   (*  I : s1 : Sort -> ... -> sk : Sort ->
           p1 : ||P1|| ->
@@ -168,13 +162,13 @@ let translate_inductive info env label ind  =
           pr : ||Pr|| ->
           a1 : A1 -> ... -> an : An -> s
   *)
-  let arity = Term.it_mkProd_or_LetIn (Constr.mkSort arity_sort) arity_context in
-  let arity' = Terms.translate_types info env uenv arity in
-  let arity' = Tsorts.add_sort_params template_params arity' in
-  let arity' = Tsorts.add_sort_params univ_poly_params arity' in
+  let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
+  let arity' = Terms.translate_types info env ind.univ_poly_env arity in
+  let arity' = Tsorts.add_sort_params ind.template_names arity' in
+  let arity' = Tsorts.add_sort_params ind.univ_poly_names arity' in
   debug "--- Translating inductive: %s ---" name';
-  debug "Arity context: %a" pp_coq_ctxt arity_context;
-  debug "Arity sort: %a" pp_coq_type (Constr.mkSort arity_sort);
+  debug "Arity context: %a" pp_coq_ctxt ind.arity_context;
+  debug "Arity sort: %a" pp_coq_type (Constr.mkSort ind.arity_sort);
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
   (* Printing out the type declaration. *)
@@ -197,6 +191,22 @@ let is_template_parameter ind = function
       | _ -> None
     in
     aux [] tp
+
+let extract_rel_context info env =
+  let aux (env, acc) = function
+    | [] -> (env, List.rev acc)
+    | decl :: l ->
+      match Context.Rel.Declaration.to_tuple decl with
+      | (x, None, a) ->
+        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
+        (new_env, x::acc)
+      | (x, Some u, a) ->
+        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+        (new_env, acc)
+  in
+  aux (env, [])
+
+
 
 (** Subtyping is extended to parameters of template or true polymorphic inductive types.
     For all j such that the parameter pj has type
@@ -223,6 +233,11 @@ let is_template_parameter ind = function
 let translate_inductive_subtyping info env label ind =
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
   let inductive' = Dedukti.var name' in
+  let (nenv, arity_ctxt_names) = extract_rel_context info env ind.arity_context in
+  let translate_name name =
+    let name = Cname.fresh_name ~default:"_" info env name in
+    Cname.translate_name name in
+  let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
   (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
   let print_param_ST_elim decl =
     match is_template_parameter ind decl with
@@ -236,37 +251,25 @@ let translate_inductive_subtyping info env label ind =
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
         let lifted_param_pat = Dedukti.ulams locals
             (T.coq_pattern_lifted_from_sort (Dedukti.var new_sort) applied_param) in
-        let param_with_pat param =
-          if param = decl
+        let translate_name_with_lifted name =
+          if name = tparam_name
           then lifted_param_pat
-          else 
-            begin
-            end
+          else Dedukti.var (translate_name name)
         in
         let pattern_match =
           Dedukti.apps inductive'
-            (List.map Dedukti.var ind.univ_poly_params @
+            (List.map Dedukti.var ind.univ_poly_names @
              List.map Dedukti.var ind.template_names @
-             List.map param_with_pat ind.mind_params_ctxt @
-             List.map  ind.mind_params_ctxt @
-             [lifted_param_pat]) in
-        let lifted_param_lhs = Dedukti.ulams locals decl in
-        let lhs_match =
-          Dedukti.apps match_function_var'
-            (List.map Dedukti.var univ_poly_params @
-             List.map Dedukti.var template_params @
-             List.map (fun x -> Dedukti.var (fst x)) params_context' @
-             [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
+             List.map translate_name_with_lifted arity_ctxt_names
+            ) in
 
         let context =
-          univ_poly_context' @
-          template_poly_context' @
-          return_sort_binding ::
-          params_context' @
-          [return_type_binding; (new_sort_name, T.coq_Sort())] in
+          ind.univ_poly_names @
+          ind.template_names @
+          arity_ctxt_names' in
 
         (* Printing out the rule for lift elimination *)
-        Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
+        Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, pattern_match))
       end
   in
   List.iter print_param_ST_elim ind.mind_params_ctxt
@@ -294,7 +297,6 @@ let translate_constructors info env label ind =
   
   (* Get universe parameters names and corresponding local environnement *)
   let template_params = ind.template_names in
-  let univ_poly_params = ind.univ_poly_params in
   let uenv = ind.univ_poly_env in
   
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
@@ -311,7 +313,7 @@ let translate_constructors info env label ind =
     let cons_name = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let cons_type = Terms.translate_types info env uenv cons_type in
     let template_type = Tsorts.add_sort_params template_params cons_type in
-    let univ_type     = Tsorts.add_sort_params univ_poly_params template_type in
+    let univ_type     = Tsorts.add_sort_params ind.univ_poly_names template_type in
     debug "Cons_type: %a" Dedukti.pp_term univ_type;
     
     Dedukti.print info.fmt (Dedukti.declaration false cons_name univ_type);
@@ -357,7 +359,7 @@ let translate_match info env label ind =
   
   (* Compute universe parameters names and corresponding local environnement *)
   let template_params = ind.template_names in
-  let univ_poly_params = ind.univ_poly_params in
+  let univ_poly_params = ind.univ_poly_names in
   let uenv = ind.univ_poly_env in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
@@ -567,7 +569,7 @@ let translate_match info env label ind =
         match_function_applied'
         (brackets @ [cons_applieds'.(j)]) in
     let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
-    let rw_rule = Dedukti.rewrite (case_rule_context', case_rule_left', case_rule_right') in
+    let rw_rule = Dedukti.typed_rewrite (case_rule_context', case_rule_left', case_rule_right') in
     Dedukti.print info.fmt rw_rule
   done;
   
@@ -605,5 +607,5 @@ let translate_match info env label ind =
     [return_type_binding; (new_sort_name, T.coq_Sort())] in
   
   (* Printing out the rule for lift elimination *)
-  Dedukti.print info.fmt (Dedukti.rewrite (context, pattern_match, lhs_match))
+  Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, lhs_match))
   

@@ -10,6 +10,18 @@ open Term
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
+
+let translate_rel_decl info env decl =
+  match Context.Rel.Declaration.to_tuple decl with
+  | (x, None, a) ->
+    let x = Cname.fresh_name ~default:"_" info env x in
+    let x' = Cname.translate_name x in
+    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
+    (new_env, Some (x',a))
+  | (x, Some u, a) ->
+    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+    (new_env, None)
+
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
@@ -561,9 +573,9 @@ and lift_fix info env uenv names types bodies rec_indices =
       body')
     ]) in
   for i = 0 to n - 1 do
-    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules1.(i));
-    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules2.(i));
-    List.iter (Dedukti.print info.fmt) (List.map Dedukti.rewrite fix_rules3.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules1.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules2.(i));
+    List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
   Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
   env, fix_declarations1
@@ -571,19 +583,13 @@ and lift_fix info env uenv names types bodies rec_indices =
 (** Translate the context [x1 : a1, ..., xn : an] into the list
     [x1, ||a1||; ...; x1, ||an||], ignoring let declarations. *)
 and translate_rel_context info env uenv context =
-  let translate_rel_declaration c (env, translated) =
-    let (x, u, a) = Context.Rel.Declaration.to_tuple c in
-    match u with
-    | None ->
-      let x = Cname.fresh_name ~default:"_" info env x in
-      let x' = Cname.translate_name x in
+  let aux decl (env, translated) =
+    match translate_rel_decl info env decl with
+    | (new_env, Some (x',a)) ->
       let a' = translate_types info env uenv a in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
       (new_env, (x', a') :: translated)
-    | Some(u) ->
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-      (new_env, translated) in
-  let env, translated = List.fold_right translate_rel_declaration context (env, []) in
+    | (new_env, None) -> (new_env, translated) in
+  let env, translated = List.fold_right aux context (env, []) in
   (* Reverse the list as the newer declarations are on top. *)
   (env, List.rev translated)
 

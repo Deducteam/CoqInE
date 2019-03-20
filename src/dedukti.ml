@@ -13,6 +13,10 @@ type term =
   | Bracket of term
   | Wildcard
 
+type context = (var * term) list
+
+type untyped_context = var list
+
 type instruction =
   | EmptyLine
   | Comment of string
@@ -20,7 +24,7 @@ type instruction =
   | Declaration of bool * var * term
   | Definition of bool * var * term * term
   | UDefinition of bool * var * term
-  | Rewrite of (var * term) list * term * term
+  | Rewrite of untyped_context * term * term
 
 let var x = Var(x)
 
@@ -66,6 +70,8 @@ let udefinition opaque x a = UDefinition(opaque, x, a)
 
 let rewrite (context, left, right) = Rewrite(context, left, right)
 
+let typed_rewrite (context, left, right) = rewrite (List.map fst context, left, right)
+
 let apply_context a context = apps a (List.map var (List.map fst context))
 
 (** Pretty-printing using the minimal number of parentheses. *)
@@ -110,11 +116,8 @@ and print_binding out (v, ty) =
 
 let pp_term = print_term
 
-let print_context_var out (v, ty) =
-  Format.fprintf out "@[<2>%a@]" print_var v
-
 let print_context out context =
-  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_context_var) context
+  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_var) context
 
 let print fmt = function
   | Comment(c) -> Format.fprintf fmt "(; %s ;)@." c

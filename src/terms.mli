@@ -49,6 +49,10 @@ val lift_fix :
   Constr.t array ->
   int array -> Environ.env * Context.Rel.Declaration.t array
 
+val translate_rel_decl :
+  Info.info -> Environ.env ->
+  Context.Rel.Declaration.t -> (Environ.env * (Dedukti.var * Constr.types) option)
+
 val translate_rel_context :
   Info.info -> Environ.env -> Info.env ->
   Context.Rel.t -> Environ.env * (Dedukti.var * Dedukti.term) list
