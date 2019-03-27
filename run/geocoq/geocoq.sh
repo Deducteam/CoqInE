@@ -1,4 +1,4 @@
-GEOCOQ_DIR=/home/gferey/git/GeoCoq
+GEOCOQ_DIR=/home/gferey/git/geocoqine
 
 CURDIR=`dirname $0`
 
@@ -12,10 +12,15 @@ Tarski_dev/Ch03_bet.v
 Tarski_dev/Ch04_cong_bet.v
 Tarski_dev/Ch04_col.v
 Tactics/Coinc/tactics_axioms.v
+Utils/sets.v
+Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
+Tarski_dev/Ch05_bet_le.v
+Tarski_dev/Ch06_out_lines.v
 )
+
+
 OTHER_FILES=(
 Utils/arity.v
-Utils/sets.v
 Tactics/Coinc/ColR.v
 Meta_theory/Models/tarski_to_col_theory.v
 Tarski_dev/Tactics/ColR.v

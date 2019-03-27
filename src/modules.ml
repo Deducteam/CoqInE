@@ -87,10 +87,11 @@ let translate_mutual_coinductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then extend subtyping (I guess...) *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_inductive_subtyping info env label inds.(i)
-  done;
+  (* Then extend subtyping if we have template polymorphic inductives *)
+  if Encoding.is_templ_polymorphism_on () then
+    for i = 0 to pred ntypes do
+      Inductives.translate_inductive_subtyping info env label inds.(i)
+    done;
   (* Then declare all the constructors *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)

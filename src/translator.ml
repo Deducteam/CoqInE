@@ -91,6 +91,10 @@ struct
       (if (get()).pred_cast_flag
        then [cu s1; cu s2; a; b; coq_var (get()).t_I; t]
        else [cu s1; cu s2; a; b;                      t])
+  let coq_pcast cu s1 s2 a b t =
+    if (get()).pred_cast_flag
+    then apps (coq_var (get()).t_priv_cast) [cu s1; cu s2; a; b;t]
+    else coq_cast cu s1 s2 a b t
   let coq_lift cu s1 s2 t = apps (coq_var (get()).t_lift)
       (if (get()).pred_lift_flag
        then [cu s1; cu s2; coq_var  (get()).t_I; t]
@@ -191,6 +195,7 @@ struct
 
   let coq_prod     s = Std.coq_prod (if a () then Std.cu else Short.scu) s
   let coq_cast     s = Std.coq_cast (if a () then Std.cu else Short.scu) s
+  let coq_pcast    s = Std.coq_pcast (if a () then Std.cu else Short.scu) s
   let coq_lift     s = Std.coq_lift (if a () then Std.cu else Short.scu) s
   let cstr_le      s = Std.cstr_le  (if a () then Std.cu else Short.scu) s
   let cstr_lt      s = Std.cstr_lt  (if a () then Std.cu else Short.scu) s
@@ -200,14 +205,15 @@ struct
     | AsLift ->
       apps (coq_var (get()).t_lift)
         (if (get()).pred_lift_flag
-         then [var s;wildcard;t]
-         else [var s;wildcard;wildcard;t])
+         then [var s;wildcard;wildcard;t]
+         else [var s;wildcard;t])
     | AsCast ->
       let p = app (coq_var (get()).t_univ) (var s) in
+      let uwildcard = app (coq_var (get()).t_univ) wildcard in
       apps (coq_var (get()).t_cast)
         (if (get()).pred_cast_flag
-         then [wildcard;wildcard;p;wildcard;wildcard;t]
-         else [wildcard;wildcard;p;wildcard;t])
+         then [wildcard;wildcard;p;uwildcard;wildcard;t]
+         else [wildcard;wildcard;p;uwildcard;t])
     | AsPrivateCast ->
       let p = app (coq_var (get()).t_univ) (var s) in
       apps (coq_var (get()).t_priv_cast)

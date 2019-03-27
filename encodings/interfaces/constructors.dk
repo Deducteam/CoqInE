@@ -48,4 +48,5 @@ def cast : s : Sort -> s' : Sort ->
            p : eps (SubType s s' a b) ->
            Term s a -> Term s' b.
 
+def lift (s : Sort) (s' : Sort) := cast (axiom s) (axiom s') (univ s) (univ s').
 

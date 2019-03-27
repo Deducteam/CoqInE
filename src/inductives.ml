@@ -136,6 +136,38 @@ let get_infos mind_body index =
   }
 
 
+
+let is_template_parameter ind = function
+  | Context.Rel.Declaration.LocalDef _ -> None
+  | Context.Rel.Declaration.LocalAssum (name, tp) ->
+    let rec aux acc t = match Constr.kind t with
+      | Term.Prod(x,a,t) -> aux (Cname.translate_name x::acc) t
+      | Term.Sort (Sorts.Type u) ->
+        (match Univ.Universe.level u with
+         | None -> None
+         | Some lvl ->
+           Utils.map_opt (fun lvl_name -> (name, List.rev acc, lvl, lvl_name))
+             (Info.try_translate_template_arg ind.univ_poly_env lvl)
+        )
+      | _ -> None
+    in
+    aux [] tp
+
+let extract_rel_context info env =
+  let aux (env, acc) = function
+    | [] -> (env, List.rev acc)
+    | decl :: l ->
+      match Context.Rel.Declaration.to_tuple decl with
+      | (x, None, a) ->
+        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
+        (new_env, x::acc)
+      | (x, Some u, a) ->
+        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+        (new_env, acc)
+  in
+  aux (env, [])
+
+
 (** Translate the type of the given inductive
       I : s1 : Sort -> ... -> sk : Sort ->
           p1 : ||P1|| ->
@@ -172,39 +204,11 @@ let translate_inductive info env label ind  =
   debug "Arity: %a" pp_coq_type arity;
   debug "Arity': %a" Dedukti.pp_term arity';
   (* Printing out the type declaration. *)
-  Dedukti.print info.fmt (Dedukti.declaration false name' arity')
-
-
-let is_template_parameter ind = function
-  | Context.Rel.Declaration.LocalDef _ -> None
-  | Context.Rel.Declaration.LocalAssum (name, tp) ->
-    let rec aux acc t = match Constr.kind t with
-      | Term.Prod(x,a,t) -> aux (Cname.translate_name x::acc) t
-      | Term.Sort (Sorts.Type u) ->
-        (match Univ.Universe.level u with
-         | None -> None
-         | Some lvl ->
-           Utils.map_opt (fun lvl_name -> (name, List.rev acc, lvl, lvl_name))
-             (Info.try_translate_template_arg ind.univ_poly_env lvl)
-        )
-      | _ -> None
-    in
-    aux [] tp
-
-let extract_rel_context info env =
-  let aux (env, acc) = function
-    | [] -> (env, List.rev acc)
-    | decl :: l ->
-      match Context.Rel.Declaration.to_tuple decl with
-      | (x, None, a) ->
-        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
-        (new_env, x::acc)
-      | (x, Some u, a) ->
-        let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-        (new_env, acc)
+  let definable =
+    Encoding.is_templ_polymorphism_on () &&
+    List.exists (fun p -> Option.has_some (is_template_parameter ind p)) ind.mind_params_ctxt
   in
-  aux (env, [])
-
+  Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
 
 (** Subtyping is extended to parameters of template or true polymorphic inductive types.
@@ -255,6 +259,9 @@ let translate_inductive_subtyping info env label ind =
           then lifted_param_pat
           else Dedukti.var (translate_name name)
         in
+        let translate_replace_sort s =
+          Dedukti.var (if s = level_name' then new_level_name' else s)
+        in
         let lhs =
           Dedukti.apps inductive'
             (List.map Dedukti.var ind.univ_poly_names @
@@ -265,16 +272,21 @@ let translate_inductive_subtyping info env label ind =
           Tsorts.translate_sort ind.univ_poly_env ind.arity_sort in
         let new_uenv = (* Env remapping level to new_level_name *)
           Info.replace_template_name ind.univ_poly_env level new_level_name' in
-        let target_sort =
+        let small_sort =
           Tsorts.translate_sort new_uenv ind.arity_sort in
         let rhs =
           Dedukti.apps inductive'
-            (List.map Dedukti.var ind.univ_poly_names @
-             List.map Dedukti.var ind.template_names @
+            (List.map translate_replace_sort ind.univ_poly_names @
+             List.map translate_replace_sort ind.template_names @
              List.map Dedukti.var arity_ctxt_names'
             ) in
-        let rhs = T.coq_lift origin_sort target_sort rhs in
+        let rhs = T.coq_pcast
+            (Translator.Succ (small_sort, 1))
+            (Translator.Succ (origin_sort, 1))
+            (T.coq_sort small_sort)
+            (T.coq_sort origin_sort) rhs in
         let context =
+          new_level_name' ::
           ind.univ_poly_names @
           ind.template_names @
           arity_ctxt_names' in
@@ -601,7 +613,7 @@ let translate_match info env label ind =
        Dedukti.var return_sort_name' ::
        List.map (fun x -> Dedukti.var (fst x)) params_context' @
        [Dedukti.ulams local_ctxt_names pattern]) in
-  let lhs_match =
+  let rhs_match =
     Dedukti.apps match_function_var'
       (List.map Dedukti.var univ_poly_params @
        List.map Dedukti.var template_params @
@@ -617,5 +629,5 @@ let translate_match info env label ind =
     [return_type_binding; (new_sort_name, T.coq_Sort())] in
   
   (* Printing out the rule for lift elimination *)
-  Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, lhs_match))
+  Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, rhs_match))
   
