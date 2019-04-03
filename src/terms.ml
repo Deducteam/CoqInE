@@ -398,21 +398,21 @@ and translate_cast info uenv t' enva a envb b =
     | CastType(_), _
     | _, CastType(_) -> Error.not_supported "CastType"
     | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
-      (* TODO: should we check for useless casts (b1~ b2) ? *)
+      (* TODO: should we check for useless casts (b1~b2) ? *)
+      let x1' = Cname.fresh_name info enva x1 in
       let (x,tA),t =
         match t' with
         | Dedukti.Lam ((x,Some tA),t) -> ((x,tA), t)
         | _ -> (* We eta-expand the translation t' of t here *)
           let tA = translate_types info enva uenv a1 in
           (* We assume a1 and a2 are convertible.
-             Otherwise Coq's typechking would have failed. *)
-          let x = Cname.fresh_name info enva x1 in
-          let x = Cname.translate_name x in
+             Otherwise Coq's typecheking would have failed. *)
+          let x = Cname.translate_name x1' in
           let t = Dedukti.app t' (Dedukti.var x)  in
           ((x,tA), t)
       in
-      let nenva = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x1, a1)) enva in
-      let nenvb = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x2, a2)) envb in
+      let nenva = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x1', a1)) enva in
+      let nenvb = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x1', a2)) envb in
       Dedukti.lam (x, tA) (translate_cast info uenv t nenva b1 nenvb b2)
     | _ -> t'
 

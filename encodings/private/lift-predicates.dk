@@ -1,0 +1,55 @@
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;----------------------------  Axiom  ----------------------------;)
+
+univ' (s : Sort) (s' : Sort) : Univ s'.
+
+[s] Term _ (univ' s _) --> Univ s.
+
+[s,s',p] univ s s' p --> univ' s s'.
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+def prod' : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+            a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ s3.
+
+[s1, s2, a, b] Term _ (prod' s1 s2 _ a b) --> x : Term s1 a -> Term s2 (b x).
+
+[s1, s2,s3,p] prod s1 s2 s3 p --> prod' s1 s2 s3.
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+def lift' : s : Sort -> s' : Sort ->
+            Univ s -> Univ s'.
+
+[s, a] Term _ (lift' s _ a) --> Term s a.
+
+[s1,s2,t] lift s1 s2 _ t --> lift' s1 s2 t.
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[s,t] lift' s s t --> t.
+
+
+[s,a]
+    lift' s s a
+--> a.
+
+[s1,s2,s3,a]
+    lift' _  s3 (lift' s1 s2 a)
+--> lift' s1 s3 a.
+
+[s1,s2,s3,a,b]
+    prod' _  s2 s3 (lift' s1 _ a) (x => b x)
+--> prod' s1 s2 s3 a             (x => b x).
+
+[s1,s2,s3,a,b]
+    prod' s1 _  s3 a (x => lift' s2 _ (b x))
+--> prod' s1 s2 s3 a (x => b x).
+
+

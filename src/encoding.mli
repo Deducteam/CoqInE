@@ -52,11 +52,17 @@ type t =
     t_Sort : string;
     t_Univ : string;
     t_Term : string;
+    
+    t_axiom : string;
+    t_sup   : string;
+    t_rule  : string;
+    
     t_univ : string;
     t_prod : string;
     t_lift : string;
     t_cast : string;
     t_I    : string;
+    t_priv_lift   : string;
     t_priv_cast   : string;
     t_priv_code   : string;
     t_priv_uncode : string;

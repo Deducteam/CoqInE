@@ -16,6 +16,8 @@ elif [ "$1" = "original_cast" ]; then
 	exportdk original_cast original_cast original
 elif [ "$1" = "predicates" ]; then
 	exportdk predicates predicates predicates
+elif [ "$1" = "lift_predicates" ]; then
+	exportdk lift-predicates lift-predicates lift-predicates
 elif [ "$1" = "functionnal" ]; then
 	exportdk functionnal functionnal functionnal
 elif [ "$1" = "constructors" ]; then

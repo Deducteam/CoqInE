@@ -23,14 +23,18 @@ type t =
     encoding_name   : string;
     system_module   : string;
     universe_module : string;
-    t_Sort : string;
-    t_Univ : string;
-    t_Term : string;
-    t_univ : string;
-    t_prod : string;
-    t_lift : string;
-    t_cast : string;
-    t_I    : string;
+    t_Sort  : string;
+    t_Univ  : string;
+    t_Term  : string;
+    t_axiom : string;
+    t_sup   : string;
+    t_rule  : string;
+    t_univ  : string;
+    t_prod  : string;
+    t_lift  : string;
+    t_cast  : string;
+    t_I     : string;
+    t_priv_lift   : string;
     t_priv_cast   : string;
     t_priv_code   : string;
     t_priv_uncode : string;
@@ -57,14 +61,26 @@ let original =
     t_Sort = "Sort";
     t_Univ = "Univ";
     t_Term = "Term";
+    t_axiom = "axiom";
+    t_sup = "sup";
+    t_rule = "rule";
     t_univ = "univ";
     t_prod = "prod";
     t_lift = "lift";
     t_cast = "cast";
     t_I    = "I";
+    t_priv_lift   = "lift'";
     t_priv_cast   = "cast'";
     t_priv_code   = "c";
     t_priv_uncode = "u";
+  }
+
+let lift_priv =
+  { original with
+    pred_univ_flag            = true;
+    pred_prod_flag            = true;
+    pred_lift_flag            = true;
+    encoding_name = "private_lift";
   }
 
 let original_cast =
@@ -91,6 +107,7 @@ let polymorph =
     lifted_type_pattern = AsPrivateCast; (* Casted type pattern *)
     encoding_name = "polymorphism";
   }
+
 
 
 let named enc =
@@ -125,6 +142,7 @@ let rec get_encoding e =
     | "original"      -> original
     | "original_cast" -> original_cast
     | "template_cast" -> template_cast
+    | "lift_priv"     -> lift_priv
     | "polymorph"     -> polymorph
     | invalid_name -> failwith (Format.sprintf "Unknown encoding: %s" invalid_name)
 let set_encoding e = set (get_encoding e)

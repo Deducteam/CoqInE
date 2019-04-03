@@ -51,13 +51,13 @@ struct
 
   let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
 
-  let coq_axiom s    = app  (coq_var "axiom") s
+  let coq_axiom s    = app  (coq_var (get()).t_axiom) s
   let coq_axioms s i = Utils.iterate i coq_axiom s
-  let coq_rule s1 s2 = apps (coq_var "rule" ) [s1; s2]
+  let coq_rule s1 s2 = apps (coq_var (get()).t_rule) [s1; s2]
   let rec coq_sup  = function
     | [] -> coq_prop ()
     | [u] -> u
-    | (u :: u_list) -> apps (coq_var "sup") [u; coq_sup u_list]
+    | (u :: u_list) -> apps (coq_var (get()).t_sup) [u; coq_sup u_list]
   let rec cu = function
     | Succ (u   ,0) -> cu u
     | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
@@ -84,21 +84,28 @@ struct
 
   let coq_U    s           = app  (coq_var (get()).t_Univ ) (cu s)
   let coq_term s  a        = apps (coq_var (get()).t_Term ) [cu s; a]
-  let coq_sort s           = app  (coq_var (get()).t_univ ) (cu s)
 
-  let coq_prod cu s1 s2 a b   = apps (coq_var (get()).t_prod ) [cu s1; cu s2; a; b]
+  let t_I () = coq_var (get()).t_I
+  let coq_sort cu s = apps (coq_var (get()).t_univ )
+      (if (get()).pred_univ_flag
+       then [cu s; cu (Succ (s,1)); t_I()]
+       else [cu s])
+  let coq_prod cu s1 s2 a b   = apps (coq_var (get()).t_prod )
+      (if (get()).pred_prod_flag
+       then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
+       else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b t = apps (coq_var (get()).t_cast )
       (if (get()).pred_cast_flag
-       then [cu s1; cu s2; a; b; coq_var (get()).t_I; t]
-       else [cu s1; cu s2; a; b;                      t])
+       then [cu s1; cu s2; a; b; t_I(); t]
+       else [cu s1; cu s2; a; b;        t])
   let coq_pcast cu s1 s2 a b t =
     if (get()).pred_cast_flag
     then apps (coq_var (get()).t_priv_cast) [cu s1; cu s2; a; b;t]
     else coq_cast cu s1 s2 a b t
   let coq_lift cu s1 s2 t = apps (coq_var (get()).t_lift)
       (if (get()).pred_lift_flag
-       then [cu s1; cu s2; coq_var  (get()).t_I; t]
-       else [cu s1; cu s2;                       t])
+       then [cu s1; cu s2; t_I(); t]
+       else [cu s1; cu s2;        t])
 
   
   let cstr_le cu s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
@@ -119,26 +126,6 @@ struct
 
   let code_name u = "_u" ^ (string_of_int u)
   let code_var  u = (var (code_name u))
-
-  (* Redefining headers first then overriding previous definitions. *)
-  let coq_header () =
-    let res = ref [] in
-    let add n t = res := (udefinition false n t) :: !res in
-    add (nat_name 0) (coq_var "z");
-    for i = 1 to 9 do add ( nat_name i) (app (coq_var "s"   )         ( nat_var (i-1))) done;
-    for i = 0 to 9 do add (sort_name i) (app (coq_var "type")         ( nat_var i    )) done;
-    for i = 0 to 9 do add (code_name i) (app (coq_var (get()).t_univ) (sort_var i    )) done;
-    add "_Set"  (Std.coq_U    Set );
-    add "_Prop" (Std.coq_U    Prop);
-    add "_set"  (Std.coq_sort Set );
-    add "_prop" (Std.coq_sort Prop);
-    coq_header () @
-    (comment "------------  Short definitions  -----------") ::
-    EmptyLine ::
-    (List.rev !res) @
-    EmptyLine ::
-    (comment "--------  Begining of translation  ---------") ::
-    EmptyLine :: []
 
   let rec short_nat i =
     if i <= 9 then nat_var i else app (coq_var "s") (short_nat (i-1))
@@ -174,6 +161,26 @@ struct
 
   let short_proj i t = app (app (coq_var "proj") (short_nat i)) t
 
+  (* Redefining headers first then overriding previous definitions. *)
+  let coq_header () =
+    let res = ref [] in
+    let add n t = res := (udefinition false n t) :: !res in
+    add (nat_name 0) (coq_var "z");
+    for i = 1 to 9 do add ( nat_name i) (app (coq_var "s"   ) (nat_var (i-1))) done;
+    for i = 0 to 9 do add (sort_name i) (app (coq_var "type") (nat_var i    )) done;
+    for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type i)) done;
+    add "_Set"  (Std.coq_U    Set );
+    add "_Prop" (Std.coq_U    Prop);
+    add "_set"  (Std.coq_sort scu Set );
+    add "_prop" (Std.coq_sort scu Prop);
+    coq_header () @
+    (comment "------------  Short definitions  -----------") ::
+    EmptyLine ::
+    (List.rev !res) @
+    EmptyLine ::
+    (comment "--------  Begining of translation  ---------") ::
+    EmptyLine :: []
+
 end
 
 module T =
@@ -191,7 +198,7 @@ struct
   let coq_universe s = if a () then Std.cu       s else Short.scu        s
   let coq_U        s = if a () then Std.coq_U    s else Short.short_U    s
   let coq_term     s = if a () then Std.coq_term s else Short.short_term s
-  let coq_sort     s = if a () then Std.coq_sort s else Short.short_sort s
+  let coq_sort     s = if a () then Std.coq_sort Std.cu s else Short.short_sort s
 
   let coq_prod     s = Std.coq_prod (if a () then Std.cu else Short.scu) s
   let coq_cast     s = Std.coq_cast (if a () then Std.cu else Short.scu) s
@@ -203,10 +210,9 @@ struct
   let coq_pattern_lifted_from_sort s t =
     match (get()).lifted_type_pattern with
     | AsLift ->
-      apps (coq_var (get()).t_lift)
-        (if (get()).pred_lift_flag
-         then [var s;wildcard;wildcard;t]
-         else [var s;wildcard;t])
+      (if (get()).pred_lift_flag
+         then apps (coq_var (get()).t_priv_lift) [var s;wildcard;t]
+         else apps (coq_var (get()).t_lift     ) [var s;wildcard;t])
     | AsCast ->
       let p = app (coq_var (get()).t_univ) (var s) in
       let uwildcard = app (coq_var (get()).t_univ) wildcard in

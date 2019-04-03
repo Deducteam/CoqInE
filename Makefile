@@ -84,6 +84,10 @@ geocoq: RUNDIR:=$(GEOCOQDIR)
 geocoq: run
 
 
+.PHONY: lift_geocoq
+lift_geocoq: ENCODING_FLAGS:=lift_predicates short
+lift_geocoq: COQINE_FLAGS:=readable lift_priv
+lift_geocoq: geocoq
 
 .PHONY: template_geocoq
 template_geocoq: ENCODING_FLAGS:=original_cast short
