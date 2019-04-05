@@ -17,7 +17,5 @@ Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
 
 Require Import import.
 
-Require Import Tactics.Coinc.tactics_axioms.
-
 
 Dedukti Export All.

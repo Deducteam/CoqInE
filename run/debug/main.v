@@ -9,7 +9,7 @@ Dedukti Set Destination "out".
 Dedukti Add Debug "Coq.Init.Specif".
 
 
-Dedukti Set Encoding "readable polymorph".
+Dedukti Set Encoding "original_cast ".
 
 (*
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".

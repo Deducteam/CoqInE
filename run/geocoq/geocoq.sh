@@ -20,14 +20,12 @@ Tarski_dev/Ch06_out_lines.v
 
 
 OTHER_FILES=(
+Utils/all_equiv.v
 Utils/arity.v
 Tactics/Coinc/ColR.v
 Meta_theory/Models/tarski_to_col_theory.v
 Tarski_dev/Tactics/ColR.v
 Utils/all_equiv.v
-Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
-Tarski_dev/Ch05_bet_le.v
-Tarski_dev/Ch06_out_lines.v
 Tarski_dev/Ch07_midpoint.v
 Tarski_dev/Ch08_orthogonality.v
 Tarski_dev/Annexes/coplanar.v
@@ -132,7 +130,6 @@ Tarski_dev/Ch03_bet.v
 Tarski_dev/Ch04_cong_bet.v
 Tactics/Coinc/tactics_axioms.v
 Tarski_dev/Ch04_col.v
-Utils/sets.v
 Tactics/Coinc/Permutations.v
 Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tactics/Coinc/CoincR.v
@@ -244,3 +241,5 @@ sed "s/\.v/\./" Make > import.v
 sed -i "s/\//\./g" import.v
 sed -i "s/GeoCoq/Require Import GeoCoq/" import.v
 sed -i "/\.Ch/!d" import.v
+echo "Require Import Coq.Classes.Morphisms." >> import.v
+
