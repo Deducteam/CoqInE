@@ -152,7 +152,10 @@ and translate_structure_body info env sb =
 and translate_structure_field_body info env (label, sfb) =
   let full_name = (Names.ModPath.to_string info.module_path) ^ "." ^
                   (Names.Label.to_string label) in
-  debug "Structure field body: %s" full_name;
+  debug "";
+  debug "---------------------------------------------";
+  debug "    Structure field body: %s" full_name;
+  debug "---------------------------------------------";
   if not_filtered full_name
   then match sfb with
     | SFBconst cb -> translate_constant_body info env label cb

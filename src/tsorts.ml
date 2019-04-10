@@ -66,13 +66,15 @@ let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
   
   let levels = Univ.Instance.to_array univ_instance in
   let rec aux acc i = function
-    | None     :: tl -> aux              acc  (i+1) tl
+    | None     :: tl -> aux acc (i+1) tl
     | (Some a) :: tl when i < nb_instance ->
       let lvl = if i < nb_instance then levels.(i) else a in
       aux (lvl::acc) (i+1) tl
-    | _              -> List.rev acc
+    | _             -> List.rev acc
   in
   let levels = aux [] 0 univ_ctxt in
+  debug "Univ context: %a" (pp_list " " pp_coq_level) levels;
+  
   List.fold_left
     (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
     (Dedukti.var name)
@@ -89,19 +91,12 @@ let instantiate_ind_univ_params env uenv name ind univ_instance =
         "polymorphic",
         instantiate_poly_univ_params uenv name univ_ctxt univ_instance
       end
-    else if Encoding.is_templ_polymorphism_on () &&
-            Environ.template_polymorphic_ind ind env
-    then
-      begin
-        let univ_ctx = 
-          match oib.mind_arity with
-          | RegularArity a -> assert false
-          | TemplateArity ar -> ar.template_param_levels
-        in
+    else
+      match oib.mind_arity with
+      | TemplateArity ar when Encoding.is_templ_polymorphism_on () ->
         "template",
-        instantiate_template_univ_params uenv name univ_ctx univ_instance
-      end
-    else "", Dedukti.var name
+        instantiate_template_univ_params uenv name ar.template_param_levels univ_instance
+      | _ -> "", Dedukti.var name
   in
   debug "Printing %s inductive constructor: %s@@{%a} : %a" indtype name
     pp_coq_inst univ_instance

@@ -2,6 +2,7 @@
 Require Import
   Test.Debuglib
   Test.Identity
+  Coq.Classes.RelationClasses
 (*
   Test.Polymorph
   Test.ImportA

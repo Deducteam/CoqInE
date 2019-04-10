@@ -7,9 +7,11 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 Dedukti Add Debug "Coq.Init.Specif".
+(*
+Dedukti Add Debug "Coq.Classes.RelationClasses".
+*)
 
-
-Dedukti Set Encoding "original_cast ".
+Dedukti Set Encoding "readable polymorph".
 
 (*
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".

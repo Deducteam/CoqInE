@@ -314,11 +314,13 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
     let n = Array.length names in
-    debug "Translating fixpoints (%i):" n;
+    debug "Translating %i fixpoints:" n;
     for i = 0 to n - 1 do
       debug "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
     done;
     let n = Array.length names in
+    (* TODO: not the whole environment should be added here, only the relevant part
+       i.e. variables that occur in the body of the fixpoint *)
     let env, fix_declarations =
       (* try Hashtbl.find fixpoint_table rec_declaration *)
       try Hashtbl.find fixpoint_table (env, rec_declaration)

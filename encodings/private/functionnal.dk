@@ -58,27 +58,35 @@ def cast' : s : Sort -> s' : Sort ->
 [s1,s2,A,B,a] cast' s1 _ A (cast' _ _ (univ s2) _ B) a --> cast' s1 s2 A B a.
 
 
+
 (; This version encodes both contravariant and covariant product subtyping. ;)
+(;
 [s1,s1',s2,s3,A,A',B,C,b]
   cast' _ _ (prod s1 s2 A B) (prod s1' s3 A' C) (x => b x) -->
   x : Term s1' A' => cast' s2 s3 (B (cast' s1' s1 A' A x)) (C x) (b (cast' s1' s1 A' A x)).
 
-(; This version encodes only covariant product subtyping. 
-[s1,s2,s3,A,B,C,b]
-  cast' _ _ (prod s1 s2 A B) (prod _ s3 A C) (x => b x) -->
-  x : Term s1 A => cast' s2 s3 (B x) (C x) (b x).
-;)
-
-
-(; This version encodes both contravariant and covariant product subtyping. ;)
 [s1,s1',s2,s3,A,A',B,C,b,a]
   cast' _ _ (prod s1 s2 A B) (prod s1' s3 A' C) b a -->
   cast' s2 s3 (B (cast' s1' s1 A' A a)) (C a) (b (cast' s1' s1 A' A a)).
+;)
 
-(; This version encodes only covariant product subtyping. 
+
+(; This version encodes only covariant product subtyping. ;)
+(;
+[s1,s2,s3,A,B,C,b]
+  cast' _ _ (prod s1 s2 A B) (prod _ s3 A C) (x => b x) -->
+  x : Term s1 A => cast' s2 s3 (B x) (C x) (b x).
+
 [s1,s2,s3,A,B,C,b,a]
   cast' _ _ (prod s1 s2 A B) (prod _ s3 A C) b a -->
   cast' s2 s3 (B a) (C a) (b a).
 ;)
+
+
+(; This version encodes only product subtyping with eta expansion ;)
+
+[s1,s1',s2,s3,A,A',B,C,b]
+  cast' _ _ (prod s1 s2 A B) (prod s1' s3 A' C) b -->
+  x : Term s1' A' => cast' s2 s3 (B (cast' s1' s1 A' A x)) (C x) (b (cast' s1' s1 A' A x)).
 
 

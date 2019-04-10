@@ -124,11 +124,6 @@ debug_named: ENCODING_FLAGS:=original
 debug_named: COQINE_FLAGS:=named original
 debug_named: debug
 
-.PHONY: debug_named
-debug_named: ENCODING_FLAGS:=original
-debug_named: COQINE_FLAGS:=named original
-debug_named: debug
-
 .PHONY: debug_poly
 debug_poly: ENCODING_FLAGS:=constructors short
 debug_poly: COQINE_FLAGS:=readable polymorph

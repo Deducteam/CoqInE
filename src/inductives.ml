@@ -153,17 +153,18 @@ let is_template_parameter ind = function
     in
     aux [] tp
 
+(** Extract the list of LocalAssums in a context in reverse order. *)
 let extract_rel_context info env =
-  let aux (env, acc) = function
-    | [] -> (env, List.rev acc)
+  let rec aux (env, acc) = function
+    | [] -> (env, acc)
     | decl :: l ->
       match Context.Rel.Declaration.to_tuple decl with
       | (x, None, a) ->
         let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
-        (new_env, x::acc)
+        aux (new_env, x::acc) l
       | (x, Some u, a) ->
         let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-        (new_env, acc)
+        aux (new_env, acc) l
   in
   aux (env, [])
 
