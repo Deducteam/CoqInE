@@ -579,6 +579,8 @@ let translate_match info env label ind =
        -->
        case_ci y11 ... y1k1
   *)
+  (* TODO: We could probably remove the non-linearity here since it is
+     guaranteed by typing *)
   for j = 0 to ind.n_cons-1 do
     let case_rule_context' =
       univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
@@ -621,6 +623,23 @@ let translate_match info env label ind =
        Dedukti.var new_sort_name ::
        List.map (fun x -> Dedukti.var (fst x)) params_context' @
        [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
+  
+  (* TODO: add match equivalences:
+      match_I s1 ... si' ... sk
+           p1 
+           ...
+           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+           ...
+           pr
+       -->
+       match_I s1 ... si ... sk
+           p1 
+           ...
+           (x1 => ... => xl => pj x1 ... xl)
+           ...
+           pr
+  *)
+
   
   let context =
     univ_poly_context' @

@@ -30,8 +30,8 @@ type : Nat -> Sort.
 
 (;-----------------------  CTS Rule definition  -------------------;)
 
-[   ] rule prop     set      --> set
-[s1 ] rule s1       prop     --> prop
+[s  ] rule prop     s        --> s
+[   ] rule _        prop     --> prop
 [   ] rule set      set      --> set
 [i  ] rule set      (type i) --> type i
 [i  ] rule (type i) set      --> type i

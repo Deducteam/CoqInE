@@ -173,19 +173,21 @@ let instantiate_universes env ctx ar argsorts =
     else Sorts.Type level
   in (ty, subst, safe_subst_fn) (* original returns (ctx, ty) *)
 
-
 let infer_template_polymorph_ind_applied info env uenv ind args =
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   match mip.mind_arity with
   | RegularArity a -> a.mind_user_arity, []
   | TemplateArity ar ->
-    debug "Inferring template polymorph: %a (%i)" pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
+    debug "Inferring template polymorph: %a (%i)"
+      pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
     let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
     (* Do we really need to apply safe_subst to arity ? *)
-    Universes.subst_univs_constr subst arity,
+    let subst_type = Universes.subst_univs_constr subst arity in
+    debug "Substituted type: %a" pp_coq_term subst_type;
+    subst_type,
     if Encoding.is_templ_polymorphism_on () then
       List.map
         (Tsorts.translate_universe uenv)
@@ -210,7 +212,28 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
         (List.map safe_subst
            (Utils.filter_some ar.template_param_levels))
     else []
-  
+
+let infer_template_polymorph_dest_applied info env uenv ind args =
+  let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
+  match mip.mind_arity with
+  | RegularArity a -> a.mind_user_arity, []
+  | TemplateArity ar ->
+    debug "Inferring template destructor: %a (%i)"
+      pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
+    let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
+    let ctx = List.rev mip.mind_arity_ctxt in
+    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let arity = Term.mkArity (List.rev ctx,s) in
+    (* Do we really need to apply safe_subst to arity ? *)
+    let subst_type = Universes.subst_univs_constr subst arity in
+    debug "Substituted type: %a" pp_coq_term subst_type;
+    subst_type,
+    if Encoding.is_templ_polymorphism_on () then
+      List.map
+        (Tsorts.translate_universe uenv)
+        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+    else []
+
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
@@ -339,13 +362,16 @@ let rec translate_constr ?expected_type info env uenv t =
     let n_reals  =  ind_body.Declarations.mind_nrealargs in
     let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
     
+    (*
     let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
+    *)
+    
     let params, reals = Utils.list_chop n_params ind_args in
     let params = List.map (Reduction.whd_all env) params in
     
-    debug "params: %a" (pp_list ", " pp_coq_term) params;
-    let _, univ_params =
-      infer_template_polymorph_ind_applied info env uenv
+    debug "Template params: %a" (pp_list ", " pp_coq_term) params;
+    let arity, univ_params =
+      infer_template_polymorph_dest_applied info env uenv
         case_info.ci_ind (Array.of_list params)
     in
     let univ_params' = List.map T.coq_universe univ_params in
