@@ -221,12 +221,12 @@ let translate_inductive info env label ind  =
       on the return sort expression s.
     we generate:
       I s1 ... si' ... sk
-           p1 
-           ...
-           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
-           ...
-           pr
-           a1 ...  ... an
+        p1 
+        ...
+        (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+        ...
+        pr
+        a1 ...  ... an
        -->
        lift s(s1 ... si ... sk) s(s1 ... si' ... sk)
          (I s1 ... si ... sk
