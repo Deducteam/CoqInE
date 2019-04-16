@@ -11,6 +11,7 @@ RUNDIR=run
 TESTDIR=$(RUNDIR)/test
 GEOCOQDIR=$(RUNDIR)/geocoq
 DEBUGDIR=$(RUNDIR)/debug
+MATHCOMPDIR=$(RUNDIR)/mathcomp
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
 CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
@@ -82,6 +83,10 @@ debug: run
 .PHONY: geocoq
 geocoq: RUNDIR:=$(GEOCOQDIR)
 geocoq: run
+
+.PHONY: mathcomp
+mathcomp: RUNDIR:=$(MATHCOMPDIR)
+mathcomp: run
 
 
 .PHONY: lift_geocoq
