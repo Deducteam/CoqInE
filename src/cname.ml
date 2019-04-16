@@ -59,9 +59,6 @@ let fresh_name info env ?prefix ?default name =
   | Names.Anonymous, Some(d)  ->
     Names.Name(fresh_identifier info env ?prefix (Names.Id.of_string d))
 
-let match_function identifier =
-  Names.Id.of_string (String.concat "_" ["match"; Names.Id.to_string identifier])
-
 (** Name of the match function for the inductive type *)
 let constraint_name index = "cstr_" ^ (string_of_int index)
 
@@ -158,9 +155,12 @@ let translate_constructor info env ((mind, i), j) =
   let label = Names.Label.of_id (ind_body.Declarations.mind_consnames.(j - 1)) in
   translate_module_path info env module_path [label]
 
+
+let match_function info env (modpath : Names.ModPath.t) (id:Names.Id.t) =
+  let match_id = Names.Id.of_string ("match__" ^ (Names.Id.to_string id)) in
+  translate_module_path info env modpath [Names.Label.of_id match_id]
+
 (** The name of the match function for the inductive type [(mind, i)]. *)
 let translate_match_function info env (mind, i) =
   let ind_body = get_inductive_body info env mind i in
-  let module_path = Names.MutInd.modpath mind in
-  let label = Names.Label.of_id (match_function ind_body.Declarations.mind_typename) in
-  translate_module_path info env module_path [label]
+  match_function info env (Names.MutInd.modpath mind) ind_body.Declarations.mind_typename

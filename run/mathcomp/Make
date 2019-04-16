@@ -1,16 +1,1 @@
 # -arg -nois
-import.v
-Test/Debuglib.v
-Test/Identity.v
-Test/ImportA.v
-Test/ImportB.v
-Test/ImportC.v
-Test/Cast.v
-Test/Let.v
-Test/Inductives.v
-Test/Fixpoints.v
-Test/Sections.v
-Test/NestedModules.v
-Test/NestedLibraries.v
-Test/Reflexivity.v
-Test/Polymorph.v

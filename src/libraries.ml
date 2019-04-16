@@ -16,13 +16,13 @@ let translate_qualified_library qualid =
   let filename = Cname.translate_dir_path dir_path in
   let info = Info.init module_path filename in
   begin
-    (*
-    try 
+(*
+    try
 *)
       (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
       Modules.translate_module_body info (Global.env ()) module_body;
       (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
-        (*
+(*
     with e -> Info.close info; raise e
 *)
   end;

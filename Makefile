@@ -133,3 +133,8 @@ debug_named: debug
 debug_poly: ENCODING_FLAGS:=constructors short
 debug_poly: COQINE_FLAGS:=readable polymorph
 debug_poly: debug
+
+.PHONY: lift_mathcomp
+lift_mathcomp: ENCODING_FLAGS:=lift_predicates short
+lift_mathcomp: COQINE_FLAGS:=readable lift_priv
+lift_mathcomp: mathcomp

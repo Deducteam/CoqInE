@@ -20,14 +20,15 @@
 run/debug/**/*.dk
 run/test/**/*.dk
 run/geocoq/**/*.dk
+run/mathcomp/**/*.dk
 
 run/debug/out
 run/test/out
 run/geocoq/out
+run/mathcomp/out
 
 run/geocoq/GeoCoq
 run/geocoq/Make
-
 
 encodings/_build
 

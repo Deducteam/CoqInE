@@ -95,8 +95,12 @@ let translate_mutual_coinductive_body info env label mind_body =
   (* Then declare all the constructors *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
-  done
+  done;
   (* No match function defined so we are done *)
+  (* Then declare all the match functions *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_match info env label inds.(i)
+  done
 
 
 (** Translate the body of non-recursive definitions when it's a record. *)
@@ -127,7 +131,7 @@ let identifiers_of_structure_body structure_body =
   List.concat (List.map identifiers_of_structure_field_body structure_body)
 *)
 
-              
+
 (** Modules are organised into:
     - [module_body] (mb): a wrapper around a struct expression
     - [struct_expr_body] (seb): a struct expression, e.g. functor,
@@ -136,15 +140,25 @@ let identifiers_of_structure_body structure_body =
     - [structure_field_body] (sfb): a single field declaration, e.g.
       definition, inductive, ... **)
 let rec translate_module_body info env mb =
-  match mb.mod_expr with
-  | Abstract       -> Error.not_supported "Abstract"
-  | Algebraic _    -> Error.not_supported "Algebraic"
-  | Struct mod_sig -> translate_module_signature info env mod_sig
-  | FullStruct     -> translate_module_signature info env mb.mod_type
+  let mod_name = Names.ModPath.to_string mb.mod_mp in
+  debug "";
+  debug "=============================================";
+  debug "      Module body: %s" mod_name;
+  debug "=============================================";
+  if not_filtered mod_name
+  then
+    match mb.mod_expr with
+    | Abstract       -> Error.not_supported "Abstract"
+    | Algebraic _    -> Error.not_supported "Algebraic"
+    | Struct mod_sig -> translate_module_signature info env mod_sig
+    | FullStruct     -> translate_module_signature info env mb.mod_type
+  else debug "Filtered out"
 
 and translate_module_signature info env  = function
   | NoFunctor struct_body -> translate_structure_body info env struct_body
-  | MoreFunctor _         -> Error.not_supported "Functor"
+  | MoreFunctor _ ->
+    Error.not_supported
+      (Format.sprintf "Functor (%s)" (Names.ModPath.to_string info.module_path))
 
 and translate_structure_body info env sb =
   List.iter (translate_structure_field_body info env) sb
@@ -167,3 +181,4 @@ and translate_structure_field_body info env (label, sfb) =
       ) info env label mib
     | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
     | SFBmodtype _  -> ()
+  else debug "Filtered out";

@@ -400,7 +400,8 @@ let translate_match info env label ind =
       (fun j -> Constr.mkConstructU(((mind, ind.index), j + 1), univ_instance)) in
   
   let indtype_name = ind_body.mind_typename in
-  let match_function_name' = Cname.translate_identifier (Cname.match_function indtype_name) in
+  let match_function_name' = Cname.match_function info env info.module_path indtype_name in
+  
   let match_function_var'  = Dedukti.var match_function_name' in
   debug "###  %s" match_function_name';
   
@@ -418,7 +419,8 @@ let translate_match info env label ind =
   let cons_types    = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init ind.n_cons (fun j ->
     fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
-  let cons_ind_args = Array.map (fun a -> snd (Inductive.find_inductive env a)) cons_types in
+  let cons_ind_args = Array.map
+      (fun a -> snd (Constr.decompose_app (Reduction.whd_all env a))) cons_types in
   let cons_ind_real_args = Array.init ind.n_cons (fun j ->
     snd (Utils.list_chop ind.n_params cons_ind_args.(j))) in
   let cons_applieds = Array.init ind.n_cons (fun j ->

@@ -23,8 +23,6 @@ val fresh_name :
   Info.info -> Environ.env ->
   ?prefix:string -> ?default:string -> Names.Name.t -> Names.Name.t
 
-(** Name of the match function for the inductive type *)
-val match_function : Names.Id.t -> Names.Id.t
 
 val constraint_name : int -> string
 
@@ -67,7 +65,8 @@ val translate_inductive :
 val translate_constructor :
   Info.info -> Environ.env -> (Names.MutInd.t * int) * int -> string
 
+(** Name of the match function for the inductive type *)
+val match_function : Info.info -> Environ.env -> Names.ModPath.t -> Names.Id.t -> string
+
 val translate_match_function :
   Info.info -> Environ.env -> Names.MutInd.t * int -> string
-
-                                                                

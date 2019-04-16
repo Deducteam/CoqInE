@@ -46,7 +46,7 @@ def lift' : s : Sort -> s' : Sort ->
 
 [s1,s2,s3,a,b]
     prod' _  s2 s3 (lift' s1 _ a) (x => b x)
---> prod' s1 s2 s3 a             (x => b x).
+--> prod' s1 s2 s3 a              (x => b x).
 
 [s1,s2,s3,a,b]
     prod' s1 _  s3 a (x => lift' s2 _ (b x))

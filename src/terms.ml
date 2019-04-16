@@ -30,7 +30,10 @@ let rec infer_translate_sort info env uenv a =
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
   | SortType(s) -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
-  | CastType(a, b) -> Error.not_supported "CastType"
+  (* FIXME: CastType are probably not correctly translated.
+     They are never used in Coq's kernel but occur in SSReflect module *)
+  | CastType(a', _) -> infer_translate_sort info env uenv a'
+    (* Error.not_supported "CastType" *)
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info env ~default:"_" x in
     let s1' = infer_translate_sort info env uenv a in
@@ -76,8 +79,11 @@ let rec convertible info env uenv a b =
   let b = Reduction.whd_all env b in
   match Term.kind_of_type a, Term.kind_of_type b with
   | SortType(s1), SortType(s2) -> Tsorts.convertible_sort uenv s1 s2
-  | CastType(_), _
-  | _, CastType(_) -> Error.not_supported "CastType"
+  (* FIXME: CastType are probably not correctly translated.
+     They are never used in Coq's kernel but occur in SSReflect module *)
+  | CastType(a',_), _ -> convertible info env uenv a' b
+  | _, CastType(b',_) -> convertible info env uenv a b'
+  (* Error.not_supported "CastType" *)
   | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
     convertible info env uenv a1 a2 &&
     let nenv = Environ.push_rel (Context.Rel.Declaration.LocalAssum (x1, a1)) env in
@@ -110,7 +116,10 @@ let push_const_decl env (c, m, const_type) =
     | Some m -> Def (Mod_subst.from_val m) in
   let const_body_code =
     (** TODO : None does not handle polymorphic types ! *)
-    match Cbytegen.compile_constant_body ~fail_on_error:true (Environ.pre_env env) (Monomorphic_const Univ.ContextSet.empty) const_body with
+    match Cbytegen.compile_constant_body
+            ~fail_on_error:true
+            (Environ.pre_env env)
+            (Monomorphic_const Univ.ContextSet.empty) const_body with
     | Some code -> code
     | None -> Error.error (Pp.str "compile_constant_body failed")
   in
@@ -423,8 +432,13 @@ and translate_cast info uenv t' enva a envb b =
       T.coq_lift
         (Tsorts.translate_sort uenv sa)
         (Tsorts.translate_sort uenv sb) t'
-    | CastType(_), _
-    | _, CastType(_) -> Error.not_supported "CastType"
+
+    (* FIXME: CastType are probably not correctly translated.
+       They are never used in Coq's kernel but occur in SSReflect module *)
+    | CastType(a',_), _ -> translate_cast info uenv t' enva a' envb b
+    | _, CastType(b',_) -> translate_cast info uenv t' enva a envb b'
+    (* Error.not_supported "CastType" *)
+
     | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
       (* TODO: should we check for useless casts (b1~b2) ? *)
       let x1' = Cname.fresh_name info enva x1 in
@@ -449,7 +463,10 @@ and translate_types info env uenv a =
   (* Specialize on the type to get a nicer and more compact translation. *)
   match Term.kind_of_type a with
   | SortType(s) -> T.coq_U (Tsorts.translate_sort uenv s)
-  | CastType(a, b) -> Error.not_supported "CastType"
+  (* FIXME: CastType are probably not correctly translated.
+     They are never used in Coq's kernel but occur in SSReflect module *)
+  | CastType(a', _) -> translate_types info env uenv a'
+  (* Error.not_supported "CastType" *)
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info ~default:"_" env x in
     let x' = Cname.translate_name x in
