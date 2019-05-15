@@ -44,6 +44,8 @@ def c : t : Code -> D t -> Code.
 
 (;-------------------------  Subtyping ----------------------------;)
 
+[s] Cumul s s --> true.
+
 def forall : (Code -> Bool) -> Bool.
 [] forall (x => true) --> true.
 

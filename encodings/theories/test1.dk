@@ -403,6 +403,41 @@ se  : Sort. se' : Sort. [] Axiom se se' --> true. def ue := univ se se' I.
       (x => b x)
 ).
 
+(; Non-functionnality of axiom ;)
+(;
+  From
+    A : S
+    s : s1
+    s : s2
+    s : s3
+    s : s4
+  We have
+      s : s3                       s : s4
+      ------                       ------
+      A : s    s : s1    s < s     A : s    s : s2    s < s
+      ------------------------     ------------------------
+               A : s                        A : s
+  Translation of these two judgments should be convertible
+;)
+#ASSERT
+(
+  s : Sort =>
+  s1 : Sort => p1 : eps (Axiom s s1) =>
+  s2 : Sort => p2 : eps (Axiom s s2) =>
+  s3 : Sort => p3 : eps (Axiom s s3) =>
+  s4 : Sort => p4 : eps (Axiom s s4) =>
+  A : Univ s =>
+    cast s3 s1 (univ s s3 p3) (univ s s1 p1) I A
+) == (
+  s : Sort =>
+  s1 : Sort => p1 : eps (Axiom s s1) =>
+  s2 : Sort => p2 : eps (Axiom s s2) =>
+  s3 : Sort => p3 : eps (Axiom s s3) =>
+  s4 : Sort => p4 : eps (Axiom s s4) =>
+  A : Univ s =>
+    cast s4 s2 (univ s s4 p4) (univ s s2 p2) I A
+).
+
 (; Beta-convertibles at the head are still convertible ;)
 (;
   From
@@ -417,7 +452,7 @@ se  : Sort. se' : Sort. [] Axiom se se' --> true. def ue := univ se se' I.
     |- (x => x) a : C     (by application rule)
   Besides
     |- a : C              (since A < C)
-  Translation of these two judgments should be beta equivalent
+  Translation of these two judgments should be convertible
 ;)
 #ASSERT
 (
