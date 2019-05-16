@@ -60,20 +60,19 @@ def ST : Code -> Code -> Bool.
 
 (;---------------------  Canonicity rules -------------------------;)
 
-[s,t] u s (c s t) --> t.
 [  t] c _ (u _ t) --> t.
 
 [A,B,F]
   c (cPi A (x => B x)) (x => F x) -->
   cLam (x:Code => c (B x) (F (u A x))).
 
-[A,B,F]
-  u (cPi A (x => B x)) (cLam (x => F x)) -->
-  x : D A => u (B (c A x)) (F (c A x)).
-
 [A,B,F,U]
   u (cPi A (x => B x)) F U -->
   u (B (c A U)) (cApp F (c A U)).
+
+[A,B,F]
+  u (cPi A (x => B x)) (cLam (x => F x)) -->
+  x : D A => u (B (c A x)) (F (c A x)).
 
 [A,B,F,U]
   cApp (c (cPi A (x => B x)) F) U -->
@@ -82,8 +81,8 @@ def ST : Code -> Code -> Bool.
 [F,U]
   cApp (cLam F) U --> F U.
 
+[s,t] u s (c s t) --> t.
+
 
 (; def delta_delta := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)). ;)
-
-
 
