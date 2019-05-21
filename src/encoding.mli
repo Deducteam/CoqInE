@@ -2,7 +2,6 @@
 type lifted_type_pattern =
   | AsLift
   | AsCast
-  | AsPrivateCast
   | AsUncodedCode
 
 type t =
@@ -29,7 +28,7 @@ type t =
     (** Are we allowed to use casts (for casted lambdas) ?
         Or should we turn them into lifted lambdas instead ? *)
 
-    lift_flag : bool;
+    (*    lift_flag : bool; *)
     (** Are we allowed to use lifts (for lifted type) ?
         Or should we use casts instead ? *)
 
@@ -41,6 +40,12 @@ type t =
     pred_lift_flag            : bool;
     pred_cast_flag            : bool;
     (** Predicate symbols ? *)
+
+    priv_lift_flag            : bool;
+    priv_cast_flag            : bool;
+    priv_univ_flag            : bool;
+    priv_prod_flag            : bool;
+    (** Private version of symbols ? *)
 
     encoding_name : string;
 
@@ -64,6 +69,8 @@ type t =
     t_I    : string;
     t_priv_lift   : string;
     t_priv_cast   : string;
+    t_priv_univ   : string;
+    t_priv_prod   : string;
     t_priv_code   : string;
     t_priv_uncode : string;
   }

@@ -133,9 +133,6 @@ struct
   let short_type i =
     if i <= 9 then sort_var i else app (coq_var "type") (short_nat i)
 
-  let short_code i =
-    if i <= 9 then code_var i else app (coq_var (get()).t_univ) (short_type i)
-
   let rec scu = function
     | Succ (u,0)    -> scu u
     | Succ (Succ(u,i), j) -> scu (Succ (u,i+j))
@@ -145,6 +142,9 @@ struct
     | Max u_list    -> Std.coq_sup (List.map scu u_list)
     | Rule (s1,s2)  -> Std.coq_rule (scu s1) (scu s2)
     | s -> Std.cu s
+
+  let short_code i =
+    if i <= 9 then code_var i else Std.coq_sort scu (Succ(Set,i+1))
 
   let short_U    s   = app  (coq_var (get()).t_Univ) (scu s)
   let short_term s a = apps (coq_var (get()).t_Term) [scu s; a]
@@ -157,7 +157,7 @@ struct
     | Succ (Prop,i) -> short_code (i-1)
     | Set  -> var "_set"
     | Prop -> var "_prop"
-    | u -> app (coq_var (get()).t_univ) (scu u)
+    | u -> Std.coq_sort scu u
 
   let short_proj i t = app (app (coq_var "proj") (short_nat i)) t
 
@@ -208,21 +208,31 @@ struct
   let cstr_lt      s = Std.cstr_lt  (if a () then Std.cu else Short.scu) s
 
   let coq_pattern_lifted_from_sort s t =
-    let univ s = app (coq_var (get()).t_univ) (var s) in
+    let univ s =
+      if (get()).priv_univ_flag
+      then apps (coq_var (get()).t_priv_univ) [var s; wildcard]
+      else
+        apps (coq_var (get()).t_univ)
+          (if (get()).pred_univ_flag
+           then [var s; wildcard; wildcard]
+           else [var s]) in
     match (get()).lifted_type_pattern with
     | AsLift ->
       (if (get()).pred_lift_flag
          then apps (coq_var (get()).t_priv_lift) [var s;wildcard;t]
          else apps (coq_var (get()).t_lift     ) [var s;wildcard;t])
     | AsCast ->
-      let uwildcard = app (coq_var (get()).t_univ) wildcard in
-      apps (coq_var (get()).t_cast)
-        (if (get()).pred_cast_flag
-         then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
-         else [wildcard;wildcard;univ s;uwildcard;t])
-    | AsPrivateCast ->
-      apps (coq_var (get()).t_priv_cast)
-        [wildcard;wildcard;univ s;wildcard;t]
+      if (get()).priv_cast_flag
+      then apps (coq_var (get()).t_priv_cast) [wildcard;wildcard;univ s;wildcard;t]
+      else
+        let uwildcard =
+          apps (coq_var (get()).t_univ) (if (get()).pred_univ_flag
+                                         then [wildcard]
+                                         else [wildcard;wildcard;wildcard]) in
+        apps (coq_var (get()).t_cast)
+          (if (get()).pred_cast_flag
+           then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
+           else [wildcard;wildcard;univ s;uwildcard;t])
     | AsUncodedCode ->
       let c = coq_var (get()).t_priv_code in
       let u = coq_var (get()).t_priv_uncode in

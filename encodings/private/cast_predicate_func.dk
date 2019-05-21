@@ -141,6 +141,7 @@ def cast' : s : Sort -> s' : Sort ->
   cast' _ _ (prod' s1 s2 _ A B) (prod' _ s3 _ A C) (x => b x) -->
   x : Term s1 A => cast' s2 s3 (B x) (C x) (b x).
 ;)
+
 [s1,s1',s2,s3,A,A',B,C,b,a]
   cast' _ _ (prod s1 s2 A B) (prod s1' s3 A' C) b a -->
   cast' s2 s3 (B (cast' s1' s1 A' A a)) (C a) (b (cast' s1' s1 A' A a)).

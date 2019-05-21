@@ -2,7 +2,6 @@
 type lifted_type_pattern =
   | AsLift
   | AsCast
-  | AsPrivateCast
   | AsUncodedCode
 
 type t =
@@ -14,12 +13,15 @@ type t =
     named_univ_flag           : bool;
     readable_translation_flag : bool;
     cast_flag                 : bool;
-    lift_flag                 : bool;
     lifted_type_pattern       : lifted_type_pattern;
     pred_univ_flag            : bool;
     pred_prod_flag            : bool;
     pred_lift_flag            : bool;
     pred_cast_flag            : bool;
+    priv_lift_flag            : bool;
+    priv_cast_flag            : bool;
+    priv_univ_flag            : bool;
+    priv_prod_flag            : bool;
     encoding_name   : string;
     system_module   : string;
     universe_module : string;
@@ -36,6 +38,8 @@ type t =
     t_I     : string;
     t_priv_lift   : string;
     t_priv_cast   : string;
+    t_priv_univ   : string;
+    t_priv_prod   : string;
     t_priv_code   : string;
     t_priv_uncode : string;
   }
@@ -49,12 +53,15 @@ let original =
     named_univ_flag           = false;
     readable_translation_flag = false;
     cast_flag                 = false;
-    lift_flag                 = true;
     lifted_type_pattern       = AsLift;
     pred_univ_flag            = false;
     pred_prod_flag            = false;
     pred_lift_flag            = false;
     pred_cast_flag            = false;
+    priv_lift_flag            = false;
+    priv_cast_flag            = false;
+    priv_univ_flag            = false;
+    priv_prod_flag            = false;
     encoding_name = "original";
     system_module   = "Coq";
     universe_module = "U";
@@ -71,22 +78,37 @@ let original =
     t_I    = "I";
     t_priv_lift   = "lift'";
     t_priv_cast   = "cast'";
+    t_priv_univ   = "univ'";
+    t_priv_prod   = "prod'";
     t_priv_code   = "c";
     t_priv_uncode = "u";
   }
 
 let lift_priv =
   { original with
-    pred_univ_flag            = true;
-    pred_prod_flag            = true;
-    pred_lift_flag            = true;
-    encoding_name = "private_lift";
+    pred_univ_flag = true;
+    pred_prod_flag = true;
+    pred_lift_flag = true;
+    priv_lift_flag = true;
+    priv_univ_flag = true;
+    priv_prod_flag = true;
+    encoding_name  = "private_lift";
+  }
+
+let universo =
+  { lift_priv with
+    cast_flag           = true; (* Use casts instead of lifts *)
+    pred_cast_flag      = true; (* They take a predicate argument *)
+    priv_cast_flag      = true;
+    lifted_type_pattern = AsCast;
+    (* Universe lifting pattern are private cast *)
+    encoding_name  = "universo";
   }
 
 let original_cast =
   { original with
     cast_flag = true; (* Casts are used for lifting functions *)
-    lift_flag = true; (* Lifts are still normal forms for universe lifting *)
+                      (* .. but lifts are still normal forms for universe lifting *)
     encoding_name = "original_cast";
   }
 
@@ -101,10 +123,13 @@ let polymorph =
     polymorphism_flag         = true;
     templ_polymorphism_flag   = true;
     constraints_flag          = true;
-    lift_flag                 = false; (* Do not use lifts *)
-    cast_flag                 = true;  (* Use casts *)
+    cast_flag                 = true;  (* Use casts instead of lifts *)
     pred_cast_flag            = true;  (* Casts take subtype predicate argument *)
-    lifted_type_pattern = AsPrivateCast; (* Casted type pattern *)
+    priv_lift_flag = false;
+    priv_cast_flag = true;
+    priv_univ_flag = true;
+    priv_prod_flag = true;
+    lifted_type_pattern = AsCast; (* Casted type pattern *)
     encoding_name = "polymorphism";
   }
 
@@ -126,6 +151,7 @@ let readable enc =
     t_Univ = "U";
     t_Term = "T";
     t_univ = "u";
+    t_priv_univ = "u'";
   }
 
 
@@ -143,6 +169,7 @@ let rec get_encoding e =
     | "original_cast" -> original_cast
     | "template_cast" -> template_cast
     | "lift_priv"     -> lift_priv
+    | "universo"      -> universo
     | "polymorph"     -> polymorph
     | invalid_name -> failwith (Format.sprintf "Unknown encoding: %s" invalid_name)
 let set_encoding e = set (get_encoding e)

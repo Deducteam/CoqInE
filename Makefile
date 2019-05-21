@@ -99,6 +99,11 @@ template_geocoq: ENCODING_FLAGS:=original_cast short
 template_geocoq: COQINE_FLAGS:=readable original_cast
 template_geocoq: geocoq
 
+.PHONY: universo_geocoq
+universo_geocoq: ENCODING_FLAGS:=predicates short
+universo_geocoq: COQINE_FLAGS:=readable universo
+universo_geocoq: geocoq
+
 .PHONY: debug_default
 debug_default: ENCODING_FLAGS:=original
 debug_default: COQINE_FLAGS:=original

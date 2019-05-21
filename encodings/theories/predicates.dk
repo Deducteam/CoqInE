@@ -47,7 +47,37 @@ type : Nat -> Sort.
 [i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
 
 
-def succ : Sort -> Sort.
+(;-----------------------  LUB wrt Cumulativity  ------------------;)
 
-[] succ prop --> (type z).
-[i] succ (type i) --> (type (s i)).
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i.
+[j  ] max z     (s j) --> s j.
+[i,j] max (s i) (s j) --> s (max i j).
+
+[s  ] sup prop     s        --> s
+[s  ] sup s        prop     --> s
+[   ] sup set      set      --> set
+[i  ] sup set      (type i) --> type i
+[i  ] sup (type i) set      --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;------------------------  Other definitions  -------------------;)
+
+(; These functions are provided to simplify the translation.
+   - Axiom s (axiom s)       should reduce to I
+   - Rule s1 s2 (rule s1 s2) should reduce to I
+;)
+
+
+def axiom : Sort -> Sort.
+[]  axiom prop     --> type z.
+[i] axiom (type i) --> type (s i).
+
+def rule : Sort -> Sort -> Sort.
+[s  ] rule prop     s        --> s
+[   ] rule _        prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
