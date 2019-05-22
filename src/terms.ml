@@ -506,13 +506,34 @@ and lift_fix info env uenv names types bodies rec_indices =
      - The first function duplicates the argument and sends it to the second.
      - The second pattern matches on the second arguments, then throws it away
        and passes the first argument to the third function.
-     - The third function executes the body of the fixpoint. *)
-  (* fix1_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
-     fix2_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> |y1| : ||B1|| -> ... -> |yn| : ||Bn|| -> ||I y1 ... yn|| -> ||A||.
-     fix3_f : |G| -> |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
-     [...] fix1_f |G| |x1| ... |xr| --> fix2_f |x1| ... |xr| |u1| ... |un| |xr|.
-     [...] fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|) --> fix3_f |G| |x1| ... |xr|.
-     [...] fix3_f |G| |x1| ... |xr| --> |[(fix1_f G)/f]t|. *)
+     - The third function executes the body of the fixpoint.
+
+     fix1_f : |Context| ->
+              |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
+
+     fix2_f : |Context| ->
+              |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| ->
+              |y1| : ||B1|| -> ... -> |yn| : ||Bn|| ->
+              ||I y1 ... yn|| -> ||A||.
+
+     fix3_f : |Context| ->
+              |x1| : ||A1|| -> ... -> |xr| : ||I u1 ... un|| -> ||A||.
+
+     [...]
+       fix1_f |G| |x1| ... |xr|
+       -->
+       fix2_f |x1| ... |xr| |u1| ... |un| |xr|.
+
+     [...]
+       fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|)
+       -->
+       fix3_f |G| |x1| ... |xr|.
+
+     [...]
+       fix3_f |G| |x1| ... |xr|
+       -->
+       |[(fix1_f G)/f]t|.
+  *)
   let n = Array.length names in
   let fix_names1 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix1" ~default:"_") names in
   let fix_names2 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix2" ~default:"_") names in
@@ -550,20 +571,17 @@ and lift_fix info env uenv names types bodies rec_indices =
   (* we still have to remember the named variables (i.e. from nested let in). *)
   let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
   (* Check: we can create a fixpoint particular for current uenv. *)
-  let types1_closed' = Array.map (translate_types info global_env uenv)
-                                 types1_closed in
-  let types2_closed' = Array.map (translate_types info global_env uenv)
-                                 types2_closed in
-  let types3_closed' = Array.map (translate_types info global_env uenv)
-                                 types3_closed in
+  let types1_closed' = Array.map (translate_types info global_env uenv) types1_closed in
+  let types2_closed' = Array.map (translate_types info global_env uenv) types2_closed in
+  let types3_closed' = Array.map (translate_types info global_env uenv) types3_closed in
   for i = 0 to n - 1 do
     Dedukti.print info.fmt (Dedukti.declaration true fix_names1'.(i) types1_closed'.(i));
     Dedukti.print info.fmt (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
     Dedukti.print info.fmt (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms1 = Array.init n (fun i -> Constr.mkConst const1.(i)) in
-  let fix_terms2 = Array.init n (fun i -> Constr.mkConst const2.(i)) in
-  let fix_terms3 = Array.init n (fun i -> Constr.mkConst const3.(i)) in
+  let fix_terms1 = Array.map Constr.mkConst const1 in
+  let fix_terms2 = Array.map Constr.mkConst const2 in
+  let fix_terms3 = Array.map Constr.mkConst const3 in
   let fix_rules1 = Array.init n (fun i ->
     let env, context' = translate_rel_context info global_env uenv (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in

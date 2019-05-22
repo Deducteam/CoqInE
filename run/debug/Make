@@ -1,5 +1,6 @@
 # -arg -nois
 import.v
+Test/Test.v
 Test/Debuglib.v
 Test/Identity.v
 Test/ImportA.v

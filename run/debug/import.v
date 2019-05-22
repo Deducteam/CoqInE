@@ -1,9 +1,10 @@
 
 Require Import
+  Test.Test
+(*
   Test.Debuglib
   Test.Identity
   Coq.Classes.RelationClasses
-(*
   Test.Polymorph
   Test.ImportA
   Test.ImportB

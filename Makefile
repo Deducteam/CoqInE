@@ -104,6 +104,11 @@ universo_geocoq: ENCODING_FLAGS:=predicates short
 universo_geocoq: COQINE_FLAGS:=readable universo
 universo_geocoq: geocoq
 
+.PHONY: debug_universo
+debug_universo: ENCODING_FLAGS:=predicates short
+debug_universo: COQINE_FLAGS:=readable universo
+debug_universo: debug
+
 .PHONY: debug_default
 debug_default: ENCODING_FLAGS:=original
 debug_default: COQINE_FLAGS:=original
