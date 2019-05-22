@@ -19,11 +19,6 @@ val apply_rel_context :
 val convertible :
   Info.info -> Environ.env -> Info.env -> Constr.t -> Constr.t -> bool
 
-val fixpoint_table :
-  (Environ.env * (Names.Name.t array * Constr.types array * Constr.t array),
-   Environ.env * Context.Rel.Declaration.t array)
-  Hashtbl.t
-
 val make_const : Names.ModPath.t -> Names.Id.t -> Names.Constant.t
 
 val push_const_decl :

@@ -349,12 +349,13 @@ let rec translate_constr ?expected_type info env uenv t =
     debug "Translating %i fixpoints:" n;
     for i = 0 to n - 1 do
       debug "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
+      debug "body:  %a" pp_coq_term bodies.(i);
     done;
     let n = Array.length names in
     (* TODO: not the whole environment should be added here, only the relevant part
        i.e. variables that occur in the body of the fixpoint *)
     let env, fix_declarations =
-      (* try Hashtbl.find fixpoint_table rec_declaration *)
+      (*      try Hashtbl.find fixpoint_table rec_declaration *)
       try Hashtbl.find fixpoint_table (env, rec_declaration)
       with Not_found -> lift_fix info env uenv names types bodies rec_indices in
     let new_env =
@@ -513,13 +514,13 @@ and lift_fix info env uenv names types bodies rec_indices =
      [...] fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|) --> fix3_f |G| |x1| ... |xr|.
      [...] fix3_f |G| |x1| ... |xr| --> |[(fix1_f G)/f]t|. *)
   let n = Array.length names in
-  let fix_names1 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
-  let fix_names2 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
-  let fix_names3 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix" ~default:"_") names in
+  let fix_names1 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix1" ~default:"_") names in
+  let fix_names2 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix2" ~default:"_") names in
+  let fix_names3 = Array.map (Cname.fresh_of_name info env ~global:true ~prefix:"fix3" ~default:"_") names in
   let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
   let return_types = Array.map snd contexts_return_types in
-  let ind_applieds = Array.map (fun context -> let (_, _, a) = Context.Rel.Declaration.to_tuple (List.hd context) in a) contexts in
+  let ind_applieds = Array.map (fun context -> Context.Rel.Declaration.get_type (List.hd context)) contexts in
   let inds_args = Array.map (Inductive.find_inductive env) ind_applieds in
   let pinds = Array.map fst inds_args in
   let inds = Array.map fst pinds in
@@ -560,9 +561,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     Dedukti.print info.fmt (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
     Dedukti.print info.fmt (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms1 = Array.init n (fun i -> Constr.mkConst (const1.(i))) in
-  let fix_terms2 = Array.init n (fun i -> Constr.mkConst (const2.(i))) in
-  let fix_terms3 = Array.init n (fun i -> Constr.mkConst (const3.(i))) in
+  let fix_terms1 = Array.init n (fun i -> Constr.mkConst const1.(i)) in
+  let fix_terms2 = Array.init n (fun i -> Constr.mkConst const2.(i)) in
+  let fix_terms3 = Array.init n (fun i -> Constr.mkConst const3.(i)) in
   let fix_rules1 = Array.init n (fun i ->
     let env, context' = translate_rel_context info global_env uenv (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in
@@ -623,6 +624,7 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
   Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
+  (* Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1); *)
   env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list

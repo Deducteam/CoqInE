@@ -7,6 +7,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
+Dedukti Add Debug "Coq.Init.Datatypes".
 Dedukti Add Debug "Coq.Classes.CRelationClasses".
 Dedukti Add Debug "Coq.Classes.RelationClasses".
 
