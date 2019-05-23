@@ -99,6 +99,8 @@ let universo =
   { lift_priv with
     cast_flag           = true; (* Use casts instead of lifts *)
     pred_cast_flag      = true; (* They take a predicate argument *)
+    polymorphism_flag         = false;
+    templ_polymorphism_flag   = false;
     priv_cast_flag      = true;
     lifted_type_pattern = AsCast;
     (* Universe lifting pattern are private cast *)

@@ -478,7 +478,7 @@ and translate_types info env uenv a =
   | LetInType(x, u, a, b) ->
     let env, u = lift_let info env uenv x u a in
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-    translate_constr info new_env uenv b
+    translate_types info new_env uenv b
   | AtomicType(_) ->
     (* Fall back on the usual translation of types. *)
     let s' = infer_translate_sort info env uenv a in

@@ -32,15 +32,16 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
+#	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R /home/gferey/git/geocoqine/ GeoCoq -R . Top -l main
 	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 	rm out/Coq__Init__Specif.dk
 	rm out/Coq__Init__Tactics.dk
 	rm out/Coq__Init__Nat.dk
 	rm out/Coq__Init__Peano.dk
-#	rm out/Coq__Init__Decimal.dk
-#	rm out/Coq__Init__Logic__Type.dk
-#	rm out/Coq__Init__Datatypes.dk
-#	rm out/Coq__Init__Wf.dk
+	rm out/Coq__Init__Decimal.dk
+	rm out/Coq__Init__Logic__Type.dk
+	rm out/Coq__Init__Datatypes.dk
+	rm out/Coq__Init__Wf.dk
 #	sed -i "s/{//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
 #	sed -i "s/}//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
 

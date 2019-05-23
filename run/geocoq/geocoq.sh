@@ -1,20 +1,273 @@
+#!/bin/bash
+
 GEOCOQ_DIR=/home/gferey/git/geocoqine
 
 CURDIR=`dirname $0`
 
 GEOCOQ_FILES=(
-Utils/general_tactics.v
-Axioms/tarski_axioms.v
-Tarski_dev/Definitions.v
 Axioms/euclidean_axioms.v
 Elements/OriginalProofs/euclidean_defs.v
 Elements/OriginalProofs/general_tactics.v
 Elements/OriginalProofs/euclidean_tactics.v
 Elements/OriginalProofs/lemma_congruencesymmetric.v
+Elements/OriginalProofs/lemma_congruencetransitive.v
+Elements/OriginalProofs/lemma_congruenceflip.v
+Elements/OriginalProofs/lemma_equalitysymmetric.v
+Elements/OriginalProofs/lemma_inequalitysymmetric.v
+Elements/OriginalProofs/lemma_3_6a.v
+Elements/OriginalProofs/lemma_betweennotequal.v
+Elements/OriginalProofs/lemma_localextension.v
 )
 
+OTHER_FILES=(
+book1.v
+euclidean_defs.v
+euclidean_tactics.v
+general_tactics.v
+lemma_10_12.v
+lemma_21helper.v
+lemma_26helper.v
+lemma_30helper.v
+lemma_3_5b.v
+lemma_35helper.v
+lemma_3_6a.v
+lemma_3_6b.v
+lemma_3_7a.v
+lemma_3_7b.v
+lemma_8_2.v
+lemma_8_3.v
+lemma_8_7.v
+lemma_9_5a.v
+lemma_9_5b.v
+lemma_9_5.v
+lemma_ABCequalsCBA.v
+lemma_altitudebisectsbase.v
+lemma_altitudeofrighttriangle.v
+lemma_angleaddition.v
+lemma_angledistinct.v
+lemma_angleorderrespectscongruence2.v
+lemma_angleorderrespectscongruence.v
+lemma_angleordertransitive.v
+lemma_angletrichotomy2.v
+lemma_angletrichotomy.v
+lemma_betweennesspreserved.v
+lemma_betweennotequal.v
+lemma_collinear1.v
+lemma_collinear2.v
+lemma_collinear4.v
+lemma_collinear5.v
+lemma_collinearbetween.v
+lemma_collinearitypreserved.v
+lemma_collinearorder.v
+lemma_collinearparallel2.v
+lemma_collinearparallel.v
+lemma_collinearright.v
+lemma_congruenceflip.v
+lemma_congruencesymmetric.v
+lemma_congruencetransitive.v
+lemma_crisscross.v
+lemma_crossbar2.v
+lemma_crossbar.v
+lemma_crossimpliesopposite.v
+lemma_diagonalsbisect.v
+lemma_diagonalsmeet.v
+lemma_differenceofparts.v
+lemma_doublereverse.v
+lemma_droppedperpendicularunique.v
+lemma_EFreflexive.v*
+lemma_equalanglesflip.v
+lemma_equalangleshelper.v
+lemma_equalanglesNC.v
+lemma_equalanglesreflexive.v
+lemma_equalanglessymmetric.v
+lemma_equalanglestransitive.v
+lemma_equalitysymmetric.v
+lemma_equaltorightisright.v
+lemma_erectedperpendicularunique.v
+lemma_ETreflexive.v
+lemma_Euclid4.v
+lemma_extensionunique.v
+lemma_extension.v
+lemma_fiveline.v
+lemma_inequalitysymmetric.v
+lemma_interior5.v
+lemma_layoffunique.v
+lemma_layoff.v
+lemma_legsmallerhypotenuse.v
+lemma_lessthanadditive.v
+lemma_lessthanbetween.v
+lemma_lessthancongruence2.v
+lemma_lessthancongruence.v
+lemma_lessthannotequal.v
+lemma_lessthantransitive.v
+lemma_linereflectionisometry.v
+lemma_localextension.v
+lemma_midpointunique.v
+lemma_NCdistinct.v
+lemma_NChelper.v
+lemma_NCorder.v
+lemma_notperp.v
+lemma_ondiameter.v
+lemma_oppositesideflip.v
+lemma_oppositesidesymmetric.v
+lemma_outerconnectivity.v
+lemma_parallelbetween.v
+lemma_parallelcollinear1.v
+lemma_parallelcollinear2.v
+lemma_parallelcollinear.v
+lemma_paralleldef2A.v
+lemma_paralleldef2B.v
+lemma_parallelflip.v
+lemma_parallelNC.v
+lemma_parallelPasch.v
+lemma_parallelsymmetric.v
+lemma_partnotequalwhole.v
+lemma_Pasch_outer2.v
+lemma_paste5.v
+lemma_PGflip.v
+lemma_PGrectangle.v
+lemma_PGrotate.v
+lemma_PGsymmetric.v
+lemma_planeseparation.v
+lemma_Playfairhelper2.v
+lemma_Playfairhelper.v
+lemma_Playfair.v
+lemma_pointreflectionisometry.v
+lemma_ray1.v
+lemma_ray2.v
+lemma_ray3.v
+lemma_ray4.v
+lemma_ray5.v
+lemma_rayimpliescollinear.v
+lemma_raystrict.v
+lemma_ray.v
+lemma_rectangleparallelogram.v
+lemma_rectanglereverse.v
+lemma_rectanglerotate.v
+lemma_rightangleNC.v
+lemma_rightreverse.v
+lemma_righttogether.v
+lemma_RTcongruence.v
+lemma_RTsymmetric.v
+lemma_samenotopposite.v
+lemma_sameside2.v
+lemma_samesidecollinear.v
+lemma_samesideflip.v
+lemma_samesidereflexive.v
+lemma_samesidesymmetric.v
+lemma_samesidetransitive.v
+lemma_squareflip.v
+lemma_squareparallelogram.v
+lemma_squarerectangle.v
+lemma_squaresequal.v
+lemma_squareunique.v
+lemma_subtractequals.v
+lemma_supplementinequality.v
+lemma_supplementofright.v
+lemma_supplements2.v
+lemma_supplements.v
+lemma_supplementsymmetric.v
+lemma_tarskiparallelflip.v
+lemma_TCreflexive.v
+lemma_TGflip.v
+lemma_TGsymmetric.v
+lemma_together2.v
+lemma_together.v
+lemma_trapezoiddiagonals.v*
+lemma_triangletoparallelogram.v
+lemma_trichotomy1.v
+lemma_trichotomy2.v
+lemma_TTflip2.v
+lemma_TTflip.v
+lemma_TTorder.v
+lemma_TTtransitive.v
+lemma_twolines2.v
+lemma_twolines.v
+lemma_twoperpsparallel.v
+lemma_tworays.v
+proposition_01.v
+proposition_02.v
+proposition_03.v
+proposition_04.v
+proposition_05b.v
+proposition_05.v
+proposition_06a.v
+proposition_06.v
+proposition_07.v
+proposition_08.v
+proposition_09.v
+proposition_10.v
+proposition_11B.v
+proposition_11.v
+proposition_12.v
+proposition_13.v
+proposition_14.v
+proposition_15.v
+proposition_16.v
+proposition_17.v
+proposition_18.v
+proposition_19.v
+proposition_20.v
+proposition_21.v
+proposition_22.v
+proposition_23B.v
+proposition_23C.v
+proposition_23.v
+proposition_24.v
+proposition_25.v
+proposition_26A.v
+proposition_26B.v
+proposition_27B.v
+proposition_27.v
+proposition_28A.v
+proposition_28B.v
+proposition_28C.v
+proposition_28D.v
+proposition_29B.v
+proposition_29C.v
+proposition_29.v
+proposition_30A.v
+proposition_30B.v
+proposition_30.v
+proposition_31short.v
+proposition_31.v
+proposition_32.v
+proposition_33B.v
+proposition_33.v
+proposition_34.v
+proposition_35A.v
+proposition_35.v
+proposition_36A.v
+proposition_36.v
+proposition_37.v
+proposition_38.v
+proposition_39A.v
+proposition_39.v
+proposition_40.v
+proposition_41.v
+proposition_42B.v
+proposition_42.v
+proposition_43B.v
+proposition_43.v
+proposition_44A.v
+proposition_44.v
+proposition_45.v
+proposition_46.v
+proposition_47A.v
+proposition_47B.v
+proposition_47.v
+proposition_48A.v
+proposition_48.v
 
-OTHER_FILES=(	
+
+Utils/general_tactics.v
+Axioms/tarski_axioms.v
+Tarski_dev/Definitions.v
+Elements/OriginalProofs/euclidean_defs.v
+Elements/OriginalProofs/general_tactics.v
+Elements/OriginalProofs/euclidean_tactics.v
+Elements/OriginalProofs/lemma_congruencesymmetric.v
+
 Utils/general_tactics.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
@@ -26,8 +279,7 @@ Tarski_dev/Ch04_col.v
 Tactics/Coinc/tactics_axioms.v
 Utils/sets.v
 
-
-	Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
+Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
 Utils/all_equiv.v
@@ -235,7 +487,10 @@ Meta_theory/Parallel_postulates/szmielew.v
 
 # Remove previous GeoCoq dependencies
 rm -f $CURDIR/Make
-# echo "-args -nois" >> $CURDIR/Make
+rm -f $CURDIR/import.v
+
+#echo "-args -nois" >> $CURDIR/Make
+#echo "-R $GEOCOQ_DIR GeoCoq" >> $CURDIR/Make
 echo "import.v" >> $CURDIR/Make
 
 rm -rf $CURDIR/GeoCoq
@@ -243,13 +498,13 @@ mkdir  $CURDIR/GeoCoq
 
 for i in "${GEOCOQ_FILES[@]}"; do
 	mkdir -p $CURDIR/GeoCoq/$(dirname "$i")
-    cp $GEOCOQ_DIR/$i $CURDIR/GeoCoq/$i
+	cp $GEOCOQ_DIR/$i $CURDIR/GeoCoq/$i
 	echo "GeoCoq/$i" >> $CURDIR/Make
+	echo "Require Import GeoCoq.$i" | sed -e "s/\.v/\./" | sed -e "s/\//\./g" >> $CURDIR/import.v
 done
 
-sed "s/\.v/\./" Make > import.v
-sed -i "s/\//\./g" import.v
-sed -i "s/GeoCoq/Require Import GeoCoq/" import.v
-sed -i "/\.Ch/!d" import.v
-echo "Require Import Coq.Classes.Morphisms." >> import.v
+
+
+#sed -i "/\.Ch/!d" import.v
+#echo "Require Import Coq.Classes.Morphisms." >> import.v
 
