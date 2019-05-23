@@ -5,6 +5,6 @@ Require Coqine.
 
 Dedukti Set Destination "out".
 
-Dedukti Set Encoding "readable universo".
+Dedukti Set Encoding "original_cast ".
 
 Dedukti Export All.
