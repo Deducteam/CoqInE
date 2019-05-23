@@ -32,7 +32,6 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
-#	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R /home/gferey/git/geocoqine/ GeoCoq -R . Top -l main
 	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 	rm out/Coq__Init__Specif.dk
 	rm out/Coq__Init__Tactics.dk
@@ -65,6 +64,6 @@ CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
 
 Make: geocoq.sh
-	bash geocoq.sh
+	bash geocoq.sh 
 
 -include .depend

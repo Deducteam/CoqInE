@@ -1,7 +1,5 @@
 #!/bin/bash
 
-GEOCOQ_DIR=/home/gferey/git/geocoqine
-
 CURDIR=`dirname $0`
 
 GEOCOQ_FILES=(
@@ -485,26 +483,17 @@ Meta_theory/Parallel_postulates/parallel_postulates.v
 Meta_theory/Parallel_postulates/szmielew.v
 )
 
-# Remove previous GeoCoq dependencies
+# Remove previous GeoCoq dependencies and the lists in Make / import.v
 rm -f $CURDIR/Make
 rm -f $CURDIR/import.v
-
-#echo "-args -nois" >> $CURDIR/Make
-#echo "-R $GEOCOQ_DIR GeoCoq" >> $CURDIR/Make
-echo "import.v" >> $CURDIR/Make
-
 rm -rf $CURDIR/GeoCoq
-mkdir  $CURDIR/GeoCoq
 
+# Create them again from the GEOCOQ_FILES variable
+mkdir  $CURDIR/GeoCoq
+echo "import.v" >> $CURDIR/Make
 for i in "${GEOCOQ_FILES[@]}"; do
 	mkdir -p $CURDIR/GeoCoq/$(dirname "$i")
-	cp $GEOCOQ_DIR/$i $CURDIR/GeoCoq/$i
+	cp ${GEOCOQ_DIR}/$i $CURDIR/GeoCoq/$i
 	echo "GeoCoq/$i" >> $CURDIR/Make
 	echo "Require Import GeoCoq.$i" | sed -e "s/\.v/\./" | sed -e "s/\//\./g" >> $CURDIR/import.v
 done
-
-
-
-#sed -i "/\.Ch/!d" import.v
-#echo "Require Import Coq.Classes.Morphisms." >> import.v
-
