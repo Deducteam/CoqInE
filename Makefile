@@ -144,3 +144,8 @@ debug_poly: debug
 lift_mathcomp: ENCODING_FLAGS:=lift_predicates short
 lift_mathcomp: COQINE_FLAGS:=readable lift_priv
 lift_mathcomp: mathcomp
+
+.PHONY: debug_mathcomp
+debug_mathcomp: ENCODING_FLAGS:=predicates short
+debug_mathcomp: COQINE_FLAGS:=readable universo
+debug_mathcomp: mathcomp
