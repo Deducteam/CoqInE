@@ -12,7 +12,7 @@ Dedukti Add Debug "Coq.Init.Specif".
 Dedukti Add Debug "Coq.Classes.RelationClasses".
 *)
 
-Dedukti Set Encoding "readable universo".
+Dedukti Set Encoding "original_cast ".
 
 (*
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".

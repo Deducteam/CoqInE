@@ -488,6 +488,13 @@ rm -f $CURDIR/Make
 rm -f $CURDIR/import.v
 rm -rf $CURDIR/GeoCoq
 
+if [ -z "${GEOCOQ_DIR}" ]; then
+	echo "Environment variable GEOCOQ_DIR is not set."
+	echo "Please set it to the path of your GeoCoq library."
+	echo "Failing..."
+	exit 1
+fi
+
 # Create them again from the GEOCOQ_FILES variable
 mkdir  $CURDIR/GeoCoq
 echo "import.v" >> $CURDIR/Make
@@ -497,3 +504,4 @@ for i in "${GEOCOQ_FILES[@]}"; do
 	echo "GeoCoq/$i" >> $CURDIR/Make
 	echo "Require Import GeoCoq.$i" | sed -e "s/\.v/\./" | sed -e "s/\//\./g" >> $CURDIR/import.v
 done
+
