@@ -29,6 +29,7 @@ run/mathcomp/out
 
 run/geocoq/GeoCoq
 run/geocoq/Make
+run/geocoq/import.v
 
 encodings/_build
 

@@ -89,20 +89,16 @@ mathcomp: RUNDIR:=$(MATHCOMPDIR)
 mathcomp: run
 
 
-.PHONY: lift_geocoq
-lift_geocoq: ENCODING_FLAGS:=lift_predicates short
-lift_geocoq: COQINE_FLAGS:=readable lift_priv
-lift_geocoq: geocoq
-
-.PHONY: template_geocoq
-template_geocoq: ENCODING_FLAGS:=original_cast short
-template_geocoq: COQINE_FLAGS:=readable original_cast
-template_geocoq: geocoq
-
 .PHONY: universo_geocoq
-universo_geocoq: ENCODING_FLAGS:=predicates short
-universo_geocoq: COQINE_FLAGS:=readable universo
+universo_geocoq: ENCODING_FLAGS:=predicates
+universo_geocoq: COQINE_FLAGS:=universo
 universo_geocoq: geocoq
+
+.PHONY: debug_geocoq
+debug_geocoq: ENCODING_FLAGS:=predicates short
+debug_geocoq: COQINE_FLAGS:=readable universo
+debug_geocoq: geocoq
+
 
 .PHONY: debug_universo
 debug_universo: ENCODING_FLAGS:=predicates short
