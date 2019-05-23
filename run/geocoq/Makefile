@@ -41,8 +41,8 @@ generate: compile $(OUTFOLDER)
 #	rm out/Coq__Init__Logic__Type.dk
 #	rm out/Coq__Init__Datatypes.dk
 #	rm out/Coq__Init__Wf.dk
-	sed -i "s/{//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
-	sed -i "s/}//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
+#	sed -i "s/{//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
+#	sed -i "s/}//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
 
 
 # Generate the dependencies of [.dk] files

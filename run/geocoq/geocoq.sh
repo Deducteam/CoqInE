@@ -6,6 +6,18 @@ GEOCOQ_FILES=(
 Utils/general_tactics.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
+Axioms/euclidean_axioms.v
+Elements/OriginalProofs/euclidean_defs.v
+Elements/OriginalProofs/general_tactics.v
+Elements/OriginalProofs/euclidean_tactics.v
+Elements/OriginalProofs/lemma_congruencesymmetric.v
+)
+
+
+OTHER_FILES=(	
+Utils/general_tactics.v
+Axioms/tarski_axioms.v
+Tarski_dev/Definitions.v
 Tactics/finish.v
 Tarski_dev/Ch02_cong.v
 Tarski_dev/Ch03_bet.v
@@ -13,13 +25,11 @@ Tarski_dev/Ch04_cong_bet.v
 Tarski_dev/Ch04_col.v
 Tactics/Coinc/tactics_axioms.v
 Utils/sets.v
-Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
+
+
+	Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
-)
-
-
-OTHER_FILES=(
 Utils/all_equiv.v
 Utils/arity.v
 Tactics/Coinc/ColR.v

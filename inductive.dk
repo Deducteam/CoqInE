@@ -115,17 +115,8 @@ def fix3__F :
   
   fix2__F P f f0 t t.
 
-[ P, f, f0, t]
-  
-  fix2__F P f f0 t Tnil -->
-  
-  fix3__F P f f0 t.
-
-[ P, f, f0, t, __, __0]
-  
-  fix2__F P f f0 t (Tcons __ __0) -->
-  
-  fix3__F P f f0 t.
+[ P, f, f0, t] fix2__F P f f0 t Tnil        --> fix3__F P f f0 t.
+[ P, f, f0, t] fix2__F P f f0 t (Tcons _ _) --> fix3__F P f f0 t.
 
 [ P, f, f0]
   
@@ -178,10 +169,15 @@ def fix'__F :
   t' : C.T (C.sup _1 C.set) Tlist ->
   C.T _0 (P t).
 
+
+[P F t] fix__F P F t --> F (fix__F P F) t.
+
+
 [P,F,t] fix__F P F t --> fix'__F P F t t.
 
 [P,F,t] fix'__F P F t Tnil        --> F (fix__F P F) t.
 [P,F,t] fix'__F P F t (Tcons _ _) --> F (fix__F P F) t.
+
 
 def Tlist__rect2 :
   P : (t : C.T (C.sup _1 C.set) Tlist -> C.U _0) ->
@@ -202,7 +198,8 @@ def Tlist__rect2 :
      __ : C.T _0 (P t) ->
      C.T _0 (P (Tcons T t))) =>
   fix__F P
-    (fix => (t => match____Tlist _0 (t0 : C.T (C.sup _1 C.set) Tlist => P t0) f
+    (fix => (t =>
+	  match____Tlist _0 (t0 : C.T (C.sup _1 C.set) Tlist => P t0) f
       (T : C.U _0 =>
        t0 : C.T (C.sup _1 C.set) Tlist =>
        f0 T t0 (fix t0)) t))
