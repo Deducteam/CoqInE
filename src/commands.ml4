@@ -24,6 +24,11 @@ VERNAC COMMAND EXTEND DeduktiExportAll CLASSIFIED AS QUERY
   [ translate_all () ]
 END
 
+VERNAC COMMAND EXTEND DeduktiExportAllBut CLASSIFIED AS QUERY
+| [ "Dedukti" "Export" "All" "But" global_list(refs) ] ->
+  [ translate_all_but refs ]
+END
+
 
 (** Printing universes **)
 
@@ -39,6 +44,16 @@ END
 
 
 (** Setting parameters **)
+
+VERNAC COMMAND EXTEND EnableFailProofMode CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Failproofmode" ] ->
+  [ enable_failproofmode () ]
+END
+
+VERNAC COMMAND EXTEND DisableFailProofMode CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Failproofmode" ] ->
+  [ disable_failproofmode () ]
+END
 
 VERNAC COMMAND EXTEND DeduktiSetDestination CLASSIFIED AS QUERY
 | [ "Dedukti" "Set" "Destination" string(dest) ] ->

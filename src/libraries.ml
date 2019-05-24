@@ -3,6 +3,11 @@
 open Debug
 open Translator
 
+let fail_on_issue = ref true
+
+let  enable_failproofmode () = message "Failproof mode enabled." ; fail_on_issue := false
+let disable_failproofmode () = message "Failproof mode disabled."; fail_on_issue := true
+
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
@@ -16,24 +21,21 @@ let translate_qualified_library qualid =
   let filename = Cname.translate_dir_path dir_path in
   let info = Info.init module_path filename in
   begin
-(*
-    try
-*)
-      (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
-      Modules.translate_module_body info (Global.env ()) module_body;
-      (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
-(*
-    with e -> Info.close info; raise e
-*)
+    (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
+    ( try
+        Modules.translate_module_body info (Global.env ()) module_body;
+      with e -> if !fail_on_issue then (Info.close info; raise e)
+    );
+    (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
   end;
   debug_stop ();
   Info.close info
 
+let qualid_of_ref r = (Libnames.qualid_of_reference r).CAst.v
 
 (** Translates the given library *)
 let translate_library reference =
-  let cast_qualid = Libnames.qualid_of_reference reference in
-  let qualid = cast_qualid.CAst.v in
+  let qualid = qualid_of_ref reference in
   let lib_loc, lib_path, lib_phys_path = Library.locate_qualified_library qualid in
   Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] None;
   Tsorts.set_universes (Global.universes ());
@@ -50,14 +52,20 @@ let translate_universes () =
   end;
   Info.close info
 
-
-(** Translate all loaded libraries. **)
-let translate_all () =
+(** Translate all loaded libraries but expressions. **)
+let translate_all_but refs =
+  let ignore_qualids =  List.map qualid_of_ref refs in
+  message "Translating all libraries except from the following:%a"
+    (pp_list "\n  Ignoring " pp_t) (List.map Libnames.pr_qualid ignore_qualids);
+  let not_ignored qualid = not (List.exists (Libnames.qualid_eq qualid) ignore_qualids) in
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
   Tsorts.set_universes (Global.universes ());
   translate_universes ();
-  List.iter translate_qualified_library qualids
+  List.iter translate_qualified_library (List.filter not_ignored qualids)
+
+(** Translate all loaded libraries. **)
+let translate_all () = translate_all_but []
 
 
 let print_universes_constraints universes =

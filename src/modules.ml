@@ -24,16 +24,31 @@ let dest_const_univ universes =
       an opaque definition (a theorem). **)
 
 let translate_constant_body info env label const =
-  debug "Translating constant body: %s" (Names.Label.to_string label);
-
+  let name = Names.Label.to_string label in
+  
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
+  let poly_inst, poly_cstr, env =
+    match const.const_universes with
+    | Monomorphic_const uctxt ->
+      debug "Translating monomorphic constant body: %s" name;
+      let env' = Environ.push_context_set ~strict:true uctxt env in
+      Univ.Instance.empty, Univ.Constraint.empty, env'
+    | Polymorphic_const univ_ctxt ->
+      let uctxt = Univ.AUContext.repr univ_ctxt in
+      let env' = Environ.push_context ~strict:false uctxt env in
+      let instance = Univ.UContext.instance uctxt in
+      let constraints = Univ.UContext.constraints uctxt in
+      debug "Translating polymorphic [%a] constant body: %s" pp_coq_inst instance name;
+      instance, constraints, env'
+  in
+  
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
   let uenv = Info.make [] [] (List.length univ_poly_params) poly_cstr  in
 
-  let const_type = const.const_type in
+  let const_type = Vars.subst_instance_constr poly_inst const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in
   let const_type' = Tsorts.add_sort_params univ_poly_params const_type' in
 

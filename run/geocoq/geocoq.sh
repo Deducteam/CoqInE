@@ -2,7 +2,7 @@
 
 CURDIR=`dirname $0`
 
-GEOCOQ_FILES=(
+ELEMENTS_FILES=(
 Axioms/euclidean_axioms.v
 Elements/OriginalProofs/euclidean_defs.v
 Elements/OriginalProofs/general_tactics.v
@@ -237,8 +237,11 @@ Elements/OriginalProofs/lemma_rectangleparallelogram.v
 Elements/OriginalProofs/lemma_paste5.v
 Elements/OriginalProofs/proposition_48.v
 Elements/OriginalProofs/book1.v
+)
 
+GEOCOQ_FILES=(
 Utils/general_tactics.v
+Axioms/euclidean_axioms.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
 Tactics/finish.v
@@ -246,14 +249,38 @@ Tarski_dev/Ch02_cong.v
 Tarski_dev/Ch03_bet.v
 Tarski_dev/Ch04_cong_bet.v
 Tarski_dev/Ch04_col.v
-Tactics/Coinc/tactics_axioms.v
 Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
+Tarski_dev/Ch07_midpoint.v
+Tarski_dev/Ch08_orthogonality.v
+Tarski_dev/Annexes/coplanar.v
+Tarski_dev/Ch09_plane.v
+Meta_theory/Dimension_axioms/upper_dim_2.v
+Tarski_dev/Ch10_line_reflexivity.v
+Tarski_dev/Ch10_line_reflexivity_2.v
+
+Utils/arity.v
 )
 
 OTHER_FILES=(
+Meta_theory/Continuity/grad.v
+Axioms/continuity_axioms.v
+
+Meta_theory/Continuity/first_order.v
+
 Utils/sets.v
+Tactics/Coinc/tactics_axioms.v
+Tactics/Coinc/Permutations.v
+Meta_theory/Models/tarski_to_coinc_theory_for_cop.v
+
+
+Meta_theory/Continuity/first_order.v
+Utils/arity.v
+Tactics/Coinc/tactics_axioms.v
+Meta_theory/Models/tarski_to_coinc_theory_for_cop.v
+Tactics/Coinc/Permutations.v
+Meta_theory/Dimension_axioms/upper_dim_2.v
 
 book1.v
 euclidean_defs.v

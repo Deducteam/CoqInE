@@ -8,9 +8,10 @@ DKDEP        ?= dkdep
 VERBOSE      ?=
 
 OUTFOLDER = out
+PRUNEDFOLDER = pruned
 COQINEPATH=../../src
 
-DKS = $(wildcard $(OUTFOLDER)/*.dk)
+DKS = $(wildcard $(PRUNEDFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
 
 .PHONY: all	compile generate depend check clean
@@ -21,7 +22,6 @@ DKOS = $(DKS:.dk=.dko)
 #	precalculated, so we need to call make twice.
 all: compile generate depend
 	make check  # Call make again so that it include the updated depend file
-#	rm CoqMakefile
 
 # Compile the local [.v] files that are not part of the stdlib
 compile: CoqMakefile
@@ -30,34 +30,30 @@ compile: CoqMakefile
 $(OUTFOLDER):
 	mkdir $(OUTFOLDER)
 
-# Generate the [.dk] files by executing [main.v]
-generate: compile $(OUTFOLDER)
-	$(COQTOP) -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
-	rm out/Coq__Init__Specif.dk
-	rm out/Coq__Init__Tactics.dk
-	rm out/Coq__Init__Nat.dk
-	rm out/Coq__Init__Peano.dk
-	rm out/Coq__Init__Decimal.dk
-	rm out/Coq__Init__Logic__Type.dk
-	rm out/Coq__Init__Datatypes.dk
-	rm out/Coq__Init__Wf.dk
-#	sed -i "s/{//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
-#	sed -i "s/}//g" out/Top__GeoCoq__Tarski__dev__Definitions.dk
+$(PRUNEDFOLDER):
+	mkdir $(PRUNEDFOLDER)
 
+# Generate the [.dk] files by executing [main.v]
+generate: compile $(OUTFOLDER) $(PRUNEDFOLDER)
+	$(COQTOP) -init-file ../../.coqrc -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	ls out/*GeoCoq*.dk | sed -e "s:out/Top__:#REQUIRE Top__:g" | sed -e "s/.dk/./g" > config.dk
+	dkprune -l -I $(OUTFOLDER) -o $(PRUNEDFOLDER) config.dk
+	rm -f $(PRUNEDFOLDER)/C.dk $(PRUNEDFOLDER)/Coq.dk
 
 # Generate the dependencies of [.dk] files
 depend:
-	$(DKDEP) -I $(OUTFOLDER) $(OUTFOLDER)/*.dk > .depend
+	$(DKDEP) -I $(PRUNEDFOLDER) $(PRUNEDFOLDER)/*.dk > .depend
 
 # Check and compile the generated [.dk]
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) -eta -e -nl $<
+	$(DKCHECK) -I $(PRUNEDFOLDER) -eta -e -nl $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dk *.dko *.conf GeoCoq Make
+	rm -rf $(OUTFOLDER) $(PRUNEDFOLDER)
+	rm -rf .depend .*.aux *.vo *.dk *.dko *.conf GeoCoq Make config.dk pruned
 	rm -f CoqMakefile
 
 CoqMakefile: Make

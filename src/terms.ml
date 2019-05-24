@@ -29,7 +29,7 @@ let rec infer_translate_sort info env uenv a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
   match Term.kind_of_type a with
-  | SortType(s) -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
+  | SortType s -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
   (* FIXME: CastType are probably not correctly translated.
      They are never used in Coq's kernel but occur in SSReflect module *)
   | CastType(a', _) -> infer_translate_sort info env uenv a'
@@ -44,7 +44,7 @@ let rec infer_translate_sort info env uenv a =
     (* No need to lift the let here. *)
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     infer_translate_sort info new_env uenv b
-  | AtomicType(_) -> Tsorts.translate_sort uenv (infer_sort env a)
+  | AtomicType _ -> Tsorts.translate_sort uenv (infer_sort env a)
 
 (** Abstract over the variables of [context], eliminating let declarations. *)
 let abstract_rel_context context t =
@@ -254,7 +254,10 @@ let rec translate_constr ?expected_type info env uenv t =
          Type inferred of "True List" is Prop.
          However, inductive translation generate a Type1 when ignoring template poly
       *)
+      debug "Inferring type for %a" pp_coq_term t;
+      debug "Expecting %a" pp_coq_term a;
       let b = infer_type env t in
+      debug "Inferred %a" pp_coq_term b;
       if convertible info env uenv a b then t
       else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
@@ -326,7 +329,7 @@ let rec translate_constr ?expected_type info env uenv t =
             not (Encoding.is_polymorphism_on ())
     then Dedukti.var name
     else if Encoding.is_polymorphism_on () &&
-            Environ.polymorphic_constant kn env
+            Environ.polymorphic_pconstant (kn,univ_instance) env
     then
       let cb = Environ.lookup_constant kn env in
       let univ_ctxt = Declareops.constant_polymorphic_context cb in

@@ -1,0 +1,2 @@
+(* Add Rec LoadPath "/home/gferey/git/coqine/dedukti/" as Coqine. *)
+Add ML Path "/home/gferey/git/coqine/src".
