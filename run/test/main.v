@@ -7,4 +7,9 @@ Dedukti Set Destination "out".
 
 Dedukti Set Encoding "original_cast ".
 
-Dedukti Export All.
+Dedukti Export All But
+	    Coq.Init.Specif
+	Coq.Init.Tactics
+	Coq.Init.Peano
+	Coq.Init.Nat
+.

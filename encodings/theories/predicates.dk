@@ -65,14 +65,16 @@ def max : Nat -> Nat -> Nat.
 (;------------------------  Other definitions  -------------------;)
 
 (; These functions are provided to simplify the translation.
-   - Axiom s (axiom s)       should reduce to I
-   - Rule s1 s2 (rule s1 s2) should reduce to I
+   - Axiom s (axiom s)       should reduce to true
+   - Rule s1 s2 (rule s1 s2) should reduce to true
 ;)
 
 
 def axiom : Sort -> Sort.
 []  axiom prop     --> type z.
 [i] axiom (type i) --> type (s i).
+
+[x] Axiom x (axiom x) --> true.
 
 def rule : Sort -> Sort -> Sort.
 [s  ] rule prop     s        --> s
@@ -81,3 +83,6 @@ def rule : Sort -> Sort -> Sort.
 [i  ] rule set      (type i) --> type i
 [i  ] rule (type i) set      --> type i
 [i,j] rule (type i) (type j) --> type (max i j).
+
+[s1,s2,s3] Rule s1 s2 (rule s1 s2) --> true.
+

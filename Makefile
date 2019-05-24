@@ -18,7 +18,7 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
 .PHONY: all plugin install uninstall clean fullclean
 
-all: check-version .merlin plugin test
+all: check-version .merlin plugin test debug_test
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
@@ -99,6 +99,11 @@ debug_geocoq: ENCODING_FLAGS:=predicates short
 debug_geocoq: COQINE_FLAGS:=readable universo
 debug_geocoq: geocoq
 
+
+.PHONY: debug_test
+debug_test: ENCODING_FLAGS:=predicates short
+debug_test: COQINE_FLAGS:=readable universo
+debug_test: test
 
 .PHONY: debug_universo
 debug_universo: ENCODING_FLAGS:=predicates short

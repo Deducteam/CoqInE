@@ -323,7 +323,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | Const (kn, univ_instance) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
-    if Utils.str_starts_with "Little__fix_" name
+    if Utils.str_starts_with "Little__fix" name
     then Dedukti.var (Utils.truncate name 8)
     else if Utils.str_starts_with "fix_" name ||
             not (Encoding.is_polymorphism_on ())
@@ -525,7 +525,7 @@ and lift_fix info env uenv names types bodies rec_indices =
      [...]
        fix1_f |G| |x1| ... |xr|
        -->
-       fix2_f |x1| ... |xr| |u1| ... |un| |xr|.
+       fix2_f |G| |x1| ... |xr| |u1| ... |un| |xr|.
 
      [...]
        fix2_f |G| |x1| ... |xr| {|uj1|} ... {|ujn|} (|cj z1 ... zkj|)
@@ -607,8 +607,10 @@ and lift_fix info env uenv names types bodies rec_indices =
         let env, cons_context' = translate_rel_context info env uenv (cons_contexts.(j)) in
         let fix_term2' = translate_constr info env uenv fix_terms2.(i) in
         let fix_term3' = translate_constr info env uenv fix_terms3.(i) in
-        let cons_term' = translate_constr info env uenv (Constr.mkConstruct ((inds.(i), j + 1))) in
-        let cons_term_applied' = Dedukti.apply_context cons_term' cons_context' in
+        let cons_term' = translate_constr info env uenv
+            (Constr.mkConstructUi (((pinds.(i), j + 1)))) in
+        let cons_term_applied' = Dedukti.apps cons_term'
+            (List.map (fun v -> Dedukti.var (fst v)) cons_context') in
         let cons_ind_args' = List.map (translate_constr info env uenv) cons_ind_args.(j) in
         (context' @ cons_context',
          Dedukti.apps
