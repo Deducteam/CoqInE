@@ -20,6 +20,7 @@
 run/debug/**/*.dk
 run/test/**/*.dk
 run/geocoq/**/*.dk
+run/geocoq_orig/**/*.dk
 run/mathcomp/**/*.dk
 
 run/debug/out
