@@ -33,6 +33,12 @@ run/geocoq/import.v
 run/geocoq/config.dk
 run/geocoq/pruned
 
+run/geocoq_orig/GeoCoq
+run/geocoq_orig/Make
+run/geocoq_orig/import.v
+run/geocoq_orig/config.dk
+run/geocoq_orig/pruned
+
 encodings/_build
 
 # emacs tmp files

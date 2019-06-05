@@ -8,10 +8,11 @@ VERBOSE      ?=
 CAMLFLAGS="-bin-annot -annot"
 
 RUNDIR=run
-TESTDIR=$(RUNDIR)/test
-GEOCOQDIR=$(RUNDIR)/geocoq
-DEBUGDIR=$(RUNDIR)/debug
-MATHCOMPDIR=$(RUNDIR)/mathcomp
+RUN_TESTS_DIR=$(RUNDIR)/test
+RUN_GEOCOQ_DIR=$(RUNDIR)/geocoq
+RUN_GEOCOQ_ORIG_DIR=$(RUNDIR)/geocoq_orig
+RUN_DEBUG_DIR=$(RUNDIR)/debug
+RUN_MATHCOMP_DIR=$(RUNDIR)/mathcomp
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
 CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
@@ -42,9 +43,11 @@ uninstall: CoqMakefile
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	make -C $(TESTDIR)   clean
-	make -C $(GEOCOQDIR) clean
-	make -C $(DEBUGDIR)  clean
+	make -C $(RUN_TESTS_DIR)       clean
+	make -C $(RUN_DEBUG_DIR)       clean
+	make -C $(RUN_GEOCOQ_DIR)      clean
+	make -C $(RUN_GEOCOQ_ORIG_DIR) clean
+	make -C $(RUN_MATHCOMP_DIR)    clean
 	rm CoqMakefile
 
 fullclean: clean
@@ -72,32 +75,18 @@ run: plugin
 	make -C $(RUNDIR)
 
 .PHONY: test
-test: RUNDIR:=$(TESTDIR)
+test: RUNDIR:=$(RUN_TESTS_DIR)
 test: run
 
 .PHONY: debug
-debug: RUNDIR:=$(DEBUGDIR)
+debug: RUNDIR:=$(RUN_DEBUG_DIR)
 debug: run
 
-# This target requires geocoq. Set correct path in run/geocoq/Makefile.
-.PHONY: geocoq
-geocoq: RUNDIR:=$(GEOCOQDIR)
-geocoq: run
-
 .PHONY: mathcomp
-mathcomp: RUNDIR:=$(MATHCOMPDIR)
+mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
 mathcomp: run
 
 
-.PHONY: universo_geocoq
-universo_geocoq: ENCODING_FLAGS:=predicates
-universo_geocoq: COQINE_FLAGS:=universo
-universo_geocoq: geocoq
-
-.PHONY: debug_geocoq
-debug_geocoq: ENCODING_FLAGS:=predicates short
-debug_geocoq: COQINE_FLAGS:=readable universo
-debug_geocoq: geocoq
 
 
 .PHONY: debug_test
@@ -154,3 +143,28 @@ lift_mathcomp: mathcomp
 debug_mathcomp: ENCODING_FLAGS:=predicates short
 debug_mathcomp: COQINE_FLAGS:=readable universo
 debug_mathcomp: mathcomp
+
+# These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
+.PHONY: geocoq_orig_universo
+geocoq_orig_universo: ENCODING_FLAGS:= predicates
+geocoq_orig_universo: COQINE_FLAGS  := universo
+geocoq_orig_universo: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
+geocoq_orig_universo: run
+
+.PHONY: geocoq_orig
+geocoq_orig: ENCODING_FLAGS:= predicates short
+geocoq_orig: COQINE_FLAGS  := readable universo
+geocoq_orig: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
+geocoq_orig: run
+
+.PHONY: geocoq_universo
+geocoq_universo: ENCODING_FLAGS:= predicates
+geocoq_universo: COQINE_FLAGS  := universo
+geocoq_universo: RUNDIR        := $(RUN_GEOCOQ_DIR)
+geocoq_universo: run
+
+.PHONY: geocoq
+geocoq: ENCODING_FLAGS:= predicates short
+geocoq: COQINE_FLAGS  := readable universo
+geocoq: RUNDIR        := $(RUN_GEOCOQ_DIR)
+geocoq: run
