@@ -31,6 +31,9 @@ elif [ "$1" = "fullcodes_test1" ]; then
 elif [ "$1" = "fullcodes_test2" ]; then
 	exportdk predicates fullcodes predicates
 	cat $CURDIR/theories/test2.dk >> $BUILD/Coq.dk
+elif [ "$1" = "fullcodes_test3" ]; then
+	exportdk predicates fullcodes predicates
+	cat $CURDIR/theories/test3.dk >> $BUILD/Coq.dk
 elif [ "$1" = "deepcodes" ]; then
 	exportdk predicates deepcodes predicates
 elif [ "$1" = "deepcodes_test1" ]; then
@@ -67,4 +70,3 @@ do
 	fi
 	shift
 done
-

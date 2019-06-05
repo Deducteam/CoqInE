@@ -1,0 +1,43 @@
+
+
+
+
+(;
+Unique Normal Forms for Lambda Calculus with Surjective Pairing
+[J. W. Klop, R. C. de Vrijer]
+(1989)
+
+
+The following system is no confluent:
+
+
+F x x -->  1
+Y f   -->  f (Y f)
+O     -->  O
+C m   -->  O (F m (C m))
+A     -->  C A
+
+A --> C A --> O (F A     (C A))
+          --> O (F (C A) (C A)) --> O 1
+A --> C A --> C (O 1)
+
+
+
+
+O = (\x.x x) (\x.x x)
+
+
+
+;)
+
+def Id (x : Code) : D x -> D x := x => x.
+
+def F (x:Code) (y:Code) : D y -> D y := t => (c x (u y t)).
+#ASSERT
+  (
+    x : Code => F x x
+  ) == (
+    x : Code => Id x
+  ).
+
+def O := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)).

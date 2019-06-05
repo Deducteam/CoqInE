@@ -84,5 +84,4 @@ def rule : Sort -> Sort -> Sort.
 [i  ] rule (type i) set      --> type i
 [i,j] rule (type i) (type j) --> type (max i j).
 
-[s1,s2,s3] Rule s1 s2 (rule s1 s2) --> true.
-
+[s1,s2] Rule s1 s2 (rule s1 s2) --> true.
