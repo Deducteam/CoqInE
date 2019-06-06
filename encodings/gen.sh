@@ -1,4 +1,4 @@
-DKCHECK="dkcheck -nl -e"
+DKCHECK="dkcheck -e"
 
 CURDIR=`dirname $0`
 BUILD=$CURDIR/_build

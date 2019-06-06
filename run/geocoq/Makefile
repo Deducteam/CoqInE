@@ -48,7 +48,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(PRUNEDFOLDER) -eta -e -nl $<
+	$(DKCHECK) -I $(PRUNEDFOLDER) --eta -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
@@ -60,6 +60,6 @@ CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
 
 Make: geocoq.sh
-	bash geocoq.sh 
+	bash geocoq.sh
 
 -include .depend

@@ -1,0 +1,21 @@
+
+- Fixpoints :
+    Remove too strong dependency in the context.
+    Only the fixpoint with truly different context should be translated differently.
+    Only the context that play a role in the body of the fixpoint should appear
+
+- Fixpoints:
+    It seems polymorphics constructors are not handled correctly (sort is ommitted)
+
+- Letin:
+    Detect the surperfluous letins where the body can be typed
+    without using the value on the variable. Replace that with a standard letin.
+    Note: when a library doesn't rely on dependent type, this is always the case
+
+- True universe polymorphism:
+    Implement full support.
+    Definition of polymorphic constant are not sort-abstracted yet.
+
+- Remove non necessary type annotation
+    Whenever possible do not annotate lambdas with their type to
+    avoid duplication.

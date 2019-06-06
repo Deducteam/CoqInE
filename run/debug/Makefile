@@ -46,7 +46,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) -eta -errors-in-snf -e -nl $<
+	$(DKCHECK) -I $(OUTFOLDER) --eta --snf -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
