@@ -42,6 +42,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
+#	$(DKCHECK) -I $(OUTFOLDER) -e $<
 	$(DKCHECK) -I $(OUTFOLDER) --eta -e $<
 
 clean: CoqMakefile

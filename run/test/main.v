@@ -8,7 +8,9 @@ Dedukti Set Destination "out".
 Dedukti Set Encoding "readable universo".
 
 Dedukti Export All But
-	    Coq.Init.Specif
+(*
+*)
+    Coq.Init.Specif
 	Coq.Init.Tactics
 	Coq.Init.Peano
 	Coq.Init.Nat
