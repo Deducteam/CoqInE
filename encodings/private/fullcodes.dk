@@ -51,7 +51,7 @@ def forall : (Code -> Bool) -> Bool.
 
 def ST : Code -> Code -> Bool.
 [s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
-[a,b,b'] ST (cPi a b) (cPi a b') --> forall (x:Code => ST (b x) (b' x)).
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall (x:Code => ST (b x) (b' x))
 [A]      ST A         A          --> true.
 
 [sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
@@ -85,4 +85,3 @@ def ST : Code -> Code -> Bool.
 
 
 (; def delta_delta := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)). ;)
-

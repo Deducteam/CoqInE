@@ -366,7 +366,7 @@ let rec translate_constr ?expected_type info env uenv t =
         (fun env declaration -> Environ.push_rel declaration env)
         env fix_declarations in
     translate_constr info new_env uenv (Constr.mkRel (n - i))
-       
+
   | Case(case_info, return_type, matched, branches) ->
     debug "Test";
     let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
@@ -374,14 +374,14 @@ let rec translate_constr ?expected_type info env uenv t =
     let n_params = mind_body.Declarations.mind_nparams   in
     let n_reals  =  ind_body.Declarations.mind_nrealargs in
     let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
-    
+
     (*
     let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
     *)
-    
+
     let params, reals = Utils.list_chop n_params ind_args in
     let params = List.map (Reduction.whd_all env) params in
-    
+
     debug "Template params: %a" (pp_list ", " pp_coq_term) params;
     let arity, univ_params =
       infer_template_polymorph_dest_applied info env uenv
@@ -398,7 +398,7 @@ let rec translate_constr ?expected_type info env uenv t =
       (param' :: params', Vars.subst1 param d) in
     let match_function' = Dedukti.var match_function_name in
     let return_sort' = Tsorts.translate_sort uenv return_sort in
-    let return_sort' = T.coq_universe return_sort' in 
+    let return_sort' = T.coq_universe return_sort' in
     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
     debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
     let return_type' = translate_constr info env uenv return_type in
@@ -550,7 +550,8 @@ and lift_fix info env uenv names types bodies rec_indices =
   let inds = Array.map fst pinds in
   let ind_args = Array.map snd inds_args in
   let ind_specifs = Array.map (Inductive.lookup_mind_specif env) inds in
-  let arity_contexts = Array.map (fun ind_specif -> fst (Inductive.mind_arity (snd ind_specif))) ind_specifs in
+  let one_ind_body = Array.map snd ind_specifs in
+  let arity_contexts = Array.map (fun body -> fst (Inductive.mind_arity body)) one_ind_body in
   let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Constr.mkInd inds.(i)) arity_contexts.(i)) in
   let types1 = types in
   let types2 = Array.init n (fun i ->
@@ -596,6 +597,14 @@ and lift_fix info env uenv names types bodies rec_indices =
         (ind_args' @ [Dedukti.var (fst (List.nth context' (List.length context' - 1)))]))
     ]) in
   let fix_rules2 = Array.init n (fun i ->
+      let nb_poly_univs =
+        if Encoding.is_polymorphism_on () then Univ.Instance.length (snd pinds.(i)) else 0 in
+      debug "Nb poly univs: %i" nb_poly_univs;
+      let nb_templ_poly = if Encoding.is_templ_polymorphism_on ()
+        then (match one_ind_body.(i).mind_arity with
+            | RegularArity a -> 0
+            | TemplateArity ar -> Utils.count_some ar.template_param_levels)
+        else 0 in
       let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in
       let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in
       let cons_contexts = Array.map fst cons_contexts_types in
@@ -609,10 +618,19 @@ and lift_fix info env uenv names types bodies rec_indices =
         let fix_term3' = translate_constr info env uenv fix_terms3.(i) in
         let cons_term' = translate_constr info env uenv
             (Constr.mkConstructUi (((pinds.(i), j + 1)))) in
+        (* These variable do not need to be named
         let cons_term_applied' = Dedukti.apps cons_term'
             (List.map (fun v -> Dedukti.var (fst v)) cons_context') in
+        *)
+        let nb_args = nb_poly_univs + nb_templ_poly + List.length cons_context' in
+        let cons_term_applied' = Dedukti.apps cons_term'
+            (Utils.list_init Dedukti.wildcard nb_args) in
+        (*
         let cons_ind_args' = List.map (translate_constr info env uenv) cons_ind_args.(j) in
-        (context' @ cons_context',
+        *)
+        let cons_ind_args' = Utils.list_init Dedukti.wildcard (List.length cons_ind_args.(j)) in
+        Debug.debug "cons_ind_args': %a" (pp_list ", " Dedukti.pp_term) cons_ind_args';
+        (context' ,
          Dedukti.apps
            (Dedukti.apply_context fix_term2' context')
            (cons_ind_args' @ [cons_term_applied']),

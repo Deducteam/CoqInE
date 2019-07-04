@@ -1,9 +1,9 @@
 
-
-
-(* [list_chop i l] splits [l] into two lists [(l1,l2)] such that
-   [l1++l2=l] and [l1] has length [i].
-   It raises [Failure] when [i] is negative or greater than the length of [l]  *)
+let rec list_init (e:'a) : int -> 'a list =
+  let rec aux acc = function
+  | 0 -> acc
+  | n -> aux (e::acc) (n-1) in
+  aux []
 
 let list_chop n l =
   let rec chop_aux i acc = function
@@ -25,6 +25,12 @@ let str_starts_with str1 str2 =
 
 let truncate str l =
   String.sub str l (String.length str - l)
+
+let count_some l =
+  let aux acc = function
+  | None   -> acc
+  | Some a -> 1+acc in
+  List.fold_left aux 0 l
 
 let filter_some l =
   let aux acc = function

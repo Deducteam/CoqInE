@@ -63,8 +63,7 @@ do
 		sed -i 's/Univ/U/g' $BUILD/C.dk
 		sed -i 's/univ/u/g' $BUILD/C.dk
 	elif [ "$1" = "check" ]; then
-		$DKCHECK $BUILD/Coq.dk
-		$DKCHECK $BUILD/C.dk
+		$DKCHECK $BUILD/*.dk
 	else
 		echo "Unknown command: $1"
 	fi
