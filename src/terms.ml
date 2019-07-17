@@ -358,8 +358,10 @@ let rec translate_constr ?expected_type info env uenv t =
     (* TODO: not the whole environment should be added here, only the relevant part
        i.e. variables that occur in the body of the fixpoint *)
     let env, fix_declarations =
-      (*      try Hashtbl.find fixpoint_table rec_declaration *)
+      try Hashtbl.find fixpoint_table rec_declaration
+      (*
       try Hashtbl.find fixpoint_table (env, rec_declaration)
+      *)
       with Not_found -> lift_fix info env uenv names types bodies rec_indices in
     let new_env =
       Array.fold_left
@@ -664,8 +666,10 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules2.(i));
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
+  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
+  (*
   Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
-  (* Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1); *)
+  *)
   env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list

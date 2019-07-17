@@ -1,0 +1,5 @@
+Add ML Path "/home/gferey/git/coqine/src".
+
+(*
+Add LoadPath "/home/gferey/git/coqine/run/geocoq/GeoCoq/" as GeoCoq.
+*)

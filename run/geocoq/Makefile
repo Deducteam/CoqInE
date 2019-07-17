@@ -3,6 +3,7 @@
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
+COQC         ?= coqc
 DKCHECK      ?= dkcheck
 DKDEP        ?= dkdep
 VERBOSE      ?=
@@ -35,7 +36,8 @@ $(PRUNEDFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER) $(PRUNEDFOLDER)
-	$(COQTOP) -init-file ../../.coqrc -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	$(COQC) -init-file ../../.coqrc -w all -R . Top main.v
+#	$(COQTOP) -init-file ../../.coqrc -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 	ls out/*GeoCoq*.dk | sed -e "s:out/Top__:#REQUIRE Top__:g" | sed -e "s/.dk/./g" > config.dk
 	dkprune -l -I $(OUTFOLDER) -o $(PRUNEDFOLDER) config.dk
 	rm -f $(PRUNEDFOLDER)/C.dk $(PRUNEDFOLDER)/Coq.dk
@@ -53,7 +55,7 @@ check: $(DKOS)
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	rm -rf $(OUTFOLDER) $(PRUNEDFOLDER)
-	rm -rf .depend .*.aux *.vo *.dk *.dko *.conf GeoCoq Make config.dk pruned
+	rm -rf .depend .*.aux *.vo *.dk *.dko *.conf *.glob GeoCoq Make config.dk pruned
 	rm -f CoqMakefile
 
 CoqMakefile: Make

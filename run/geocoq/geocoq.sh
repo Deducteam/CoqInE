@@ -4,11 +4,9 @@ CURDIR=`dirname $0`
 
 GEOCOQ_FILES=(
 Utils/general_tactics.v
-Axioms/euclidean_axioms.v
 Axioms/tarski_axioms.v
 Tarski_dev/Definitions.v
 Tactics/finish.v
-Tarski_dev/Tactics/ColR.v
 Tarski_dev/Ch02_cong.v
 Tarski_dev/Ch03_bet.v
 Tarski_dev/Ch04_cong_bet.v
@@ -16,14 +14,16 @@ Tarski_dev/Ch04_col.v
 Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
+Utils/arity.v
+Tactics/Coinc/tactics_axioms.v
+Meta_theory/Models/tarski_to_col_theory.v
+Utils/TCSets.v
+Utils/sets.v
+Tactics/Coinc/ColR.v
+Tarski_dev/Tactics/ColR.v
 Tarski_dev/Ch07_midpoint.v
 Tarski_dev/Ch08_orthogonality.v
 Tarski_dev/Annexes/coplanar.v
-Tarski_dev/Ch09_plane.v
-Meta_theory/Dimension_axioms/upper_dim_2.v
-Tarski_dev/Ch10_line_reflexivity.v
-Tarski_dev/Ch10_line_reflexivity_2.v
-Utils/arity.v
 )
 
 OTHER_FILES=(
@@ -268,6 +268,8 @@ rm -rf $CURDIR/GeoCoq
 # Create them again from the GEOCOQ_FILES variable
 mkdir  $CURDIR/GeoCoq
 echo "import.v" >> $CURDIR/Make
+
+
 for i in "${GEOCOQ_FILES[@]}"; do
 	mkdir -p $CURDIR/GeoCoq/$(dirname "$i")
 	cp ${GEOCOQ_DIR}/$i $CURDIR/GeoCoq/$i

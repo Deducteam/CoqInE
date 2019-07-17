@@ -78,8 +78,9 @@ let apply_context a context = apps a (List.map var (List.map fst context))
 
 (** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
 let print_var out = function
-  | "" -> Format.fprintf out "__"
-  | x  -> Format.fprintf out "%s" x
+  | ""    -> Format.fprintf out "__"
+  | "def" -> Format.fprintf out "def__"
+  | x     -> Format.fprintf out "%s" x
 
 let rec print_term out term =
   let rec print_term out term =
@@ -157,4 +158,3 @@ let printc fmt = function
     Format.fprintf fmt "@[<v2>[ %a] %a -->  %a.@]@."
       print_context context print_term left print_term right
   | instruction -> print fmt instruction
-

@@ -1,30 +1,20 @@
+
 (* This script tests the Dedukti plugin by exporting test files and parts
   of the Coq standard library. *)
 
-Require Coqine.
+Declare ML Module "coqine_plugin".
 
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
-Dedukti Add Debug "Coq.Classes.CRelationClasses".
-Dedukti Add Debug "Coq.Classes.RelationClasses".
-Dedukti Add Debug "Coq.Init.Datatypes".
-Dedukti Add Debug "Top.GeoCoq.Utils.arity".
-
 Dedukti Set Encoding "readable universo".
-
-Dedukti Filter Out "Coq.Init.Logic.rew_ex".
-Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
-
-Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
 
 Dedukti Enable Failproofmode.
 
 Require Import import.
 
 Dedukti Export All.
-
 
 (*
 Dedukti Export Library
@@ -73,4 +63,3 @@ Dedukti Export Library All But
   Coq.Structures.OrdersFacts
 .
 *)
-

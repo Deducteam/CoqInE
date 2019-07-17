@@ -55,11 +55,14 @@ let translate_universes () =
 (** Translate all loaded libraries but expressions. **)
 let translate_all_but refs =
   let sep = "\n  Ignoring " in
-  match List.map qualid_of_ref refs with
-  | [] -> message "Translating all libraries"
-  | ignore_qualids ->
-    message "Translating all libraries except from the following:%s%a"
-      sep (pp_list sep pp_t) (List.map Libnames.pr_qualid ignore_qualids);
+  let ignore_qualids = List.map qualid_of_ref refs in
+  begin
+    match ignore_qualids with
+    | [] -> message "Translating all libraries"
+    | ignore_qualids ->
+      message "Translating all libraries except from the following:%s%a"
+        sep (pp_list sep pp_t) (List.map Libnames.pr_qualid ignore_qualids)
+  end;
   let not_ignored qualid = not (List.exists (Libnames.qualid_eq qualid) ignore_qualids) in
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in

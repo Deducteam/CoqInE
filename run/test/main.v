@@ -1,7 +1,7 @@
 (* This script tests the Dedukti plugin by exporting test files and parts
   of the Coq standard library. *)
 
-Require Coqine.
+Declare ML Module "coqine_plugin".
 
 Dedukti Set Destination "out".
 

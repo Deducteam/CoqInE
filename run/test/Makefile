@@ -2,7 +2,7 @@
 
 # Variables
 COQ_MAKEFILE ?= coq_makefile
-COQTOP       ?= coqtop
+COQC         ?= coqc
 DKCHECK      ?= dkcheck
 DKDEP        ?= dkdep
 VERBOSE      ?=
@@ -32,7 +32,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
-	$(COQTOP) -init-file ../../.coqrc -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	$(COQC) -init-file ../../.coqrc -verbose -w all -R . Top main.v
 
 # Generate the dependencies of [.dk] files
 depend:
