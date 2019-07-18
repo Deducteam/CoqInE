@@ -14,7 +14,6 @@ Tarski_dev/Ch04_col.v
 Meta_theory/Decidability/equivalence_between_decidability_properties_of_basic_relations.v
 Tarski_dev/Ch05_bet_le.v
 Tarski_dev/Ch06_out_lines.v
-Utils/arity.v
 Tactics/Coinc/tactics_axioms.v
 Meta_theory/Models/tarski_to_col_theory.v
 Utils/TCSets.v

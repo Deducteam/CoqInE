@@ -7,15 +7,8 @@ Dedukti Set Destination "out".
 
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Add Debug "Coq.Init.Datatypes".
+Dedukti Add Debug "Coq.Init.Peano".
 
 Dedukti Set Encoding "readable universo".
 
-Dedukti Export All But
-(*
-*)
-    Coq.Init.Specif
-	Coq.Init.Tactics
-	Coq.Init.Peano
-	Coq.Init.Nat
-.
+Dedukti Export All But Coq.Init.Specif Coq.Init.Tactics.

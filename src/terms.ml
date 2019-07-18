@@ -358,9 +358,9 @@ let rec translate_constr ?expected_type info env uenv t =
     (* TODO: not the whole environment should be added here, only the relevant part
        i.e. variables that occur in the body of the fixpoint *)
     let env, fix_declarations =
-      try Hashtbl.find fixpoint_table rec_declaration
-      (*
       try Hashtbl.find fixpoint_table (env, rec_declaration)
+      (*
+      try Hashtbl.find fixpoint_table rec_declaration
       *)
       with Not_found -> lift_fix info env uenv names types bodies rec_indices in
     let new_env =
@@ -382,7 +382,9 @@ let rec translate_constr ?expected_type info env uenv t =
     *)
 
     let params, reals = Utils.list_chop n_params ind_args in
+    (* Probably put that back
     let params = List.map (Reduction.whd_all env) params in
+    *)
 
     debug "Template params: %a" (pp_list ", " pp_coq_term) params;
     let arity, univ_params =
@@ -666,9 +668,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules2.(i));
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
-  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
-  (*
   Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
+  (*
+  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
   *)
   env, fix_declarations1
 

@@ -90,7 +90,7 @@ mathcomp: run
 
 
 .PHONY: debug_test
-debug_test: ENCODING_FLAGS:=predicates short
+debug_test: ENCODING_FLAGS:=predicates_eta short
 debug_test: COQINE_FLAGS:=readable universo
 debug_test: test
 
