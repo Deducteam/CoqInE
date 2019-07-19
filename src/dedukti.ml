@@ -7,6 +7,7 @@ type term =
   | Var of var
   | Pie of (var * term) * term
   | Lam of (var * term option) * term
+  | LetIn of (var * term * term) * term
   | App of term * term
   | Dot of term (* Dot patterns *)
   | Cmt of string * term (* Comment annotations *)
@@ -33,6 +34,8 @@ let arr a b = Pie(("", a), b)
 let pie (x, a) b = Pie((x, a), b)
 
 let lam (x, a) b = Lam((x, Some a), b)
+
+let letin (x, u, a) b = LetIn((x,u,a), b)
 
 let ulam x b = Lam((x, None), b)
 
@@ -88,6 +91,8 @@ let rec print_term out term =
     | Pie(("", a), b) -> Format.fprintf out "%a ->@ %a" print_app a print_term b
     | Pie((x , a), b) -> Format.fprintf out "%a ->@ %a" print_binding (x, Some a) print_term b
     | Lam((x , a), b) -> Format.fprintf out "%a =>@ %a" print_binding (x,      a) print_term b
+    | LetIn((x , u, a), b) ->
+      Format.fprintf out "(%a := %a) =>@ %a" print_binding (x,Some a) print_atomic u print_term b
     | _               -> Format.fprintf out "%a" print_app term
   in
   Format.fprintf out "@[<hv0>%a@]" print_term term

@@ -33,17 +33,6 @@ val translate_constr :
 val translate_types :
   Info.info -> Environ.env -> Info.env -> Constr.types -> Dedukti.term
 
-val lift_let :
-  Info.info -> Environ.env -> Info.env ->
-  Names.Name.t -> Constr.t -> Constr.types -> Environ.env * Constr.t
-
-val lift_fix :
-  Info.info -> Environ.env -> Info.env ->
-  Names.Name.t array ->
-  Constr.types array ->
-  Constr.t array ->
-  int array -> Environ.env * Context.Rel.Declaration.t array
-
 val translate_rel_decl :
   Info.info -> Environ.env ->
   Context.Rel.Declaration.t -> (Environ.env * (Dedukti.var * Constr.types) option)

@@ -57,7 +57,7 @@ let fresh_name info env ?prefix ?default name =
   | Names.Name(identifier), _ -> Names.Name(fresh_identifier info env ?prefix identifier)
   | Names.Anonymous, None     -> name
   | Names.Anonymous, Some(d)  ->
-    Names.Name(fresh_identifier info env ?prefix (Names.Id.of_string d))
+    Names.Name (fresh_of_string info env ?prefix d)
 
 (** Name of the match function for the inductive type *)
 let constraint_name index = "cstr_" ^ (string_of_int index)
@@ -69,12 +69,12 @@ let is_alpha c =
   match c with
   | 'a' .. 'z'
   | 'A' .. 'Z' -> true
-  | _ -> false
+  | _          -> false
 
 let is_numerical c =
   match c with
   | '0' .. '9' -> true
-  | _ -> false
+  | _          -> false
 
 let is_alpha_numerical c = is_alpha c || is_numerical c
 

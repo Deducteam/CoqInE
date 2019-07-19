@@ -6,6 +6,8 @@ type lifted_type_pattern =
 
 type t =
   {
+    simpl_letins_flag         : bool;
+    unsafe_fixpoints_flag     : bool;
     polymorphism_flag         : bool;
     templ_polymorphism_flag   : bool;
     float_univ_flag           : bool;
@@ -46,6 +48,8 @@ type t =
 
 let original =
   {
+    simpl_letins_flag         = true;
+    unsafe_fixpoints_flag     = false;
     polymorphism_flag         = false;
     templ_polymorphism_flag   = false;
     constraints_flag          = false;
@@ -184,3 +188,5 @@ let is_named_univ_on         () = (get()).named_univ_flag
 let is_float_univ_on         () = (get()).float_univ_flag
 let is_readable_on           () = (get()).readable_translation_flag
 let is_cast_on               () = (get()).cast_flag
+let is_letins_simpl          () = (get()).simpl_letins_flag
+let is_fixpoints_unsage      () = (get()).unsafe_fixpoints_flag

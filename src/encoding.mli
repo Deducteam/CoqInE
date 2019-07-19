@@ -6,6 +6,12 @@ type lifted_type_pattern =
 
 type t =
   {
+    simpl_letins_flag : bool;
+    (** Translate let-in as simpl beta redices or not ? *)
+
+    unsafe_fixpoints_flag : bool;
+    (** Translate fixpoints as external body or generic unsafe fixpoint operator ?*)
+
     polymorphism_flag : bool;
     (** Is (true) polymorphism translation on ? *)
 
@@ -20,7 +26,7 @@ type t =
 
     named_univ_flag : bool;
     (** Should we use universe names or value ? Only has meaning when float is false. *)
-    
+
     readable_translation_flag : bool;
     (** Is (pseudo-)readable translation mode on ? *)
 
@@ -57,11 +63,11 @@ type t =
     t_Sort : string;
     t_Univ : string;
     t_Term : string;
-    
+
     t_axiom : string;
     t_sup   : string;
     t_rule  : string;
-    
+
     t_univ : string;
     t_prod : string;
     t_lift : string;
@@ -74,7 +80,7 @@ type t =
     t_priv_code   : string;
     t_priv_uncode : string;
   }
-  
+
 (* Some encodings *)
 val original      : t (** Ali's original encoding *)
 val original_cast : t (** Ali's original encoding with cast instead of lifted lambdas *)
@@ -85,7 +91,7 @@ val readable : t -> t (** Encoding with shorter names and aliases for concrete u
 
 val set : t -> unit
 (** Sets current encoding *)
-  
+
 val get : unit -> t
 (** Gets current encoding *)
 
@@ -94,7 +100,7 @@ val set_encoding : string -> unit
 
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)
-  
+
 val is_templ_polymorphism_on : unit -> bool
 (** Is template polymorphism translation on ? *)
 
@@ -112,3 +118,9 @@ val is_readable_on : unit -> bool
 
 val is_cast_on : unit -> bool
 (** Use casts or lifted lambdas ? *)
+
+val is_letins_simpl : unit -> bool
+(** Translate let-in as simpl beta redices or not ? *)
+
+val is_fixpoints_unsage : unit -> bool
+(** Translate fixpoints as external body or generic unsafe fixpoint operator ?*)

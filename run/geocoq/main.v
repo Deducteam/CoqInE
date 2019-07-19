@@ -8,6 +8,10 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Set Destination "out".
 
+(* This generates a huge file...
+Dedukti Add Debug "Top.GeoCoq.Tarski_dev.Ch08_orthogonality".
+ *)
+
 Dedukti Set Encoding "readable universo".
 
 Dedukti Enable Failproofmode.

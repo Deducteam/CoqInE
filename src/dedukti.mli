@@ -9,6 +9,7 @@ type term =
   | Var of var
   | Pie of (var * term) * term
   | Lam of (var * term option) * term
+  | LetIn of (var * term * term) * term
   | App of term * term
   | Dot of term
   | Cmt of string * term
@@ -32,6 +33,7 @@ val var : var -> term
 val arr : term -> term -> term
 val pie : var * term -> term -> term
 val lam : var * term -> term -> term
+val letin : var * term * term -> term -> term
 val ulam : var -> term -> term
 val app : term -> term -> term
 val dot : term -> term

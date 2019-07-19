@@ -25,7 +25,7 @@ let dest_const_univ universes =
 
 let translate_constant_body info env label const =
   let name = Names.Label.to_string label in
-  
+
   (* There should be no section hypotheses at this stage. *)
   assert (List.length const.const_hyps = 0);
   let poly_inst, poly_cstr, env =
@@ -42,7 +42,7 @@ let translate_constant_body info env label const =
       debug "Translating polymorphic [%a] constant body: %s" pp_coq_inst instance name;
       instance, constraints, env'
   in
-  
+
   let poly_inst, poly_cstr = dest_const_univ const.const_universes in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let poly_cstr        = Tsorts.translate_univ_poly_constraints poly_cstr in
@@ -53,7 +53,7 @@ let translate_constant_body info env label const =
   let const_type' = Tsorts.add_sort_params univ_poly_params const_type' in
 
   let label' = Cname.translate_element_name info env label in
-  
+
   match const.const_body with
   | Undef inline ->
     (* For now assume inline is None. *)
@@ -78,7 +78,7 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then extend subtyping *)
+  (* Then extend subtyping to inductive types *)
   for i = 0 to pred ntypes do
     Inductives.translate_inductive_subtyping info env label inds.(i)
   done;
@@ -86,9 +86,17 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
   done;
+  (* Then extend subtyping to inductive constructors *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_constructors_subtyping info env label inds.(i)
+  done;
   (* Then declare all the match functions *)
   for i = 0 to pred ntypes do
     Inductives.translate_match info env label inds.(i)
+  done;
+  (* Then extend subtyping to inductive destructors *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_match_subtyping info env label inds.(i)
   done
 
 (** Pseudo-translate the body of mutual coinductive definitions [mind]. *)

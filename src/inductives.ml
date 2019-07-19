@@ -17,22 +17,22 @@ type ind_infos =
 
     (* Total number of mutually inductive types *)
     nb_mutind : int;
-    
+
     (* Index of the current inductive type in the block *)
     index : int;
-    
+
     (* Body of the current inductive type *)
     body : Declarations.one_inductive_body;
-    
+
     (* Number of parameters common to all definitions *)
     n_params : int;
-    
+
     (* Number of constructors in the current type *)
     n_cons : int;
-    
+
     (* Inductive type name *)
     typename : Names.Id.t;
-    
+
     (* Constructor names array *)
     cons_names : Names.Id.t array;
 
@@ -44,20 +44,20 @@ type ind_infos =
     arity_real_context : Context.Rel.t;
 
     arity : Declarations.inductive_arity;
-    
+
     (* Local Coq levels that are template polymorphic (Named level only) *)
     template_levels : Univ.Level.t list;
     (* Names for template polymorphic coq levels *)
     template_names  : Dedukti.var  list;
-    
+
     arity_sort : Sorts.t;
-    
+
     (* Universe polymorphic instance (array of universe levels) *)
     poly_inst : Univ.Instance.t;
-    
+
     (* Universe polymorphic constraints *)
     poly_cstr : Univ.Constraint.t;
-    
+
     univ_poly_names : Dedukti.var list;
     univ_poly_cstr : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list;
     univ_poly_nb_params : int;
@@ -96,7 +96,11 @@ let get_infos mind_body index =
   (* Compute universe polymorphic instance and associated constraints *)
   let poly_inst, poly_cstr =
     match mind_univs with
-    | Monomorphic_ind univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
+    | Monomorphic_ind univ_ctxt ->
+(*
+      Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
+*)
+      Univ.Instance.empty, Univ.Constraint.empty
     | Polymorphic_ind univ_ctxt ->
       let uctxt = Univ.AUContext.repr univ_ctxt in
       Univ.UContext.instance uctxt,
@@ -169,15 +173,11 @@ let extract_rel_context info env =
   aux (env, [])
 
 
-(** Translate the type of the given inductive
-      I : s1 : Sort -> ... -> sk : Sort ->
-          p1 : ||P1|| ->
-          ... ->
-          pr : ||Pr|| ->
-          x1 : A1 -> ... -> xn : An -> s
-    where the s1 ... sr are either
-    - template polymorphic universe levels
-    - true polymorphic universe levels
+(* I : s1 : Sort -> ... -> sk : Sort ->
+       p1 : ||P1|| ->
+       ... ->
+       pr : ||Pr|| ->
+       x1 : A1 -> ... -> xn : An -> s
 *)
 let translate_inductive info env label ind  =
   (* An inductive definition is organised into:
@@ -185,10 +185,10 @@ let translate_inductive info env label ind  =
        containing a context of common parameter and list of [inductive_body]
      - [inductive_body] : a single inductive type definition, containing a name,
        an arity, and a list of constructor names and types *)
-  
+
   (* Body of the current inductive type *)
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
-  
+
   (*  I : s1 : Sort -> ... -> sk : Sort ->
           p1 : ||P1|| ->
           ... ->
@@ -212,37 +212,28 @@ let translate_inductive info env label ind  =
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
 
-(** Subtyping is extended to parameters of template or true polymorphic inductive types.
-    For all j such that the parameter pj has type
-      A1 -> ... -> Ak -> Type_si
-    where si is either
-    - a head-quantified template polymorphic parameter
-    - a head-quantified true polymorphic parameter with positive influence
-      on the return sort expression s.
-    we generate:
-      I s1 ... si' ... sk
-        p1 
-        ...
-        (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
-        ...
-        pr
-        a1 ...  ... an
-       -->
-       lift s(s1 ... si ... sk) s(s1 ... si' ... sk)
-         (I s1 ... si ... sk
-            p1  ... (x1 => ... => xl => pj x1 ... xl) ... pr
-            a1 ... an)
-    Note: we might generate identity lifts which shouldn't be an issue.
+(* I s1 ... si' ... sk
+     p1
+     ...
+     (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+     ...
+     pr
+     a1 ...  ... an
+   -->
+   lift s[s1 ... si ..., sk]  s[s1 ... si' ... sk]
+     (I s1 ... si ... sk
+        p1  ... (x1 => ... => xl => pj x1 ... xl) ... pr
+        a1 ... an)
 *)
 let translate_inductive_subtyping info env label ind =
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
   let inductive' = Dedukti.var name' in
-  let (nenv, arity_ctxt_names) = extract_rel_context info env ind.arity_context in
+  let _, arity_ctxt_names = extract_rel_context info env ind.arity_context in
   let translate_name name =
     let name = Cname.fresh_name ~default:"_" info env name in
     Cname.translate_name name in
   let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
-  (* Translate the rule for lift elimination in j-th parameters template polymorphism *)
+  (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
   let print_param_ST_elim decl =
     match is_template_parameter ind decl with
     | None -> () (* When parameter in not template polymorphic: no rule *)
@@ -300,77 +291,127 @@ let translate_inductive_subtyping info env label ind =
 
 
 
-(** Translate the constructors of the i-th inductive type in [mind_body].
-    cj : s1 : Sort -> ... -> sk : Sort ->
-         |p1| : ||P1|| ->
-         ... ->
-         |pr| : ||Pr|| ->
-         y1  : ||Bj1||(s1,...,sr) ->
-         ... ->
-         ykj : ||Bjkj||(s1,...,sr) ->
-         I s1 ... sk  p1 ... pr  aj1(y1...ykj)  ... ajn(y1...ykj)
+(* cj : s1 : Sort -> ... -> sk : Sort ->
+        |p1| : ||P1|| ->
+        ... ->
+        |pr| : ||Pr|| ->
+        y1  : ||Bj1||(s1,...,sr) ->
+        ... ->
+        ykj : ||Bjkj||(s1,...,sr) ->
+        I s1 ... sk  p1 ... pr  aj1(y1...ykj)  ... ajn(y1...ykj)
 *)
 let translate_constructors info env label ind =
-  let univ_instance =
-    match ind.mind_univs with
-    | Monomorphic_ind univ_ctxt ->
-      Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt)
-    | Polymorphic_ind univ_ctxt ->
-      Univ.AUContext.instance univ_ctxt (* Univ.abstract_universe_context *)
-    | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
-  
-  (* Get universe parameters names and corresponding local environnement *)
-  let template_params = ind.template_names in
-  let uenv = ind.univ_poly_env in
-  
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-  
-  let ind_subst = Inductive.ind_subst mind ind.mind_body univ_instance in
-  
+  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst  in
+
   for j = 0 to ind.n_cons - 1 do
     let cons_name = ind.body.mind_consnames.(j) in
     let cons_type = ind.body.mind_user_lc.(j) in
     (* Substitute the inductive types as specified in the Coq code. *)
     let cons_type = Vars.substl ind_subst cons_type in
     debug "Cons_type: %a" pp_coq_type cons_type;
-    
-    let cons_name = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
-    let cons_type = Terms.translate_types info env uenv cons_type in
-    let template_type = Tsorts.add_sort_params template_params cons_type in
-    let univ_type     = Tsorts.add_sort_params ind.univ_poly_names template_type in
-    debug "Cons_type: %a" Dedukti.pp_term univ_type;
-    
-    Dedukti.print info.fmt (Dedukti.declaration false cons_name univ_type);
+
+    let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
+    let cons_type' = Terms.translate_types info env ind.univ_poly_env cons_type in
+    let template_type' = Tsorts.add_sort_params ind.template_names cons_type' in
+    let univ_type'     = Tsorts.add_sort_params ind.univ_poly_names template_type' in
+    debug "Cons_type: %a" Dedukti.pp_term univ_type';
+
+    Dedukti.print info.fmt (Dedukti.declaration true cons_name' univ_type');
   done
 
 
-(** Translate the match function for the i-th inductive type in [mind_body].
+(* cl s1 ... si' ... sk
+      p1 ... (x1 => ... => xl => lift (u si) _ (pj x1 ... xl)) ... pr
+   -->
+   cl s1 ... si ... sk
+      p1 ... (x1 => ... => xl => pj x1 ... xl) ... pr
+*)
+let translate_constructors_subtyping info env label ind =
+  for consid = 0 to ind.n_cons - 1 do
+    let cons_name = ind.body.mind_consnames.(consid) in
+    let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
+    let cons' = Dedukti.var cons_name' in
+    let _, arity_ctxt_names = extract_rel_context info env ind.mind_params_ctxt in
+    let translate_name name =
+      let name = Cname.fresh_name ~default:"_" info env name in
+      Cname.translate_name name in
+    let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
+    (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
+    let print_param_ST_elim decl =
+      match is_template_parameter ind decl with
+      | None -> () (* When parameter in not template polymorphic: no rule *)
+      | Some (tparam_name,locals,level,level_name') ->
+        begin
+          let new_level_name' = level_name' ^ "'" in
+          let tparam_name = Cname.fresh_name ~default:"_" info env tparam_name in
+          let tparam_name' = Cname.translate_name tparam_name in
+          let applied_param =  (* pj x1 ... xl *)
+          Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
+          let lifted_param_pat = Dedukti.ulams locals
+              (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+          let translate_name_with_lifted name =
+            if name = tparam_name
+            then lifted_param_pat
+            else Dedukti.var (translate_name name)
+          in
+          let translate_replace_sort s =
+            Dedukti.var (if s = level_name' then new_level_name' else s)
+          in
+          let lhs =
+            Dedukti.apps cons'
+              (List.map Dedukti.var ind.univ_poly_names @
+               List.map Dedukti.var ind.template_names @
+               List.map translate_name_with_lifted arity_ctxt_names
+              ) in
+          let rhs =
+            Dedukti.apps cons'
+              (List.map translate_replace_sort ind.univ_poly_names @
+               List.map translate_replace_sort ind.template_names @
+               List.map Dedukti.var arity_ctxt_names'
+              ) in
+          let context =
+            new_level_name' ::
+            ind.univ_poly_names @
+            ind.template_names @
+            arity_ctxt_names' in
 
-  match_I :
-    s : Sort ->
-    s1 : Sort -> ... -> sk : Sort ->
-    |p1| : ||P1|| ->
+          (* Printing out the rule for lift elimination *)
+          Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
+        end
+    in
+    List.iter print_param_ST_elim ind.mind_params_ctxt
+  done
+
+
+
+
+(* match_I :
+     s1 : Sort -> ... -> sk : Sort ->
+     |p1| : ||P1|| ->
+     ... ->
+     |pr| : ||Pr|| ->
+
+     s : Sort ->
+     P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
+          ||I [s1] ... [sk] p1 ... pr x1 ... xn|| ->
+          Univ s) ->
+
+    case_c1 : (y11 : ||B11|| -> ... -> y1k1 : ||B1k1|| ->
+               Term s (P |u11| ... |u1n| (|c1 s1 ... sk p1 ... pr y11 ... y1k1|))) -> ...
     ... ->
-    |pr| : ||Pr|| ->
-    P : (|x1| : ||A1|| -> ... -> |xn| : ||An|| ->
-            ||I [s1] ... [sk] p1 ... pr x1 ... xn|| ->
-            type s) ->
-    
-    case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
-               term s (P |u11| ... |u1n| (|c1 [s1] ... [sk] p1 ... pr y11 ... y1k1|))) -> ...
-    ... ->
-    case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
-               term s (P |uj1| ... |ujn| (|cj [s1] ... [sk] p1 ... pr yj1 ... yjkj|))) -> ...
-    
-    |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
-    x : ||I [s1] ... [sk] p1 ... pr x1 ... xn|| ->
-    term s (P |x1| ... |xn| x)
+    case_cj : (yj1 : ||Bj1|| -> ... -> yjkj : ||Bjkj|| ->
+               Term s (P |uj1| ... |ujn| (|cj s1 ... sk p1 ... pr yj1 ... yjkj|))) -> ...
+
+    x1 : ||A1|| -> ... -> xn : ||An|| ->
+    x : ||I s1 ... sk p1 ... pr x1 ... xn|| ->
+    Term s (P x1 ... xn x)
 *)
 let translate_match info env label ind =
   let mind_body = ind.mind_body in
   (* Body of the current inductive type *)
   let ind_body = ind.body in
-  
+
   (* Instance (array of universe levels) corresponding to the mutually inductive
      universe parameters  *)
   let univ_instance =
@@ -380,7 +421,8 @@ let translate_match info env label ind =
     | Polymorphic_ind univ_ctxt ->
       Univ.AUContext.instance univ_ctxt
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
-  
+  let univ_instance = ind.poly_inst in
+
   (* Compute universe parameters names and corresponding local environnement *)
   let template_params = ind.template_names in
   let univ_poly_params = ind.univ_poly_names in
@@ -392,56 +434,54 @@ let translate_match info env label ind =
   This is only used for ind_terms.(index), why build the whole array ?
   *)
   let ind_term = Constr.mkIndU((mind, ind.index), univ_instance) in
-  
+
   let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
-  
+
   (* Constructor names start from 1. *)
   let cons_terms = Array.init ind.n_cons
       (fun j -> Constr.mkConstructU(((mind, ind.index), j + 1), univ_instance)) in
-  
+
   let indtype_name = ind_body.mind_typename in
   let match_function_name' = Cname.match_function info env info.module_path indtype_name in
-  
+
   let match_function_var'  = Dedukti.var match_function_name' in
   debug "###  %s" match_function_name';
-  
-  let arity_context = ind_body.mind_arity_ctxt in
-  
+
   (* Use the normalized types in the rest. *)
   let cons_types = Array.map (Vars.substl ind_subst) ind_body.mind_nf_lc in
-  
+
   (* Translate the match function: match_I *)
   let params_context = ind.mind_params_ctxt in
-  let arity_real_context, _ = Utils.list_chop ind_body.mind_nrealdecls arity_context in
+  let arity_real_context = ind.arity_real_context in
   let ind_applied = Terms.apply_rel_context ind_term (arity_real_context @ params_context) in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types    = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init ind.n_cons (fun j ->
-    fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in 
+    fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in
   let cons_ind_args = Array.map
       (fun a -> snd (Constr.decompose_app (Reduction.whd_all env a))) cons_types in
   let cons_ind_real_args = Array.init ind.n_cons (fun j ->
     snd (Utils.list_chop ind.n_params cons_ind_args.(j))) in
   let cons_applieds = Array.init ind.n_cons (fun j ->
       Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context))  in
-  
+
   if ind.n_cons > 0 then debug "Test: %a" pp_coq_term cons_applieds.(0);
   let params_env, params_context' =
     Terms.translate_rel_context info (Global.env ()) uenv params_context in
-  
+
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Cname.fresh_of_string info params_env "s" in
   let return_sort_name' = Cname.translate_identifier return_sort_name in
   let return_sort' = Translator.LocalNamed return_sort_name' in
   let params_env = Cname.push_identifier return_sort_name params_env in
-  
+
   (* Create a fresh variable P and add it to the environment *)
   let return_type_name = Cname.fresh_of_string info params_env "P" in
   let return_type_name' = Cname.translate_identifier return_type_name in
   let return_type_var' = Dedukti.var return_type_name' in
   let params_env = Cname.push_identifier return_type_name params_env in
-  
+
   (* Create a fresh variables for each constructors of the inductive type
      and add them to the environment (why ?) *)
   let params_env, case_names' =
@@ -454,44 +494,44 @@ let translate_match info env label ind =
       (params_env, [])
       ind.cons_names in
   let case_names' = Array.of_list (List.rev case_names') in
-  
+
   let arity_real_env, arity_real_context' =
     Terms.translate_rel_context info params_env uenv arity_real_context in
   let ind_applied' = Terms.translate_types info arity_real_env uenv ind_applied in
-  
+
   debug "ind_applied: %a / %a" pp_coq_term ind_applied Dedukti.pp_term ind_applied';
-  
+
   (* Create a fresh variable x and add it to the environment *)
   let matched_name = Cname.fresh_of_string info arity_real_env "x" in
   let matched_name' = Cname.translate_identifier matched_name in
   let matched_var' = Dedukti.var matched_name' in
   let params_env = Cname.push_identifier matched_name params_env in
-  
+
   let cases' = Array.map Dedukti.var case_names' in
   let params' = List.map Dedukti.var (fst (List.split params_context')) in
-  
+
   let cons_real_env_contexts' =
     Array.map
       (Terms.translate_rel_context info params_env uenv)
       cons_real_contexts in
-  
+
   let cons_real_envs      = Array.map fst cons_real_env_contexts' in
   let cons_real_contexts' = Array.map snd cons_real_env_contexts' in
-  
+
   debug "Env: %a" pp_coq_env params_env;
   Array.iter (debug "%a" pp_coq_ctxt) cons_real_contexts;
   Array.iter (debug "%a" pp_coq_env ) cons_real_envs;
-  
+
   let cons_ind_real_args' =
     Array.mapi
       (fun j -> Terms.translate_args info cons_real_envs.(j) uenv)
       cons_ind_real_args in
-  
+
   let cons_applieds' =
     Array.mapi
       (fun j -> Terms.translate_constr info cons_real_envs.(j) uenv)
       cons_applieds in
-  
+
   (* Combine the above. *)
   let case_types' =
     Array.init ind.n_cons
@@ -502,7 +542,7 @@ let translate_match info env label ind =
                  (cons_ind_real_args'.(j) @ [cons_applieds'.(j)])))) in
 
   if ind.n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
-  
+
   let cases_context' = Array.to_list (Array.init ind.n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
     if Encoding.is_templ_polymorphism_on ()
@@ -534,20 +574,20 @@ let translate_match info env label ind =
   (* Printing out the match definition. *)
   (* match_I :
      s : Sort ->
-     
+
      s1 : Sort -> ... -> sk : Sort ->
      p1 : ||P1|| -> ... -> pr : ||Pr|| ->
-     
+
      P : (x1 : ||A1|| -> ... -> xn : ||An|| ->
           ||I s1 ... sk p1 ... pr x1 ... xn|| ->
           Univ s) ->
-     
+
      case_c1 : (|y11| : ||B11|| -> ... -> |y1k1| : ||B1k1|| ->
                 term s (P |u11| ... |u1n| (|c1 s1 ... sk p1 ... pr y11 ... y1k1|))) -> ...
      ... ->
      case_cj : (|yj1| : ||Bj1|| -> ... -> |yjkj| : ||Bjkj|| ->
                 term s (P |uj1| ... |ujn| (|cj s1 ... sk p1 ... pr yj1 ... yjkj|))) -> ...
-     
+
      |x1| : ||A1|| -> ... -> |xn| : ||An|| ->
      x : ||I s1 ... sk p1 ... pr x1 ... xn|| ->
      Term s (P |x1| ... |xn| x)
@@ -564,11 +604,11 @@ let translate_match info env label ind =
        params' @
        return_type_var' ::
        Array.to_list cases') in
-  
+
   (* Printing out the match rewrite rules. *)
   (* match_I :
-       s
        s1 ... sr
+       s
        p1 ... pr
        P
        case_c1
@@ -581,7 +621,7 @@ let translate_match info env label ind =
        -->
        case_ci y11 ... y1k1
   *)
-  (* TODO: We could probably remove the non-linearity here since it is
+  (* TODO: We could probably remove the non-linearity of si and pi here since it is
      guaranteed by typing *)
   for j = 0 to ind.n_cons-1 do
     let case_rule_context' =
@@ -600,7 +640,7 @@ let translate_match info env label ind =
     let rw_rule = Dedukti.typed_rewrite (case_rule_context', case_rule_left', case_rule_right') in
     Dedukti.print info.fmt rw_rule
   done;
-  
+
   (* Translate the rule for lift elimination in match polymorphism *)
   (* match_I s1 ... sr p1  ... pr _ a1 ... an (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
      -->
@@ -625,31 +665,101 @@ let translate_match info env label ind =
        Dedukti.var new_sort_name ::
        List.map (fun x -> Dedukti.var (fst x)) params_context' @
        [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
-  
-  (* TODO: add match equivalences:
-      match_I s1 ... si' ... sk
-           p1 
-           ...
-           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
-           ...
-           pr
-       -->
-       match_I s1 ... si ... sk
-           p1 
-           ...
-           (x1 => ... => xl => pj x1 ... xl)
-           ...
-           pr
-  *)
-
-  
   let context =
     univ_poly_context' @
     template_poly_context' @
     return_sort_binding ::
     params_context' @
     [return_type_binding; (new_sort_name, T.coq_Sort())] in
-  
+
   (* Printing out the rule for lift elimination *)
-  Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, rhs_match))
-  
+  Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, rhs_match));
+
+  (* TODO: add match equivalences:
+      match_I s1 ... si' ... sk
+           p1
+           ...
+           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+           ...
+           pr
+       -->
+       match_I s1 ... si ... sk
+           p1
+           ...
+           (x1 => ... => xl => pj x1 ... xl)
+           ...
+           pr
+  *)
+  let _, arity_ctxt_names = extract_rel_context info env ind.mind_params_ctxt in
+  let translate_name name =
+    let name = Cname.fresh_name ~default:"_" info env name in
+    Cname.translate_name name in
+  let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
+  (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
+  let print_param_ST_elim decl =
+    match is_template_parameter ind decl with
+    | None -> () (* When parameter in not template polymorphic: no rule *)
+    | Some (tparam_name,locals,level,level_name') ->
+      begin
+          let new_level_name' = level_name' ^ "'" in
+          let tparam_name = Cname.fresh_name ~default:"_" info env tparam_name in
+          let tparam_name' = Cname.translate_name tparam_name in
+          let applied_param =  (* pj x1 ... xl *)
+            Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
+          let lifted_param_pat = Dedukti.ulams locals
+              (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+          let translate_name_with_lifted name =
+            if name = tparam_name
+            then lifted_param_pat
+            else Dedukti.var (translate_name name)
+          in
+          let translate_replace_sort s =
+            Dedukti.var (if s = level_name' then new_level_name' else s)
+          in
+          let lhs =
+            Dedukti.apps match_function_var'
+              (List.map Dedukti.var ind.univ_poly_names @
+               List.map Dedukti.var ind.template_names @
+               Dedukti.var return_sort_name' ::
+               List.map translate_name_with_lifted arity_ctxt_names
+              ) in
+          let rhs =
+            Dedukti.apps match_function_var'
+              (List.map translate_replace_sort ind.univ_poly_names @
+               List.map translate_replace_sort ind.template_names @
+               Dedukti.var return_sort_name' ::
+               List.map Dedukti.var arity_ctxt_names'
+              ) in
+          let context =
+            new_level_name' :: return_sort_name' ::
+            ind.univ_poly_names @
+            ind.template_names @
+            arity_ctxt_names' in
+
+          (* Printing out the rule for lift elimination *)
+          Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
+        end
+  in
+  List.iter print_param_ST_elim ind.mind_params_ctxt
+
+
+
+
+(* match_I s
+     s1 ... si' ... sk
+     p1
+     ...
+     (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+     ...
+     pr
+   -->
+   match_I s
+     s1 ... si ... sk
+     p1
+     ...
+     (x1 => ... => xl => pj x1 ... xl)
+     ...
+     pr
+*)
+let translate_match_subtyping info env label ind =
+  ()

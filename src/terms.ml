@@ -10,6 +10,52 @@ open Term
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
+module ISet = Set.Make(
+  struct
+    type t = int
+    let compare = Pervasives.compare
+  end
+)
+
+(* Fetch all variables free in a term *)
+let add_free_vars set te =
+  let set = ref set in
+  let add i = set := ISet.add i (!set) in
+  let rec occur_rec n c = match Constr.kind c with
+    | Constr.Rel m -> if m > n then add (m-n)
+    | _ -> Constr.iter_with_binders succ occur_rec n c
+  in
+  occur_rec 0 te;
+  !set
+
+let get_free_vars te =
+  List.sort Pervasives.compare (ISet.elements (add_free_vars ISet.empty te))
+
+let fixpoint_signature env rec_decl = rec_decl
+let fixpoint_signature env rec_decl =
+  let (names, types, bodies) = rec_decl in
+  let n = Array.length names in
+  message "Debugging %i fixpoints:" n;
+  for i = 0 to n - 1 do
+    message "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
+    message "body:  %a" pp_coq_term bodies.(i);
+  done;
+  let set = ref ISet.empty in
+  Array.iter (fun e -> set := add_free_vars !set e) types;
+  Array.iter (fun e -> set := add_free_vars !set e) bodies;
+  let fv = List.sort Pervasives.compare (ISet.elements !set) in
+  let fv_types =
+    List.map
+      (fun i ->
+         message "Test: %i in %a" i pp_coq_env env;
+         let _,_,ty = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
+         message "Type is : %a" pp_coq_type ty;
+         ty) fv in
+  (fv_types, rec_decl)
+let fixpoint_signature env rec_decl = (env, rec_decl)
+
+
+
 
 let translate_rel_decl info env decl =
   match Context.Rel.Declaration.to_tuple decl with
@@ -296,9 +342,18 @@ let rec translate_constr ?expected_type info env uenv t =
     Dedukti.lam (x', a'') t'
 
   | LetIn(x, u, a, t) ->
-    let env, u = lift_let info env uenv x u a in
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-    translate_constr info new_env uenv t
+    if Encoding.is_letins_simpl ()
+    then
+      let x2 = Cname.fresh_name info ~default:"_" env x in
+      let x' = Cname.translate_name x2 in
+      let a' = translate_types  info env uenv a in
+      let u' = translate_constr info env uenv u in
+      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+      let t' = translate_constr info new_env uenv t in
+      Dedukti.letin (x',u',a') t'
+    else
+      let new_env = lift_let info env uenv x u a in
+      translate_constr info new_env uenv t
 
   | App(f, args) ->
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
@@ -358,11 +413,13 @@ let rec translate_constr ?expected_type info env uenv t =
     (* TODO: not the whole environment should be added here, only the relevant part
        i.e. variables that occur in the body of the fixpoint *)
     let env, fix_declarations =
-      try Hashtbl.find fixpoint_table (env, rec_declaration)
-      (*
-      try Hashtbl.find fixpoint_table rec_declaration
-      *)
-      with Not_found -> lift_fix info env uenv names types bodies rec_indices in
+      let fsig = fixpoint_signature env rec_declaration in
+      try Hashtbl.find fixpoint_table fsig
+      with Not_found ->
+        let res = lift_fix info env uenv names types bodies rec_indices in
+        Hashtbl.add fixpoint_table fsig res;
+        res
+    in
     let new_env =
       Array.fold_left
         (fun env declaration -> Environ.push_rel declaration env)
@@ -483,9 +540,19 @@ and translate_types info env uenv a =
     let b' = translate_types info new_env uenv b in
     Dedukti.pie (x', a') b'
   | LetInType(x, u, a, b) ->
-    let env, u = lift_let info env uenv x u a in
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-    translate_types info new_env uenv b
+    if Encoding.is_letins_simpl ()
+    then
+      let x2 = Cname.fresh_name info ~default:"_" env x in
+      let x' = Cname.translate_name x2 in
+      let a' = translate_types  info env uenv a in
+      let u' = translate_constr info env uenv u in
+      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+      let b' = translate_types info new_env uenv b in
+      Dedukti.letin (x',u',a') b'
+    else
+      let new_env = lift_let info env uenv x u a in
+      translate_types info new_env uenv b
+
   | AtomicType(_) ->
     (* Fall back on the usual translation of types. *)
     let s' = infer_translate_sort info env uenv a in
@@ -504,9 +571,11 @@ and lift_let info env uenv x u a =
   let a_closed' = translate_types  info global_env uenv a_closed in
   let u_closed' = translate_constr info global_env uenv u_closed in
   Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
-  let yconst = make_const info.module_path y in
-  let env = push_const_decl env (yconst, Some(u_closed), a_closed) in
-  env, apply_rel_context (Constr.mkConst yconst) rel_context
+  let yconstant = make_const info.module_path y in
+  let yconstr = apply_rel_context (Constr.mkConst yconstant) rel_context in
+  let env = push_const_decl env (yconstant, Some(u_closed), a_closed) in
+  let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, yconstr, a)) env in
+  new_env
 
 and lift_fix info env uenv names types bodies rec_indices =
   (* A fixpoint is translated by 3 functions:
@@ -642,9 +711,6 @@ and lift_fix info env uenv names types bodies rec_indices =
       let cons_rules = Array.init n_cons f in
       Array.to_list cons_rules
     ) in
-  let env = Array.fold_left push_const_decl env name1_declarations in
-  let env = Array.fold_left push_const_decl env name2_declarations in
-  let env = Array.fold_left push_const_decl env name3_declarations in
   let fix_applieds1 = Array.init n (fun i -> apply_rel_context fix_terms1.(i) rel_context) in
   (* The declarations need to be lifted to account for the displacement. *)
   let fix_declarations1 = Array.init n (fun i ->
@@ -668,10 +734,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules2.(i));
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
-  Hashtbl.add fixpoint_table (env, (names, types, bodies)) (env, fix_declarations1);
-  (*
-  Hashtbl.add fixpoint_table (names, types, bodies) (env, fix_declarations1);
-  *)
+  let env = Array.fold_left push_const_decl env name1_declarations in
+  let env = Array.fold_left push_const_decl env name2_declarations in
+  let env = Array.fold_left push_const_decl env name3_declarations in
   env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list
