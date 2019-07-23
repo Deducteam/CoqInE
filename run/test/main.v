@@ -9,7 +9,9 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Add Debug "Coq.Init.Peano".
 
-Dedukti Set Encoding "readable universo".
+Dedukti Set Encoding "universo".
+
+Require Import import.
 
 Dedukti Export All But
         Coq.Init.Specif

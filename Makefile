@@ -92,6 +92,11 @@ debug_test: ENCODING:=predicates_eta/C.dk
 debug_test: COQINE_FLAGS:=readable universo
 debug_test: test
 
+.PHONY: debug_fix
+debug_fix: ENCODING:=predicates_eta_fix/C.dk
+debug_fix: COQINE_FLAGS:=readable universo
+debug_fix: test
+
 .PHONY: debug_universo
 debug_universo: ENCODING:=predicates/C.dk
 debug_universo: COQINE_FLAGS:=readable universo

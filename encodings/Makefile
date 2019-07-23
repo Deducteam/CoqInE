@@ -43,8 +43,10 @@ endef
 
 $(eval $(call targ,original,original,original,original,,))
 $(eval $(call targ,original_cast,original_cast,original_cast,original_cast,,))
+
 $(eval $(call targ,predicates,predicates,predicates,predicates,,))
 $(eval $(call targ,predicates_eta,predicates,predicates_eta,predicates,,))
+$(eval $(call targ,predicates_eta_fix,predicates,predicates_eta,predicates,generic,))
 $(eval $(call targ,lift_predicates,lift-predicates,lift-predicates,lift-predicates,,))
 $(eval $(call targ,functional,functional,functional,functional,,))
 $(eval $(call targ,constructors,constructors,functional,functional,,))
