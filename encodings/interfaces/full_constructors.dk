@@ -29,17 +29,17 @@ def rule  : Sort -> Sort -> Sort.
 def Cumul : Sort -> Sort -> Bool.
 
 cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
-              Cumul s1 s2 -> Cumul s2 s3 -> Cumul s1 s3.
+              eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
 
 cumul_rule_1 : s1 : Sort -> s2 : Sort -> s3 : Sort ->
-               Cumul s1 s3 ->  Cumul (rule s1 s2) (rule s3 s2).
+               eps (Cumul s1 s3) ->  eps (Cumul (rule s1 s2) (rule s3 s2)).
 
 cumul_rule_2 : s1 : Sort -> s2 : Sort -> s3 : Sort ->
-               Cumul s2 s3 -> Cumul (rule s1 s2) (rule s1 s3).
+               eps (Cumul s2 s3) -> eps (Cumul (rule s1 s2) (rule s1 s3)).
 
 (; The following constructor is probably useless. ;)
 cumul_axiom : s1 : Sort -> s2 : Sort ->
-              Cumul s1 s2 -> Cumul (axiom s1) (axiom s2).
+              eps (Cumul s1 s2) -> eps (Cumul (axiom s1) (axiom s2)).
 
 
 (;--------------------  Term public constructors  -----------------;)
@@ -57,5 +57,3 @@ def cast : s : Sort -> s' : Sort ->
            Term s a -> Term s' b.
 
 def lift (s : Sort) (s' : Sort) := cast (axiom s) (axiom s') (univ s) (univ s').
-
-

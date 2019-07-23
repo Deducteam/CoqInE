@@ -4,65 +4,73 @@
 
 
 Code : Type.
-def D : Code -> Type.
+def Decode : Code -> Type.
 
 cU : s : Sort -> Code.
-cPi  : A : Code -> (D A -> Code) -> Code.
+cPi  : A : Code -> (Decode A -> Code) -> Code.
 
-[s]   D (cU s)    --> Univ s.
-[a,b] D (cPi a b) --> x : D a -> D (b x).
+[s]   Decode (cU s)    --> Univ s.
+[a,b] Decode (cPi a b) --> x : Decode a -> Decode (b x).
 
 
-def u : t : Code -> Code -> D t.
-def c : t : Code -> D t -> Code.
+def uncode : t : Code -> Code -> Decode t.
+def code   : t : Code -> Decode t -> Code.
 
-[s,t] Term s t --> D (c (cU s) t).
+[s,t] Term s t --> Decode (code (cU s) t).
 
 
 
 (;----------------------------  Axiom  ----------------------------;)
 
-[s,s',p] univ s s' p --> u (cU s') (cU s).
+[s,s',p] univ s s' p --> uncode (cU s') (cU s).
 
 
 (;----------------------------  Rule  -----------------------------;)
 
 [s1,s2,s3,p,a,b]
-  prod s1 s2 s3 p a b -->
-  u (cU s3) (cPi (c (cU s1) a) (x : D (c (cU s1) a) => c (cU s2) (b x))).
+  prod s1 s2 s3 p a b
+  -->
+  uncode (cU s3)
+    (cPi (code (cU s1) a)
+         (x : Decode (code (cU s1) a) => code (cU s2) (b x))).
 
 
 (;---------------------------  Casts  -----------------------------;)
 
-[s1,s2,a,b,t] cast s1 s2 a b _ t --> u (c (cU s2) b) (c (c (cU s1) a) t).
+[s1,s2,a,b,t]
+  cast s1 s2 a b _ t
+  -->
+  uncode (code (cU s2) b) (code (code (cU s1) a) t).
 
 
 
 (;-------------------------  Subtyping ----------------------------;)
 
-def forall : c : Code -> (D c -> Bool) -> Bool.
+[s] Cumul s s --> true.
+
+def forall : c : Code -> (Decode c -> Bool) -> Bool.
 [] forall _ (x => true) --> true.
 
 def ST : Code -> Code -> Bool.
 [s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
-[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x : D a => ST (b x) (b' x)).
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall a (x : Decode a => ST (b x) (b' x)).
 [A]      ST A         A          --> true.
 
-[sa,sb,a,b] SubType sa sb a b --> ST (c (cU sa) a) (c (cU sb) b).
+[sa,sb,a,b] SubType sa sb a b --> ST (code (cU sa) a) (code (cU sb) b).
 
 
 
 (;---------------------  Canonicity rules -------------------------;)
 
-[s,t] u s (c s t) --> t.
-[  t] c _ (u _ t) --> t.
+[s,t] uncode s (code s t) --> t.
+[  t] code _ (uncode _ t) --> t.
 
 [A,B,C,F]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) (x => F x)) -->
-  x : D A => u (B x) (c (C x) (F x)).
+  uncode (cPi A (x => B x)) (code (cPi A (x => C x)) (x => F x))
+  -->
+  x : Decode A => uncode (B x) (code (C x) (F x)).
 
 [A,B,C,F,G]
-  u (cPi A (x => B x)) (c (cPi A (x => C x)) F) G -->
-  u (B G) (c (C G) (F G)).
-
-
+  uncode (cPi A (x => B x)) (code (cPi A (x => C x)) F) G
+  -->
+  uncode (B G) (code (C G) (F G)).

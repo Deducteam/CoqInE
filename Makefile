@@ -63,14 +63,14 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING_FLAGS ?= original_cast # Configuration for the encoding generation
+ENCODING ?= original_cast # Configuration for the encoding generation
 COQINE_FLAGS   ?= original_cast # Configuration for the translator
 
 .PHONY: run
 run: plugin
-	sh encodings/gen.sh $(ENCODING_FLAGS)
 	make -C $(RUNDIR) clean
-	cp encodings/_build/*.dk $(RUNDIR)/
+	make -C encodings clean _build/$(ENCODING)
+	cp encodings/_build/$(ENCODING) $(RUNDIR)/
 	sed -i -e "/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"." $(RUNDIR)/main.v
 	make -C $(RUNDIR)
 
@@ -90,81 +90,81 @@ mathcomp: run
 
 
 .PHONY: debug_test
-debug_test: ENCODING_FLAGS:=predicates_eta short
+debug_test: ENCODING:=predicates_eta/C.dk
 debug_test: COQINE_FLAGS:=readable universo
 debug_test: test
 
 .PHONY: debug_universo
-debug_universo: ENCODING_FLAGS:=predicates short
+debug_universo: ENCODING:=predicates/C.dk
 debug_universo: COQINE_FLAGS:=readable universo
 debug_universo: debug
 
 .PHONY: debug_default
-debug_default: ENCODING_FLAGS:=original
+debug_default: ENCODING:=original/Coq.dk
 debug_default: COQINE_FLAGS:=original
 debug_default: debug
 
 .PHONY: debug_readable
-debug_readable: ENCODING_FLAGS:=original short
+debug_readable: ENCODING:=original/C.dk
 debug_readable: COQINE_FLAGS:=readable original
 debug_readable: debug
 
 .PHONY: debug_named_cast
-debug_named_cast: ENCODING_FLAGS:=original_cast
+debug_named_cast: ENCODING:=original_cast/Coq.dk
 debug_named_cast: COQINE_FLAGS:=named original_cast
 debug_named_cast: debug
 
 .PHONY: debug_cast
-debug_cast: ENCODING_FLAGS:=original_cast short
+debug_cast: ENCODING:=original_cast/C.dk
 debug_cast: COQINE_FLAGS:=readable original_cast
 debug_cast: debug
 
 .PHONY: debug_template
-debug_template: ENCODING_FLAGS:=original_cast short
+debug_template: ENCODING:=original_cast/C.dk
 debug_template: COQINE_FLAGS:=readable template_cast
 debug_template: debug
 
 .PHONY: debug_named
-debug_named: ENCODING_FLAGS:=original
+debug_named: ENCODING:=original/Coq.dk
 debug_named: COQINE_FLAGS:=named original
 debug_named: debug
 
 .PHONY: debug_poly
-debug_poly: ENCODING_FLAGS:=constructors short
+debug_poly: ENCODING:=constructors/C.dk
 debug_poly: COQINE_FLAGS:=readable polymorph
 debug_poly: debug
 
 .PHONY: lift_mathcomp
-lift_mathcomp: ENCODING_FLAGS:=lift_predicates short
+lift_mathcomp: ENCODING:=lift_predicates/C.dk
 lift_mathcomp: COQINE_FLAGS:=readable lift_priv
 lift_mathcomp: mathcomp
 
 .PHONY: debug_mathcomp
-debug_mathcomp: ENCODING_FLAGS:=predicates short
+debug_mathcomp: ENCODING:=predicates/C.dk
 debug_mathcomp: COQINE_FLAGS:=readable universo
 debug_mathcomp: mathcomp
 
 # These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
 .PHONY: geocoq_orig_universo
-geocoq_orig_universo: ENCODING_FLAGS:= predicates
+geocoq_orig_universo: ENCODING:= predicates/Coq.dk
 geocoq_orig_universo: COQINE_FLAGS  := universo
 geocoq_orig_universo: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
 geocoq_orig_universo: run
 
 .PHONY: geocoq_orig
-geocoq_orig: ENCODING_FLAGS:= predicates short
+geocoq_orig: ENCODING:= predicates/C.dk
 geocoq_orig: COQINE_FLAGS  := readable universo
 geocoq_orig: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
 geocoq_orig: run
 
 .PHONY: geocoq_universo
-geocoq_universo: ENCODING_FLAGS:= predicates
+geocoq_universo: ENCODING:= predicates/Coq.dk
 geocoq_universo: COQINE_FLAGS  := universo
 geocoq_universo: RUNDIR        := $(RUN_GEOCOQ_DIR)
 geocoq_universo: run
 
 .PHONY: geocoq
-geocoq: ENCODING_FLAGS:= predicates short
+geocoq: ENCODING:= predicates/C.dk
 geocoq: COQINE_FLAGS  := readable universo
 geocoq: RUNDIR        := $(RUN_GEOCOQ_DIR)
 geocoq: run

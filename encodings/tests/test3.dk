@@ -1,7 +1,3 @@
-
-
-
-
 (;
 Unique Normal Forms for Lambda Calculus with Surjective Pairing
 [J. W. Klop, R. C. de Vrijer]
@@ -22,17 +18,14 @@ A --> C A --> O (F A     (C A))
 A --> C A --> C (O 1)
 
 
-
-
 O = (\x.x x) (\x.x x)
-
-
 
 ;)
 
-def Id (x : Code) : D x -> D x := x => x.
 
-def F (x:Code) (y:Code) : D y -> D y := t => (c x (u y t)).
+def Id (x : Code) : Decode x -> Decode x := x => x.
+
+def F (x:Code) (y:Code) : Decode x -> Decode y := t => (uncode y (code x t)).
 #ASSERT
   (
     x : Code => F x x

@@ -12,8 +12,8 @@ Dedukti Add Debug "Coq.Init.Peano".
 Dedukti Set Encoding "readable universo".
 
 Dedukti Export All But
-(*
         Coq.Init.Specif
         Coq.Init.Tactics
+(*
 *)
 .
