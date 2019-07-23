@@ -42,6 +42,7 @@ uninstall: CoqMakefile
 	make -f CoqMakefile .merlin
 
 clean: CoqMakefile
+	make -C encoding - clean
 	make -f CoqMakefile - clean
 	make -C $(RUN_TESTS_DIR)       clean
 	make -C $(RUN_DEBUG_DIR)       clean
@@ -63,7 +64,7 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING ?= original_cast # Configuration for the encoding generation
+ENCODING ?= original_cast/Coq.dk # Configuration for the encoding generation
 COQINE_FLAGS   ?= original_cast # Configuration for the translator
 
 .PHONY: run
@@ -85,9 +86,6 @@ debug: run
 .PHONY: mathcomp
 mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
 mathcomp: run
-
-
-
 
 .PHONY: debug_test
 debug_test: ENCODING:=predicates_eta/C.dk
