@@ -42,7 +42,7 @@ uninstall: CoqMakefile
 	make -f CoqMakefile .merlin
 
 clean: CoqMakefile
-	make -C encoding - clean
+	make -C encodings - clean
 	make -f CoqMakefile - clean
 	make -C $(RUN_TESTS_DIR)       clean
 	make -C $(RUN_DEBUG_DIR)       clean
