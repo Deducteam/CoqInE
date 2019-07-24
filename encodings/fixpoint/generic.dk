@@ -2,24 +2,43 @@
 (;-----------------  FIXPOINTS DEFINITION SCHEME  -----------------;)
 (;-----------------------------------------------------------------;)
 
-(; Require rule ;)
+(; Required rule ;)
 [s] Rule s s s --> true.
 
-
+(; Natural numbers ;)
 N : Type.
 _0 : N.
 _S : N -> N.
 
 
+
+(;-----------------  Arity  -----------------;)
+
+(; SAc k s A   represents both
+   - the arity of a single body in a mutually recursive block
+     without the recursive call parameters.
+   - the index of expected structurally decreasing inductive argument in arity ;)
+
 SingleArity : Sort -> Type.
-SAc : N -> s : Sort -> Univ s -> SingleArity s.
+make_SA : N -> s : Sort -> Univ s -> SingleArity s.
+
+
+(;-----------------  Fetch type from Arity  -----------------;)
+
+def SA_arity : s : Sort -> SingleArity s -> Univ s.
+[s,A] SA_arity s (make_SA _ _ A) --> A.
+
+
+
+(;-----------------  Arity Lists  -----------------;)
+
+(; This is a sized list of single arities ;)
 
 MutualArity : Sort -> N -> Type.
 MAnil  : s : Sort -> MutualArity s _0.
 MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (_S n).
 
-
-(; Short constructors ;)
+(;-----------------  Short constructor: make_MA  -----------------;)
 
 def MutualArity' : Sort -> N -> N -> Type.
 [s,n  ] MutualArity' s n _0     --> MutualArity s n.
@@ -29,56 +48,72 @@ def MAcons_aux :
   s : Sort ->
   n : N -> m : N ->
   SingleArity s ->
-  MutualArity' s n m ->
-  MutualArity' s (_S n) m.
+  MutualArity' s n m ->     (;  SA -> ... -> SA -> MAn    ;)
+  MutualArity' s (_S n) m.  (;  SA -> ... -> SA -> MAn+1  ;)
 [s,n  ,A,MA   ] MAcons_aux s n _0     A MA    --> MAcons s n A MA.
 [s,n,m,A,MA,A'] MAcons_aux s n (_S m) A MA A' --> MAcons_aux s n m A (MA A').
 
-def MAcons' : s : Sort -> n : N -> MutualArity' s n n.
-[s     ] MAcons' s _0        --> MAnil s.
-[s,n,SA] MAcons' s (_S n) SA --> MAcons_aux s n n SA (MAcons' s n).
+(; Use directly    make_MA s 3 a b c     ;)
+def make_MA : s : Sort -> n : N -> MutualArity' s n n.
+[s     ] make_MA s _0        --> MAnil s.
+[s,n,SA] make_MA s (_S n) SA --> MAcons_aux s n n SA (make_MA s n).
 
+(;-----------------  Fetch Arity from Arity List  -----------------;)
 
-
-
-def SA_arity : s : Sort -> SingleArity s -> Univ s.
-[s,A] SA_arity s (SAc _ _ A) --> A.
-
-
-def MA_ith_arity : s : Sort -> n : N -> MutualArity s n -> N -> Univ s.
-
+def MA_ith_SA  : s : Sort -> n : N -> MutualArity s n -> N -> SingleArity s.
 [s,SA]
-  MA_ith_arity s _ (MAcons _ _ SA _) _0
-  -->
-  SA_arity s SA.
-
+  MA_ith_SA s _ (MAcons _ _ SA _) _0 --> SA.
 [s,n,i,MA]
-  MA_ith_arity s _ (MAcons _ n _ MA) (_S i)
+  MA_ith_SA s _ (MAcons _ n _ MA) (_S i)
   -->
-  MA_ith_arity s n MA i.
+  MA_ith_SA s n MA i.
+
+(;-----------------  Fetch Type from Arity List  -----------------;)
+
+def MA_ith_arity (s : Sort) (n : N) (MA : MutualArity s n) (i : N) : Univ s :=
+  SA_arity s (MA_ith_SA s n MA i).
 
 
-def MA_aux_arity :
-  s : Sort ->
-  n : N -> MutualArity s n -> N ->
-  m : N -> MutualArity s m -> Univ s.
 
-[s,n,MA_base,i]
-  MA_aux_arity s n MA_base i _ (MAnil _)
+
+
+(;------  Fetch type with recursive call arguments from Arity List  -----;)
+
+def MA_lift_arity :
+  s : Sort -> Univ s -> m : N -> MutualArity s m -> Univ s.
+
+[s,ar] MA_lift_arity s ar _ (MAnil _) --> ar.
+
+[s,ar,m,SA,MA]
+  MA_lift_arity s ar _ (MAcons _ m SA MA)
   -->
-  MA_ith_arity s n MA_base i.
-
-[s,n,MA_base,i,m,SA,MA]
-  MA_aux_arity s n MA_base i _ (MAcons _ m SA MA)
-  -->
-  prod s s s I (SA_arity s SA) (f => (MA_aux_arity s n MA_base i m MA))
-  .
+  prod s s s I (SA_arity s SA) (f => (MA_lift_arity s ar m MA)).
 
 def MA_arity (s : Sort) (n : N) (MA : MutualArity s n) (i : N) : Univ s
-  := MA_aux_arity s n MA i n MA.
+  := MA_lift_arity s (MA_ith_arity s n MA i) n MA.
 
 
-MutualFixpointType : (s : Sort) -> (n : N) -> (MA : MutualArity s n) -> Type.
+
+(;-----------------  Fixpoint Type  -----------------;)
+
+(; Sized list of functions of each "type with recursive calls"  ;)
+
+IMutualFixpointType : (s : Sort) -> (n : N) -> (MA : MutualArity s n) -> N -> Type.
+
+def MutualFixpointType (s : Sort) (n : N) (MA : MutualArity s n) : Type :=
+  IMutualFixpointType s n MA n.
+
+MFTnil :
+  (s : Sort) -> (n : N) -> (MA : MutualArity s n) -> IMutualFixpointType s n MA n.
+
+MFTcons :
+  (s : Sort) ->
+  (n : N) -> (MA : MutualArity s n) ->
+  i : N ->
+  Term s (MA_arity s n MA i) ->
+  IMutualFixpointType s n MA (_S i) -> IMutualFixpointType s n MA i.
+
+(;-----------------  Short constructor: fix  -----------------;)
 
 def MutualFixpointType' : (s : Sort) -> (n : N) -> (MA : MutualArity s n) -> N -> N -> Type.
 [s,n,MA]
@@ -91,10 +126,71 @@ def MutualFixpointType' : (s : Sort) -> (n : N) -> (MA : MutualArity s n) -> N -
   -->
   Term s (MA_arity s n MA i)  ->  MutualFixpointType' s n MA (_S i) j.
 
-fix :
+def fix :
   s : Sort ->
   n : N ->
   MA: MutualArity s n -> MutualFixpointType' s n MA _0 n.
+
+def fix1 :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n ->
+  i : N ->
+  j : N ->
+  MutualFixpointType' s n MA i j.   (;  Ai -> ... -> Ai+j-1 -> MFTn  ;)
+[s,n,MA,i,j] fix s n MA --> fix1 s n MA _0 n.
+
+[s,n,MA,i,j]
+  fix1 s n MA i (_S j) -->
+
+
+def fix' :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n ->
+  i : N ->
+  j : N ->
+  MutualFixpointType' s n MA (_S i) j     ->  (;       Ai+1 -> ... -> Ai+j -> MFTn  ;)
+  MutualFixpointType' s n MA i      (_S j).   (; Ai -> Ai+1 -> ... -> Ai+j -> MFTn  ;)
+
+[s,n,i,MA,ai,f]
+  fix' s n MA i _0 f --> MFTcons s n MA i .
+[s,n,MA]
+  fix' s n MA i (_S j) ai f --> fix' s n MA _0 n.
+
+[s,n,MA,]
+  fix' s n MA i _0 --> MFTnil s n MA.
+
+
+
+def fix_body :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n ->
+  MF: MutualFixpointType s n MA ->
+  i : N ->
+  Term s (MA_arity s n MA i).
+
+def fix_body' :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n ->
+  MF: MutualFixpointType s n MA ->
+  n' : N ->
+  MA': MutualArity s n' ->
+  MF': MutualFixpointType s n' MA' ->
+  i : N ->
+  Term s (MA_lift_arity s (MA_ith_arity s n' MA' i) n MA).
+
+[s,n,MA,MF,i] fix_body s n MA MF i --> fix_body' s n MA MF n MA MF i.
+
+(;
+[s,n,MA,MF,n',SA',body]
+  fix_body' s n MA MF (_S n') (MAcons _ _ SA' _) (fix _ (_S n') _ body) _0
+  -->
+  body.
+;)
+
 
 def fix_proj :
   s : Sort ->
@@ -105,9 +201,32 @@ def fix_proj :
   Term s (MA_ith_arity s n MA i).
 
 
-fix_proj
+def fix_proj' :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n ->
+  MutualFixpointType s n MA ->
+  i : N ->
+  SA: SingleArity s ->
+  body : Term s (MA_lift_arity s (SA_arity s SA) n MA) ->
+  Term s (SA_arity s SA).
 
+[s,n,MA,MF,i]
+  fix_proj s n MA MF i
+  -->
+  fix_proj' s n MA MF i (MA_ith_SA s n MA i) (fix_body s n MA MF i).
 
+(;
+[s,n,MA,MF,i,j]
+  fix_proj' s n MA MF i (make_SA _0 s (prod' _ _ _ ind (x => f x)))
+  -->
+  .
+
+[s,n,MA,MF,i,j]
+  fix_proj' s n MA MF i (make_SA (_S n) s (prod' _ _ _ a (x => f x))
+  -->
+  fix_proj' s n MA MF i j.
+;)
 
 
 
@@ -198,11 +317,11 @@ f1 : n : Coq.Term Coq.set nat ->
 
 (;     f_0  /  0  :  forall n:nat, P n     ;)
 def SA : SingleArity (type z) :=
-  SAc _0 (type z) (prod set (type z) (type z) I nat (n => P n)).
+  make_SA _0 (type z) (prod set (type z) (type z) I nat (n => P n)).
 
 (;   { f_0  /  0  :  forall n:nat, P n }   ;)
 def MA : MutualArity (type z) (_S _0) :=
-  MAcons' (type z) (_S _0) SA.
+  make_MA (type z) (_S _0) SA.
 
 #EVAL[SNF] Term (type z) (SA_arity (type z) SA).
 #EVAL[SNF] Term (type z) (MA_ith_arity (type z) (_S _0) MA _0).
@@ -221,7 +340,7 @@ def FP : MutualFixpointType (type z) (_S _0) MA :=
 
 def FP1 := fix_proj (type z) (_S _0) MA FP _0.
 
-#INFER[SNF] FP1.
+#CHECK FP1  :  ( n : Term set nat -> Term (type z) (P n) ).
 
 
 
