@@ -7,9 +7,14 @@
 
 (; Natural numbers ;)
 N : Type.
-_0 : N.
+0 : N.
 _S : N -> N.
 
+def 1 := _S 0.
+def 2 := _S 1.
+def 3 := _S 2.
+def 4 := _S 3.
+def 5 := _S 4.
 
 
 (;-----------------  Arity  -----------------;)
@@ -37,13 +42,13 @@ def SA_arity : s : Sort -> SingleArity s -> Univ s.
 (; This is a sized list of single arities ;)
 
 MutualArity : Sort -> N -> Type.
-MAnil  : s : Sort -> MutualArity s _0.
+MAnil  : s : Sort -> MutualArity s 0.
 MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (_S n).
 
 (;-----------------  Short constructor: make_MA  -----------------;)
 
 def MutualArity' : Sort -> N -> N -> Type.
-[s,n  ] MutualArity' s n _0     --> MutualArity s n.
+[s,n  ] MutualArity' s n 0     --> MutualArity s n.
 [s,n,i] MutualArity' s n (_S i) --> SingleArity s -> MutualArity' s n i.
 
 def MAcons_aux :
@@ -52,19 +57,19 @@ def MAcons_aux :
   SingleArity s ->
   MutualArity' s n m ->     (;  SA -> ...(m)... -> SA -> MAn    ;)
   MutualArity' s (_S n) m.  (;  SA -> ...(m)... -> SA -> MAn+1  ;)
-[s,n  ,A,MA   ] MAcons_aux s n _0     A MA    --> MAcons s n A MA.
+[s,n  ,A,MA   ] MAcons_aux s n 0     A MA    --> MAcons s n A MA.
 [s,n,m,A,MA,A'] MAcons_aux s n (_S m) A MA A' --> MAcons_aux s n m A (MA A').
 
 (; Use directly    make_MA s 3 a b c     ;)
 def make_MA : s : Sort -> n : N -> MutualArity' s n n.
-[s     ] make_MA s _0        --> MAnil s.
+[s     ] make_MA s 0        --> MAnil s.
 [s,n,SA] make_MA s (_S n) SA --> MAcons_aux s n n SA (make_MA s n).
 
 (;-----------------  Fetch Arity from Arity List  -----------------;)
 
 def MA_ith_SA  : s : Sort -> n : N -> MutualArity s n -> N -> SingleArity s.
 [s,SA]
-  MA_ith_SA s _ (MAcons _ _ SA _) _0 --> SA.
+  MA_ith_SA s _ (MAcons _ _ SA _) 0 --> SA.
 [s,n,i,MA]
   MA_ith_SA s _ (MAcons _ n _ MA) (_S i)
   -->
@@ -113,7 +118,7 @@ def MutualFixpointType (s : Sort) (n : N) (MA : MutualArity s n) : Type
 MFTnil :
   (s : Sort) ->
   (n : N) -> (MA : MutualArity s n) ->
-  MutualFixpointTypeAux s n MA _0 (MAnil s).
+  MutualFixpointTypeAux s n MA 0 (MAnil s).
 
 MFTcons :
   (s : Sort) ->
@@ -207,7 +212,7 @@ def fix_body' :
 [s,n,MA,MF,i] fix_body s n MA MF i --> fix_body' s n MA n MA MF i.
 
 [s,n,MA,SA,t]
-  fix_body' s n MA (_S _) (MAcons _ _ SA _) (MFTcons _ _ _ _ _ _ t _) _0
+  fix_body' s n MA (_S _) (MAcons _ _ SA _) (MFTcons _ _ _ _ _ _ t _) 0
   -->
   t.
 
@@ -272,7 +277,7 @@ def fix_proj_2 :
   Term s A.
 
 [s,n,MA,MF,Ind,B,body,a,s1]
-  fix_proj_1 s n MA MF (SAc _0 _ (prod' s1 s _ Ind (x => B x))) body a
+  fix_proj_1 s n MA MF (SAc 0 _ (prod' s1 s _ Ind (x => B x))) body a
   -->
   fix_proj_2 s n MA MF
     (prod' s1 s s Ind (x => B x))
@@ -282,28 +287,48 @@ def fix_proj_3 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
   MutualFixpointType s n MA ->
-  i : N -> MAi : MutualArity s i ->
   A : Univ s ->
+  i : N -> MAi : MutualArity s i ->
+  f : (k : N -> Term s (MA_ith_arity s i MAi k)) ->
   Term s (MA_lift_arity s A i MAi) ->
   Term s A.
 
 [s,n,MA,MF,A,body]
   fix_proj_2 s n MA MF A body guarded
   -->
-  fix_proj_3 s n MA MF n MA A body.
+  fix_proj_3 s n MA MF A n MA (k => fix_proj s n MA MF k) body.
 
-[body] fix_proj_3 _ _ _ _ _ (MAnil _) _ body --> body.
+[body] fix_proj_3 _ _ _ _ _ _ (MAnil _) _ body --> body.
 
-[s,n,MA,MF,A,body]
-  fix_proj_3 s n MA MF _ (MAcons _ _ _ MAi) A body  <---  g1 -> ... -> gn -> A
+[s,n,MA,MF,i,MAi,A,f,body]
+  fix_proj_3 s n MA MF A
+    _ (MAcons _ i _ MAi)
+    f
+    body
   -->
-  fix_proj_3 s n MA MF _ (MAcons _ _ _ MAi) A body g1) (fix_proj ... 2) (fix_proj ... 3)
+  fix_proj_3 s n MA MF A
+    i MAi
+    (k => f (_S k))
+    (body (f 0)).
 
 
-  body (fix_proj ... 1) (fix_proj ... 2) (fix_proj ... 3)
+def fixproj :
+  s : Sort ->
+  n : N ->
+  MA :(MutualArity' s n n -> MutualArity s n) ->
+  (
+     MutualFixpointType' s n (MA (make_MA s n)) n (MA (make_MA s n)) n (MA (make_MA s n)) ->
+     MutualFixpointType s n (MA (make_MA s n))
+  ) ->
+  i : N ->
+  Term s (MA_ith_arity s n (MA (make_MA s n)) i).
 
-  fix_proj_3 s n MA MF n MA A (body (fix_proj )  )
-  .
+[s,n,MA,MF]
+  fixproj s n MA MF
+  -->
+  fix_proj s n
+    (MA (make_MA s n))
+    (MF (fix s n (MA (make_MA s n)))).
 
 
 
@@ -313,33 +338,28 @@ with     b := b
 with     c := c.
 ;)
 
-def 1 := _S _0.
-def 2 := _S 1.
-def 3 := _S 2.
 A : Univ set.
 B : Univ set.
 C : Univ set.
 
-def SA_A : SingleArity set   := make_SA _0 set A.
-def SA_B : SingleArity set   := make_SA _0 set B.
-def SA_C : SingleArity set   := make_SA _0 set C.
+def SA_A : SingleArity set   := make_SA 0 set A.
+def SA_B : SingleArity set   := make_SA 0 set B.
+def SA_C : SingleArity set   := make_SA 0 set C.
 def MA   : MutualArity set 3 := make_MA set 3 SA_A SA_B SA_C.
 def MFT  : MutualFixpointType set 3 MA :=
   fix set 3 MA (a => b => c => a) (a => b => c => b) (a => b => c => c).
 
-def body_a := fix_body set 3 MA MFT _0.
+def body_a := fix_body set 3 MA MFT 0.
 def body_b := fix_body set 3 MA MFT 1.
 def body_c := fix_body set 3 MA MFT 2.
 
-def a    : Term set A := fix_proj set 3 MA MFT _0.
+def a    : Term set A := fix_proj set 3 MA MFT 0.
 def b    : Term set B := fix_proj set 3 MA MFT 1.
 def c    : Term set C := fix_proj set 3 MA MFT 2.
 
 [] guarded? set A a --> guarded.
 [] guarded? set B b --> guarded.
 [] guarded? set C c --> guarded.
-
-
 
 
 
@@ -387,21 +407,26 @@ with g acc n v {struct v} :=
 (; The encoding used was: "universo". ;)
 
 nat :
-  Coq.Univ Coq.set.
+  Univ set.
 
 def Z :
-  Coq.Term Coq.set nat.
+  Term set nat.
 
 def S :
-  __ : Coq.Term Coq.set nat -> Coq.Term Coq.set nat.
+  __ : Term set nat -> Term set nat.
+
+
+[] guarded? set nat Z     --> guarded.
+[] guarded? set nat (S _) --> guarded.
+
 
 def match____nat :
-  s : Coq.Sort ->
-  P : (Coq.Term Coq.set nat -> Coq.Univ s) ->
-  case__Z : Coq.Term s (P Z) ->
-  case__S : (__ : Coq.Term Coq.set nat -> Coq.Term s (P (S __))) ->
-  x : Coq.Term Coq.set nat ->
-  Coq.Term s (P x).
+  s : Sort ->
+  P : (Term set nat -> Univ s) ->
+  case__Z : Term s (P Z) ->
+  case__S : (__ : Term set nat -> Term s (P (S __))) ->
+  x : Term set nat ->
+  Term s (P x).
 
 [ s, P, case__Z, case__S]
 
@@ -417,374 +442,187 @@ def match____nat :
 
 [ s, P, s']
 
-  match____nat s (x => Coq.cast' _ _ (Coq.univ' s' _) _ (P x)) -->
+  match____nat s (x => cast' _ _ (univ' s' _) _ (P x)) -->
 
   match____nat s' (x => P x).
 
 
-P : n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z).
-f0 : Coq.Term (Coq.type Coq.z) (P Z).
-f1 : n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n)).
+P : n : Term set nat -> Univ (type z).
+f0 : Term (type z) (P Z).
+f1 : n : Term set nat ->
+     __ : Term (type z) (P n) ->
+     Term (type z) (P (S n)).
 
-(;     f_0  /  0  :  forall n:nat, P n     ;)
+
+(;     f0  /  0  :  forall n:nat, P n     ;)
 def nat__rect__SA : SingleArity (type z) :=
-  make_SA _0 (type z) (prod set (type z) (type z) I nat (n => P n)).
+  make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n)).
 
-(;   { f_0  /  0  :  forall n:nat, P n }   ;)
-def nat__rect__MA : MutualArity (type z) (_S _0) :=
-  make_MA (type z) (_S _0) nat__rect__SA.
+(;   { f0  /  0  :  forall n:nat, P n }   ;)
+def nat__rect__MA : MutualArity (type z) 1 :=
+  make_MA (type z) 1 nat__rect__SA.
 
 #EVAL[SNF] Term (type z) (SA_arity (type z) nat__rect__SA).
-#EVAL[SNF] Term (type z) (MA_ith_arity (type z) (_S _0) nat__rect__MA _0).
+#EVAL[SNF] Term (type z) (MA_ith_arity (type z) 1 nat__rect__MA 0).
 
-#EVAL[SNF] Term (type z) (MA_arity (type z) (_S _0) nat__rect__MA _0).
+#EVAL[SNF] Term (type z) (MA_arity (type z) 1 nat__rect__MA 0).
 
-def nat__rect__FP : MutualFixpointType (type z) (_S _0) nat__rect__MA :=
-  fix (type z) (_S _0) nat__rect__MA
+def nat__rect__FP : MutualFixpointType (type z) 1 nat__rect__MA :=
+  fix (type z) 1 nat__rect__MA
     (nat__rect => n =>
-      match____nat (Coq.type Coq.z) (n0 : Coq.Term Coq.set nat => P n0)
+      match____nat (type z) (n0 : Term set nat => P n0)
         f0
-        (n0 : Coq.Term Coq.set nat => f1 n0 (nat__rect n0))
+        (n0 : Term set nat => f1 n0 (nat__rect n0))
         n).
 
-def nat__rect := fix_proj (type z) (_S _0) nat__rect__MA nat__rect__FP _0.
+def nat__rect__proj := fix_proj (type z) 1 nat__rect__MA nat__rect__FP 0.
 
-#CHECK nat__rect  :  ( n : Term set nat -> Term (type z) (P n) ).
+#CHECK nat__rect__proj  :  ( n : Term set nat -> Term (type z) (P n) ).
 
 
+def nat__rect :
+  P : (n : Term set nat -> Univ (type z)) ->
+  f0 : Term (type z) (P Z) ->
+  f1 : (n : Term set nat ->
+       __ : Term (type z) (P n) ->
+       Term (type z) (P (S n)) ) ->
+  n: Term set nat ->
+  Term (type z) (P n)
+  :=
+  P => f0 => f1 =>
+  fixproj (type z) 1
+    (c => c
+       (make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
+    (c => c
+      (nat__rect => n =>
+        match____nat (type z) (n0 : Term set nat => P n0)
+          f0
+          (n0 : Term set nat => f1 n0 (nat__rect n0))
+          n))
+    0.
 
+def nat__rect2 :
+  P : (n : Term set nat -> Univ (type z)) ->
+  f0 : Term (type z) (P Z) ->
+  f1 : (n : Term set nat ->
+       __ : Term (type z) (P n) ->
+       Term (type z) (P (S n)) ) ->
+  n: Term set nat ->
+  Term (type z) (P n)
+  :=
+  P => f0 => f1 =>
+  fixproj (type z) 1
+    (c => c
+       (make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
+    (c => c
+      (nat__rect => n =>
+        match____nat (type z) (n0 : Term set nat => P n0)
+          f0
+          (n0 : Term set nat => f1 n0 (nat__rect n0))
+          n))
+    0.
+
+#CHECK nat__rect == nat__rect2.
 (;
+#EVAL[SNF] nat__rect.
+#EVAL[SNF] nat__rect2.
+;)
 
-def nat__rect :
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term (Coq.type Coq.z) (P n) :=
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) =>
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) =>
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) =>
-  match____nat (Coq.type Coq.z) (n0 : Coq.Term Coq.set nat => P n0) f0
-    (n0 : Coq.Term Coq.set nat => f1 n0 (nat__rect P f0 f1 n0)) n.
-
-
-
-
-
-
-def fix1__F :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term (Coq.type Coq.z) (P n).
-
-def fix2__F :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  __ : Coq.Term Coq.set nat ->
-  Coq.Term (Coq.type Coq.z) (P n).
-
-def fix3__F :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term (Coq.type Coq.z) (P n).
-
-[ P, f0, f1, n]
-
-  fix1__F P f0 f1 n -->
-
-  fix2__F P f0 f1 n n.
-
-[ P, f0, f1, n]
-
-  fix2__F P f0 f1 n Z -->
-
-  fix3__F P f0 f1 n.
-
-[ P, f0, f1, n]
-
-  fix2__F P f0 f1 n (S _) -->
-
-  fix3__F P f0 f1 n.
-
-[ P, f0, f1]
-
-  fix3__F P f0 f1 -->
-
-  n : Coq.Term Coq.set nat =>
-  match____nat (Coq.type Coq.z) (n0 : Coq.Term Coq.set nat => P n0) f0
-    (n0 : Coq.Term Coq.set nat => f1 n0 (fix1__F P f0 f1 n0)) n.
-
-def nat__rect :
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term (Coq.type Coq.z) (P n) :=
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ (Coq.type Coq.z)) =>
-  f0 : Coq.Term (Coq.type Coq.z) (P Z) =>
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term (Coq.type Coq.z) (P n) ->
-     Coq.Term (Coq.type Coq.z) (P (S n))) =>
-  fix1__F P f0 f1.
-
-def fix1__F0 :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.prop (P n) ->
-     Coq.Term Coq.prop (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term Coq.prop (P n).
-
-def fix2__F0 :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.prop (P n) ->
-     Coq.Term Coq.prop (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  __ : Coq.Term Coq.set nat ->
-  Coq.Term Coq.prop (P n).
-
-def fix3__F0 :
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.prop (P n) ->
-     Coq.Term Coq.prop (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term Coq.prop (P n).
-
-[ P, f0, f1, n]
-
-  fix1__F0 P f0 f1 n -->
-
-  fix2__F0 P f0 f1 n n.
-
-[ P, f0, f1, n]
-
-  fix2__F0 P f0 f1 n Z -->
-
-  fix3__F0 P f0 f1 n.
-
-[ P, f0, f1, n]
-
-  fix2__F0 P f0 f1 n (S _) -->
-
-  fix3__F0 P f0 f1 n.
-
-[ P, f0, f1]
-
-  fix3__F0 P f0 f1 -->
-
-  n : Coq.Term Coq.set nat =>
-  match____nat Coq.prop (n0 : Coq.Term Coq.set nat => P n0) f0
-    (n0 : Coq.Term Coq.set nat => f1 n0 (fix1__F0 P f0 f1 n0)) n.
-
-def nat__ind :
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.prop (P n) ->
-     Coq.Term Coq.prop (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term Coq.prop (P n) :=
-
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.prop) =>
-  f0 : Coq.Term Coq.prop (P Z) =>
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.prop (P n) ->
-     Coq.Term Coq.prop (P (S n))) =>
-  fix1__F0 P f0 f1.
 
 def nat__rec :
 
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.set) ->
-  f0 : Coq.Term Coq.set (P Z) ->
+  P : (n : Term set nat -> Univ set) ->
+  f0 : Term set (P Z) ->
   f1 :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.set (P n) ->
-     Coq.Term Coq.set (P (S n))) ->
-  n : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set (P n) :=
+    (n : Term set nat ->
+     __ : Term set (P n) ->
+     Term set (P (S n))) ->
+  n : Term set nat ->
+  Term set (P n) :=
 
-  P : (n : Coq.Term Coq.set nat -> Coq.Univ Coq.set) =>
+  P : (n : Term set nat -> Univ set) =>
   nat__rect
-    (Coq.cast (Coq.rule Coq.set (Coq.type Coq.z))
-       (Coq.rule Coq.set (Coq.type (Coq.s Coq.z)))
-       (Coq.prod Coq.set (Coq.type Coq.z) (Coq.rule Coq.set (Coq.type Coq.z))
-          Coq.I nat
-          (n : Coq.Term Coq.set nat =>
-           Coq.univ Coq.set (Coq.type Coq.z) Coq.I))
-       (Coq.prod Coq.set (Coq.type (Coq.s Coq.z))
-          (Coq.rule Coq.set (Coq.type (Coq.s Coq.z))) Coq.I nat
-          (n : Coq.Term Coq.set nat =>
-           Coq.univ (Coq.type Coq.z) (Coq.type (Coq.s Coq.z)) Coq.I))
-       Coq.I P).
-
-def fix1__plus :
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-def fix2__plus :
-  x : Coq.Term Coq.set nat ->
-  __ : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-def fix3__plus :
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-[ x]
-
-  fix1__plus x -->
-
-  fix2__plus x x.
-
-[ x]
-
-  fix2__plus x Z -->
-
-  fix3__plus x.
-
-[ x]
-
-  fix2__plus x (S _) -->
-
-  fix3__plus x.
-
-[ ]
-
-  fix3__plus -->
-
-  x : Coq.Term Coq.set nat =>
-  y : Coq.Term Coq.set nat =>
-  match____nat Coq.set (x0 : Coq.Term Coq.set nat => nat) y
-    (x_27_ : Coq.Term Coq.set nat => S (fix1__plus x_27_ y)) x.
+    (cast (rule set (type z))
+       (rule set (type (s z)))
+       (prod set (type z) (rule set (type z))
+          I nat
+          (n : Term set nat =>
+           univ set (type z) I))
+       (prod set (type (s z))
+          (rule set (type (s z))) I nat
+          (n : Term set nat =>
+           univ (type z) (type (s z)) I))
+       I P).
 
 def plus :
+  x : Term set nat ->
+  y : Term set nat ->
+  Term set nat :=
+  fixproj set 1
+    (c=>c
+      (make_SA 0 set
+        (prod set set set I nat (x => prod set set set I nat (y => nat)))))
+    (c=>c
+      (plus => x => y =>
+         match____nat set (x0 : Term set nat => nat) y
+           (x' : Term set nat => S (plus x' y)) x))
+    0.
 
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat :=
+#EVAL[SNF] plus Z Z.
+#EVAL[SNF] plus (S (S Z)) (S (S (S Z))).
+#CHECK plus (S (S Z)) (S (S (S Z))) == S (S (S (S (S Z)))).
 
-  fix1__plus.
 
-def fix1__times :
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-def fix2__times :
-  x : Coq.Term Coq.set nat ->
-  __ : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-def fix3__times :
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat.
-
-[ x]
-
-  fix1__times x -->
-
-  fix2__times x x.
-
-[ x]
-
-  fix2__times x Z -->
-
-  fix3__times x.
-
-[ x]
-
-  fix2__times x (S _) -->
-
-  fix3__times x.
-
-[ ]
-
-  fix3__times -->
-
-  x : Coq.Term Coq.set nat =>
-  y : Coq.Term Coq.set nat =>
-  match____nat Coq.set (x0 : Coq.Term Coq.set nat => nat) Z
-    (x_27_ : Coq.Term Coq.set nat => plus y (fix1__times x_27_ y)) x.
 
 def times :
+  x : Term set nat ->
+  y : Term set nat ->
+  Term set nat :=
+  fixproj set 1
+    (c=>c
+      (make_SA 0 set
+        (prod set set set I nat (x => prod set set set I nat (y => nat)))))
+    (c=>c
+      (times => x => y =>
+         match____nat set (x0 : Term set nat => nat) Z
+           (x' : Term set nat => plus y (times x' y)) x))
+    0.
 
-  x : Coq.Term Coq.set nat ->
-  y : Coq.Term Coq.set nat ->
-  Coq.Term Coq.set nat :=
 
-  fix1__times.
+#EVAL[SNF] times (S Z) Z.
+#EVAL[SNF] times Z (S Z).
+#EVAL[SNF] times (S (S Z)) (S (S (S Z))).
+#CHECK times (S (S Z)) (S (S (S Z))) == S (S (S (S (S (S Z))))).
+
+
 
 vect :
-  __ : Coq.Term Coq.set nat -> Coq.Univ Coq.set.
+  __ : Term set nat -> Univ set.
 
 def nil :
-  Coq.Term Coq.set (vect Z).
+  Term set (vect Z).
 
 def cons :
-  n : Coq.Term Coq.set nat ->
-  __ : Coq.Term Coq.set nat ->
-  __0 : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set (vect (S n)).
+  n : Term set nat ->
+  __ : Term set nat ->
+  _0 : Term set (vect n) ->
+  Term set (vect (S n)).
+
+[] guarded? set (vect _) nil          --> guarded.
+[] guarded? set (vect _) (cons _ _ _) --> guarded.
 
 def match____vect :
-  s : Coq.Sort ->
-  P : (__ : Coq.Term Coq.set nat -> Coq.Term Coq.set (vect __) -> Coq.Univ s) ->
-  case__nil : Coq.Term s (P Z nil) ->
+  s : Sort ->
+  P : (__ : Term set nat -> Term set (vect __) -> Univ s) ->
+  case__nil : Term s (P Z nil) ->
   case__cons :
-    (n : Coq.Term Coq.set nat ->
-     __ : Coq.Term Coq.set nat ->
-     __0 : Coq.Term Coq.set (vect n) ->
-     Coq.Term s (P (S n) (cons n __ __0))) ->
-  __ : Coq.Term Coq.set nat ->
-  x : Coq.Term Coq.set (vect __) ->
-  Coq.Term s (P __ x).
+    (n : Term set nat ->
+     __ : Term set nat ->
+     _0 : Term set (vect n) ->
+     Term s (P (S n) (cons n __ _0))) ->
+  __ : Term set nat ->
+  x : Term set (vect __) ->
+  Term s (P __ x).
 
 [ s, P, case__nil, case__cons]
 
@@ -792,324 +630,168 @@ def match____vect :
 
   case__nil.
 
-[ s, P, case__nil, case__cons, n, __, __0]
+[ s, P, case__nil, case__cons, n, __, _0]
 
-  match____vect s P case__nil case__cons {S n} (cons n __ __0) -->
+  match____vect s P case__nil case__cons {S n} (cons n __ _0) -->
 
-  case__cons n __ __0.
+  case__cons n __ _0.
 
 [ s, P, s']
 
-  match____vect s (__ => x => Coq.cast' _ _ (Coq.univ' s' _) _ (P __ x)) -->
+  match____vect s (__ => x => cast' _ _ (univ' s' _) _ (P __ x)) -->
 
   match____vect s' (__ => x => P __ x).
 
-def fix1__F1 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term (Coq.type Coq.z) (P n v) ->
-     Coq.Term (Coq.type Coq.z) (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term (Coq.type Coq.z) (P n v).
 
-def fix2__F1 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term (Coq.type Coq.z) (P n v) ->
-     Coq.Term (Coq.type Coq.z) (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  __ : Coq.Term Coq.set nat ->
-  __0 : Coq.Term Coq.set (vect __) ->
-  Coq.Term (Coq.type Coq.z) (P n v).
 
-def fix3__F1 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term (Coq.type Coq.z) (P n v) ->
-     Coq.Term (Coq.type Coq.z) (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term (Coq.type Coq.z) (P n v).
-
-[ P, f0, f1, n, v]
-
-  fix1__F1 P f0 f1 n v -->
-
-  fix2__F1 P f0 f1 n v n v.
-
-[ P, f0, f1, n, v]
-
-  fix2__F1 P f0 f1 n v _ nil -->
-
-  fix3__F1 P f0 f1 n v.
-
-[ P, f0, f1, n, v]
-
-  fix2__F1 P f0 f1 n v _ (cons _ _ _) -->
-
-  fix3__F1 P f0 f1 n v.
-
-[ P, f0, f1]
-
-  fix3__F1 P f0 f1 -->
-
-  n : Coq.Term Coq.set nat =>
-  v : Coq.Term Coq.set (vect n) =>
-  match____vect (Coq.type Coq.z)
-    (n0 : Coq.Term Coq.set nat => v0 : Coq.Term Coq.set (vect n0) => P n0 v0)
-    f0
-    (n0 : Coq.Term Coq.set nat =>
-     n1 : Coq.Term Coq.set nat =>
-     v0 : Coq.Term Coq.set (vect n0) =>
-     f1 n0 n1 v0 (fix1__F1 P f0 f1 n0 v0))
-    n v.
 
 def vect__rect :
 
   P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ (Coq.type Coq.z)) ->
-  f0 : Coq.Term (Coq.type Coq.z) (P Z nil) ->
+    (n : Term set nat ->
+     v : Term set (vect n) ->
+     Univ (type z)) ->
+  f0 : Term (type z) (P Z nil) ->
   f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term (Coq.type Coq.z) (P n v) ->
-     Coq.Term (Coq.type Coq.z) (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term (Coq.type Coq.z) (P n v) :=
+    (n : Term set nat ->
+     n0 : Term set nat ->
+     v : Term set (vect n) ->
+     __ : Term (type z) (P n v) ->
+     Term (type z) (P (S n) (cons n n0 v))) ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term (type z) (P n v) :=
 
   P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ (Coq.type Coq.z)) =>
-  f0 : Coq.Term (Coq.type Coq.z) (P Z nil) =>
+    (n : Term set nat ->
+     v : Term set (vect n) ->
+     Univ (type z)) =>
+  f0 : Term (type z) (P Z nil) =>
   f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term (Coq.type Coq.z) (P n v) ->
-     Coq.Term (Coq.type Coq.z) (P (S n) (cons n n0 v))) =>
-  fix1__F1 P f0 f1.
+    (n : Term set nat ->
+     n0 : Term set nat ->
+     v : Term set (vect n) ->
+     __ : Term (type z) (P n v) ->
+     Term (type z) (P (S n) (cons n n0 v))) =>
 
-def fix1__F2 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.prop (P n v) ->
-     Coq.Term Coq.prop (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.prop (P n v).
+  fixproj (type z) 1
+    (c=>c
+      (make_SA 0 (type z)
+        (prod set (type z) (type z) I nat
+          (n => prod set (type z) (type z) I (vect n) (v => P n v)))))
+    (c=>c
+      (vect__rect => n => v =>
+        match____vect (type z)
+          (n0 : Term set nat => v0 : Term set (vect n0) => P n0 v0)
+          f0
+          (n0 : Term set nat =>
+           n1 : Term set nat =>
+           v0 : Term set (vect n0) =>
+           f1 n0 n1 v0 (vect__rect n0 v0))
+          n v))
+      0.
 
-def fix2__F2 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.prop (P n v) ->
-     Coq.Term Coq.prop (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  __ : Coq.Term Coq.set nat ->
-  __0 : Coq.Term Coq.set (vect __) ->
-  Coq.Term Coq.prop (P n v).
-
-def fix3__F2 :
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.prop (P n v) ->
-     Coq.Term Coq.prop (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.prop (P n v).
-
-[ P, f0, f1, n, v]
-
-  fix1__F2 P f0 f1 n v -->
-
-  fix2__F2 P f0 f1 n v n v.
-
-[ P, f0, f1, n, v]
-
-  fix2__F2 P f0 f1 n v _ nil -->
-
-  fix3__F2 P f0 f1 n v.
-
-[ P, f0, f1, n, v]
-
-  fix2__F2 P f0 f1 n v _ (cons _ _ _) -->
-
-  fix3__F2 P f0 f1 n v.
-
-[ P, f0, f1]
-
-  fix3__F2 P f0 f1 -->
-
-  n : Coq.Term Coq.set nat =>
-  v : Coq.Term Coq.set (vect n) =>
-  match____vect Coq.prop
-    (n0 : Coq.Term Coq.set nat => v0 : Coq.Term Coq.set (vect n0) => P n0 v0)
-    f0
-    (n0 : Coq.Term Coq.set nat =>
-     n1 : Coq.Term Coq.set nat =>
-     v0 : Coq.Term Coq.set (vect n0) =>
-     f1 n0 n1 v0 (fix1__F2 P f0 f1 n0 v0))
-    n v.
-
-def vect__ind :
-
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.prop) ->
-  f0 : Coq.Term Coq.prop (P Z nil) ->
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.prop (P n v) ->
-     Coq.Term Coq.prop (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.prop (P n v) :=
-
-  P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.prop) =>
-  f0 : Coq.Term Coq.prop (P Z nil) =>
-  f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.prop (P n v) ->
-     Coq.Term Coq.prop (P (S n) (cons n n0 v))) =>
-  fix1__F2 P f0 f1.
 
 def vect__rec :
 
   P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.set) ->
-  f0 : Coq.Term Coq.set (P Z nil) ->
+    (n : Term set nat ->
+     v : Term set (vect n) ->
+     Univ set) ->
+  f0 : Term set (P Z nil) ->
   f1 :
-    (n : Coq.Term Coq.set nat ->
-     n0 : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     __ : Coq.Term Coq.set (P n v) ->
-     Coq.Term Coq.set (P (S n) (cons n n0 v))) ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set (P n v) :=
+    (n : Term set nat ->
+     n0 : Term set nat ->
+     v : Term set (vect n) ->
+     __ : Term set (P n v) ->
+     Term set (P (S n) (cons n n0 v))) ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set (P n v) :=
 
   P :
-    (n : Coq.Term Coq.set nat ->
-     v : Coq.Term Coq.set (vect n) ->
-     Coq.Univ Coq.set) =>
+    (n : Term set nat ->
+     v : Term set (vect n) ->
+     Univ set) =>
   vect__rect
-    (Coq.cast (Coq.rule Coq.set (Coq.rule Coq.set (Coq.type Coq.z)))
-       (Coq.rule Coq.set (Coq.rule Coq.set (Coq.type (Coq.s Coq.z))))
-       (Coq.prod Coq.set (Coq.rule Coq.set (Coq.type Coq.z))
-          (Coq.rule Coq.set (Coq.rule Coq.set (Coq.type Coq.z))) Coq.I nat
-          (n : Coq.Term Coq.set nat =>
-           Coq.prod Coq.set (Coq.type Coq.z)
-             (Coq.rule Coq.set (Coq.type Coq.z)) Coq.I (vect n)
-             (v : Coq.Term Coq.set (vect n) =>
-              Coq.univ Coq.set (Coq.type Coq.z) Coq.I)))
-       (Coq.prod Coq.set (Coq.rule Coq.set (Coq.type (Coq.s Coq.z)))
-          (Coq.rule Coq.set (Coq.rule Coq.set (Coq.type (Coq.s Coq.z))))
-          Coq.I nat
-          (n : Coq.Term Coq.set nat =>
-           Coq.prod Coq.set (Coq.type (Coq.s Coq.z))
-             (Coq.rule Coq.set (Coq.type (Coq.s Coq.z))) Coq.I (vect n)
-             (v : Coq.Term Coq.set (vect n) =>
-              Coq.univ (Coq.type Coq.z) (Coq.type (Coq.s Coq.z)) Coq.I)))
-       Coq.I P).
+    (cast (rule set (rule set (type z)))
+       (rule set (rule set (type (s z))))
+       (prod set (rule set (type z))
+          (rule set (rule set (type z))) I nat
+          (n : Term set nat =>
+           prod set (type z)
+             (rule set (type z)) I (vect n)
+             (v : Term set (vect n) =>
+              univ set (type z) I)))
+       (prod set (rule set (type (s z)))
+          (rule set (rule set (type (s z))))
+          I nat
+          (n : Term set nat =>
+           prod set (type (s z))
+             (rule set (type (s z))) I (vect n)
+             (v : Term set (vect n) =>
+              univ (type z) (type (s z)) I)))
+       I P).
+
+
+
+def f :
+
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
+
+def g :
+
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
+
+
+
+(;
 
 def fix1__f :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
 
 def fix2__f :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  __ : Coq.Term Coq.set nat ->
-  __0 : Coq.Term Coq.set (vect __) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  __ : Term set nat ->
+  _0 : Term set (vect __) ->
+  Term set nat.
 
 def fix3__f :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
 
 def fix1__g :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
 
 def fix2__g :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  __ : Coq.Term Coq.set nat ->
-  __0 : Coq.Term Coq.set (vect __) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  __ : Term set nat ->
+  _0 : Term set (vect __) ->
+  Term set nat.
 
 def fix3__g :
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat.
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat.
 
 [ acc, n, v]
 
@@ -1133,14 +815,14 @@ def fix3__g :
 
   fix3__f -->
 
-  acc : Coq.Term Coq.set nat =>
-  n : Coq.Term Coq.set nat =>
-  v : Coq.Term Coq.set (vect n) =>
-  match____vect Coq.set
-    (n0 : Coq.Term Coq.set nat => v0 : Coq.Term Coq.set (vect n0) => nat) acc
-    (n_27_ : Coq.Term Coq.set nat =>
-     e : Coq.Term Coq.set nat =>
-     v_27_ : Coq.Term Coq.set (vect n_27_) =>
+  acc : Term set nat =>
+  n : Term set nat =>
+  v : Term set (vect n) =>
+  match____vect set
+    (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
+    (n_27_ : Term set nat =>
+     e : Term set nat =>
+     v_27_ : Term set (vect n_27_) =>
      fix1__g (plus acc e) n_27_ v_27_)
     n v.
 
@@ -1166,32 +848,32 @@ def fix3__g :
 
   fix3__g -->
 
-  acc : Coq.Term Coq.set nat =>
-  n : Coq.Term Coq.set nat =>
-  v : Coq.Term Coq.set (vect n) =>
-  match____vect Coq.set
-    (n0 : Coq.Term Coq.set nat => v0 : Coq.Term Coq.set (vect n0) => nat) acc
-    (n_27_ : Coq.Term Coq.set nat =>
-     e : Coq.Term Coq.set nat =>
-     v_27_ : Coq.Term Coq.set (vect n_27_) =>
+  acc : Term set nat =>
+  n : Term set nat =>
+  v : Term set (vect n) =>
+  match____vect set
+    (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
+    (n_27_ : Term set nat =>
+     e : Term set nat =>
+     v_27_ : Term set (vect n_27_) =>
      fix1__f (times acc e) n_27_ v_27_)
     n v.
 
 def f :
 
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat :=
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat :=
 
   fix1__f.
 
 def g :
 
-  acc : Coq.Term Coq.set nat ->
-  n : Coq.Term Coq.set nat ->
-  v : Coq.Term Coq.set (vect n) ->
-  Coq.Term Coq.set nat :=
+  acc : Term set nat ->
+  n : Term set nat ->
+  v : Term set (vect n) ->
+  Term set nat :=
 
   fix1__g.
 ;)
