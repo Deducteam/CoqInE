@@ -480,11 +480,6 @@ def nat__rect__SA : SingleArity (type z) :=
 def nat__rect__MA : MutualArity (type z) 1 :=
   make_MA (type z) 1 nat__rect__SA.
 
-#EVAL[SNF] Term (type z) (SA_arity (type z) nat__rect__SA).
-#EVAL[SNF] Term (type z) (MA_ith_arity (type z) 1 nat__rect__MA 0).
-
-#EVAL[SNF] Term (type z) (MA_arity (type z) 1 nat__rect__MA 0).
-
 def nat__rect__FP : MutualFixpointType (type z) 1 nat__rect__MA :=
   fix (type z) 1 nat__rect__MA
     (nat__rect => n =>
@@ -495,6 +490,8 @@ def nat__rect__FP : MutualFixpointType (type z) 1 nat__rect__MA :=
 
 def nat__rect__proj := fix_proj (type z) 1 nat__rect__MA nat__rect__FP 0.
 
+
+#PRINT "  nat_rect : Nat -> P n ?".
 #CHECK nat__rect__proj  :  ( n : Term set nat -> Term (type z) (P n) ).
 
 
@@ -559,9 +556,8 @@ def plus :
            (x' : Term set nat => S (plus x' y)) x))
     0.
 
-#EVAL[SNF] plus Z Z.
-#EVAL[SNF] plus (S (S Z)) (S (S (S Z))).
-#CHECK plus (S (S Z)) (S (S (S Z))) == S (S (S (S (S Z)))).
+#PRINT "  2+3 = 5 ?".
+#CHECK plus _2 _3 == _5.
 
 
 
@@ -580,21 +576,19 @@ def times :
     0.
 
 
-#EVAL[SNF] times (S Z) Z.
-#EVAL[SNF] times Z (S Z).
-#EVAL[SNF] times (S (S Z)) (S (S (S Z))).
-#CHECK times (S (S Z)) (S (S (S Z))) == S (S (S (S (S (S Z))))).
+#PRINT "  2*3 = 6 ?".
+#CHECK times _2 _3 == _6.
 
-def n5 := S (S (S (S (S Z)))).
-def n10    := plus n5 n5.
-def n100   := times n10 n10.
-def n1000  := times n10 n100.
-def n10000 := times n10 n1000.
+def _10    := plus _5 _5.
+def _100   := times _10 _10.
+def _1000  := times _10 _100.
+def _10000 := times _10 _1000.
 
-#CHECK times n100 n10 == times n10 n100.
-(;
-#CHECK times n100 n100 == times n10 n1000.
-;)
+#PRINT "  100*10=10*100 ?".
+#CHECK times _100 _10 == times _10 _100.
+
+#PRINT "  100*100=10*1000 ?".
+#CHECK times _100 _100 == times _10 _1000.
 
 
 vect :
@@ -735,7 +729,6 @@ def vect__rec :
        I P).
 
 
-
 def f_Arity := make_SA 2 set
   ( prod set set set I nat      (acc =>
     prod set set set I nat      (n =>
@@ -778,13 +771,14 @@ def g := fix_proj set 2 fg_MA fg_FP 1.
 ;)
 
 (;   f 0 3 [3,2,1] = 7   ;)
+#PRINT "  f 0 3 [3,2,1] = 7 ?".
 #CHECK
   f Z _3
     (cons _2 _3 (cons _1 _2 (cons Z _1 nil)))
   ==
   plus _3 _4.
 
-
+#PRINT "  f acc (n+1) (cons n a l) = g (acc+a) n l".
 #CHECK
 (
   acc:Term set nat =>
