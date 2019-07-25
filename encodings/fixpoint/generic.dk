@@ -236,6 +236,15 @@ def app_body :
   a : Term s1 A ->
   Term s (MA_lift_arity s (lift s2 s (B a)) n MA).
 
+[body,a]
+  app_body _ _ (MAnil _) _ _ _ _ body a --> body a.
+
+[s,n,SA,MA,s1,s2,A,B,body,a]
+  app_body s _ (MAcons _ n SA MA) s1 s2 A B body a
+  -->
+  f => app_body s n MA s1 s2 A B (body f) a.
+
+
 def fix_proj :
   s : Sort ->
   n : N -> MA: MutualArity s n ->
@@ -415,6 +424,15 @@ def Z :
 def S :
   __ : Term set nat -> Term set nat.
 
+def _1 := S Z.
+def _2 := S _1.
+def _3 := S _2.
+def _4 := S _3.
+def _5 := S _4.
+def _6 := S _5.
+def _7 := S _6.
+def _8 := S _7.
+
 
 [] guarded? set nat Z     --> guarded.
 [] guarded? set nat (S _) --> guarded.
@@ -501,33 +519,6 @@ def nat__rect :
           n))
     0.
 
-def nat__rect2 :
-  P : (n : Term set nat -> Univ (type z)) ->
-  f0 : Term (type z) (P Z) ->
-  f1 : (n : Term set nat ->
-       __ : Term (type z) (P n) ->
-       Term (type z) (P (S n)) ) ->
-  n: Term set nat ->
-  Term (type z) (P n)
-  :=
-  P => f0 => f1 =>
-  fixproj (type z) 1
-    (c => c
-       (make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
-    (c => c
-      (nat__rect => n =>
-        match____nat (type z) (n0 : Term set nat => P n0)
-          f0
-          (n0 : Term set nat => f1 n0 (nat__rect n0))
-          n))
-    0.
-
-#CHECK nat__rect == nat__rect2.
-(;
-#EVAL[SNF] nat__rect.
-#EVAL[SNF] nat__rect2.
-;)
-
 
 def nat__rec :
 
@@ -594,6 +585,16 @@ def times :
 #EVAL[SNF] times (S (S Z)) (S (S (S Z))).
 #CHECK times (S (S Z)) (S (S (S Z))) == S (S (S (S (S (S Z))))).
 
+def n5 := S (S (S (S (S Z)))).
+def n10    := plus n5 n5.
+def n100   := times n10 n10.
+def n1000  := times n10 n100.
+def n10000 := times n10 n1000.
+
+#CHECK times n100 n10 == times n10 n100.
+(;
+#CHECK times n100 n100 == times n10 n1000.
+;)
 
 
 vect :
@@ -735,147 +736,66 @@ def vect__rec :
 
 
 
-def f :
+def f_Arity := make_SA 2 set
+  ( prod set set set I nat      (acc =>
+    prod set set set I nat      (n =>
+    prod set set set I (vect n) (v => nat)))).
 
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
+def g_Arity := make_SA 2 set
+  ( prod set set set I nat      (acc =>
+    prod set set set I nat      (n =>
+    prod set set set I (vect n) (v => nat)))).
 
-def g :
+def fg_MA := make_MA set 2 f_Arity g_Arity.
 
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
+def fg_FP :=
+  fix set 2 fg_MA
+    (f => g => acc => n => v =>
+       match____vect set
+         (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
+         (n_27_ : Term set nat =>
+         e : Term set nat =>
+         v_27_ : Term set (vect n_27_) =>
+         g (plus acc e) n_27_ v_27_)
+         n v
+    )
+    (f => g => acc => n => v =>
+       match____vect set
+         (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
+         (n_27_ : Term set nat =>
+         e : Term set nat =>
+         v_27_ : Term set (vect n_27_) =>
+         f (times acc e) n_27_ v_27_)
+         n v
+    ).
 
-
+def f := fix_proj set 2 fg_MA fg_FP 0.
+def g := fix_proj set 2 fg_MA fg_FP 1.
 
 (;
-
-def fix1__f :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
-
-def fix2__f :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  __ : Term set nat ->
-  _0 : Term set (vect __) ->
-  Term set nat.
-
-def fix3__f :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
-
-def fix1__g :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
-
-def fix2__g :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  __ : Term set nat ->
-  _0 : Term set (vect __) ->
-  Term set nat.
-
-def fix3__g :
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat.
-
-[ acc, n, v]
-
-  fix1__f acc n v -->
-
-  fix2__f acc n v n v.
-
-[ acc, n, v]
-
-  fix2__f acc n v _ nil -->
-
-  fix3__f acc n v.
-
-[ acc, n, v]
-
-  fix2__f acc n v _ (cons _ _ _) -->
-
-  fix3__f acc n v.
-
-[ ]
-
-  fix3__f -->
-
-  acc : Term set nat =>
-  n : Term set nat =>
-  v : Term set (vect n) =>
-  match____vect set
-    (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
-    (n_27_ : Term set nat =>
-     e : Term set nat =>
-     v_27_ : Term set (vect n_27_) =>
-     fix1__g (plus acc e) n_27_ v_27_)
-    n v.
-
-[ acc, n, v]
-
-  fix1__g acc n v -->
-
-  fix2__g acc n v n v.
-
-[ acc, n, v]
-
-  fix2__g acc n v _ nil -->
-
-  fix3__g acc n v.
-
-[ acc, n, v]
-
-  fix2__g acc n v _ (cons _ _ _) -->
-
-  fix3__g acc n v.
-
-[ ]
-
-  fix3__g -->
-
-  acc : Term set nat =>
-  n : Term set nat =>
-  v : Term set (vect n) =>
-  match____vect set
-    (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
-    (n_27_ : Term set nat =>
-     e : Term set nat =>
-     v_27_ : Term set (vect n_27_) =>
-     fix1__f (times acc e) n_27_ v_27_)
-    n v.
-
-def f :
-
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat :=
-
-  fix1__f.
-
-def g :
-
-  acc : Term set nat ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set nat :=
-
-  fix1__g.
+  f acc n [a,b,c,d] = ((acc+a)*b + c)*d
+  f acc n [a,b,c,d] =  (acc*a +b)*c + d
 ;)
 
-(; End of translation. ;)
+(;   f 0 3 [3,2,1] = 7   ;)
+#CHECK
+  f Z _3
+    (cons _2 _3 (cons _1 _2 (cons Z _1 nil)))
+  ==
+  plus _3 _4.
+
+
+#CHECK
+(
+  acc:Term set nat =>
+  n : Term set nat =>
+  a : Term set nat =>
+  l : Term set (vect n) =>
+    f acc (S n) (cons n a l)
+) == (
+  acc:Term set nat =>
+  n : Term set nat =>
+  a : Term set nat =>
+  l : Term set (vect n) =>
+    g (plus acc a) n l
+).

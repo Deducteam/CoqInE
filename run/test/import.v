@@ -30,3 +30,17 @@ with g acc n v {struct v} :=
   | cons n' e v' => f (times acc e) n' v'
   end
 .
+
+
+Inductive PList : forall n : nat, vect n -> Type :=
+| PNil  : PList Z nil
+| PCons : forall (n : nat) (l : vect n) (a : nat) (b : nat), PList (S (S n)) (cons (S n) b (cons n a l)).
+
+
+Inductive list : Type :=
+| Nil : list
+| Cons : list -> list.
+
+Inductive pair_list : list -> Type :=
+| pair_nil  : pair_list Nil
+| pair_nons : forall (l : list), pair_list (Cons (Cons l)).
