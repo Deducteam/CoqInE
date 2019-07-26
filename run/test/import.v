@@ -1,4 +1,11 @@
 
+
+
+
+
+
+
+
 Inductive nat : Type :=
 | Z : nat
 | S : nat -> nat.
@@ -30,11 +37,6 @@ with g acc n v {struct v} :=
   | cons n' e v' => f (times acc e) n' v'
   end
 .
-
-
-Inductive PList : forall n : nat, vect n -> Type :=
-| PNil  : PList Z nil
-| PCons : forall (n : nat) (l : vect n) (a : nat) (b : nat), PList (S (S n)) (cons (S n) b (cons n a l)).
 
 
 Inductive list : Type :=

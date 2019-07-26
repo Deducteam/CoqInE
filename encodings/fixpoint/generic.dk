@@ -8,84 +8,78 @@
 (; Natural numbers ;)
 N : Type.
 0 : N.
-_S : N -> N.
+S : N -> N.
 
-def 1 := _S 0.
-def 2 := _S 1.
-def 3 := _S 2.
-def 4 := _S 3.
-def 5 := _S 4.
+(; Short names ;)
+def 1 := S 0.
+def 2 := S 1.
+def 3 := S 2.
+def 4 := S 3.
+def 5 := S 4.
+def 6 := S 5.
+def 7 := S 6.
+def 8 := S 7.
+def 9 := S 8.
 
 
-(;-----------------  Arity  -----------------;)
+(;-----------------------------------------------------------------;)
+(;--------------------------  SingleArity  ------------------------;)
+(;-----------------------------------------------------------------;)
 
-(; SAc k s A   represents both
+(; [SAc k s A]   builds a pair of
    - the arity of a single body in a mutually recursive block
-     without the recursive call parameters.
-   - the index of expected structurally decreasing inductive argument in arity ;)
-
+     (without the recursive call parameters)
+   - the index of expected structurally decreasing inductive argument in arity
+   We write these pairs (k / A).
+;)
 SingleArity : Sort -> Type.
 SAc : N -> s : Sort -> Univ s -> SingleArity s.
 
-def make_SA := SAc.
+(;-----------------  Fetch type from SingleArity  -----------------;)
 
-
-(;-----------------  Fetch type from Arity  -----------------;)
-
+(;  Fetches  A  from  (k / A)  ;)
 def SA_arity : s : Sort -> SingleArity s -> Univ s.
 [s,A] SA_arity s (SAc _ _ A) --> A.
 
 
+(;-----------------------------------------------------------------;)
+(;--------------------------  MutualArity  ------------------------;)
+(;-----------------------------------------------------------------;)
 
-(;-----------------  Arity Lists  -----------------;)
-
-(; This is a sized list of single arities ;)
-
+(; [MutualArity s n]  is the type of lists of s-SA of size n
+   We write these lists:   { k1 / A1, ..., kn / An }
+;)
 MutualArity : Sort -> N -> Type.
+
+(; Builds {} ;)
 MAnil  : s : Sort -> MutualArity s 0.
-MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (_S n).
 
-(;-----------------  Short constructor: make_MA  -----------------;)
-
-def MutualArity' : Sort -> N -> N -> Type.
-[s,n  ] MutualArity' s n 0     --> MutualArity s n.
-[s,n,i] MutualArity' s n (_S i) --> SingleArity s -> MutualArity' s n i.
-
-def MAcons_aux :
-  s : Sort ->
-  n : N -> m : N ->
-  SingleArity s ->
-  MutualArity' s n m ->     (;  SA -> ...(m)... -> SA -> MAn    ;)
-  MutualArity' s (_S n) m.  (;  SA -> ...(m)... -> SA -> MAn+1  ;)
-[s,n  ,A,MA   ] MAcons_aux s n 0     A MA    --> MAcons s n A MA.
-[s,n,m,A,MA,A'] MAcons_aux s n (_S m) A MA A' --> MAcons_aux s n m A (MA A').
-
-(; Use directly    make_MA s 3 a b c     ;)
-def make_MA : s : Sort -> n : N -> MutualArity' s n n.
-[s     ] make_MA s 0        --> MAnil s.
-[s,n,SA] make_MA s (_S n) SA --> MAcons_aux s n n SA (make_MA s n).
+(; Builds { k1 / A1, ..., kn+1 / An+1 }
+   from
+     kn+1
+     An+1
+     { k1 / A1, ..., kn / An }
+;)
+MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (S n).
 
 (;-----------------  Fetch Arity from Arity List  -----------------;)
 
+(;  Fetches  (ki / Ai)  from  { k1 / A1, ..., kn / An }  ;)
 def MA_ith_SA  : s : Sort -> n : N -> MutualArity s n -> N -> SingleArity s.
-[s,SA]
-  MA_ith_SA s _ (MAcons _ _ SA _) 0 --> SA.
-[s,n,i,MA]
-  MA_ith_SA s _ (MAcons _ n _ MA) (_S i)
-  -->
-  MA_ith_SA s n MA i.
+[s,SA]     MA_ith_SA s _ (MAcons _ _ SA _) 0     --> SA.
+[s,n,i,MA] MA_ith_SA s _ (MAcons _ n _ MA) (S i) --> MA_ith_SA s n MA i.
 
-(;-----------------  Fetch Type from Arity List  -----------------;)
+(;-----------------  Fetch type from Arity List  ------------------;)
 
+(;  Fetches  Ai  from  { k1 / A1, ..., kn / An }  ;)
 def MA_ith_arity (s : Sort) (n : N) (MA : MutualArity s n) (i : N) : Univ s :=
   SA_arity s (MA_ith_SA s n MA i).
 
-
-
-
-
 (;------  Fetch type with recursive call arguments from Arity List  -----;)
 
+(;  Builds the type
+      A1 -> ... -> An -> B
+    from  B  and  { k1 / A1, ..., kn / An }  ;)
 def MA_lift_arity :
   s : Sort -> Univ s -> m : N -> MutualArity s m -> Univ s.
 
@@ -96,29 +90,50 @@ def MA_lift_arity :
   -->
   prod s s s I (SA_arity s SA) (f => (MA_lift_arity s ar m MA)).
 
+(;  Builds the type
+      A1 -> ... -> An -> Ai
+    from  i  and  { k1 / A1, ..., kn / An }  ;)
 def MA_arity (s : Sort) (n : N) (MA : MutualArity s n) (i : N) : Univ s
   := MA_lift_arity s (MA_ith_arity s n MA i) n MA.
 
 
 
-(;-----------------  Fixpoint Type  -----------------;)
+(;-----------------------------------------------------------------;)
+(;------------------------  MutualFixpoint  -----------------------;)
+(;-----------------------------------------------------------------;)
 
-(; Sized list of functions of each "type with recursive calls"  ;)
-
-(; List of MA' arity lifted with MA ;)
-MutualFixpointTypeAux :
+MutualFixpointAux :
   (s : Sort) ->
   (n : N) -> MutualArity s n ->
   (i : N) -> MutualArity s i -> Type.
 
-def MutualFixpointType (s : Sort) (n : N) (MA : MutualArity s n) : Type
+def MutualFixpoint (s : Sort) (n : N) (MA : MutualArity s n) : Type
   :=
-  MutualFixpointTypeAux s n MA n MA.
+  MutualFixpointAux s n MA n MA.
+
+(; MutualFixpoint s n { k1 / A1, ..., kn / An }
+   is a list of size n whose i-th element is the body of the the i-th fixpoint body:
+     A1 -> ... -> An -> Ai
+   We write these lists
+     { k1 / A1 := f1, ..., kn / An := fn }
+
+   MutualFixpointAux s n { k1 / A1, ..., kn / An } i { k(n-i+1) / B(n-i+1), ..., kn / Bn }
+   is a list of size i whose j-th element has type:
+     A1 -> ... -> An -> B(n-i+j)
+   When A = B, this is something like
+     { k1 / A1 := f1, ..., k1 / A1 := fn }[n-i+1 ... n]
+   ! This is different from   { k(n-i+1) / A(n-i+1) := f(n-i+1), ..., kn / An := fn }
+
+   We provide constructors only for MutualFixpointAux.
+
+   It is clear, from their types that
+     MutualFixpoint s n MA == MutualFixpointAux s n MA n MA
+;)
 
 MFTnil :
   (s : Sort) ->
   (n : N) -> (MA : MutualArity s n) ->
-  MutualFixpointTypeAux s n MA 0 (MAnil s).
+  MutualFixpointAux s n MA 0 (MAnil s).
 
 MFTcons :
   (s : Sort) ->
@@ -126,103 +141,52 @@ MFTcons :
   (i : N) -> (MAi : MutualArity s i) ->
   SA : SingleArity s ->
   Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
-  MutualFixpointTypeAux s n MAn i MAi ->
-  MutualFixpointTypeAux s n MAn (_S i) (MAcons s i SA MAi).
-
-(;-----------------  Short constructor: fix  -----------------;)
-
-def MutualFixpointType' :
-  (s : Sort) ->
-  (n : N) -> MutualArity s n ->
-  (i : N) -> MutualArity s i ->
-  (j : N) -> MutualArity s j ->
-  Type.
-
-[s,n,MAn,i,MAi]
-  MutualFixpointType' s n MAn i MAi _ (MAnil _)
-  -->
-  MutualFixpointTypeAux s n MAn i MAi.
-
-[s,n,MAn,i,MAi,SA,j,MAj]
-  MutualFixpointType' s n MAn i MAi _ (MAcons _ j SA MAj)
-  -->
-  Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
-  MutualFixpointType' s n MAn i MAi j MAj.
+  MutualFixpointAux s n MAn i MAi ->
+  MutualFixpointAux s n MAn (S i) (MAcons s i SA MAi).
 
 
-def fix' :
-  (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
-  (i : N) -> (MAi : MutualArity s i) ->
-  (j : N) -> (MAj : MutualArity s j) ->
-  SA : SingleArity s ->
-  Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
-  MutualFixpointType' s n MAn i      MAi                 j MAj ->
-  MutualFixpointType' s n MAn (_S i) (MAcons s i SA MAi) j MAj.
+(;-----------------------------------------------------------------;)
+(;--------------  Fetch body from MutualFixpoint  -----------------;)
+(;-----------------------------------------------------------------;)
 
-[s,n,MAn,i,MAi,SA,t,MFT]
-  fix' s n MAn i MAi _ (MAnil _) SA t MFT
-  -->
-  MFTcons s n MAn i MAi SA t MFT.
-
-[s,n,MAn,i,MAi,j,MAj,SA,t,MFT,t']
-  fix' s n MAn i MAi (_S _) (MAcons _ j _ MAj) SA t MFT t'
-  -->
-  fix' s n MAn i MAi j MAj SA t (MFT t').
-
-
-def make_fix :
-  (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
-  (i : N) -> (MAi : MutualArity s i) ->
-  MutualFixpointType' s n MAn i MAi i MAi.
-
-[s,n,MAn]
-  make_fix s n MAn _ (MAnil _)
-  -->
-  MFTnil s n MAn.
-
-[s,n,MAn,j,MAj,SA,t]
-  make_fix s n MAn (_S _) (MAcons _ j SA MAj) t
-  -->
-  fix' s n MAn j MAj j MAj SA t (make_fix s n MAn j MAj).
-
-def fix :
-  s : Sort ->
-  n : N ->
-  MA: MutualArity s n -> MutualFixpointType' s n MA n MA n MA.
-
-[s,n,MAn] fix s n MAn --> make_fix s n MAn n MAn.
-
-
-
+(; Fetches  fi  from  i  and  { k1 / A1 := f1, ..., kn / An := fn }  ;)
 def fix_body :
   s : Sort ->
   n : N ->
   MA: MutualArity s n ->
-  MutualFixpointType s n MA ->
+  MutualFixpoint s n MA ->
   i : N ->
   Term s (MA_arity s n MA i).
 
+(; Fetches  f(i+j)  from  i, j  and both
+   { k1       / A1       := f1      , ..., kn / An := fn }
+   and
+   { k(n-i+1) / A(n-i+1) := f(n-i+1), ..., kn / An := fn }
+;)
 def fix_body' :
   s : Sort ->
   n : N -> MAn : MutualArity s n ->
   i : N -> MAi : MutualArity s i ->
-  MutualFixpointTypeAux s n MAn i MAi ->
+  MutualFixpointAux s n MAn i MAi ->
   j : N ->
   Term s (MA_lift_arity s (SA_arity s (MA_ith_SA s i MAi j)) n MAn).
 [s,n,MA,MF,i] fix_body s n MA MF i --> fix_body' s n MA n MA MF i.
 
 [s,n,MA,SA,t]
-  fix_body' s n MA (_S _) (MAcons _ _ SA _) (MFTcons _ _ _ _ _ _ t _) 0
+  fix_body' s n MA (S _) (MAcons _ _ SA _)  (MFTcons _ _ _ _ _ _ t _  ) 0
   -->
   t.
 
 [s,n,MA,i,MAi,MFT,j]
-  fix_body' s n MA (_S _) (MAcons _ i _ MAi) (MFTcons _ _ _ _ _ _ _ MFT) (_S j)
+  fix_body' s n MA (S _) (MAcons _ i _ MAi) (MFTcons _ _ _ _ _ _ _ MFT) (S j)
   -->
   fix_body' s n MA i MAi MFT j.
 
 
 
+
+
+(; We should not need this ! ;)
 def lift (s : Sort) (s' : Sort) := cast' s s' (univ' s s) (univ' s' s').
 
 def app_body :
@@ -248,14 +212,14 @@ def app_body :
 def fix_proj :
   s : Sort ->
   n : N -> MA: MutualArity s n ->
-  MutualFixpointType s n MA ->
+  MutualFixpoint s n MA ->
   i : N ->
   Term s (MA_ith_arity s n MA i).
 
 def fix_proj_1 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
-  MutualFixpointType s n MA ->
+  MutualFixpoint s n MA ->
   SA : SingleArity s ->
   Term s (MA_lift_arity s (SA_arity s SA) n MA) ->
   Term s (SA_arity s SA).
@@ -266,11 +230,12 @@ def fix_proj_1 :
   fix_proj_1 s n MA MF (MA_ith_SA s n MA i) (fix_body s n MA MF i).
 
 [s,n,MA,MF,i,A,B,body,a,s1,s2]
-  fix_proj_1 s n MA MF (SAc (_S i) _ (prod' s1 s2 _ A (x => B x))) body a
+  fix_proj_1 s n MA MF (SAc (S i) _ (prod' s1 s2 _ A (x => B x))) body a
   -->
   fix_proj_1 s n MA MF
     (SAc i s (lift s2 s (B a)))
     (app_body s n MA s1 s2 A (x => B x) body a).
+
 
 Guarded? : Type.
 guarded : Guarded?.
@@ -279,7 +244,7 @@ def guarded? : s : Sort -> Ind : Univ s -> Term s Ind -> Guarded?.
 def fix_proj_2 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
-  MutualFixpointType s n MA ->
+  MutualFixpoint s n MA ->
   A : Univ s ->
   Term s (MA_lift_arity s A n MA) ->
   Guarded? ->
@@ -295,7 +260,7 @@ def fix_proj_2 :
 def fix_proj_3 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
-  MutualFixpointType s n MA ->
+  MutualFixpoint s n MA ->
   A : Univ s ->
   i : N -> MAi : MutualArity s i ->
   f : (k : N -> Term s (MA_ith_arity s i MAi k)) ->
@@ -317,8 +282,160 @@ def fix_proj_3 :
   -->
   fix_proj_3 s n MA MF A
     i MAi
-    (k => f (_S k))
+    (k => f (S k))
     (body (f 0)).
+
+
+
+
+
+
+(;-----------------------------------------------------------------;)
+(;-------------  Short constructor of MutualArity  ----------------;)
+(;-----------------------------------------------------------------;)
+
+(;  MA' s n i  =  SA -> ... (i) ... -> SA -> MA s n ;)
+def MutualArity' : Sort -> N -> N -> Type.
+[s,n  ] MutualArity' s n 0     --> MutualArity s n.
+[s,n,i] MutualArity' s n (S i) --> SingleArity s -> MutualArity' s n i.
+
+def MA_magic :
+  s : Sort ->
+  n : N -> m : N ->
+  SingleArity s ->
+  MutualArity' s n m ->    (;  SA -> ...(m)... -> SA -> MA s n      ;)
+  MutualArity' s (S n) m.  (;  SA -> ...(m)... -> SA -> MA s (n+1)  ;)
+
+(; Dark magic occuring here ;)
+[s,n  ,A,MA   ] MA_magic s n 0     A MA    --> MAcons s n A MA.
+[s,n,m,A,MA,A'] MA_magic s n (S m) A MA A' --> MA_magic s n m A (MA A').
+
+def make_MA : s : Sort -> n : N -> MutualArity' s n n.
+[s     ] make_MA s 0        --> MAnil s.
+[s,n,SA] make_MA s (S n) SA --> MA_magic s n n SA (make_MA s n).
+
+(; The idea here is quite complexe:
+   1) First we start from a function
+     make_MA s n n  :  SA -> ...(n)... -> SA -> MA s n
+   2) When a first argument "sa" is provided, we integrate it and build a function
+     MA_magic s (n-1) (n-1) sa (make_MA s (n-1) (n-1))
+   of type
+     SA -> ...(n-1)... -> SA -> MA s n
+   where only n-1 arguments are now required to build the MA s n :
+   - the last argument "make_MA s (n-1) (n-1)" builds MA s (n-1) from n-1 arguments
+   - the 4th argument "sa" remembers the first provided argument
+   3) When a second argument sa2 is provided,
+     3a) MA_magic forward the extra argument to its "(n-1)-builder" function
+         MA_magic s (n-1) (n-1) sa (make_MA s (n-1) (n-1)) sa2
+         -->
+         MA_magic s (n-1) (n-2) sa (make_MA s (n-1) (n-1) sa2)
+       The 3rd argument is decreased to account for the fact that
+       the new "(n-1)-builder" function require one less argument to build MA s (n-1).
+     3b) Then make_MA can process the argument and become
+         MA_magic s (n-1) (n-2) sa (make_MA s (n-1) (n-1) sa2)
+         -->
+         MA_magic s (n-1) (n-2) sa
+           (MA_magic s (n-2) (n-2) sa2 (make_MA s (n-2) (n-2)))
+   4) When yet an other argument sa3 is provided, it is forwarded from
+      MA_magic s (n-1) (n-1)   to   MA_magic s (n-2) (n-2)
+      then eventually to    make_MA s (n-2) (n-2)   which build
+      MA_magic s (n-3) (n-3) sa3 (make_MA s (n-3))
+   5) This keeps on until make_MA s 0 is reached.
+      The term now looks something like:
+        MA_magic s (n-1) 0 sa
+          (MA_magic s (n-2) 0 sa2
+            (MA_magic s (n-3) 0 sa3
+              (...
+                   (MA_magic s 0 0 san (make_MA s 0))...)))
+      At this point, no extra argument is expected and MAnil s is produced.
+   6) The innermost MA_magic s 0 0 san (MAnil s)  then builds
+        MAcons s n san (MAnil s)
+   7) The next one keeps on producing a MAcons
+        MA_magic s 1 0 sa(n-1)  (MAcons s n san (MAnil s))
+        -->
+        MA_cons s 1 sa(n-1) (MAcons s n san (MAnil s))
+   8) This keeps on until the last one produces the expected list :
+        MA_magic s (n-1) 0 sa l
+        -->
+        MA_cons s (n-1) sa l   :  MA s n
+   Note) In practice the "backward" production of MAcons-es occur first
+         at the head (MA_magic s (n-1) ...) and eventually produces the
+         "0-builder" (MAnil s) from "MA_magic s 0".
+         I find it easier to understand when looking at the innermost
+         production first. All the productions occur anyway
+
+   To build a s-MA of size 3 you may now use directly:    make_MA s 3 a b c
+;)
+
+
+
+
+(;-----------------  Short constructor: fix  -----------------;)
+
+def MutualFixpoint' :
+  (s : Sort) ->
+  (n : N) -> MutualArity s n ->
+  (i : N) -> MutualArity s i ->
+  (j : N) -> MutualArity s j ->
+  Type.
+
+[s,n,MAn,i,MAi]
+  MutualFixpoint' s n MAn i MAi _ (MAnil _)
+  -->
+  MutualFixpointAux s n MAn i MAi.
+
+[s,n,MAn,i,MAi,SA,j,MAj]
+  MutualFixpoint' s n MAn i MAi _ (MAcons _ j SA MAj)
+  -->
+  Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
+  MutualFixpoint' s n MAn i MAi j MAj.
+
+
+def fix_magic :
+  (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
+  (i : N) -> (MAi : MutualArity s i) ->
+  (j : N) -> (MAj : MutualArity s j) ->
+  SA : SingleArity s ->
+  Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
+  MutualFixpoint' s n MAn i     MAi                 j MAj ->
+  MutualFixpoint' s n MAn (S i) (MAcons s i SA MAi) j MAj.
+
+[s,n,MAn,i,MAi,SA,t,MFT]
+  fix_magic s n MAn i MAi _ (MAnil _) SA t MFT
+  -->
+  MFTcons s n MAn i MAi SA t MFT.
+
+[s,n,MAn,i,MAi,j,MAj,SA,t,MFT,t']
+  fix_magic s n MAn i MAi (S _) (MAcons _ j _ MAj) SA t MFT t'
+  -->
+  fix_magic s n MAn i MAi j MAj SA t (MFT t').
+
+
+def make_fix :
+  (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
+  (i : N) -> (MAi : MutualArity s i) ->
+  MutualFixpoint' s n MAn i MAi i MAi.
+
+[s,n,MAn]
+  make_fix s n MAn _ (MAnil _)
+  -->
+  MFTnil s n MAn.
+
+[s,n,MAn,j,MAj,SA,t]
+  make_fix s n MAn (S _) (MAcons _ j SA MAj) t
+  -->
+  fix_magic s n MAn j MAj j MAj SA t (make_fix s n MAn j MAj).
+
+def fix :
+  s : Sort ->
+  n : N ->
+  MA: MutualArity s n -> MutualFixpoint' s n MA n MA n MA.
+
+[s,n,MAn] fix s n MAn --> make_fix s n MAn n MAn.
+
+
+
+
 
 
 def fixproj :
@@ -326,8 +443,8 @@ def fixproj :
   n : N ->
   MA :(MutualArity' s n n -> MutualArity s n) ->
   (
-     MutualFixpointType' s n (MA (make_MA s n)) n (MA (make_MA s n)) n (MA (make_MA s n)) ->
-     MutualFixpointType s n (MA (make_MA s n))
+     MutualFixpoint' s n (MA (make_MA s n)) n (MA (make_MA s n)) n (MA (make_MA s n)) ->
+     MutualFixpoint s n (MA (make_MA s n))
   ) ->
   i : N ->
   Term s (MA_ith_arity s n (MA (make_MA s n)) i).
@@ -338,458 +455,3 @@ def fixproj :
   fix_proj s n
     (MA (make_MA s n))
     (MF (fix s n (MA (make_MA s n)))).
-
-
-
-(;
-Fixpoint a := a
-with     b := b
-with     c := c.
-;)
-
-A : Univ set.
-B : Univ set.
-C : Univ set.
-
-def SA_A : SingleArity set   := make_SA 0 set A.
-def SA_B : SingleArity set   := make_SA 0 set B.
-def SA_C : SingleArity set   := make_SA 0 set C.
-def MA   : MutualArity set 3 := make_MA set 3 SA_A SA_B SA_C.
-def MFT  : MutualFixpointType set 3 MA :=
-  fix set 3 MA (a => b => c => a) (a => b => c => b) (a => b => c => c).
-
-def body_a := fix_body set 3 MA MFT 0.
-def body_b := fix_body set 3 MA MFT 1.
-def body_c := fix_body set 3 MA MFT 2.
-
-def a    : Term set A := fix_proj set 3 MA MFT 0.
-def b    : Term set B := fix_proj set 3 MA MFT 1.
-def c    : Term set C := fix_proj set 3 MA MFT 2.
-
-[] guarded? set A a --> guarded.
-[] guarded? set B b --> guarded.
-[] guarded? set C c --> guarded.
-
-
-
-
-
-(; We ambitiously translate the following inductive definition:
-
-Inductive nat : Type :=
-| Z : nat
-| S : nat -> nat.
-
-Fixpoint plus (x:nat) (y:nat) :=
-  match x with
-  | Z => y
-  | S x' => S (plus x' y)
-  end.
-
-Fixpoint times (x:nat) (y:nat) :=
-  match x with
-  | Z => Z
-  | S x' => plus y (times x' y)
-  end.
-
-Inductive vect : nat -> Type :=
-| nil : vect Z
-| cons : forall n : nat, nat -> vect n -> vect (S n).
-
-Fixpoint f acc n (v:vect n) {struct v} :=
-  match v with
-  | nil => acc
-  | cons n' e v' => g (plus acc e) n' v'
-  end
-with g acc n v {struct v} :=
-  match v with
-  | nil => acc
-  | cons n' e v' => f (times acc e) n' v'
-  end
-.
-
-;)
-
-
-
-(; This file was automatically generated by Coqine. ;)
-(; The encoding used was: "universo". ;)
-
-nat :
-  Univ set.
-
-def Z :
-  Term set nat.
-
-def S :
-  __ : Term set nat -> Term set nat.
-
-def _1 := S Z.
-def _2 := S _1.
-def _3 := S _2.
-def _4 := S _3.
-def _5 := S _4.
-def _6 := S _5.
-def _7 := S _6.
-def _8 := S _7.
-
-
-[] guarded? set nat Z     --> guarded.
-[] guarded? set nat (S _) --> guarded.
-
-
-def match____nat :
-  s : Sort ->
-  P : (Term set nat -> Univ s) ->
-  case__Z : Term s (P Z) ->
-  case__S : (__ : Term set nat -> Term s (P (S __))) ->
-  x : Term set nat ->
-  Term s (P x).
-
-[ s, P, case__Z, case__S]
-
-  match____nat s P case__Z case__S Z -->
-
-  case__Z.
-
-[ s, P, case__Z, case__S, __]
-
-  match____nat s P case__Z case__S (S __) -->
-
-  case__S __.
-
-[ s, P, s']
-
-  match____nat s (x => cast' _ _ (univ' s' _) _ (P x)) -->
-
-  match____nat s' (x => P x).
-
-
-P : n : Term set nat -> Univ (type z).
-f0 : Term (type z) (P Z).
-f1 : n : Term set nat ->
-     __ : Term (type z) (P n) ->
-     Term (type z) (P (S n)).
-
-
-(;     f0  /  0  :  forall n:nat, P n     ;)
-def nat__rect__SA : SingleArity (type z) :=
-  make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n)).
-
-(;   { f0  /  0  :  forall n:nat, P n }   ;)
-def nat__rect__MA : MutualArity (type z) 1 :=
-  make_MA (type z) 1 nat__rect__SA.
-
-def nat__rect__FP : MutualFixpointType (type z) 1 nat__rect__MA :=
-  fix (type z) 1 nat__rect__MA
-    (nat__rect => n =>
-      match____nat (type z) (n0 : Term set nat => P n0)
-        f0
-        (n0 : Term set nat => f1 n0 (nat__rect n0))
-        n).
-
-def nat__rect__proj := fix_proj (type z) 1 nat__rect__MA nat__rect__FP 0.
-
-
-#PRINT "  nat_rect : Nat -> P n ?".
-#CHECK nat__rect__proj  :  ( n : Term set nat -> Term (type z) (P n) ).
-
-
-def nat__rect :
-  P : (n : Term set nat -> Univ (type z)) ->
-  f0 : Term (type z) (P Z) ->
-  f1 : (n : Term set nat ->
-       __ : Term (type z) (P n) ->
-       Term (type z) (P (S n)) ) ->
-  n: Term set nat ->
-  Term (type z) (P n)
-  :=
-  P => f0 => f1 =>
-  fixproj (type z) 1
-    (c => c
-       (make_SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
-    (c => c
-      (nat__rect => n =>
-        match____nat (type z) (n0 : Term set nat => P n0)
-          f0
-          (n0 : Term set nat => f1 n0 (nat__rect n0))
-          n))
-    0.
-
-
-def nat__rec :
-
-  P : (n : Term set nat -> Univ set) ->
-  f0 : Term set (P Z) ->
-  f1 :
-    (n : Term set nat ->
-     __ : Term set (P n) ->
-     Term set (P (S n))) ->
-  n : Term set nat ->
-  Term set (P n) :=
-
-  P : (n : Term set nat -> Univ set) =>
-  nat__rect
-    (cast (rule set (type z))
-       (rule set (type (s z)))
-       (prod set (type z) (rule set (type z))
-          I nat
-          (n : Term set nat =>
-           univ set (type z) I))
-       (prod set (type (s z))
-          (rule set (type (s z))) I nat
-          (n : Term set nat =>
-           univ (type z) (type (s z)) I))
-       I P).
-
-def plus :
-  x : Term set nat ->
-  y : Term set nat ->
-  Term set nat :=
-  fixproj set 1
-    (c=>c
-      (make_SA 0 set
-        (prod set set set I nat (x => prod set set set I nat (y => nat)))))
-    (c=>c
-      (plus => x => y =>
-         match____nat set (x0 : Term set nat => nat) y
-           (x' : Term set nat => S (plus x' y)) x))
-    0.
-
-#PRINT "  2+3 = 5 ?".
-#CHECK plus _2 _3 == _5.
-
-
-
-def times :
-  x : Term set nat ->
-  y : Term set nat ->
-  Term set nat :=
-  fixproj set 1
-    (c=>c
-      (make_SA 0 set
-        (prod set set set I nat (x => prod set set set I nat (y => nat)))))
-    (c=>c
-      (times => x => y =>
-         match____nat set (x0 : Term set nat => nat) Z
-           (x' : Term set nat => plus y (times x' y)) x))
-    0.
-
-
-#PRINT "  2*3 = 6 ?".
-#CHECK times _2 _3 == _6.
-
-def _10    := plus _5 _5.
-def _100   := times _10 _10.
-def _1000  := times _10 _100.
-def _10000 := times _10 _1000.
-
-#PRINT "  100*10=10*100 ?".
-#CHECK times _100 _10 == times _10 _100.
-
-#PRINT "  100*100=10*1000 ?".
-#CHECK times _100 _100 == times _10 _1000.
-
-
-vect :
-  __ : Term set nat -> Univ set.
-
-def nil :
-  Term set (vect Z).
-
-def cons :
-  n : Term set nat ->
-  __ : Term set nat ->
-  _0 : Term set (vect n) ->
-  Term set (vect (S n)).
-
-[] guarded? set (vect _) nil          --> guarded.
-[] guarded? set (vect _) (cons _ _ _) --> guarded.
-
-def match____vect :
-  s : Sort ->
-  P : (__ : Term set nat -> Term set (vect __) -> Univ s) ->
-  case__nil : Term s (P Z nil) ->
-  case__cons :
-    (n : Term set nat ->
-     __ : Term set nat ->
-     _0 : Term set (vect n) ->
-     Term s (P (S n) (cons n __ _0))) ->
-  __ : Term set nat ->
-  x : Term set (vect __) ->
-  Term s (P __ x).
-
-[ s, P, case__nil, case__cons]
-
-  match____vect s P case__nil case__cons {Z} nil -->
-
-  case__nil.
-
-[ s, P, case__nil, case__cons, n, __, _0]
-
-  match____vect s P case__nil case__cons {S n} (cons n __ _0) -->
-
-  case__cons n __ _0.
-
-[ s, P, s']
-
-  match____vect s (__ => x => cast' _ _ (univ' s' _) _ (P __ x)) -->
-
-  match____vect s' (__ => x => P __ x).
-
-
-
-
-def vect__rect :
-
-  P :
-    (n : Term set nat ->
-     v : Term set (vect n) ->
-     Univ (type z)) ->
-  f0 : Term (type z) (P Z nil) ->
-  f1 :
-    (n : Term set nat ->
-     n0 : Term set nat ->
-     v : Term set (vect n) ->
-     __ : Term (type z) (P n v) ->
-     Term (type z) (P (S n) (cons n n0 v))) ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term (type z) (P n v) :=
-
-  P :
-    (n : Term set nat ->
-     v : Term set (vect n) ->
-     Univ (type z)) =>
-  f0 : Term (type z) (P Z nil) =>
-  f1 :
-    (n : Term set nat ->
-     n0 : Term set nat ->
-     v : Term set (vect n) ->
-     __ : Term (type z) (P n v) ->
-     Term (type z) (P (S n) (cons n n0 v))) =>
-
-  fixproj (type z) 1
-    (c=>c
-      (make_SA 0 (type z)
-        (prod set (type z) (type z) I nat
-          (n => prod set (type z) (type z) I (vect n) (v => P n v)))))
-    (c=>c
-      (vect__rect => n => v =>
-        match____vect (type z)
-          (n0 : Term set nat => v0 : Term set (vect n0) => P n0 v0)
-          f0
-          (n0 : Term set nat =>
-           n1 : Term set nat =>
-           v0 : Term set (vect n0) =>
-           f1 n0 n1 v0 (vect__rect n0 v0))
-          n v))
-      0.
-
-
-def vect__rec :
-
-  P :
-    (n : Term set nat ->
-     v : Term set (vect n) ->
-     Univ set) ->
-  f0 : Term set (P Z nil) ->
-  f1 :
-    (n : Term set nat ->
-     n0 : Term set nat ->
-     v : Term set (vect n) ->
-     __ : Term set (P n v) ->
-     Term set (P (S n) (cons n n0 v))) ->
-  n : Term set nat ->
-  v : Term set (vect n) ->
-  Term set (P n v) :=
-
-  P :
-    (n : Term set nat ->
-     v : Term set (vect n) ->
-     Univ set) =>
-  vect__rect
-    (cast (rule set (rule set (type z)))
-       (rule set (rule set (type (s z))))
-       (prod set (rule set (type z))
-          (rule set (rule set (type z))) I nat
-          (n : Term set nat =>
-           prod set (type z)
-             (rule set (type z)) I (vect n)
-             (v : Term set (vect n) =>
-              univ set (type z) I)))
-       (prod set (rule set (type (s z)))
-          (rule set (rule set (type (s z))))
-          I nat
-          (n : Term set nat =>
-           prod set (type (s z))
-             (rule set (type (s z))) I (vect n)
-             (v : Term set (vect n) =>
-              univ (type z) (type (s z)) I)))
-       I P).
-
-
-def f_Arity := make_SA 2 set
-  ( prod set set set I nat      (acc =>
-    prod set set set I nat      (n =>
-    prod set set set I (vect n) (v => nat)))).
-
-def g_Arity := make_SA 2 set
-  ( prod set set set I nat      (acc =>
-    prod set set set I nat      (n =>
-    prod set set set I (vect n) (v => nat)))).
-
-def fg_MA := make_MA set 2 f_Arity g_Arity.
-
-def fg_FP :=
-  fix set 2 fg_MA
-    (f => g => acc => n => v =>
-       match____vect set
-         (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
-         (n_27_ : Term set nat =>
-         e : Term set nat =>
-         v_27_ : Term set (vect n_27_) =>
-         g (plus acc e) n_27_ v_27_)
-         n v
-    )
-    (f => g => acc => n => v =>
-       match____vect set
-         (n0 : Term set nat => v0 : Term set (vect n0) => nat) acc
-         (n_27_ : Term set nat =>
-         e : Term set nat =>
-         v_27_ : Term set (vect n_27_) =>
-         f (times acc e) n_27_ v_27_)
-         n v
-    ).
-
-def f := fix_proj set 2 fg_MA fg_FP 0.
-def g := fix_proj set 2 fg_MA fg_FP 1.
-
-(;
-  f acc n [a,b,c,d] = ((acc+a)*b + c)*d
-  f acc n [a,b,c,d] =  (acc*a +b)*c + d
-;)
-
-(;   f 0 3 [3,2,1] = 7   ;)
-#PRINT "  f 0 3 [3,2,1] = 7 ?".
-#CHECK
-  f Z _3
-    (cons _2 _3 (cons _1 _2 (cons Z _1 nil)))
-  ==
-  plus _3 _4.
-
-#PRINT "  f acc (n+1) (cons n a l) = g (acc+a) n l".
-#CHECK
-(
-  acc:Term set nat =>
-  n : Term set nat =>
-  a : Term set nat =>
-  l : Term set (vect n) =>
-    f acc (S n) (cons n a l)
-) == (
-  acc:Term set nat =>
-  n : Term set nat =>
-  a : Term set nat =>
-  l : Term set (vect n) =>
-    g (plus acc a) n l
-).
