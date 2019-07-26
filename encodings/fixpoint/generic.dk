@@ -26,20 +26,20 @@ def 9 := S 8.
 (;--------------------------  SingleArity  ------------------------;)
 (;-----------------------------------------------------------------;)
 
-(; [SAc k s A]   builds a pair of
+(; [SAcons k s A]   builds a pair of
    - the arity of a single body in a mutually recursive block
      (without the recursive call parameters)
    - the index of expected structurally decreasing inductive argument in arity
    We write these pairs (k / A).
 ;)
 SingleArity : Sort -> Type.
-SAc : N -> s : Sort -> Univ s -> SingleArity s.
+SAcons : N -> s : Sort -> Univ s -> SingleArity s.
 
 (;-----------------  Fetch type from SingleArity  -----------------;)
 
 (;  Fetches  A  from  (k / A)  ;)
 def SA_arity : s : Sort -> SingleArity s -> Univ s.
-[s,A] SA_arity s (SAc _ _ A) --> A.
+[s,A] SA_arity s (SAcons _ _ A) --> A.
 
 
 (;-----------------------------------------------------------------;)
@@ -115,7 +115,7 @@ def MutualFixpoint (s : Sort) (n : N) (MA : MutualArity s n) : Type
    is a list of size n whose i-th element is the body of the the i-th fixpoint body:
      A1 -> ... -> An -> Ai
    We write these lists
-     { k1 / A1 := f1, ..., kn / An := fn }
+     { k1 / A1 := body1, ..., kn / An := bodyn }
 
    MutualFixpointAux s n { k1 / A1, ..., kn / An } i { k(n-i+1) / B(n-i+1), ..., kn / Bn }
    is a list of size i whose j-th element has type:
@@ -145,11 +145,12 @@ MFTcons :
   MutualFixpointAux s n MAn (S i) (MAcons s i SA MAi).
 
 
+
 (;-----------------------------------------------------------------;)
 (;--------------  Fetch body from MutualFixpoint  -----------------;)
 (;-----------------------------------------------------------------;)
 
-(; Fetches  fi  from  i  and  { k1 / A1 := f1, ..., kn / An := fn }  ;)
+(; Fetches  fi  from  i  and  { k1 / A1 := body1, ..., kn / An := bodyn }  ;)
 def fix_body :
   s : Sort ->
   n : N ->
@@ -159,9 +160,9 @@ def fix_body :
   Term s (MA_arity s n MA i).
 
 (; Fetches  f(i+j)  from  i, j  and both
-   { k1       / A1       := f1      , ..., kn / An := fn }
+   { k1       / A1       := body1      , ..., kn / An := bodyn }
    and
-   { k(n-i+1) / A(n-i+1) := f(n-i+1), ..., kn / An := fn }
+   { k(n-i+1) / A(n-i+1) := body(n-i+1), ..., kn / An := bodyn }
 ;)
 def fix_body' :
   s : Sort ->
@@ -184,11 +185,22 @@ def fix_body' :
 
 
 
-
+(;-----------------------------------------------------------------;)
+(;---------------------------  Utils  -----------------------------;)
+(;-----------------------------------------------------------------;)
 
 (; We should not need this ! ;)
 def lift (s : Sort) (s' : Sort) := cast' s s' (univ' s s) (univ' s' s').
 
+(; Input:
+     { k1 / A1, ..., kn / An }
+     body : A1 -> ... -> An -> x : A -> B x
+     a : A
+   Output:
+     g1 => ... => gn => body a
+   of type
+     A1 -> ... -> An -> B a
+;)
 def app_body :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
@@ -208,7 +220,22 @@ def app_body :
   -->
   f => app_body s n MA s1 s2 A B (body f) a.
 
+(; guarded? s A x --> guarded   iif x starts with a constructor   ;)
+Guarded? : Type.
+guarded : Guarded?.
+def guarded? : s : Sort -> Ind : Univ s -> Term s Ind -> Guarded?.
 
+
+(;-----------------------------------------------------------------;)
+(;-------------------  Fixpoint projections  ----------------------;)
+(;-----------------------------------------------------------------;)
+
+(; This returns the i-th fixpoint projection of the given
+    { k1 / A1 := body1, ..., kn / An := bodyn }
+   We write this
+     Fix fi{ f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn }
+   of type Ai
+;)
 def fix_proj :
   s : Sort ->
   n : N -> MA: MutualArity s n ->
@@ -216,6 +243,17 @@ def fix_proj :
   i : N ->
   Term s (MA_ith_arity s n MA i).
 
+(; Returns a term
+     Fix1 fi { f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn } (k / A) body
+   Such that when applied to  t1, ..., tk with tk constructor headed, it reduces to
+     body
+       Fix f1{ f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn }
+       ...
+       Fix fn{ f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn }
+       t1
+       ...
+       tk
+;)
 def fix_proj_1 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
@@ -230,17 +268,20 @@ def fix_proj_1 :
   fix_proj_1 s n MA MF (MA_ith_SA s n MA i) (fix_body s n MA MF i).
 
 [s,n,MA,MF,i,A,B,body,a,s1,s2]
-  fix_proj_1 s n MA MF (SAc (S i) _ (prod' s1 s2 _ A (x => B x))) body a
+  fix_proj_1 s n MA MF (SAcons (S i) _ (prod' s1 s2 _ A (x => B x))) body a
   -->
   fix_proj_1 s n MA MF
-    (SAc i s (lift s2 s (B a)))
+    (SAcons i s (lift s2 s (B a)))
     (app_body s n MA s1 s2 A (x => B x) body a).
 
-
-Guarded? : Type.
-guarded : Guarded?.
-def guarded? : s : Sort -> Ind : Univ s -> Term s Ind -> Guarded?.
-
+(; Returns a term
+     Fix2 fi { f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn } A body
+   Such that when applied to "guarded", it reduces to
+     body
+       Fix f1{ f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn }
+       ...
+       Fix fn{ f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn }
+;)
 def fix_proj_2 :
   s : Sort ->
   n : N -> MA : MutualArity s n ->
@@ -251,16 +292,20 @@ def fix_proj_2 :
   Term s A.
 
 [s,n,MA,MF,Ind,B,body,a,s1]
-  fix_proj_1 s n MA MF (SAc 0 _ (prod' s1 s _ Ind (x => B x))) body a
+  fix_proj_1 s n MA MF (SAcons 0 _ (prod' s1 s _ Ind (x => B x))) body a
   -->
   fix_proj_2 s n MA MF
     (prod' s1 s s Ind (x => B x))
     body (guarded? s1 Ind a) a.
 
+(; Returns a term
+     Fix3 A { k1 / A1, ..., kn / An }
+       f : (k -> Ak -> ... -> An -> A)
+       body
+   That reduces to   body (f 1) ... (f n) : A
+;)
 def fix_proj_3 :
   s : Sort ->
-  n : N -> MA : MutualArity s n ->
-  MutualFixpoint s n MA ->
   A : Univ s ->
   i : N -> MAi : MutualArity s i ->
   f : (k : N -> Term s (MA_ith_arity s i MAi k)) ->
@@ -270,23 +315,20 @@ def fix_proj_3 :
 [s,n,MA,MF,A,body]
   fix_proj_2 s n MA MF A body guarded
   -->
-  fix_proj_3 s n MA MF A n MA (k => fix_proj s n MA MF k) body.
+  fix_proj_3 s A n MA (k => fix_proj s n MA MF k) body.
 
-[body] fix_proj_3 _ _ _ _ _ _ (MAnil _) _ body --> body.
+[body] fix_proj_3 _ _ _ (MAnil _) _ body --> body.
 
-[s,n,MA,MF,i,MAi,A,f,body]
-  fix_proj_3 s n MA MF A
+[s,i,MAi,A,f,body]
+  fix_proj_3 s A
     _ (MAcons _ i _ MAi)
     f
     body
   -->
-  fix_proj_3 s n MA MF A
+  fix_proj_3 s A
     i MAi
     (k => f (S k))
     (body (f 0)).
-
-
-
 
 
 
@@ -369,8 +411,12 @@ def make_MA : s : Sort -> n : N -> MutualArity' s n n.
 
 
 
+(;-----------------------------------------------------------------;)
+(;------------  Short constructor of MutualFixpoint  --------------;)
+(;-----------------------------------------------------------------;)
 
-(;-----------------  Short constructor: fix  -----------------;)
+(; At this point try just to convince yourself the same thing
+  is happening here than above... ;)
 
 def MutualFixpoint' :
   (s : Sort) ->
@@ -389,7 +435,6 @@ def MutualFixpoint' :
   -->
   Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
   MutualFixpoint' s n MAn i MAi j MAj.
-
 
 def fix_magic :
   (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
@@ -410,7 +455,6 @@ def fix_magic :
   -->
   fix_magic s n MAn i MAi j MAj SA t (MFT t').
 
-
 def make_fix :
   (s : Sort) -> (n : N) -> (MAn : MutualArity s n) ->
   (i : N) -> (MAi : MutualArity s i) ->
@@ -426,17 +470,20 @@ def make_fix :
   -->
   fix_magic s n MAn j MAj j MAj SA t (make_fix s n MAn j MAj).
 
+
+
+
+(;-----------------------------------------------------------------;)
+(;----  Public symbols with convenient types and shorter names  ---;)
+(;-----------------------------------------------------------------;)
+
+def SA : N -> s : Sort -> Univ s -> SingleArity s  := SAcons.
+
 def fix :
   s : Sort ->
   n : N ->
   MA: MutualArity s n -> MutualFixpoint' s n MA n MA n MA.
-
 [s,n,MAn] fix s n MAn --> make_fix s n MAn n MAn.
-
-
-
-
-
 
 def fixproj :
   s : Sort ->
@@ -455,3 +502,49 @@ def fixproj :
   fix_proj s n
     (MA (make_MA s n))
     (MF (fix s n (MA (make_MA s n)))).
+
+
+
+(;-----------------------------------------------------------------;)
+(;--------------------------  Recap  ------------------------------;)
+(;-----------------------------------------------------------------;)
+(;
+
+To build a SingleArity   (k / A)
+  SA : N -> Univ s -> SingleArity
+
+To build a MutualArity  { k1 / A1, ..., kn / An }
+  make_MA : SingleArity -> ... (n) ... -> SingleArity -> MutualArity
+
+To build a MutualFixpoint  { k1 / A1 := body1, ..., kn / An := bodyn }
+  fix :
+    { k1 / A1, ..., kn / An } : MutualArity ->
+    (A1 -> ... -> An -> A1) ->
+    ...
+    (A1 -> ... -> An -> An) -> MutualFixpoint
+
+To build the i-th MutualFixpoint projection
+      Fix fi { f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn } : Ai
+  fix_proj :
+    { k1 / A1 := body1, ..., kn / An := bodyn } : MutualFixpoint ->
+    i : N -> Ai.
+
+
+And finally, to build all in a one liner:
+
+fixproj :
+    n : N ->
+
+    (c => c (k1 / A1)) ->
+    ...
+    (c => c (kn / An)) ->
+
+    (c => c body1) ->
+    ...
+    (c => c bodyn) ->
+
+    i : N
+
+
+This is well typed, somehow...
+;)

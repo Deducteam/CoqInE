@@ -10,9 +10,9 @@ A : Univ set.
 B : Univ set.
 C : Univ set.
 
-def SA_A : SingleArity set   := SAc 0 set A.
-def SA_B : SingleArity set   := SAc 0 set B.
-def SA_C : SingleArity set   := SAc 0 set C.
+def SA_A : SingleArity set   := SA 0 set A.
+def SA_B : SingleArity set   := SA 0 set B.
+def SA_C : SingleArity set   := SA 0 set C.
 def MA   : MutualArity set 3 := make_MA set 3 SA_A SA_B SA_C.
 def MFT  : MutualFixpoint set 3 MA :=
   fix set 3 MA (a => b => c => a) (a => b => c => b) (a => b => c => c).
@@ -140,7 +140,7 @@ f1 : n : Term set nat -> Term (type z) (P n) -> Term (type z) (P (Succ n)).
 
 (;     f0  /  0  :  forall n:nat, P n     ;)
 def nat__rect__SA : SingleArity (type z) :=
-  SAc 0 (type z) (prod set (type z) (type z) I nat (n => P n)).
+  SA 0 (type z) (prod set (type z) (type z) I nat (n => P n)).
 
 (;   { f0  /  0  :  forall n:nat, P n }   ;)
 def nat__rect__MA : MutualArity (type z) 1 :=
@@ -174,7 +174,7 @@ def nat__rect :
   P => f0 => f1 =>
   fixproj (type z) 1
     (c => c
-       (SAc 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
+       (SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
     (c => c
       (nat__rect => n =>
         match____nat (type z) (n0 : Term set nat => P n0)
@@ -215,7 +215,7 @@ def plus :
   Term set nat :=
   fixproj set 1
     (c=>c
-      (SAc 0 set
+      (SA 0 set
         (prod set set set I nat (x => prod set set set I nat (y => nat)))))
     (c=>c
       (plus => x => y =>
@@ -234,7 +234,7 @@ def times :
   Term set nat :=
   fixproj set 1
     (c=>c
-      (SAc 0 set
+      (SA 0 set
         (prod set set set I nat (x => prod set set set I nat (y => nat)))))
     (c=>c
       (times => x => y =>
@@ -339,7 +339,7 @@ def vect__rect :
 
   fixproj (type z) 1
     (c=>c
-      (SAc 0 (type z)
+      (SA 0 (type z)
         (prod set (type z) (type z) I nat
           (n => prod set (type z) (type z) I (vect n) (v => P n v)))))
     (c=>c
@@ -397,12 +397,12 @@ def vect__rec :
        I P).
 
 
-def f_Arity := SAc 2 set
+def f_Arity := SA 2 set
   ( prod set set set I nat      (acc =>
     prod set set set I nat      (n =>
     prod set set set I (vect n) (v => nat)))).
 
-def g_Arity := SAc 2 set
+def g_Arity := SA 2 set
   ( prod set set set I nat      (acc =>
     prod set set set I nat      (n =>
     prod set set set I (vect n) (v => nat)))).
@@ -465,7 +465,7 @@ def g := fix_proj set 2 fg_MA fg_FP 1.
 
 
 (;
-def bug_Arity := SAc 0 set (prod set set set I nat (i => nat)).
+def bug_Arity := SA 0 set (prod set set set I nat (i => nat)).
 
 def bug_MA := make_MA set 1 bug_Arity.
 
