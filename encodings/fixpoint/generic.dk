@@ -8,18 +8,18 @@
 (; Natural numbers ;)
 N : Type.
 0 : N.
-S : N -> N.
+_S : N -> N.
 
 (; Short names ;)
-def 1 := S 0.
-def 2 := S 1.
-def 3 := S 2.
-def 4 := S 3.
-def 5 := S 4.
-def 6 := S 5.
-def 7 := S 6.
-def 8 := S 7.
-def 9 := S 8.
+def 1 := _S 0.
+def 2 := _S 1.
+def 3 := _S 2.
+def 4 := _S 3.
+def 5 := _S 4.
+def 6 := _S 5.
+def 7 := _S 6.
+def 8 := _S 7.
+def 9 := _S 8.
 
 
 (;-----------------------------------------------------------------;)
@@ -60,14 +60,14 @@ MAnil  : s : Sort -> MutualArity s 0.
      An+1
      { k1 / A1, ..., kn / An }
 ;)
-MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (S n).
+MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (_S n).
 
 (;-----------------  Fetch Arity from Arity List  -----------------;)
 
 (;  Fetches  (ki / Ai)  from  { k1 / A1, ..., kn / An }  ;)
 def MA_ith_SA  : s : Sort -> n : N -> MutualArity s n -> N -> SingleArity s.
 [s,SA]     MA_ith_SA s _ (MAcons _ _ SA _) 0     --> SA.
-[s,n,i,MA] MA_ith_SA s _ (MAcons _ n _ MA) (S i) --> MA_ith_SA s n MA i.
+[s,n,i,MA] MA_ith_SA s _ (MAcons _ n _ MA) (_S i) --> MA_ith_SA s n MA i.
 
 (;-----------------  Fetch type from Arity List  ------------------;)
 
@@ -142,7 +142,7 @@ MFTcons :
   SA : SingleArity s ->
   Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
   MutualFixpointAux s n MAn i MAi ->
-  MutualFixpointAux s n MAn (S i) (MAcons s i SA MAi).
+  MutualFixpointAux s n MAn (_S i) (MAcons s i SA MAi).
 
 
 
@@ -174,12 +174,12 @@ def fix_body' :
 [s,n,MA,MF,i] fix_body s n MA MF i --> fix_body' s n MA n MA MF i.
 
 [s,n,MA,SA,t]
-  fix_body' s n MA (S _) (MAcons _ _ SA _)  (MFTcons _ _ _ _ _ _ t _  ) 0
+  fix_body' s n MA (_S _) (MAcons _ _ SA _)  (MFTcons _ _ _ _ _ _ t _  ) 0
   -->
   t.
 
 [s,n,MA,i,MAi,MFT,j]
-  fix_body' s n MA (S _) (MAcons _ i _ MAi) (MFTcons _ _ _ _ _ _ _ MFT) (S j)
+  fix_body' s n MA (_S _) (MAcons _ i _ MAi) (MFTcons _ _ _ _ _ _ _ MFT) (_S j)
   -->
   fix_body' s n MA i MAi MFT j.
 
@@ -268,7 +268,7 @@ def fix_proj_1 :
   fix_proj_1 s n MA MF (MA_ith_SA s n MA i) (fix_body s n MA MF i).
 
 [s,n,MA,MF,i,A,B,body,a,s1,s2]
-  fix_proj_1 s n MA MF (SAcons (S i) _ (prod' s1 s2 _ A (x => B x))) body a
+  fix_proj_1 s n MA MF (SAcons (_S i) _ (prod' s1 s2 _ A (x => B x))) body a
   -->
   fix_proj_1 s n MA MF
     (SAcons i s (lift s2 s (B a)))
@@ -327,7 +327,7 @@ def fix_proj_3 :
   -->
   fix_proj_3 s A
     i MAi
-    (k => f (S k))
+    (k => f (_S k))
     (body (f 0)).
 
 
@@ -338,23 +338,23 @@ def fix_proj_3 :
 
 (;  MA' s n i  =  SA -> ... (i) ... -> SA -> MA s n ;)
 def MutualArity' : Sort -> N -> N -> Type.
-[s,n  ] MutualArity' s n 0     --> MutualArity s n.
-[s,n,i] MutualArity' s n (S i) --> SingleArity s -> MutualArity' s n i.
+[s,n  ] MutualArity' s n 0      --> MutualArity s n.
+[s,n,i] MutualArity' s n (_S i) --> SingleArity s -> MutualArity' s n i.
 
 def MA_magic :
   s : Sort ->
   n : N -> m : N ->
   SingleArity s ->
-  MutualArity' s n m ->    (;  SA -> ...(m)... -> SA -> MA s n      ;)
-  MutualArity' s (S n) m.  (;  SA -> ...(m)... -> SA -> MA s (n+1)  ;)
+  MutualArity' s n      m -> (;  SA -> ...(m)... -> SA -> MA s n      ;)
+  MutualArity' s (_S n) m.   (;  SA -> ...(m)... -> SA -> MA s (n+1)  ;)
 
 (; Dark magic occuring here ;)
 [s,n  ,A,MA   ] MA_magic s n 0     A MA    --> MAcons s n A MA.
-[s,n,m,A,MA,A'] MA_magic s n (S m) A MA A' --> MA_magic s n m A (MA A').
+[s,n,m,A,MA,A'] MA_magic s n (_S m) A MA A' --> MA_magic s n m A (MA A').
 
 def make_MA : s : Sort -> n : N -> MutualArity' s n n.
 [s     ] make_MA s 0        --> MAnil s.
-[s,n,SA] make_MA s (S n) SA --> MA_magic s n n SA (make_MA s n).
+[s,n,SA] make_MA s (_S n) SA --> MA_magic s n n SA (make_MA s n).
 
 (; The idea here is quite complexe:
    1) First we start from a function
@@ -443,7 +443,7 @@ def fix_magic :
   SA : SingleArity s ->
   Term s (MA_lift_arity s (SA_arity s SA) n MAn) ->
   MutualFixpoint' s n MAn i     MAi                 j MAj ->
-  MutualFixpoint' s n MAn (S i) (MAcons s i SA MAi) j MAj.
+  MutualFixpoint' s n MAn (_S i) (MAcons s i SA MAi) j MAj.
 
 [s,n,MAn,i,MAi,SA,t,MFT]
   fix_magic s n MAn i MAi _ (MAnil _) SA t MFT
@@ -451,7 +451,7 @@ def fix_magic :
   MFTcons s n MAn i MAi SA t MFT.
 
 [s,n,MAn,i,MAi,j,MAj,SA,t,MFT,t']
-  fix_magic s n MAn i MAi (S _) (MAcons _ j _ MAj) SA t MFT t'
+  fix_magic s n MAn i MAi (_S _) (MAcons _ j _ MAj) SA t MFT t'
   -->
   fix_magic s n MAn i MAi j MAj SA t (MFT t').
 
@@ -466,7 +466,7 @@ def make_fix :
   MFTnil s n MAn.
 
 [s,n,MAn,j,MAj,SA,t]
-  make_fix s n MAn (S _) (MAcons _ j SA MAj) t
+  make_fix s n MAn (_S _) (MAcons _ j SA MAj) t
   -->
   fix_magic s n MAn j MAj j MAj SA t (make_fix s n MAn j MAj).
 
