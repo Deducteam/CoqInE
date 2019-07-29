@@ -9,7 +9,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Add Debug "Coq.Init.Specif".
 
-Dedukti Set Encoding "readable fix universo".
+Dedukti Set Encoding "universo readable fix".
 
 Require Import import.
 

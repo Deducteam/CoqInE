@@ -1,7 +1,5 @@
-
-type t =
-  {
-    simpl_letins_flag : bool;
+(**
+    simpl_letins : bool;
     (** Translate let-in as simpl beta redices or not ? *)
 
     polymorphism_flag : bool;
@@ -84,27 +82,25 @@ type t =
     t_fix_oneline  : string;
     t_guard        : string;
     t_guarded      : string;
-  }
+*)
 
-(* Some encodings *)
-val original      : t (** Ali's original encoding *)
-val original_cast : t (** Ali's original encoding with cast instead of lifted lambdas *)
-val polymorph     : t (** Polymorphism implementation *)
+val flag : string -> bool
+val symb : string -> string
 
-val named    : t -> t (** Encoding using named (rewritten) floating universe *)
-val readable : t -> t (** Encoding with shorter names and aliases for concrete universes *)
-
-val set : t -> unit
-(** Sets current encoding *)
-
-val get : unit -> t
-(** Gets current encoding *)
+val set_param  : string -> string -> unit
+val set_params : (string*string) list -> unit
+(** Sets given parameter to given value *)
 
 val set_encoding : string -> unit
-(** Selects an encoding from its name *)
-
-val set_parameter : string -> string -> unit
-(** Sets given parameter to given value *)
+(** Selects an encoding from its name
+    Some encodings:
+    - original      : Ali's original encoding
+    - original_cast : Ali's original encoding with cast instead of lifted lambdas
+    - polymorph     : Polymorphism implementation
+    - named    : Encoding modifier using named (rewritten) floating universe
+    - readable : Encoding modifier with shorter names and aliases for concrete universes
+    - fixpoint : Encoding modifier to use inlined fixpoint construction
+*)
 
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)

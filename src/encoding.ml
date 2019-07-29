@@ -1,217 +1,168 @@
 let flags     = Hashtbl.create 15
 let encodings = Hashtbl.create 15
 
-type t =
-  {
-    simpl_letins_flag         : bool;
-    polymorphism_flag         : bool;
-    templ_polymorphism_flag   : bool;
-    float_univ_flag           : bool;
-    constraints_flag          : bool;
-    named_univ_flag           : bool;
-    readable_translation_flag : bool;
-    cast_flag                 : bool;
-    lifted_type_pattern       : string;
-    pred_univ_flag            : bool;
-    pred_prod_flag            : bool;
-    pred_lift_flag            : bool;
-    pred_cast_flag            : bool;
-    priv_lift_flag            : bool;
-    priv_cast_flag            : bool;
-    priv_univ_flag            : bool;
-    priv_prod_flag            : bool;
-    encoding_name   : string;
-    system_module   : string;
-    universe_module : string;
-    t_Sort  : string;
-    t_Univ  : string;
-    t_Term  : string;
-    t_axiom : string;
-    t_sup   : string;
-    t_rule  : string;
-    t_univ  : string;
-    t_prod  : string;
-    t_lift  : string;
-    t_cast  : string;
-    t_I     : string;
-    t_priv_lift   : string;
-    t_priv_cast   : string;
-    t_priv_univ   : string;
-    t_priv_prod   : string;
-    t_priv_code   : string;
-    t_priv_uncode : string;
-    inlined_fixpoint_flag : bool;
-    t_0            : string;
-    t_S            : string;
-    t_SA           : string;
-    t_MA           : string;
-    t_fix          : string;
-    t_fix_proj     : string;
-    t_fix_oneline  : string;
-    t_guard         : string;
-    t_guarded       : string;
-  }
+let flag = Hashtbl.find flags
+let symb = Hashtbl.find encodings
 
-let original =
-  {
-    simpl_letins_flag         = true;
-    polymorphism_flag         = false;
-    templ_polymorphism_flag   = false;
-    constraints_flag          = false;
-    float_univ_flag           = false;
-    named_univ_flag           = false;
-    readable_translation_flag = false;
-    cast_flag                 = false;
-    lifted_type_pattern       = "lift";
-    pred_univ_flag            = false;
-    pred_prod_flag            = false;
-    pred_lift_flag            = false;
-    pred_cast_flag            = false;
-    priv_lift_flag            = false;
-    priv_cast_flag            = false;
-    priv_univ_flag            = false;
-    priv_prod_flag            = false;
-    encoding_name = "original";
-    system_module   = "Coq";
-    universe_module = "U";
-    t_Sort = "Sort";
-    t_Univ = "Univ";
-    t_Term = "Term";
-    t_axiom = "axiom";
-    t_sup = "sup";
-    t_rule = "rule";
-    t_univ = "univ";
-    t_prod = "prod";
-    t_lift = "lift";
-    t_cast = "cast";
-    t_I    = "I";
-    t_priv_lift   = "lift'";
-    t_priv_cast   = "cast'";
-    t_priv_univ   = "univ'";
-    t_priv_prod   = "prod'";
-    t_priv_code   = "c";
-    t_priv_uncode = "u";
-    inlined_fixpoint_flag = false;
-    t_0            = "0";
-    t_S            = "_S";
-    t_SA           = "SA";
-    t_MA           = "make_MA";
-    t_fix          = "fix";
-    t_fix_proj     = "fix_proj";
-    t_fix_oneline  = "fixproj";
-    t_guard         = "guarded?";
-    t_guarded       = "guarded";
-  }
+let set_param key value =
+  if Hashtbl.mem flags key
+  then
+    Hashtbl.replace flags key
+      ( match value with
+        | "true" -> true
+        | "false" -> false
+        | _ -> failwith ("Wrong value for key " ^ key ^ ": " ^ value)
+      )
+  else if Hashtbl.mem encodings key
+  then Hashtbl.replace encodings key value
+  else failwith ("Wrong key: " ^ key)
 
-let lift_priv =
-  { original with
-    pred_univ_flag = true;
-    pred_prod_flag = true;
-    pred_lift_flag = true;
-    priv_lift_flag = true;
-    priv_univ_flag = true;
-    priv_prod_flag = true;
-    encoding_name  = "private_lift";
-  }
+let set_params = List.iter (fun (x,y) -> set_param x y)
 
-let universo =
-  { lift_priv with
-    cast_flag           = true; (* Use casts instead of lifts *)
-    pred_cast_flag      = true; (* They take a predicate argument *)
-    constraints_flag          = true;
-    polymorphism_flag         = true;
-    templ_polymorphism_flag   = true;
-    priv_cast_flag      = true;
-    lifted_type_pattern = "cast";
+let init () =
+  List.iter (fun (x,y) -> Hashtbl.replace encodings x y)
+    [
+      ("encoding_name", "original");
+      ("lifted_type_pattern", "lift");
+      ("system_module"  , "Coq");
+      ("universe_module", "U");
+      ("Sort" , "Sort");
+      ("Univ" , "Univ");
+      ("Term" , "Term");
+      ("axiom", "axiom");
+      ("sup"  , "sup");
+      ("rule" , "rule");
+      ("univ" , "univ");
+      ("prod" , "prod");
+      ("lift" , "lift");
+      ("cast" , "cast");
+      ("I"    , "I");
+      ("priv_lift"  , "lift'");
+      ("priv_cast"  , "cast'");
+      ("priv_univ"  , "univ'");
+      ("priv_prod"  , "prod'");
+      ("priv_code"  , "code");
+      ("priv_uncode", "uncode");
+      ("0"          , "0");
+      ("S"          , "_S");
+      ("SA"         , "SA");
+      ("MA"         , "make_MA");
+      ("fix"        , "fix");
+      ("fix_proj"   , "fix_proj");
+      ("fix_oneline", "fixproj");
+      ("guard"      , "guarded?");
+      ("guarded"    , "guarded")
+    ];
+  List.iter (fun (x,y) -> Hashtbl.replace flags x y)
+    [
+      ("simpl_letins"      , true);
+      ("polymorphism"      , false);
+      ("templ_polymorphism", false);
+      ("float_univ"        , false);
+      ("constraints"       , false);
+      ("named_univ"        , false);
+      ("readable"          , false);
+      ("cast"              , false);
+      ("pred_univ"         , false);
+      ("pred_prod"         , false);
+      ("pred_lift"         , false);
+      ("pred_cast"         , false);
+      ("priv_lift"         , false);
+      ("priv_cast"         , false);
+      ("priv_univ_flag"    , false);
+      ("priv_prod"         , false);
+      ("inlined_fixpoint"  , false)
+    ]
+let _ = init ()
+
+let lift_priv () =
+  init();
+  set_params [
+    "pred_univ", "true";
+    "pred_prod", "true";
+    "pred_lift", "true";
+    "priv_lift", "true";
+    "priv_univ_flag", "true";
+    "priv_prod", "true"
+  ]
+
+let universo () =
+  lift_priv();
+  set_params [
+    "cast"               , "true"; (* Use casts instead of lifts *)
+    "pred_cast"          , "true"; (* They take a predicate argument *)
+    "constraints"        , "true";
+    "polymorphism"       , "true";
+    "templ_polymorphism" , "true";
+    "priv_cast"          , "true";
+    "lifted_type_pattern", "cast";
     (* Universe lifting pattern are private cast *)
-    encoding_name  = "universo";
-  }
-
-let original_cast =
-  { original with
-    cast_flag = true; (* Casts are used for lifting functions *)
-                      (* .. but lifts are still normal forms for universe lifting *)
-    encoding_name = "original_cast";
-  }
-
-let template_cast =
-  { original_cast with
-    templ_polymorphism_flag = true; (* Template polymorphism *)
-    encoding_name = "template_cast";
-  }
-
-let polymorph =
-  { original with
-    polymorphism_flag         = true;
-    templ_polymorphism_flag   = true;
-    constraints_flag          = true;
-    cast_flag                 = true;  (* Use casts instead of lifts *)
-    pred_cast_flag            = true;  (* Casts take subtype predicate argument *)
-    priv_lift_flag = false;
-    priv_cast_flag = true;
-    priv_univ_flag = true;
-    priv_prod_flag = true;
-    lifted_type_pattern = "cast"; (* Casted type pattern *)
-    encoding_name = "polymorphism";
-  }
+  ]
 
 
+(* Casts are used for lifting functions *)
+(* but lifts are still normal forms for universe lifting *)
+let original_cast () =
+  init();
+  set_param "cast" "true"
 
-let named enc =
-  { enc with
-    named_univ_flag = true;
-    encoding_name = "named_" ^ enc.encoding_name;
-  }
+let template_cast () =
+  original_cast ();
+  set_param "templ_polymorphism" "true" (* Template polymorphism *)
 
-let readable enc =
-  {
-    enc with
-    readable_translation_flag = true;
-    encoding_name = "readable_" ^ enc.encoding_name;
-    system_module = "C";
-    t_Sort = "S";
-    t_Univ = "U";
-    t_Term = "T";
-    t_univ = "u";
-    t_priv_univ = "u'";
-  }
-
-let fixpointed enc =
-  { enc with
-    inlined_fixpoint_flag = true;
-    encoding_name = "fix_" ^ enc.encoding_name;
-  }
+let polymorph () =
+  init();
+  set_params [
+    "polymorphism"       , "true";
+    "templ_polymorphism" , "true";
+    "constraints"        , "true";
+    "cast"               , "true";  (* Use casts instead of lifts *)
+    "pred_cast"          , "true";  (* Casts take subtype predicate argument *)
+    "priv_lift"          , "false";
+    "priv_cast"          , "true";
+    "priv_univ_flag"          , "true";
+    "priv_prod"          , "true";
+    "lifted_type_pattern", "cast"; (* Casted type pattern *)
+  ]
 
 
-let current_encoding   = ref (named original_cast)
+let named () = set_param "named_univ" "true"
 
-let set enc = current_encoding := enc
-let get () = !current_encoding
-let rec get_encoding e =
-  if Utils.str_starts_with "readable " e
-  then readable (get_encoding (Utils.truncate e 9))
-  else if Utils.str_starts_with "named " e
-  then named (get_encoding (Utils.truncate e 6))
-  else if Utils.str_starts_with "fix " e
-  then fixpointed (get_encoding (Utils.truncate e 4))
-  else match String.trim e with
-    | "original"      -> original
-    | "original_cast" -> original_cast
-    | "template_cast" -> template_cast
-    | "lift_priv"     -> lift_priv
-    | "universo"      -> universo
-    | "polymorph"     -> polymorph
-    | invalid_name -> failwith (Format.sprintf "Unknown encoding: %s" invalid_name)
-let set_encoding e = set (get_encoding e)
+let readable () = set_params
+    [ "readable","true" ;
+      "system_module", "C";
+      "Sort", "S";
+      "Univ", "U";
+      "Term", "T";
+      "univ", "u";
+      "priv_univ", "u'" ]
 
-let set_parameter key value = ()
+let fixpointed () = set_param "inlined_fixpoint" "true"
 
-let is_polymorphism_on       () = (get()).polymorphism_flag
-let is_templ_polymorphism_on () = (get()).templ_polymorphism_flag
-let is_constraints_on        () = (get()).constraints_flag
-let is_named_univ_on         () = (get()).named_univ_flag
-let is_float_univ_on         () = (get()).float_univ_flag
-let is_readable_on           () = (get()).readable_translation_flag
-let is_cast_on               () = (get()).cast_flag
-let is_letins_simpl          () = (get()).simpl_letins_flag
-let is_fixpoint_inlined      () = (get()).inlined_fixpoint_flag
+let set_encoding s =
+  let keywords = Str.split (Str.regexp "[ \t]+") s in
+  List.iter
+    (function
+      | "readable" -> readable ()
+      | "named" -> named ()
+      | "fix" -> fixpointed ()
+      | "original"      -> init ()
+      | "original_cast" -> original_cast ()
+      | "template_cast" -> template_cast ()
+      | "lift_priv"     -> lift_priv ()
+      | "universo"      -> universo ()
+      | "polymorph"     -> polymorph ()
+      | invalid_name ->
+        failwith (Format.sprintf "Unknown encoding keyword: %s" invalid_name))
+    keywords;
+  set_param "encoding_name" s
+
+let is_polymorphism_on       () = flag "polymorphism"
+let is_templ_polymorphism_on () = flag "templ_polymorphism"
+let is_constraints_on        () = flag "constraints"
+let is_named_univ_on         () = flag "named_univ"
+let is_float_univ_on         () = flag "float_univ"
+let is_readable_on           () = flag "readable"
+let is_cast_on               () = flag "cast"
+let is_letins_simpl          () = flag "simpl_letins"
+let is_fixpoint_inlined      () = flag "inlined_fixpoint"

@@ -89,9 +89,8 @@ VERNAC COMMAND EXTEND DeduktiSetEncoding CLASSIFIED AS QUERY
 | [ "Dedukti" "Set" "Encoding" string(enc) ] ->
   [ Encoding.set_encoding enc ]
 END
-(*
-VERNAC COMMAND EXTEND DeduktiSetEncoding CLASSIFIED AS QUERY
-| [ "Dedukti" "Set" "Parameter" string(key) string(value) ] ->
-  [ Encoding.set_parameter key value ]
+
+VERNAC COMMAND EXTEND DeduktiSetParam CLASSIFIED AS QUERY
+| [ "Dedukti" "Set" "Param" string(key) string(value) ] ->
+  [ Encoding.set_param key value ]
 END
-*)
