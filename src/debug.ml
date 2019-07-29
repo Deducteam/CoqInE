@@ -51,7 +51,7 @@ let pp_t = pp_with
 
 let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
-let pp_coq_term  = 
+let pp_coq_term  =
   let (sigma, env) = Pfedit.get_current_context () in
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
 let pp_coq_type  =
@@ -101,6 +101,16 @@ let pp_coq_env fmt e =
   fprintf fmt "%a\n%a"
     pp_coq_ctxt       (Environ.rel_context e)
     pp_coq_named_ctxt (Environ.named_context e)
+
+let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
+  let (rec_indices, i), (names, types, bodies) = fp in
+  let n = Array.length names in
+  let bodies = Array.init n (fun i -> (names.(i), types.(i), bodies.(i))) in
+  let pp_bodies fmt (n,t,b) =
+    fprintf fmt "%a : %a :=@.  %a,"
+      pp_coq_name n pp_coq_term t pp_coq_term b in
+  fprintf fmt "Fix %a@.  { %a }" pp_coq_name names.(i) (pp_array "@." pp_bodies) bodies
+
 
 let pp_globname fmt n =
   fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)

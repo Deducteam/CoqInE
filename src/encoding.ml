@@ -1,13 +1,9 @@
-
-type lifted_type_pattern =
-  | AsLift
-  | AsCast
-  | AsUncodedCode
+let flags     = Hashtbl.create 15
+let encodings = Hashtbl.create 15
 
 type t =
   {
     simpl_letins_flag         : bool;
-    unsafe_fixpoints_flag     : bool;
     polymorphism_flag         : bool;
     templ_polymorphism_flag   : bool;
     float_univ_flag           : bool;
@@ -15,7 +11,7 @@ type t =
     named_univ_flag           : bool;
     readable_translation_flag : bool;
     cast_flag                 : bool;
-    lifted_type_pattern       : lifted_type_pattern;
+    lifted_type_pattern       : string;
     pred_univ_flag            : bool;
     pred_prod_flag            : bool;
     pred_lift_flag            : bool;
@@ -44,12 +40,21 @@ type t =
     t_priv_prod   : string;
     t_priv_code   : string;
     t_priv_uncode : string;
+    inlined_fixpoint_flag : bool;
+    t_0            : string;
+    t_S            : string;
+    t_SA           : string;
+    t_MA           : string;
+    t_fix          : string;
+    t_fix_proj     : string;
+    t_fix_oneline  : string;
+    t_guard         : string;
+    t_guarded       : string;
   }
 
 let original =
   {
     simpl_letins_flag         = true;
-    unsafe_fixpoints_flag     = false;
     polymorphism_flag         = false;
     templ_polymorphism_flag   = false;
     constraints_flag          = false;
@@ -57,7 +62,7 @@ let original =
     named_univ_flag           = false;
     readable_translation_flag = false;
     cast_flag                 = false;
-    lifted_type_pattern       = AsLift;
+    lifted_type_pattern       = "lift";
     pred_univ_flag            = false;
     pred_prod_flag            = false;
     pred_lift_flag            = false;
@@ -86,6 +91,16 @@ let original =
     t_priv_prod   = "prod'";
     t_priv_code   = "c";
     t_priv_uncode = "u";
+    inlined_fixpoint_flag = false;
+    t_0            = "0";
+    t_S            = "_S";
+    t_SA           = "SA";
+    t_MA           = "make_MA";
+    t_fix          = "fix";
+    t_fix_proj     = "fix_proj";
+    t_fix_oneline  = "fixproj";
+    t_guard         = "guarded?";
+    t_guarded       = "guarded";
   }
 
 let lift_priv =
@@ -107,7 +122,7 @@ let universo =
     polymorphism_flag         = true;
     templ_polymorphism_flag   = true;
     priv_cast_flag      = true;
-    lifted_type_pattern = AsCast;
+    lifted_type_pattern = "cast";
     (* Universe lifting pattern are private cast *)
     encoding_name  = "universo";
   }
@@ -136,7 +151,7 @@ let polymorph =
     priv_cast_flag = true;
     priv_univ_flag = true;
     priv_prod_flag = true;
-    lifted_type_pattern = AsCast; (* Casted type pattern *)
+    lifted_type_pattern = "cast"; (* Casted type pattern *)
     encoding_name = "polymorphism";
   }
 
@@ -161,6 +176,12 @@ let readable enc =
     t_priv_univ = "u'";
   }
 
+let fixpointed enc =
+  { enc with
+    inlined_fixpoint_flag = true;
+    encoding_name = "fix_" ^ enc.encoding_name;
+  }
+
 
 let current_encoding   = ref (named original_cast)
 
@@ -171,6 +192,8 @@ let rec get_encoding e =
   then readable (get_encoding (Utils.truncate e 9))
   else if Utils.str_starts_with "named " e
   then named (get_encoding (Utils.truncate e 6))
+  else if Utils.str_starts_with "fix " e
+  then fixpointed (get_encoding (Utils.truncate e 4))
   else match String.trim e with
     | "original"      -> original
     | "original_cast" -> original_cast
@@ -181,6 +204,8 @@ let rec get_encoding e =
     | invalid_name -> failwith (Format.sprintf "Unknown encoding: %s" invalid_name)
 let set_encoding e = set (get_encoding e)
 
+let set_parameter key value = ()
+
 let is_polymorphism_on       () = (get()).polymorphism_flag
 let is_templ_polymorphism_on () = (get()).templ_polymorphism_flag
 let is_constraints_on        () = (get()).constraints_flag
@@ -189,4 +214,4 @@ let is_float_univ_on         () = (get()).float_univ_flag
 let is_readable_on           () = (get()).readable_translation_flag
 let is_cast_on               () = (get()).cast_flag
 let is_letins_simpl          () = (get()).simpl_letins_flag
-let is_fixpoints_unsage      () = (get()).unsafe_fixpoints_flag
+let is_fixpoint_inlined      () = (get()).inlined_fixpoint_flag

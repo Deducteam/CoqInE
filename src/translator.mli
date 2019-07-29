@@ -73,4 +73,6 @@ sig
 
   val coq_header : unit -> instruction list
   val coq_footer : unit -> instruction list
+  val coq_fixpoint : term -> int -> (int*term) array -> term array -> int -> term
+  val coq_guarded : string -> int -> instruction
 end

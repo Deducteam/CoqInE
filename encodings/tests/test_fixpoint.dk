@@ -255,8 +255,8 @@ def _10000 := times _10 _1000.
 #CHECK times _100 _10 == times _10 _100.
 
 (;
-#PRINT "  100*100=10*1000 ?".
-#CHECK times _100 _100 == times _10 _1000.
+#PRINT "  1000*10=10*1000 ?".
+#CHECK times _1000 _10 == times _10 _1000.
 ;)
 
 vect :

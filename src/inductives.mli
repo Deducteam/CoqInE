@@ -5,7 +5,6 @@ type ind_infos
 (** Extract inductive infos from Coq representation *)
 val get_infos : Declarations.mutual_inductive_body -> int -> ind_infos
 
-
 (** Translate the given inductive type.
 Handles both regular inductive type (no polymorphism):
     I : p1 : ||P1|| -> ... -> pr : ||Pr|| ->
@@ -134,4 +133,13 @@ val translate_match :
         pr
 *)
 val translate_match_subtyping :
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
+
+(** Fixpoint definition require to identify properly constructor-guarded expression.
+    For all cl, l-th constructors of the given inductive type we generate:
+      guarded? _ _ (ci s1 ... si' ... sk p1 ... pr a1 ... an)
+      -->
+      guarded
+*)
+val translate_guarded :
   Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit

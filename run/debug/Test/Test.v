@@ -1,6 +1,4 @@
 
-
-
 Inductive list {A:Type} : Type :=
 | Nil : list
 | Cons : A -> list -> list.

@@ -190,7 +190,15 @@ def fix_body' :
 (;-----------------------------------------------------------------;)
 
 (; We should not need this ! ;)
-def lift (s : Sort) (s' : Sort) := cast' s s' (univ' s s) (univ' s' s').
+def lift' (s : Sort) (s' : Sort) (t:Univ s) := uncode (cU s') (code (cU s) t).
+
+def prod' (s1:Sort) (s2:Sort) (s:Sort) (A:Univ s1) (B:(Term s1 A -> Univ s2)) : Univ s :=
+  uncode
+    (cU s)
+    (cPi
+      (code (cU s1) A)
+      (x => code (cU s2) (B (uncode (code (cU s1) A) x)))).
+
 
 (; Input:
      { k1 / A1, ..., kn / An }
@@ -208,9 +216,9 @@ def app_body :
   s2 : Sort ->
   A : Univ s1 ->
   B : (Term s1 A -> Univ s2) ->
-  body : Term s (MA_lift_arity s (prod' s1 s2 s A (x => B x)) n MA) ->
+  body : Term s (MA_lift_arity s (prod' s1 s2 s A B) n MA) ->
   a : Term s1 A ->
-  Term s (MA_lift_arity s (lift s2 s (B a)) n MA).
+  Term s (MA_lift_arity s (lift' s2 s (B a)) n MA).
 
 [body,a]
   app_body _ _ (MAnil _) _ _ _ _ body a --> body a.
@@ -271,7 +279,7 @@ def fix_proj_1 :
   fix_proj_1 s n MA MF (SAcons (_S i) _ (prod' s1 s2 _ A (x => B x))) body a
   -->
   fix_proj_1 s n MA MF
-    (SAcons i s (lift s2 s (B a)))
+    (SAcons i s (lift' s2 s (B a)))
     (app_body s n MA s1 s2 A (x => B x) body a).
 
 (; Returns a term

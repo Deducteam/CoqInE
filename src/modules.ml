@@ -70,7 +70,8 @@ let translate_constant_body info env label const =
 
 (** Translate the body of mutual inductive definitions [mind]. *)
 let translate_mutual_inductive_body info env label mind_body =
-  debug "Translating inductive body: %s" (Names.Label.to_string label);
+  debug "Translating inductive: %s" (Names.Label.to_string label);
+
   let ntypes = mind_body.mind_ntypes in
   let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
   (* First declare all the inductive types. Constructors of one inductive type
@@ -86,6 +87,12 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
   done;
+  (* Then declare all the guard definitions *)
+  if Encoding.is_fixpoint_inlined ()
+  then
+    for i = 0 to pred ntypes do
+      Inductives.translate_guarded info env label inds.(i)
+    done;
   (* Then extend subtyping to inductive constructors *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors_subtyping info env label inds.(i)

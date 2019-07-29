@@ -322,16 +322,16 @@ let rec translate_constr ?expected_type info env uenv t =
     translate_cast info uenv t' env a env b
 
   | Prod(x, a, b) ->
-      let x = Cname.fresh_name ~default:"_" info env x in
-      let x' = Cname.translate_name x in
-      let a_sort = infer_translate_sort info env uenv a in
-      let a'  = translate_constr info env uenv a in
-      let a'' = translate_types  info env uenv a in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
-      let b_sort = infer_translate_sort info new_env uenv b in
-      (* TODO: Should x really be in the environment when translating b's sort ? *)
-      let b' = translate_constr info new_env uenv b in
-      T.coq_prod a_sort b_sort a' (Dedukti.lam (x', a'') b')
+    let x = Cname.fresh_name ~default:"_" info env x in
+    let x' = Cname.translate_name x in
+    let a_sort = infer_translate_sort info env uenv a in
+    let a'  = translate_constr info env uenv a in
+    let a'' = translate_types  info env uenv a in
+    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
+    let b_sort = infer_translate_sort info new_env uenv b in
+    (* TODO: Should x really be in the environment when translating b's sort ? *)
+    let b' = translate_constr info new_env uenv b in
+    T.coq_prod a_sort b_sort a' (Dedukti.lam (x', a'') b')
 
   | Lambda(x, a, t) ->
     let x = Cname.fresh_name ~default:"_" info env x in
@@ -402,30 +402,33 @@ let rec translate_constr ?expected_type info env uenv t =
     let ind = Names.inductive_of_constructor kn in
     Tsorts.instantiate_ind_univ_params env uenv name ind univ_instance
 
-  | Fix((rec_indices, i), ((names, types, bodies) as rec_declaration)) ->
-    let n = Array.length names in
-    debug "Translating %i fixpoints:" n;
-    for i = 0 to n - 1 do
-      debug "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
-      debug "body:  %a" pp_coq_term bodies.(i);
-    done;
-    let n = Array.length names in
-    (* TODO: not the whole environment should be added here, only the relevant part
-       i.e. variables that occur in the body of the fixpoint *)
-    let env, fix_declarations =
-      let fsig = fixpoint_signature env rec_declaration in
-      try Hashtbl.find fixpoint_table fsig
-      with Not_found ->
-        let res = lift_fix info env uenv names types bodies rec_indices in
-        Hashtbl.add fixpoint_table fsig res;
-        res
-    in
-    let new_env =
-      Array.fold_left
-        (fun env declaration -> Environ.push_rel declaration env)
-        env fix_declarations in
-    translate_constr info new_env uenv (Constr.mkRel (n - i))
-
+  | Fix (((rec_indices, i), ((names, types, bodies) as rec_declaration)) as fp) ->
+    if Encoding.is_fixpoint_inlined ()
+    then translate_fixpoint info env uenv fp (Array.map (infer_type env) types)
+    else
+      begin
+        let n = Array.length names in
+        debug "Translating %i fixpoints:" n;
+        for i = 0 to n - 1 do
+          debug "%i -> %a : %a" i pp_coq_name names.(i) pp_coq_term types.(i);
+          debug "body:  %a" pp_coq_term bodies.(i);
+        done;
+        (* TODO: not the whole environment should be added here, only the relevant part
+           i.e. variables that occur in the body of the fixpoint *)
+        let env, fix_declarations =
+          let fsig = fixpoint_signature env rec_declaration in
+          try Hashtbl.find fixpoint_table fsig
+          with Not_found ->
+            let res = lift_fix info env uenv names types bodies rec_indices in
+            Hashtbl.add fixpoint_table fsig res;
+            res
+        in
+        let new_env =
+          Array.fold_left
+            (fun env declaration -> Environ.push_rel declaration env)
+            env fix_declarations in
+        translate_constr info new_env uenv (Constr.mkRel (n - i))
+      end
   | Case(case_info, return_type, matched, branches) ->
     debug "Test";
     let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
@@ -484,7 +487,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
 
 and translate_cast info uenv t' enva a envb b =
-  debug "Casting %a from %a to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
+  debug "Casting %a@.from %a@.to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
   if Encoding.is_cast_on () then
     let s1' = infer_translate_sort info enva uenv a in
     let s2' = infer_translate_sort info envb uenv b in
@@ -558,6 +561,44 @@ and translate_types info env uenv a =
     let s' = infer_translate_sort info env uenv a in
     let a' = translate_constr info env uenv a in
     T.coq_term s' a'
+
+and translate_sort uenv t =
+  match Term.kind_of_type t with
+  | SortType s -> T.coq_universe (Tsorts.translate_sort uenv s)
+  | CastType (a', _) -> translate_sort uenv a'
+  | _ -> assert false
+
+
+
+(** Translation of   Fix fi { f1 / k1 : A1 := t1, ..., fn / kn : An := tn }  *)
+and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfixpoint) sorts =
+  let (rec_indices, i), (names, types, bodies) = fp in
+  debug "Translating fixpoint:@.%a" pp_fixpoint fp;
+  let n = Array.length names in
+  (* Retrieving the sorts si of all the Ai these have to be made explicit in the translation. *)
+  let sort' = Array.map (translate_sort uenv) sorts in
+  let sort' = sort'.(0) in
+  (* List of all (ki, Ai') where Ai' is Ai translated in current context *)
+  let arities' =
+    Array.init n
+      (fun i -> rec_indices.(i),
+                translate_constr ~expected_type:sorts.(i) info env uenv types.(i) ) in
+  (* Fresh names fi' for the fi *)
+  let fresh_names = Array.map (Cname.fresh_name ~default:"_" info env) names in
+  let names' = Array.map Cname.translate_name fresh_names in
+  (* Computing the extended context where all recursive function symbols are added *)
+  let ext_env = Environ.push_rec_types (fresh_names,types,types) env in
+  (* Lifted Ai to represent the same term in the extended context *)
+  let lifted_types = Array.map (fun ty -> Vars.lift n ty) types in
+  (* Bodi ti is translated as   f1' => ... fn' => ti'   *)
+  let add_lams t =
+    Array.fold_left (fun t name -> Dedukti.ulam name t) t names' in
+  (* Translating the ti to ti' in the extended context *)
+  let bodies' = Array.init n (fun i ->
+      add_lams (translate_constr ~expected_type:lifted_types.(i) info ext_env uenv bodies.(i))) in
+  T.coq_fixpoint sort' n arities' bodies' i
+
+
 
 and lift_let info env uenv x u a =
   let y = Cname.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info env x in

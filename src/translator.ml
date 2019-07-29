@@ -107,7 +107,7 @@ struct
        then [cu s1; cu s2; t_I(); t]
        else [cu s1; cu s2;        t])
 
-  
+
   let cstr_le cu s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
   let cstr_lt cu s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
 
@@ -194,7 +194,7 @@ struct
   let coq_pattern_universe = Std.coq_pattern_universe
 
   let a () = not (is_readable_on ())
-  
+
   let coq_universe s = if a () then Std.cu       s else Short.scu        s
   let coq_U        s = if a () then Std.coq_U    s else Short.short_U    s
   let coq_term     s = if a () then Std.coq_term s else Short.short_term s
@@ -217,11 +217,11 @@ struct
            then [var s; wildcard; wildcard]
            else [var s]) in
     match (get()).lifted_type_pattern with
-    | AsLift ->
+    | "lift" ->
       (if (get()).pred_lift_flag
          then apps (coq_var (get()).t_priv_lift) [var s;wildcard;t]
          else apps (coq_var (get()).t_lift     ) [var s;wildcard;t])
-    | AsCast ->
+    | "cast" ->
       if (get()).priv_cast_flag
       then apps (coq_var (get()).t_priv_cast) [wildcard;wildcard;univ s;wildcard;t]
       else
@@ -233,12 +233,39 @@ struct
           (if (get()).pred_cast_flag
            then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
            else [wildcard;wildcard;univ s;uwildcard;t])
-    | AsUncodedCode ->
+    | "uncodedcode" ->
       let c = coq_var (get()).t_priv_code in
       let u = coq_var (get()).t_priv_uncode in
       apps u [univ s;apps c [wildcard;t]]
+    | s -> assert false
 
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s
   let coq_footer  () = coq_footer
+
+  let coq_fixpoint sort n arities bodies i =
+    let coq_N n =
+      assert (n >= 0);
+      if n < 10 then coq_var (string_of_int n)
+      else Utils.iterate n (app (coq_var (get()).t_S)) (coq_var (get()).t_0) in
+    let coq_arity (k,a) =
+      apps (coq_var (get()).t_SA) [coq_N k; sort; a] in
+    assert (Encoding.is_fixpoint_inlined ());
+    assert (Array.length arities = n);
+    assert (Array.length bodies = n);
+    assert (i < n);
+    let make_arities =
+      ulam "c" (apps (var "c") (Array.to_list (Array.map coq_arity arities))) in
+    let make_bodies =
+      ulam "c" (apps (var "c") (Array.to_list bodies)) in
+    apps
+      (coq_var (get()).t_fix_oneline)
+      [ sort; coq_N n; make_arities; make_bodies; coq_N i]
+
+  let coq_guarded consname args =
+    let applied_cons = Utils.iterate args (fun x -> app x wildcard) (var consname) in
+    let lhs = apps (coq_var (get()).t_guard) [wildcard; wildcard; applied_cons] in
+    let rhs = coq_var (get()).t_guarded in
+    rewrite ([],lhs,rhs)
+
 end

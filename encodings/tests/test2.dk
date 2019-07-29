@@ -2,23 +2,23 @@
 (;-----------------  Example that should typecheck  ---------------;)
 (;-----------------------------------------------------------------;)
 
-def n0 :=    z. def 0 := type n0. def U0 := Univ 0.
-def n1 := s n0. def 1 := type n1. def U1 := Univ 1. def u0 : U1 := univ 0 1 I.
-def n2 := s n1. def 2 := type n2. def U2 := Univ 2. def u1 : U2 := univ 1 2 I.
-def n3 := s n2. def 3 := type n3. def U3 := Univ 3. def u2 : U3 := univ 2 3 I.
-def n4 := s n3. def 4 := type n4. def U4 := Univ 4. def u3 : U4 := univ 3 4 I.
-def n5 := s n4. def 5 := type n5. def U5 := Univ 5. def u4 : U5 := univ 4 5 I.
+def n0 :=    z. def t0 := type n0. def U0 := Univ t0.
+def n1 := s n0. def t1 := type n1. def U1 := Univ t1. def u0 : U1 := univ t0 t1 I.
+def n2 := s n1. def t2 := type n2. def U2 := Univ t2. def u1 : U2 := univ t1 t2 I.
+def n3 := s n2. def t3 := type n3. def U3 := Univ t3. def u2 : U3 := univ t2 t3 I.
+def n4 := s n3. def t4 := type n4. def U4 := Univ t4. def u3 : U4 := univ t3 t4 I.
+def n5 := s n4. def t5 := type n5. def U5 := Univ t5. def u4 : U5 := univ t4 t5 I.
 
-def l12 := cast 2 3 u1 u2 I.
-def l13 := cast 2 4 u1 u3 I.
-def l23 := cast 3 4 u2 u3 I.
-def l24 := cast 3 5 u2 u4 I.
-def l34 := cast 4 5 u3 u4 I.
+def l12 := cast t2 t3 u1 u2 I.
+def l13 := cast t2 t4 u1 u3 I.
+def l23 := cast t3 t4 u2 u3 I.
+def l24 := cast t3 t5 u2 u4 I.
+def l34 := cast t4 t5 u3 u4 I.
 
 
 
 (; Type2 : Type3 < Type3 ;)
-def u2' : U3 := cast 4 4 u3 u3 I u2.
+def u2' : U3 := cast t4 t4 u3 u3 I u2.
 
 #ASSERT u2' == u2.
 
@@ -33,36 +33,36 @@ def u0'' := l23 (l12 u0).
 
 
 (; F : Type3 -> U0 ;)
-F : Term 4 (prod 4 4 4 I u3 (x:U3 => u3)).
+F : Term t4 (prod t4 t4 t4 I u3 (x:U3 => u3)).
 
 (; f : T : Type3 -> F T ;)
-f : Term 4 (prod 4 3 4 I u3 (T:U3 => F T)).
+f : Term t4 (prod t4 t3 t4 I u3 (T:U3 => F T)).
 
 (; G : t:Type3 -> F t -> F t ;)
-G : Term 4 (prod 4 3 4 I u3 (t:U3 => prod 3 3 3 I (F t) (x:Term 3 (F t) => F t))).
+G : Term t4 (prod t4 t3 t4 I u3 (t:U3 => prod t3 t3 t3 I (F t) (x:Term t3 (F t) => F t))).
 
-#ASSERT G u2 (f u2') : Term 3 (F u2).
+#ASSERT G u2 (f u2') : Term t3 (F u2).
 
-#ASSERT G u0' (f u0'') : Term 3  (F u0').
+#ASSERT G u0' (f u0'') : Term t3  (F u0').
 
-def p00_a : U3 := l13 (prod 1 1 1 I      u0  (x =>     u0)).
-def p00_b : U3 := l23 (prod 2 1 2 I (l12 u0) (x =>     u0)).
-def p00_c : U3 :=      prod 3 1 3 I (l13 u0) (x =>     u0).
-def p00_d : U3 := l23 (prod 1 2 2 I      u0  (x => l12 u0)).
-def p00_e : U3 := l23 (prod 2 2 2 I (l12 u0) (x => l12 u0)).
-def p00_f : U3 :=      prod 3 2 3 I (l13 u0) (x => l12 u0).
-def p00_g : U3 :=      prod 1 3 3 I      u0  (x => l13 u0).
-def p00_h : U3 :=      prod 2 3 3 I (l12 u0) (x => l13 u0).
-def p00_i : U3 :=      prod 3 3 3 I (l13 u0) (x => l13 u0).
+def p00_a : U3 := l13 (prod t1 t1 t1 I      u0  (x =>     u0)).
+def p00_b : U3 := l23 (prod t2 t1 t2 I (l12 u0) (x =>     u0)).
+def p00_c : U3 :=      prod t3 t1 t3 I (l13 u0) (x =>     u0).
+def p00_d : U3 := l23 (prod t1 t2 t2 I      u0  (x => l12 u0)).
+def p00_e : U3 := l23 (prod t2 t2 t2 I (l12 u0) (x => l12 u0)).
+def p00_f : U3 :=      prod t3 t2 t3 I (l13 u0) (x => l12 u0).
+def p00_g : U3 :=      prod t1 t3 t3 I      u0  (x => l13 u0).
+def p00_h : U3 :=      prod t2 t3 t3 I (l12 u0) (x => l13 u0).
+def p00_i : U3 :=      prod t3 t3 t3 I (l13 u0) (x => l13 u0).
 
-def p00_a' : U3 := l23 (l12 (prod 1 1 1 I u0  (x => u0))).
-def p00_c' : U3 := prod 3 1 3 I (l23 (l12 u0)) (x => u0).
-def p00_f' : U3 := prod 3 2 3 I (l23 (l12 u0)) (x => l12 u0).
-def p00_g' : U3 := prod 1 3 3 I u0  (x => l23 (l12 u0)).
-def p00_h' : U3 := prod 2 3 3 I (l12 u0) (x => l23 (l12 u0)).
-def p00_i'   : U3 := prod 3 3 3 I (l13 u0) (x => l23 (l12 u0)).
-def p00_i''  : U3 := prod 3 3 3 I (l23 (l12 u0)) (x => l13 u0).
-def p00_i''' : U3 := prod 3 3 3 I (l23 (l12 u0)) (x => l23 (l12 u0)).
+def p00_a'   : U3 := l23 (l12 (prod t1 t1 t1 I u0   (x => u0))).
+def p00_c'   : U3 := prod t3 t1 t3 I (l23 (l12 u0)) (x => u0).
+def p00_f'   : U3 := prod t3 t2 t3 I (l23 (l12 u0)) (x => l12 u0).
+def p00_g'   : U3 := prod t1 t3 t3 I u0             (x => l23 (l12 u0)).
+def p00_h'   : U3 := prod t2 t3 t3 I (l12 u0)       (x => l23 (l12 u0)).
+def p00_i'   : U3 := prod t3 t3 t3 I (l13 u0)       (x => l23 (l12 u0)).
+def p00_i''  : U3 := prod t3 t3 t3 I (l23 (l12 u0)) (x => l13 u0).
+def p00_i''' : U3 := prod t3 t3 t3 I (l23 (l12 u0)) (x => l23 (l12 u0)).
 
 #ASSERT p00_a == p00_b.
 #ASSERT p00_a == p00_c.
@@ -82,16 +82,14 @@ def p00_i''' : U3 := prod 3 3 3 I (l23 (l12 u0)) (x => l23 (l12 u0)).
 
 
 
-def l12_a := cast 3 3 (l23 u1) u2 I.
-def l12_b := cast 4 3 (l24 u1) u2 I.
-def l12_c := cast 2 4 u1 (l34 u2) I.
-def l12_d := cast 3 4 (l23 u1) (l34 u2) I.
-def l12_e := cast 4 4 (l24 u1) (l34 u2) I.
+def l12_a := cast t3 t3 (l23 u1) u2       I.
+def l12_b := cast t4 t3 (l24 u1) u2       I.
+def l12_c := cast t2 t4 u1       (l34 u2) I.
+def l12_d := cast t3 t4 (l23 u1) (l34 u2) I.
+def l12_e := cast t4 t4 (l24 u1) (l34 u2) I.
 
-def l23_a := cast 4 4 (l34 u2) u3 I.
+def l23_a := cast t4 t4 (l34 u2)         u3 I.
 
-def l13_a := cast 3 4 (l23 u1) u3 I.
-def l13_b := cast 4 4 (l24 u1) u3 I.
-def l13_c := cast 4 4 (l34 (l23_a u1)) u3 I.
-
-
+def l13_a := cast t3 t4 (l23 u1)         u3 I.
+def l13_b := cast t4 t4 (l24 u1)         u3 I.
+def l13_c := cast t4 t4 (l34 (l23_a u1)) u3 I.

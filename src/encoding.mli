@@ -1,16 +1,8 @@
 
-type lifted_type_pattern =
-  | AsLift
-  | AsCast
-  | AsUncodedCode
-
 type t =
   {
     simpl_letins_flag : bool;
     (** Translate let-in as simpl beta redices or not ? *)
-
-    unsafe_fixpoints_flag : bool;
-    (** Translate fixpoints as external body or generic unsafe fixpoint operator ?*)
 
     polymorphism_flag : bool;
     (** Is (true) polymorphism translation on ? *)
@@ -38,7 +30,7 @@ type t =
     (** Are we allowed to use lifts (for lifted type) ?
         Or should we use casts instead ? *)
 
-    lifted_type_pattern : lifted_type_pattern;
+    lifted_type_pattern : string;
     (** What's the normal form of a lifted type ? To use in pattern. *)
 
     pred_univ_flag            : bool;
@@ -79,6 +71,19 @@ type t =
     t_priv_prod   : string;
     t_priv_code   : string;
     t_priv_uncode : string;
+
+    inlined_fixpoint_flag : bool;
+    (** Translate fixpoints as external body or inlined generic fixpoint operator ?
+        This is a very experimental feature. *)
+    t_0            : string;
+    t_S            : string;
+    t_SA           : string;
+    t_MA           : string;
+    t_fix          : string;
+    t_fix_proj     : string;
+    t_fix_oneline  : string;
+    t_guard        : string;
+    t_guarded      : string;
   }
 
 (* Some encodings *)
@@ -97,6 +102,9 @@ val get : unit -> t
 
 val set_encoding : string -> unit
 (** Selects an encoding from its name *)
+
+val set_parameter : string -> string -> unit
+(** Sets given parameter to given value *)
 
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)
@@ -122,5 +130,5 @@ val is_cast_on : unit -> bool
 val is_letins_simpl : unit -> bool
 (** Translate let-in as simpl beta redices or not ? *)
 
-val is_fixpoints_unsage : unit -> bool
+val is_fixpoint_inlined : unit -> bool
 (** Translate fixpoints as external body or generic unsafe fixpoint operator ?*)

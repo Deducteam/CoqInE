@@ -76,6 +76,8 @@ let get_infos mind_body index =
   let cons_names    = body.mind_consnames in
   let n_cons = Array.length cons_names in
 
+  debug "--- Getting infos for inductive : %a ---" pp_coq_id typename;
+
   let arity_real_context, _ = Utils.list_chop body.mind_nrealdecls arity_context in
 
   (* Compute a map of template parameters and a sort for given declaration. *)
@@ -140,7 +142,6 @@ let get_infos mind_body index =
   }
 
 
-
 let is_template_parameter ind = function
   | Context.Rel.Declaration.LocalDef _ -> None
   | Context.Rel.Declaration.LocalAssum (name, tp) ->
@@ -188,6 +189,7 @@ let translate_inductive info env label ind  =
 
   (* Body of the current inductive type *)
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
+  debug "--- Translating inductive type: %s ---" name';
 
   (*  I : s1 : Sort -> ... -> sk : Sort ->
           p1 : ||P1|| ->
@@ -196,14 +198,10 @@ let translate_inductive info env label ind  =
           a1 : A1 -> ... -> an : An -> s
   *)
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
+  debug "Arity: %a" pp_coq_term arity;
   let arity' = Terms.translate_types info env ind.univ_poly_env arity in
   let arity' = Tsorts.add_sort_params ind.template_names arity' in
   let arity' = Tsorts.add_sort_params ind.univ_poly_names arity' in
-  debug "--- Translating inductive: %s ---" name';
-  debug "Arity context: %a" pp_coq_ctxt ind.arity_context;
-  debug "Arity sort: %a" pp_coq_type (Constr.mkSort ind.arity_sort);
-  debug "Arity: %a" pp_coq_type arity;
-  debug "Arity': %a" Dedukti.pp_term arity';
   (* Printing out the type declaration. *)
   let definable =
     Encoding.is_templ_polymorphism_on () &&
@@ -227,6 +225,7 @@ let translate_inductive info env label ind  =
 *)
 let translate_inductive_subtyping info env label ind =
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
+  debug "--- Translating inductive subtyping: %s ---" name';
   let inductive' = Dedukti.var name' in
   let _, arity_ctxt_names = extract_rel_context info env ind.arity_context in
   let translate_name name =
@@ -239,9 +238,10 @@ let translate_inductive_subtyping info env label ind =
     | None -> () (* When parameter in not template polymorphic: no rule *)
     | Some (tparam_name,locals,level,level_name') ->
       begin
+        debug "Printing lift extraction for param decl %a of level %a" pp_coq_decl decl pp_coq_level level;
         let new_level_name' = level_name' ^ "'" in
-        let tparam_name = Cname.fresh_name ~default:"_" info env tparam_name in
-        let tparam_name' = Cname.translate_name tparam_name in
+        let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
+        let tparam_name' = Cname.translate_name tparam_name' in
         let applied_param =  (* pj x1 ... xl *)
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
         let lifted_param_pat = Dedukti.ulams locals
@@ -302,13 +302,13 @@ let translate_inductive_subtyping info env label ind =
 *)
 let translate_constructors info env label ind =
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst  in
-
+  (* Substitute the inductive types as specified in the Coq code. *)
+  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in
   for j = 0 to ind.n_cons - 1 do
     let cons_name = ind.body.mind_consnames.(j) in
-    let cons_type = ind.body.mind_user_lc.(j) in
-    (* Substitute the inductive types as specified in the Coq code. *)
+    let cons_type = ind.body.mind_nf_lc.(j) in
     let cons_type = Vars.substl ind_subst cons_type in
+    debug "Translating inductive constructor: %a" pp_coq_id cons_name;
     debug "Cons_type: %a" pp_coq_type cons_type;
 
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
@@ -344,8 +344,8 @@ let translate_constructors_subtyping info env label ind =
       | Some (tparam_name,locals,level,level_name') ->
         begin
           let new_level_name' = level_name' ^ "'" in
-          let tparam_name = Cname.fresh_name ~default:"_" info env tparam_name in
-          let tparam_name' = Cname.translate_name tparam_name in
+          let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
+          let tparam_name' = Cname.translate_name tparam_name' in
           let applied_param =  (* pj x1 ... xl *)
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
           let lifted_param_pat = Dedukti.ulams locals
@@ -449,12 +449,12 @@ let translate_match info env label ind =
 
   (* Use the normalized types in the rest. *)
   let cons_types = Array.map (Vars.substl ind_subst) ind_body.mind_nf_lc in
+  let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
 
   (* Translate the match function: match_I *)
   let params_context = ind.mind_params_ctxt in
   let arity_real_context = ind.arity_real_context in
   let ind_applied = Terms.apply_rel_context ind_term (arity_real_context @ params_context) in
-  let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types    = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init ind.n_cons (fun j ->
@@ -702,8 +702,8 @@ let translate_match info env label ind =
     | Some (tparam_name,locals,level,level_name') ->
       begin
           let new_level_name' = level_name' ^ "'" in
-          let tparam_name = Cname.fresh_name ~default:"_" info env tparam_name in
-          let tparam_name' = Cname.translate_name tparam_name in
+          let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
+          let tparam_name' = Cname.translate_name tparam_name' in
           let applied_param =  (* pj x1 ... xl *)
             Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
           let lifted_param_pat = Dedukti.ulams locals
@@ -743,6 +743,26 @@ let translate_match info env label ind =
   List.iter print_param_ST_elim ind.mind_params_ctxt
 
 
+let translate_guarded info env label ind =
+  let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
+  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in
+  let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
+  let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
+
+  let nb_univ_poly_params = List.length ind.univ_poly_names in
+  let nb_univ_template_params = List.length ind.template_names in
+  let nb_params = ind.n_params + nb_univ_poly_params + nb_univ_template_params in
+  let nb_args = ind.body.mind_consnrealargs in
+ (* Number of expected proper arguments of the constructors (w/o params) *)
+
+  for consid = 0 to ind.n_cons - 1 do
+    let cons_name = ind.body.mind_consnames.(consid) in
+    let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
+    let args = nb_args.(consid) + nb_params in
+    Dedukti.print info.fmt (T.coq_guarded cons_name' args)
+  done
+
+
 
 
 (* match_I s
@@ -762,4 +782,4 @@ let translate_match info env label ind =
      pr
 *)
 let translate_match_subtyping info env label ind =
-  () (* TODO move the above here *)
+  () (* TODO This is currently implemented above. Maybe move it here... *)

@@ -118,4 +118,3 @@ Inductive foo
           (B:xSet -> Type) :
   (B A) -> Type := bar : forall x:(B A), foo A B x.
  *)
-

@@ -62,6 +62,13 @@ $(eval $(call targ,fullcodes_test1,predicates,fullcodes,test1,,))
 $(eval $(call targ,fullcodes_test2,predicates,fullcodes,predicates,,test2))
 $(eval $(call targ,fullcodes_test3,predicates,fullcodes,predicates,,test3))
 
+$(eval $(call targ,fullcodes_eta,predicates,fullcodes_eta,predicates,,))
+$(eval $(call targ,fullcodes_eta_test2,predicates,fullcodes_eta,predicates,,test2))
+$(eval $(call targ,fullcodes_eta_test3,predicates,fullcodes_eta,predicates,,test3))
+
+$(eval $(call targ,fullcodes_eta_fix,predicates,fullcodes_eta,predicates,fullcodes,))
+$(eval $(call targ,fullcodes_eta_fix_test2,predicates,fullcodes_eta,predicates,fullcodes,test2))
+$(eval $(call targ,fullcodes_eta_fix_test3,predicates,fullcodes_eta,predicates,fullcodes,test3))
 
 .PHONY: check
 check:

@@ -1,26 +1,18 @@
-
 (* This script tests the Dedukti plugin by exporting test files and parts
   of the Coq standard library. *)
 
-Require Coqine.
+Declare ML Module "coqine_plugin".
+
+Set Printing Universes.
+
+Dedukti Set Destination "out".
 
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Set Destination "out".
-Dedukti Add Debug "Coq.Init.Specif".
-(*
-Dedukti Add Debug "Coq.Classes.RelationClasses".
-*)
+Dedukti Add Debug "Top.Test.Debuglib".
 
-Dedukti Set Encoding "original_cast ".
-
-(*
-Dedukti Filter Out "Coq.Init.Logic.rew_ex".
-Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
-*)
+Dedukti Set Encoding "readable fix universo".
 
 Require Import import.
 
 Dedukti Export All.
-
-

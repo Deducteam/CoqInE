@@ -19,7 +19,7 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
 .PHONY: all plugin install uninstall clean fullclean
 
-all: check-version .merlin plugin debug_test
+all: check-version .merlin plugin test_fix
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
@@ -87,20 +87,32 @@ debug: run
 mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
 mathcomp: run
 
-.PHONY: debug_test
-debug_test: ENCODING:=predicates_eta/C.dk
-debug_test: COQINE_FLAGS:=readable universo
-debug_test: test
 
-.PHONY: debug_fix
-debug_fix: ENCODING:=predicates_eta_fix/C.dk
-debug_fix: COQINE_FLAGS:=readable universo
-debug_fix: test
+.PHONY: test_universo
+test_universo: ENCODING:=predicates_eta/C.dk
+test_universo: COQINE_FLAGS:=readable universo
+test_universo: test
+
+.PHONY: test_fix
+test_fix: ENCODING:=predicates_eta_fix/C.dk
+test_fix: COQINE_FLAGS:=readable fix universo
+test_fix: test
+
+.PHONY: test_poly
+test_poly: ENCODING:=fullcodes_eta_fix/C.dk
+test_poly: COQINE_FLAGS:=readable fix polymorph
+test_poly: test
+
 
 .PHONY: debug_universo
 debug_universo: ENCODING:=predicates/C.dk
 debug_universo: COQINE_FLAGS:=readable universo
 debug_universo: debug
+
+.PHONY: debug_fix
+debug_fix: ENCODING:=predicates_eta_fix/C.dk
+debug_fix: COQINE_FLAGS:=readable fix polymorph
+debug_fix: debug
 
 .PHONY: debug_default
 debug_default: ENCODING:=original/Coq.dk
@@ -147,6 +159,7 @@ debug_mathcomp: ENCODING:=predicates/C.dk
 debug_mathcomp: COQINE_FLAGS:=readable universo
 debug_mathcomp: mathcomp
 
+
 # These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
 .PHONY: geocoq_orig_universo
 geocoq_orig_universo: ENCODING:= predicates/Coq.dk
@@ -159,6 +172,7 @@ geocoq_orig: ENCODING:= predicates/C.dk
 geocoq_orig: COQINE_FLAGS  := readable universo
 geocoq_orig: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
 geocoq_orig: run
+
 
 .PHONY: geocoq_universo
 geocoq_universo: ENCODING:= predicates/Coq.dk
