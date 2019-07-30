@@ -18,6 +18,17 @@ let is_debug_on () = !debug_flag && !debug_allowed
 let message fmt =
   kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
 
+
+let verbose_allowed = ref false
+let  enable_verbose () = verbose_allowed := true
+let disable_verbose () = verbose_allowed := false
+
+let verbose fmt =
+  if !verbose_allowed
+  then message fmt
+  else ifprintf err_formatter fmt
+
+
 let debug_out = ref err_formatter
 
 let debug_to_file fn =

@@ -3,9 +3,12 @@
 
 Require Coqine.
 
+Set Printing Universes.
+
+Dedukti Set Destination "out".
+
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Set Destination "out".
 
 Dedukti Add Debug "Coq.Classes.CRelationClasses".
 Dedukti Add Debug "Coq.Classes.RelationClasses".
@@ -22,6 +25,8 @@ Dedukti Filter Out "Coq.Init.Logic.rew_ex2".
 Dedukti Enable Failproofmode.
 
 Require Import import.
+
+Load config.
 
 Dedukti Export All.
 
@@ -73,4 +78,3 @@ Dedukti Export Library All But
   Coq.Structures.OrdersFacts
 .
 *)
-

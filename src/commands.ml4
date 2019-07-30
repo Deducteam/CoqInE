@@ -75,6 +75,16 @@ VERNAC COMMAND EXTEND DeduktiFilterSymb CLASSIFIED AS QUERY
   [ Modules.filter_out symb ]
 END
 
+VERNAC COMMAND EXTEND DeduktiEnableVerbose CLASSIFIED AS QUERY
+| [ "Dedukti" "Enable" "Verbose" ] ->
+  [ Debug.enable_verbose () ]
+END
+
+VERNAC COMMAND EXTEND DeduktiDisableVerbose CLASSIFIED AS QUERY
+| [ "Dedukti" "Disable" "Verbose" ] ->
+  [ Debug.disable_verbose () ]
+END
+
 VERNAC COMMAND EXTEND DeduktiEnableDebug CLASSIFIED AS QUERY
 | [ "Dedukti" "Enable" "Debug" ] ->
   [ Debug.enable_debug () ]

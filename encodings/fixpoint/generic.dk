@@ -291,11 +291,11 @@ def fix_proj_2 :
   Guarded? ->
   Term s A.
 
-[s,n,MA,MF,Ind,B,body,a,s1]
-  fix_proj_1 s n MA MF (SAcons 0 _ (prod' s1 s _ Ind (x => B x))) body a
+[s,n,MA,MF,s1,s2,Ind,B,body,a]
+  fix_proj_1 s n MA MF (SAcons 0 _ (prod' s1 s2 _ Ind (x => B x))) body a
   -->
   fix_proj_2 s n MA MF
-    (prod' s1 s s Ind (x => B x))
+    (prod' s1 s2 s Ind (x => B x))
     body (guarded? s1 Ind a) a.
 
 (; Returns a term

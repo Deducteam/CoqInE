@@ -11,8 +11,10 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Add Debug "Top.Test.Debuglib".
 
-Dedukti Set Encoding "polymorph readable fix".
+Dedukti Set Encoding "polymorph".
 
 Require Import import.
+
+Load config.
 
 Dedukti Export All.

@@ -3,6 +3,8 @@
 
 Declare ML Module "coqine_plugin".
 
+Set Printing Universes.
+
 Dedukti Set Destination "out".
 
 Dedukti Enable Debug.

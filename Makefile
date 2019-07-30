@@ -22,8 +22,8 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 all: check-version .merlin plugin
 	make test_fix
 	make test_poly
-
-long: all debug_fix debug_poly
+	make debug_fix
+	make debug_poly
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
@@ -85,6 +85,7 @@ run: plugin
 
 .PHONY: test
 test: RUNDIR:=$(RUN_TESTS_DIR)
+test: COQINE_FLAGS:=polymorph
 test: run
 
 .PHONY: debug
@@ -109,17 +110,14 @@ geocoq: run
 
 .PHONY: test_eta
 test_eta: ENCODING:=predicates_eta/C
-test_eta: COQINE_FLAGS:=polymorph
 test_eta: test
 
 .PHONY: test_fix
 test_fix: ENCODING:=predicates_eta_fix/C
-test_fix: COQINE_FLAGS:=polymorph
 test_fix: test
 
 .PHONY: test_poly
 test_poly: ENCODING:=fullcodes_eta_fix/C
-test_poly: COQINE_FLAGS:=polymorph
 test_poly: test
 
 
@@ -191,9 +189,9 @@ orig_geocoq_short: orig_geocoq
 
 
 .PHONY: geocoq_long
-geocoq_long: ENCODING:= predicates/Coq
+geocoq_long: ENCODING:=predicates_eta_fix/Coq
 geocoq_long: geocoq
 
 .PHONY: geocoq_short
-geocoq_short: ENCODING:= predicates/C
+geocoq_short: ENCODING:= predicates_eta_fix/C
 geocoq_short: geocoq

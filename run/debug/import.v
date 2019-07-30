@@ -1,7 +1,6 @@
 
 Require Import
   Test.Test
-  Test.Debuglib
   Test.Identity
   Coq.Classes.RelationClasses
   Test.Polymorph
@@ -16,7 +15,9 @@ Require Import
   Test.NestedModules
   Test.NestedLibraries
   Test.Reflexivity
+
 (*
+  Test.Debuglib
   Coq.Logic.Berardi
   Coq.Logic.ChoiceFacts
   Coq.Logic.ClassicalChoice

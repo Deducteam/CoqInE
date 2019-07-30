@@ -9,6 +9,13 @@ val disable_debug : unit -> unit
 (** Disables debugging *)
 
 
+val  enable_verbose : unit -> unit
+(** Enables verbose mode *)
+
+val disable_verbose : unit -> unit
+(** Disables verbose mode *)
+
+
 val add_debug_lib : string -> unit
 (** Add library name to debug list *)
 
@@ -34,6 +41,9 @@ val debug   : ('a, Format.formatter, unit, unit) format4 -> 'a
 
 val message : ('a, Format.formatter, unit, unit) format4 -> 'a
 (** Prints to standard output *)
+
+val verbose : ('a, Format.formatter, unit, unit) format4 -> 'a
+(** Prints to standard output only if verbose mode is enabled *)
 
 type 'a printer = Format.formatter -> 'a -> unit
 
