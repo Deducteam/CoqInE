@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -85,3 +87,18 @@ def ST : Code -> Code -> Bool.
 
 
 (; def delta_delta := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)). ;)
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Normal forms of lifted types are uncoded codes:
+Coqine lifted_type_pattern = uncodedcode
+
+Coqine _code      = code
+Coqine _uncode    = uncode
+Coqine _code_univ = cU
+Coqine _code_prod = cPi
+Coqine _code_app  = cApp
+Coqine _code_abs  = cLam
+;)

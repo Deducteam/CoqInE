@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -53,3 +55,17 @@ def lift' : s : Sort -> s' : Sort ->
 --> prod' s1 s2 s3 a (x => b x).
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine priv_univ = true   Univ relies on a private version
+Coqine priv_prod = true   Prod relies on a private version
+Coqine priv_lift = true   Lift relies on a private version
+
+Coqine _univ = univ'
+Coqine _prod = prod'
+Coqine _lift = lift'
+
+Normal forms of lifted types are (private) lifts:
+Coqine lifted_type_pattern = lift
+;)

@@ -23,25 +23,41 @@ let set_param key value =
 
 let set_params = List.iter (fun (x,y) -> set_param x y)
 
-let init () =
+let _ =
   List.iter (fun (x,y) -> Hashtbl.replace encodings x y)
     [
-      ("syntax", "Dedukti");
+      (* General encoding parameters *)
+      ("syntax"       , "Dedukti");
       ("encoding_name", "original");
+      ("encoding_file", "Coq");
+      ("universe_file", "U");
       ("lifted_type_pattern", "lift");
-      ("system_module"  , "Coq");
-      ("universe_module", "U");
+
+      (* Public construction syntax *)
       ("Sort" , "Sort");
       ("Univ" , "Univ");
       ("Term" , "Term");
-      ("axiom", "axiom");
-      ("sup"  , "sup");
-      ("rule" , "rule");
       ("univ" , "univ");
       ("prod" , "prod");
       ("lift" , "lift");
       ("cast" , "cast");
+
+      (* Infinite hierarchy of universes constructors *)
+      ("prop" , "prop");
+      ("set"  , "set");
+      ("type" , "type");
+      ("u0"   , "z");
+      ("uS"   , "s");
+
+      (* Functionnal universe constructors *)
+      ("axiom", "axiom");
+      ("sup"  , "sup");
+      ("rule" , "rule");
+
+      (* Predicate syntax *)
       ("I"    , "I");
+
+      (* Private syntax *)
       ("_lift"  , "lift'");
       ("_cast"  , "cast'");
       ("_univ"  , "univ'");
@@ -52,6 +68,8 @@ let init () =
       ("_code_abs" , "cLam");
       ("_code_univ", "cU");
       ("_code_prod", "cPi");
+
+      (* Fixpoint syntax *)
       ("0"          , "0");
       ("S"          , "_S");
       ("SA"         , "SA");
@@ -82,86 +100,32 @@ let init () =
       ("priv_prod"         , false);
       ("inlined_fixpoint"  , false)
     ]
-let _ = init ()
-
-let lift_priv () =
-  init();
-  set_params [
-    "pred_univ", "true";
-    "pred_prod", "true";
-    "pred_lift", "true";
-    "priv_lift", "true";
-    "priv_univ", "true";
-    "priv_prod", "true"
-  ]
-
-let universo () =
-  lift_priv();
-  set_params [
-    "use_cast"           , "true"; (* Use casts instead of lifts *)
-    "pred_cast"          , "true"; (* They take a predicate argument *)
-    "constraints"        , "true";
-    "polymorphism"       , "true";
-    "templ_polymorphism" , "true";
-    "priv_cast"          , "true";
-    "lifted_type_pattern", "cast";
-    (* Universe lifting pattern are private cast *)
-  ]
 
 
-(* Casts are used for lifting functions *)
-(* but lifts are still normal forms for universe lifting *)
-let original_cast () =
-  init();
-  set_param "use_cast" "true"
+let floating_univ () =
+  set_param "float_univ" "true";
+  set_param "universe_file" "U"
 
-let template_cast () =
-  original_cast ();
+let template () =
   set_param "templ_polymorphism" "true" (* Template polymorphism *)
 
-let polymorph () =
-  init();
+let polymorphism () =
   set_params [
-    "polymorphism"       , "true";
     "templ_polymorphism" , "true";
+    "polymorphism"       , "true";
     "constraints"        , "true";
-    "use_cast"           , "true";  (* Use casts instead of lifts *)
-    "pred_cast"          , "true";  (* Casts take subtype predicate argument *)
-    "priv_lift"          , "false";
-    "priv_cast"          , "true";
-    "priv_univ"          , "true";
-    "priv_prod"          , "true";
-    "lifted_type_pattern", "cast"; (* Casted type pattern *)
   ]
 
-
 let named () = set_param "named_univ" "true"
-
-let readable () = set_params
-    [ "readable","true" ;
-      "system_module", "C";
-      "Sort", "S";
-      "Univ", "U";
-      "Term", "T";
-      "univ", "u";
-      "_univ", "u'"
-    ]
-
-let fixpointed () = set_param "inlined_fixpoint" "true"
 
 let set_encoding s =
   let keywords = Str.split (Str.regexp "[ \t]+") s in
   List.iter
     (function
-      | "readable" -> readable ()
-      | "named" -> named ()
-      | "fix" -> fixpointed ()
-      | "original"      -> init ()
-      | "original_cast" -> original_cast ()
-      | "template_cast" -> template_cast ()
-      | "lift_priv"     -> lift_priv ()
-      | "universo"      -> universo ()
-      | "polymorph"     -> polymorph ()
+      | "float"      -> floating_univ ()
+      | "named"      -> named ()
+      | "template"   -> template ()
+      | "polymorph"  -> polymorphism ()
       | invalid_name ->
         failwith (Format.sprintf "Unknown encoding keyword: %s" invalid_name))
     keywords;

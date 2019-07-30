@@ -12,7 +12,7 @@ Dedukti Set Destination "out".
 Dedukti Add Debug "Top.GeoCoq.Tarski_dev.Ch08_orthogonality".
  *)
 
-Dedukti Set Encoding "readable universo".
+Dedukti Set Encoding "polymorph".
 
 Dedukti Enable Failproofmode.
 

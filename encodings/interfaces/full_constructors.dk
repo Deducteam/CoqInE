@@ -41,6 +41,8 @@ cumul_rule_2 : s1 : Sort -> s2 : Sort -> s3 : Sort ->
 cumul_axiom : s1 : Sort -> s2 : Sort ->
               eps (Cumul s1 s2) -> eps (Cumul (axiom s1) (axiom s2)).
 
+def sup   : Sort -> Sort -> Sort.
+
 
 (;--------------------  Term public constructors  -----------------;)
 
@@ -57,3 +59,21 @@ def cast : s : Sort -> s' : Sort ->
            Term s a -> Term s' b.
 
 def lift (s : Sort) (s' : Sort) := cast (axiom s) (axiom s') (univ s) (univ s').
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ  = univ
+Coqine prod  = prod
+Coqine cast  = cast
+
+Coqine use_cast  = true    Use casts instead of lifts
+Coqine pred_cast = true    Cast is predicative
+;)

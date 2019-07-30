@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -90,3 +92,13 @@ def cast' : s : Sort -> s' : Sort ->
   x : Term s1' A' => cast' s2 s3 (B (cast' s1' s1 A' A x)) (C x) (b (cast' s1' s1 A' A x)).
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine priv_cast = true   Cast relies on a private version
+
+Coqine _cast = cast'
+
+Normal forms of lifted types are private casts:
+Coqine lifted_type_pattern = cast
+;)

@@ -34,6 +34,16 @@ def lift : s1 : Sort -> s2 : Sort ->
            Univ s1 -> Univ (sup s1 s2).
 
 
-(;
+(;------------------------  Coqine parameters  --------------------;)
 
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ = univ
+Coqine prod = prod
+Coqine lift = lift
 ;)

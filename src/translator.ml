@@ -22,8 +22,8 @@ let mk_type i = Succ (Prop, i+1)
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 
 
-let coq_var  x = Var (add_prefix (symb "system_module")   x)
-let univ_var x = Var (add_prefix (symb "universe_module") x)
+let coq_var  x = Var (add_prefix (symb "encoding_file")   x)
+let univ_var x = Var (add_prefix (symb "universe_file") x)
 
 let vsymb s = coq_var (symb s)
 
@@ -46,9 +46,9 @@ struct
 
   let coq_nat n = Utils.iterate n (app (coq_var "s")) (coq_var "z")
 
-  let coq_prop ()    = coq_var "prop"
-  let coq_set  ()    = coq_var "set"
-  let coq_type i     = app (coq_var "type") (coq_nat i)
+  let coq_prop ()    = vsymb "prop"
+  let coq_set  ()    = vsymb "set"
+  let coq_type i     = app (vsymb "type") (coq_nat i)
 
   let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
 
@@ -129,10 +129,10 @@ struct
   let code_var  u = (var (code_name u))
 
   let rec short_nat i =
-    if i <= 9 then nat_var i else app (coq_var "s") (short_nat (i-1))
+    if i <= 9 then nat_var i else app (vsymb "uS") (short_nat (i-1))
 
   let short_type i =
-    if i <= 9 then sort_var i else app (coq_var "type") (short_nat i)
+    if i <= 9 then sort_var i else app (vsymb "type") (short_nat i)
 
   let rec scu = function
     | Succ (u,0)    -> scu u
@@ -166,9 +166,9 @@ struct
   let coq_header () =
     let res = ref [] in
     let add n t = res := (udefinition false n t) :: !res in
-    add (nat_name 0) (coq_var "z");
-    for i = 1 to 9 do add ( nat_name i) (app (coq_var "s"   ) (nat_var (i-1))) done;
-    for i = 0 to 9 do add (sort_name i) (app (coq_var "type") (nat_var i    )) done;
+    add (nat_name 0) (vsymb "u0");
+    for i = 1 to 9 do add ( nat_name i) (app (vsymb "uS"   ) (nat_var (i-1))) done;
+    for i = 0 to 9 do add (sort_name i) (app (vsymb "type") (nat_var i    )) done;
     for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type i)) done;
     add "_Set"  (Std.coq_U    Set );
     add "_Prop" (Std.coq_U    Prop);

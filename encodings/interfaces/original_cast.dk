@@ -41,3 +41,19 @@ def cast : s1 : Sort -> s2 : Sort ->
            Term s1 a -> Term (sup s1 s2) (join s1 s2 a b).
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ = univ
+Coqine prod = prod
+Coqine lift = lift
+Coqine cast = cast
+
+Coqine use_cast = true    Use casts instead of lifts
+;)

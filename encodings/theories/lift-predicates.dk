@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;-------------------------  Coq encoding  ------------------------;)
 (;-----------------------------------------------------------------;)
@@ -14,6 +16,14 @@ s : Nat -> Nat.
 prop : Sort.
 set  : Sort.
 type : Nat -> Sort.
+
+(;
+Coqine prop = prop
+Coqine set = set
+Coqine type = type
+Coqine u0 = z
+Coqine uS = s
+;)
 
 
 (;---------------------  CTS Axiom definition  --------------------;)
@@ -66,6 +76,7 @@ def sup : Sort -> Sort -> Sort.
 [i  ] sup  set      (type i) --> type i.
 [i  ] sup  prop     (type i) --> type i.
 [i,j] sup  (type i) (type j) --> type (max i j).
+(; Coqine sup  = sup ;)
 
 def rule : Sort -> Sort -> Sort.
 [   ] rule  _        prop     --> prop

@@ -12,7 +12,7 @@ Dedukti Add Debug "Coq.Classes.RelationClasses".
 Dedukti Add Debug "Coq.Init.Datatypes".
 Dedukti Add Debug "Top.GeoCoq.Utils.arity".
 
-Dedukti Set Encoding "readable universo".
+Dedukti Set Encoding "polymorph".
 
 Dedukti Filter Out "Coq.Init.Logic.rew_ex".
 Dedukti Filter Out "Coq.Init.Logic.rew_ex2".

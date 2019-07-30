@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -51,3 +53,9 @@
 --> lift (rule s1 s2) (rule s1 s3) (prod s1 s2 a (x => b x)).
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Normal forms of lifted types are lifts (as expected)
+Coqine lifted_type_pattern = lift
+;)

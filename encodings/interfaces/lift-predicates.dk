@@ -42,3 +42,19 @@ def lift : s : Sort -> s' : Sort ->
            Univ s -> Univ s'.
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine univ = univ
+Coqine prod = prod
+Coqine lift = lift
+
+Coqine pred_univ = true    Univ is predicative
+Coqine pred_prod = true    Prod is predicative
+Coqine pred_lift = true    Lift is predicative
+;)

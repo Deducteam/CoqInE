@@ -1,7 +1,6 @@
 (;-----------------------------------------------------------------;)
 (;-----------------  FIXPOINTS DEFINITION SCHEME  -----------------;)
 (;-----------------------------------------------------------------;)
-(; Coqine inlined_fixpoint = true ;)
 
 (; Required rule ;)
 [s] Rule s s s --> true.
@@ -546,4 +545,20 @@ fixproj :
     i : N
 
 This is well typed, somehow...
+;)
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine inlined_fixpoint = true
+Coqine 0           = 0
+Coqine S           = _S
+Coqine SA          = SA
+Coqine MA          = make_MA
+Coqine fix         = fix
+Coqine fix_proj    = fix_proj
+Coqine fix_oneline = fixproj
+Coqine guard       = guarded?
+Coqine guarded     = guarded
 ;)

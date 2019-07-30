@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -74,3 +76,16 @@ def ST : Code -> Code -> Bool.
   uncode (cPi A (x => B x)) (code (cPi A (x => C x)) F) G
   -->
   uncode (B G) (code (C G) (F G)).
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Normal forms of lifted types are uncoded codes:
+Coqine lifted_type_pattern = uncodedcode
+
+Coqine _code      = code
+Coqine _uncode    = uncode
+Coqine _code_univ = cU
+Coqine _code_prod = cPi
+;)

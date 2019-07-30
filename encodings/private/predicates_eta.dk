@@ -75,3 +75,19 @@ def forall : s : Sort -> a : Univ s -> (Term s a -> Bool) -> Bool.
 [s1,s2,s3,A,B,C,b]
   cast' _ _ (prod' s1 s2 _ A B) (prod' {s1} s3 _ {A} C) b -->
   x : Term s1 A => cast' s2 s3 (B x) (C x) (b x).
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine priv_univ = true   Univ relies on a private version
+Coqine priv_prod = true   Prod relies on a private version
+Coqine priv_cast = true   Cast relies on a private version
+
+Coqine _univ = univ'
+Coqine _prod = prod'
+Coqine _cast = cast'
+
+Normal forms of lifted types are private casts:
+Coqine lifted_type_pattern = cast
+;)

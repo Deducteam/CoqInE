@@ -10,7 +10,8 @@ $(BUILD):
 	@mkdir $(BUILD)
 
 %.config: %.dk
-	@sed -n 's/^\(.*\)Coqine *\([^ ]*\) *= *\([^ ]*\)\(.*\)/Dedukti Set Param "\2" "\3"./p' $^ > $@
+	@echo "Dedukti Set Param \"encoding_file\" \"$(@F)\"." | sed --expression="s/.config//" > $@
+	@sed -n 's/^\(.*\)Coqine *\([^ ]*\) *= *\([^ ]*\)\(.*\)/Dedukti Set Param "\2" "\3"./p' $^ >> $@
 
 define targ
 $(BUILD)/$1: $(BUILD)
@@ -22,7 +23,7 @@ $(BUILD)/$1/Coq.dk: $(BUILD) $(BUILD)/$1
 
 $(BUILD)/$1/C.dk: $(BUILD) $(BUILD)/$1 $(BUILD)/$1/Coq.dk
 	@cp $(BUILD)/$1/Coq.dk $(BUILD)/$1/C.dk
-	@sed -i 's/Coqine \([^ ]*\)/Coqine_\1/g' $(BUILD)/$1/C.dk
+	@sed -i 's/Coqine *\([^ ]*\)/Coqine_\1/g' $(BUILD)/$1/C.dk
 	@sed -i 's/\(^\|[^_]\)Sort/\1S/g;   \
              s/\(^\|[^_]\)Term/\1T/g;   \
              s/\(^\|[^_]\)Univ/\1U/g;   \
@@ -31,6 +32,7 @@ $(BUILD)/$1/C.dk: $(BUILD) $(BUILD)/$1 $(BUILD)/$1/Coq.dk
              s/\(^\|[^_]\)uncode/\1_u/g;\
              s/\(^\|[^_]\)code/\1_c/g'   $(BUILD)/$1/C.dk
 	@sed -i 's/Coqine_\([^ ]*\)/Coqine \1/g' $(BUILD)/$1/C.dk
+	@echo "(; Coqine readable = true ;)" >> $(BUILD)/$1/C.dk
 
 $1: $(BUILD)/$1/Coq.dk
 

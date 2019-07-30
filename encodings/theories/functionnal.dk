@@ -20,6 +20,14 @@ prop : Sort.
 set  : Sort.
 type : Nat -> Sort.
 
+(;
+Coqine prop = prop
+Coqine set = set
+Coqine type = type
+Coqine u0 = z
+Coqine uS = s
+;)
+
 
 (;---------------------  CTS Axiom definition  --------------------;)
 
@@ -57,5 +65,3 @@ type : Nat -> Sort.
 [i  ] sup set      (type i) --> type i
 [i  ] sup (type i) set      --> type i
 [i,j] sup (type i) (type j) --> type (max i j).
-
-

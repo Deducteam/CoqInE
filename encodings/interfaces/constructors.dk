@@ -51,3 +51,19 @@ def cast : s : Sort -> s' : Sort ->
 def lift (s : Sort) (s' : Sort) := cast (axiom s) (axiom s') (univ s) (univ s').
 
 
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ  = univ
+Coqine prod  = prod
+Coqine cast  = cast
+
+Coqine use_cast  = true    Use casts instead of lifts
+Coqine pred_cast = true    Cast is predicative
+;)

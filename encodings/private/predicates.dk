@@ -1,3 +1,5 @@
+
+
 (;-----------------------------------------------------------------;)
 (;---------------------  PRIVATE DEFINITIONS  ---------------------;)
 (;-----------------------------------------------------------------;)
@@ -92,6 +94,8 @@ def forall : s : Sort -> a : Univ s -> (Term s a -> Bool) -> Bool.
   cast' _ _ (prod' s1 s2 _ A B) (prod' {s1} s3 _ {A} C) b a -->
   cast' s2 s3 (B a) (C a) (b a).
 
+
+(;------------------------  Coqine parameters  --------------------;)
 
 (;
 Coqine priv_univ = true   Univ relies on a private version
