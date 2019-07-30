@@ -1,8 +1,12 @@
 let flags     = Hashtbl.create 15
 let encodings = Hashtbl.create 15
 
+
 let flag = Hashtbl.find flags
-let symb = Hashtbl.find encodings
+let symb key =
+  match Hashtbl.find encodings key with
+  | "" -> failwith "Symbol \"" ^ key ^ "\" is not available in this encoding."
+  | value -> value
 
 let set_param key value =
   if Hashtbl.mem flags key
@@ -22,6 +26,7 @@ let set_params = List.iter (fun (x,y) -> set_param x y)
 let init () =
   List.iter (fun (x,y) -> Hashtbl.replace encodings x y)
     [
+      ("syntax", "Dedukti");
       ("encoding_name", "original");
       ("lifted_type_pattern", "lift");
       ("system_module"  , "Coq");
@@ -37,12 +42,16 @@ let init () =
       ("lift" , "lift");
       ("cast" , "cast");
       ("I"    , "I");
-      ("priv_lift"  , "lift'");
-      ("priv_cast"  , "cast'");
-      ("priv_univ"  , "univ'");
-      ("priv_prod"  , "prod'");
-      ("priv_code"  , "code");
-      ("priv_uncode", "uncode");
+      ("_lift"  , "lift'");
+      ("_cast"  , "cast'");
+      ("_univ"  , "univ'");
+      ("_prod"  , "prod'");
+      ("_code"  , "code");
+      ("_uncode", "uncode");
+      ("_code_app" , "cApp");
+      ("_code_abs" , "cLam");
+      ("_code_univ", "cU");
+      ("_code_prod", "cPi");
       ("0"          , "0");
       ("S"          , "_S");
       ("SA"         , "SA");
@@ -62,14 +71,14 @@ let init () =
       ("constraints"       , false);
       ("named_univ"        , false);
       ("readable"          , false);
-      ("cast"              , false);
+      ("use_cast"          , false);
       ("pred_univ"         , false);
       ("pred_prod"         , false);
       ("pred_lift"         , false);
       ("pred_cast"         , false);
       ("priv_lift"         , false);
       ("priv_cast"         , false);
-      ("priv_univ_flag"    , false);
+      ("priv_univ"         , false);
       ("priv_prod"         , false);
       ("inlined_fixpoint"  , false)
     ]
@@ -82,14 +91,14 @@ let lift_priv () =
     "pred_prod", "true";
     "pred_lift", "true";
     "priv_lift", "true";
-    "priv_univ_flag", "true";
+    "priv_univ", "true";
     "priv_prod", "true"
   ]
 
 let universo () =
   lift_priv();
   set_params [
-    "cast"               , "true"; (* Use casts instead of lifts *)
+    "use_cast"           , "true"; (* Use casts instead of lifts *)
     "pred_cast"          , "true"; (* They take a predicate argument *)
     "constraints"        , "true";
     "polymorphism"       , "true";
@@ -104,7 +113,7 @@ let universo () =
 (* but lifts are still normal forms for universe lifting *)
 let original_cast () =
   init();
-  set_param "cast" "true"
+  set_param "use_cast" "true"
 
 let template_cast () =
   original_cast ();
@@ -116,11 +125,11 @@ let polymorph () =
     "polymorphism"       , "true";
     "templ_polymorphism" , "true";
     "constraints"        , "true";
-    "cast"               , "true";  (* Use casts instead of lifts *)
+    "use_cast"           , "true";  (* Use casts instead of lifts *)
     "pred_cast"          , "true";  (* Casts take subtype predicate argument *)
     "priv_lift"          , "false";
     "priv_cast"          , "true";
-    "priv_univ_flag"          , "true";
+    "priv_univ"          , "true";
     "priv_prod"          , "true";
     "lifted_type_pattern", "cast"; (* Casted type pattern *)
   ]
@@ -135,7 +144,8 @@ let readable () = set_params
       "Univ", "U";
       "Term", "T";
       "univ", "u";
-      "priv_univ", "u'" ]
+      "_univ", "u'"
+    ]
 
 let fixpointed () = set_param "inlined_fixpoint" "true"
 
@@ -163,6 +173,6 @@ let is_constraints_on        () = flag "constraints"
 let is_named_univ_on         () = flag "named_univ"
 let is_float_univ_on         () = flag "float_univ"
 let is_readable_on           () = flag "readable"
-let is_cast_on               () = flag "cast"
+let is_cast_on               () = flag "use_cast"
 let is_letins_simpl          () = flag "simpl_letins"
 let is_fixpoint_inlined      () = flag "inlined_fixpoint"

@@ -1,11 +1,4 @@
 
-
-
-
-
-
-
-
 Inductive nat : Type :=
 | Z : nat
 | S : nat -> nat.

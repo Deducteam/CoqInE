@@ -23,6 +23,12 @@ run/geocoq/**/*.dk
 run/geocoq_orig/**/*.dk
 run/mathcomp/**/*.dk
 
+run/debug/config.v
+run/test/config.v
+run/geocoq/config.v
+run/geocoq_orig/config.v
+run/mathcomp/config.v
+
 run/debug/out
 run/test/out
 run/geocoq/out

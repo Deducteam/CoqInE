@@ -13,7 +13,7 @@ COQINEPATH=../../src
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
 
-.PHONY:	all compile generate depend check clean
+.PHONY:	all compile depend generate check clean
 
 .SUFFIXES: .dk .dko
 
@@ -24,7 +24,7 @@ all: compile generate depend
 	rm CoqMakefile
 
 # Compile the local [.v] files that are not part of the stdlib
-compile: CoqMakefile
+compile: CoqMakefile $(OUTFOLDER)
 	make -f CoqMakefile
 
 $(OUTFOLDER):

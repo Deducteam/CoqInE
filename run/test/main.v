@@ -13,4 +13,6 @@ Dedukti Set Encoding "universo readable fix".
 
 Require Import import.
 
+Load config.
+
 Dedukti Export All.

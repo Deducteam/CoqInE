@@ -1,4 +1,3 @@
-
 open Dedukti
 open Encoding
 
@@ -26,7 +25,9 @@ let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 let coq_var  x = Var (add_prefix (symb "system_module")   x)
 let univ_var x = Var (add_prefix (symb "universe_module") x)
 
-let coq_Sort () = coq_var (symb "Sort")
+let vsymb s = coq_var (symb s)
+
+let coq_Sort () = vsymb "Sort"
 
 let coq_var_univ_name n = "s" ^ string_of_int n
 
@@ -51,13 +52,13 @@ struct
 
   let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
 
-  let coq_axiom s    = app  (coq_var (symb "axiom")) s
+  let coq_axiom s    = app  (vsymb "axiom") s
   let coq_axioms s i = Utils.iterate i coq_axiom s
-  let coq_rule s1 s2 = apps (coq_var (symb "rule")) [s1; s2]
+  let coq_rule s1 s2 = apps (vsymb "rule") [s1; s2]
   let rec coq_sup  = function
     | [] -> coq_prop ()
     | [u] -> u
-    | (u :: u_list) -> apps (coq_var (symb "sup")) [u; coq_sup u_list]
+    | (u :: u_list) -> apps (vsymb "sup") [u; coq_sup u_list]
   let rec cu = function
     | Succ (u   ,0) -> cu u
     | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
@@ -82,27 +83,27 @@ struct
     | u -> cu u
   let coq_pattern_universe u = cpu u
 
-  let coq_U    s           = app  (coq_var (symb "Univ") ) (cu s)
-  let coq_term s  a        = apps (coq_var (symb "Term") ) [cu s; a]
+  let coq_U    s           = app  (vsymb "Univ") (cu s)
+  let coq_term s  a        = apps (vsymb "Term") [cu s; a]
 
-  let t_I () = coq_var (symb "I")
-  let coq_sort cu s = apps (coq_var (symb "univ") )
+  let t_I () = vsymb "I"
+  let coq_sort cu s = apps (vsymb "univ")
       (if (flag "pred_univ")
        then [cu s; cu (Succ (s,1)); t_I()]
        else [cu s])
-  let coq_prod cu s1 s2 a b   = apps (coq_var (symb "prod") )
+  let coq_prod cu s1 s2 a b   = apps (vsymb "prod")
       (if (flag "pred_prod")
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
-  let coq_cast cu s1 s2 a b t = apps (coq_var (symb "cast") )
+  let coq_cast cu s1 s2 a b t = apps (vsymb "cast")
       (if (flag "pred_cast")
        then [cu s1; cu s2; a; b; t_I(); t]
        else [cu s1; cu s2; a; b;        t])
   let coq_pcast cu s1 s2 a b t =
     if (flag "pred_cast")
-    then apps (coq_var (symb "priv_cast")) [cu s1; cu s2; a; b;t]
+    then apps (vsymb "_cast") [cu s1; cu s2; a; b;t]
     else coq_cast cu s1 s2 a b t
-  let coq_lift cu s1 s2 t = apps (coq_var (symb "lift"))
+  let coq_lift cu s1 s2 t = apps (vsymb "lift")
       (if (flag "pred_lift")
        then [cu s1; cu s2; t_I(); t]
        else [cu s1; cu s2;        t])
@@ -146,8 +147,8 @@ struct
   let short_code i =
     if i <= 9 then code_var i else Std.coq_sort scu (Succ(Set,i+1))
 
-  let short_U    s   = app  (coq_var (symb "Univ")) (scu s)
-  let short_term s a = apps (coq_var (symb "Term")) [scu s; a]
+  let short_U    s   = app  (vsymb "Univ") (scu s)
+  let short_term s a = apps (vsymb "Term") [scu s; a]
   let rec short_sort = function
     | Succ (u   ,0) -> short_sort u
     | Succ (Succ(u,i), j) -> short_sort (Succ (u,i+j))
@@ -200,43 +201,42 @@ struct
   let coq_term     s = if a () then Std.coq_term s else Short.short_term s
   let coq_sort     s = if a () then Std.coq_sort Std.cu s else Short.short_sort s
 
-  let coq_prod     s = Std.coq_prod (if a () then Std.cu else Short.scu) s
-  let coq_cast     s = Std.coq_cast (if a () then Std.cu else Short.scu) s
+  let coq_prod     s = Std.coq_prod  (if a () then Std.cu else Short.scu) s
+  let coq_cast     s = Std.coq_cast  (if a () then Std.cu else Short.scu) s
   let coq_pcast    s = Std.coq_pcast (if a () then Std.cu else Short.scu) s
-  let coq_lift     s = Std.coq_lift (if a () then Std.cu else Short.scu) s
-  let cstr_le      s = Std.cstr_le  (if a () then Std.cu else Short.scu) s
-  let cstr_lt      s = Std.cstr_lt  (if a () then Std.cu else Short.scu) s
+  let coq_lift     s = Std.coq_lift  (if a () then Std.cu else Short.scu) s
+  let cstr_le      s = Std.cstr_le   (if a () then Std.cu else Short.scu) s
+  let cstr_lt      s = Std.cstr_lt   (if a () then Std.cu else Short.scu) s
 
   let coq_pattern_lifted_from_sort s t =
-    let univ s =
-      if (flag "priv_univ_flag")
-      then apps (coq_var (symb "priv_univ")) [var s; wildcard]
-      else
-        apps (coq_var (symb "univ"))
-          (if (flag "pred_univ")
-           then [var s; wildcard; wildcard]
-           else [var s]) in
-    match (symb "lifted_type_pattern") with
+    match symb "lifted_type_pattern" with
     | "lift" ->
       (if (flag "pred_lift")
-         then apps (coq_var (symb "priv_lift")) [var s;wildcard;t]
-         else apps (coq_var (symb "lift")     ) [var s;wildcard;t])
+         then apps (vsymb "_lift") [var s;wildcard;t]
+         else apps (vsymb "lift")      [var s;wildcard;t])
     | "cast" ->
+      let univ s =
+        if (flag "priv_univ")
+        then apps (vsymb "_univ") [var s; wildcard]
+        else
+          apps (vsymb "univ")
+            (if (flag "pred_univ")
+             then [var s; wildcard; wildcard]
+             else [var s]) in
       if (flag "priv_cast")
-      then apps (coq_var (symb "priv_cast")) [wildcard;wildcard;univ s;wildcard;t]
+      then apps (vsymb "_cast") [wildcard;wildcard;univ s;wildcard;t]
       else
         let uwildcard =
-          apps (coq_var (symb "univ")) (if (flag "pred_univ")
-                                         then [wildcard]
-                                         else [wildcard;wildcard;wildcard]) in
-        apps (coq_var (symb "cast"))
+          apps (vsymb "univ") (if (flag "pred_univ")
+                               then [wildcard]
+                               else [wildcard;wildcard;wildcard]) in
+        apps (vsymb "cast")
           (if (flag "pred_cast")
            then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
            else [wildcard;wildcard;univ s;uwildcard;t])
     | "uncodedcode" ->
-      let c = coq_var (symb "priv_code") in
-      let u = coq_var (symb "priv_uncode") in
-      apps u [univ s;apps c [wildcard;t]]
+      let s_code = app (vsymb "_code_univ") (var s) in
+      apps (vsymb "_uncode") [wildcard;apps (vsymb "_code") [s_code;t]]
     | s -> assert false
 
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
@@ -247,9 +247,9 @@ struct
     let coq_N n =
       assert (n >= 0);
       if n < 10 then coq_var (string_of_int n)
-      else Utils.iterate n (app (coq_var (symb "S"))) (coq_var (symb "0")) in
+      else Utils.iterate n (app (vsymb "S")) (vsymb "0") in
     let coq_arity (k,a) =
-      apps (coq_var (symb "SA")) [coq_N k; sort; a] in
+      apps (vsymb "SA") [coq_N k; sort; a] in
     assert (Encoding.is_fixpoint_inlined ());
     assert (Array.length arities = n);
     assert (Array.length bodies = n);
@@ -259,13 +259,12 @@ struct
     let make_bodies =
       ulam "c" (apps (var "c") (Array.to_list bodies)) in
     apps
-      (coq_var (symb "fix_oneline"))
+      (vsymb "fix_oneline")
       [ sort; coq_N n; make_arities; make_bodies; coq_N i]
 
   let coq_guarded consname args =
     let applied_cons = Utils.iterate args (fun x -> app x wildcard) (var consname) in
-    let lhs = apps (coq_var (symb "guard")) [wildcard; wildcard; applied_cons] in
-    let rhs = coq_var (symb "guarded") in
-    rewrite ([],lhs,rhs)
+    let lhs = apps (vsymb "guard") [wildcard; wildcard; applied_cons] in
+    rewrite ([],lhs,vsymb "guarded")
 
 end

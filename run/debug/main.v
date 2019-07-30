@@ -11,7 +11,7 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Add Debug "Top.Test.Debuglib".
 
-Dedukti Set Encoding "readable fix universo".
+Dedukti Set Encoding "polymorph readable fix".
 
 Require Import import.
 

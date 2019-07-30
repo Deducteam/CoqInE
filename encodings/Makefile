@@ -9,6 +9,9 @@ $(BUILD):
 	@rm -rf $(BUILD)
 	@mkdir $(BUILD)
 
+%.config: %.dk
+	@sed -n 's/^\(.*\)Coqine *\([^ ]*\) *= *\([^ ]*\)\(.*\)/Dedukti Set Param "\2" "\3"./p' $^ > $@
+
 define targ
 $(BUILD)/$1: $(BUILD)
 	@rm -rf $(BUILD)/$1
@@ -19,13 +22,15 @@ $(BUILD)/$1/Coq.dk: $(BUILD) $(BUILD)/$1
 
 $(BUILD)/$1/C.dk: $(BUILD) $(BUILD)/$1 $(BUILD)/$1/Coq.dk
 	@cp $(BUILD)/$1/Coq.dk $(BUILD)/$1/C.dk
-	@sed -i 's/Sort/S/g' $(BUILD)/$1/C.dk
-	@sed -i 's/Term/T/g' $(BUILD)/$1/C.dk
-	@sed -i 's/Univ/U/g' $(BUILD)/$1/C.dk
-	@sed -i 's/univ/u/g' $(BUILD)/$1/C.dk
-	@sed -i 's/Decode/_D/g' $(BUILD)/$1/C.dk
-	@sed -i 's/uncode/_u/g' $(BUILD)/$1/C.dk
-	@sed -i 's/code/_c/g' $(BUILD)/$1/C.dk
+	@sed -i 's/Coqine \([^ ]*\)/Coqine_\1/g' $(BUILD)/$1/C.dk
+	@sed -i 's/\(^\|[^_]\)Sort/\1S/g;   \
+             s/\(^\|[^_]\)Term/\1T/g;   \
+             s/\(^\|[^_]\)Univ/\1U/g;   \
+             s/\(^\|[^_]\)univ/\1u/g;   \
+             s/\(^\|[^_]\)Decode/\1_D/g;\
+             s/\(^\|[^_]\)uncode/\1_u/g;\
+             s/\(^\|[^_]\)code/\1_c/g'   $(BUILD)/$1/C.dk
+	@sed -i 's/Coqine_\([^ ]*\)/Coqine \1/g' $(BUILD)/$1/C.dk
 
 $1: $(BUILD)/$1/Coq.dk
 
@@ -39,6 +44,8 @@ $(BUILD)/$1/Coq.dko: $(BUILD)/$1/Coq.dk
 
 all: $(BUILD)/$1/Coq.dko
 all: $(BUILD)/$1/C.dko
+all: $(BUILD)/$1/Coq.config
+all: $(BUILD)/$1/C.config
 endef
 
 $(eval $(call targ,original,original,original,original,,))

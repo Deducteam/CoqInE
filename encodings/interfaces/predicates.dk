@@ -47,4 +47,19 @@ def cast : s : Sort -> s' : Sort ->
            p : eps (SubType s s' a b) ->
            Term s a -> Term s' b.
 
+(;
+Coqine syntax = Dedukti
 
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ  = univ
+Coqine prod  = prod
+Coqine cast  = cast
+
+Coqine use_cast  = true    Use casts instead of lifts
+Coqine pred_univ = true    Univ is predicative
+Coqine pred_prod = true    Prod is predicative
+Coqine pred_cast = true    Cast is predicative
+;)
