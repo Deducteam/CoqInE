@@ -19,7 +19,11 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
 .PHONY: all plugin install uninstall clean fullclean
 
-all: check-version .merlin plugin test_fix
+all: check-version .merlin plugin
+	make test_fix
+	make test_poly
+
+long: all debug_fix debug_poly
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
@@ -77,6 +81,8 @@ run: plugin
 	sed -i -e "/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"." $(RUNDIR)/main.v
 	make -C $(RUNDIR)
 
+
+
 .PHONY: test
 test: RUNDIR:=$(RUN_TESTS_DIR)
 test: run
@@ -89,11 +95,22 @@ debug: run
 mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
 mathcomp: run
 
+.PHONY: orig_geocoq
+orig_geocoq: RUNDIR:=$(RUN_GEOCOQ_ORIG_DIR)
+orig_geocoq: COQINE_FLAGS:=polymorph
+orig_geocoq: run
 
-.PHONY: test_universo
-test_universo: ENCODING:=predicates_eta/C
-test_universo: COQINE_FLAGS:=polymorph
-test_universo: test
+.PHONY: geocoq
+geocoq: RUNDIR:=$(RUN_GEOCOQ_DIR)
+geocoq: COQINE_FLAGS:=polymorph
+geocoq: run
+
+
+
+.PHONY: test_eta
+test_eta: ENCODING:=predicates_eta/C
+test_eta: COQINE_FLAGS:=polymorph
+test_eta: test
 
 .PHONY: test_fix
 test_fix: ENCODING:=predicates_eta_fix/C
@@ -106,10 +123,10 @@ test_poly: COQINE_FLAGS:=polymorph
 test_poly: test
 
 
-.PHONY: debug_universo
-debug_universo: ENCODING:=predicates/C
-debug_universo: COQINE_FLAGS:=polymorph
-debug_universo: debug
+.PHONY: debug_eta
+debug_eta: ENCODING:=predicates_eta/C
+debug_eta: COQINE_FLAGS:=polymorph
+debug_eta: debug
 
 .PHONY: debug_fix
 debug_fix: ENCODING:=predicates_eta_fix/C
@@ -164,27 +181,19 @@ mathcomp_debug: mathcomp
 
 
 # These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
-.PHONY: geocoq_orig_universo
-geocoq_orig_universo: ENCODING:= predicates/Coq
-geocoq_orig_universo: COQINE_FLAGS  := polymorph
-geocoq_orig_universo: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
-geocoq_orig_universo: run
+.PHONY: orig_geocoq_long
+orig_geocoq_long: ENCODING:=predicates/Coq
+orig_geocoq_long: orig_geocoq
 
-.PHONY: geocoq_orig
-geocoq_orig: ENCODING:= predicates/C
-geocoq_orig: COQINE_FLAGS  := polymorph
-geocoq_orig: RUNDIR        := $(RUN_GEOCOQ_ORIG_DIR)
-geocoq_orig: run
+.PHONY: orig_geocoq_short
+orig_geocoq_short: ENCODING:=predicates/C
+orig_geocoq_short: orig_geocoq
 
 
-.PHONY: geocoq_universo
-geocoq_universo: ENCODING:= predicates/Coq
-geocoq_universo: COQINE_FLAGS  := polymorph
-geocoq_universo: RUNDIR        := $(RUN_GEOCOQ_DIR)
-geocoq_universo: run
+.PHONY: geocoq_long
+geocoq_long: ENCODING:= predicates/Coq
+geocoq_long: geocoq
 
-.PHONY: geocoq
-geocoq: ENCODING:= predicates/C
-geocoq: COQINE_FLAGS  := polymorph
-geocoq: RUNDIR        := $(RUN_GEOCOQ_DIR)
-geocoq: run
+.PHONY: geocoq_short
+geocoq_short: ENCODING:= predicates/C
+geocoq_short: geocoq

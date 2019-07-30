@@ -276,12 +276,14 @@ def fix_proj_1 :
   -->
   fix_proj_1 s n MA MF (MA_ith_SA s n MA i) (fix_body s n MA MF i).
 
-[s,n,MA,MF,i,A,B,body,a,s1,s2]
-  fix_proj_1 s n MA MF (SAcons (_S i) _ (prod' s1 s2 _ A (x => B x))) body a
+[s,n,MA,MF,i,A,B,body,a]
+  fix_proj_1 s n MA MF
+    (SAcons (_S i) _ (uncode (cU _) (cPi A (x => B x))))
+    body a
   -->
   fix_proj_1 s n MA MF
-    (SAcons i s (lift' s2 s (B a)))
-    (app_body s n MA s1 s2 A (x => B x) body a).
+    (SAcons i s (uncode (cU s) (B (code A a))))
+    (app_body s n MA s s (uncode (cU s) A) (x => uncode (cU s) (B (code A x))) body a).
 
 (; Returns a term
      Fix2 fi { f1 / k1 : A1 := body1, ..., fn / kn : An := bodyn } A body
@@ -300,12 +302,14 @@ def fix_proj_2 :
   Guarded? ->
   Term s A.
 
-[s,n,MA,MF,Ind,B,body,a,s1]
-  fix_proj_1 s n MA MF (SAcons 0 _ (prod' s1 s _ Ind (x => B x))) body a
+[s,n,MA,MF,Ind,B,body,a]
+  fix_proj_1 s n MA MF
+    (SAcons 0 _ (uncode (cU _) (cPi Ind (x => B x))))
+    body a
   -->
   fix_proj_2 s n MA MF
-    (prod' s1 s s Ind (x => B x))
-    body (guarded? s1 Ind a) a.
+    (uncode (cU s) (cPi Ind (x => B x)))
+    body (guarded? s (uncode (cU s) Ind) a) a.
 
 (; Returns a term
      Fix3 A { k1 / A1, ..., kn / An }

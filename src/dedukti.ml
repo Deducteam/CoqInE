@@ -77,89 +77,118 @@ let typed_rewrite (context, left, right) = rewrite (List.map fst context, left, 
 
 let apply_context a context = apps a (List.map var (List.map fst context))
 
+
 (** Pretty-printing using the minimal number of parentheses. *)
 
-(** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
-let print_var out = function
-  | ""    -> Format.fprintf out "__"
-  | "def" -> Format.fprintf out "def__"
-  | x     -> Format.fprintf out "%s" x
+module DeduktiPrinter =
+struct
 
-let rec print_term out term =
+  (** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
+  let print_var out = function
+    | ""    -> Format.fprintf out "__"
+    | "def" -> Format.fprintf out "def__"
+    | x     -> Format.fprintf out "%s" x
+
   let rec print_term out term =
+    let rec print_term out term =
+      match term with
+      | Pie(("", a), b) -> Format.fprintf out "%a ->@ %a" print_app a print_term b
+      | Pie((x , a), b) -> Format.fprintf out "%a ->@ %a" print_binding (x, Some a) print_term b
+      | Lam((x , a), b) -> Format.fprintf out "%a =>@ %a" print_binding (x,      a) print_term b
+      | LetIn((x , u, a), b) ->
+        Format.fprintf out "(%a := %a) =>@ %a" print_binding (x,Some a) print_atomic u print_term b
+      | _               -> Format.fprintf out "%a" print_app term
+    in
+    Format.fprintf out "@[<hv0>%a@]" print_term term
+
+  and print_app out term =
+    let rec print_app out term =
+      match term with
+      | App(a, b) -> Format.fprintf out "%a@ %a" print_app a print_atomic b
+      | _         -> Format.fprintf out "%a" print_atomic term
+    in
+    Format.fprintf out "@[<2>%a@]" print_app term
+
+  and print_atomic out term =
     match term with
-    | Pie(("", a), b) -> Format.fprintf out "%a ->@ %a" print_app a print_term b
-    | Pie((x , a), b) -> Format.fprintf out "%a ->@ %a" print_binding (x, Some a) print_term b
-    | Lam((x , a), b) -> Format.fprintf out "%a =>@ %a" print_binding (x,      a) print_term b
-    | LetIn((x , u, a), b) ->
-      Format.fprintf out "(%a := %a) =>@ %a" print_binding (x,Some a) print_atomic u print_term b
-    | _               -> Format.fprintf out "%a" print_app term
-  in
-  Format.fprintf out "@[<hv0>%a@]" print_term term
+    | Type      -> Format.fprintf out "Type"
+    | Var(x)    -> Format.fprintf out "%a" print_var x
+    | Dot(a)    -> Format.fprintf out "{%a}" print_term a
+    | Cmt(s, a) -> Format.fprintf out "(; %s ;) (%a)" s print_term a
+    | Bracket(t)-> Format.fprintf out "{%a}" print_term t
+    | Wildcard  -> Format.fprintf out "_"
+    | _         -> Format.fprintf out "(%a)" print_term term
 
-and print_app out term =
-  let rec print_app out term =
-    match term with
-    | App(a, b) -> Format.fprintf out "%a@ %a" print_app a print_atomic b
-    | _         -> Format.fprintf out "%a" print_atomic term
-  in
-  Format.fprintf out "@[<2>%a@]" print_app term
+  and print_binding out (v, ty) =
+    match ty with
+    | None    -> Format.fprintf out "@[<2>%a@]" print_var v
+    | Some ty -> Format.fprintf out "@[<2>%a :@ %a@]" print_var v print_app ty
 
-and print_atomic out term =
-  match term with
-  | Type      -> Format.fprintf out "Type"
-  | Var(x)    -> Format.fprintf out "%a" print_var x
-  | Dot(a)    -> Format.fprintf out "{%a}" print_term a
-  | Cmt(s, a) -> Format.fprintf out "(; %s ;) (%a)" s print_term a
-  | Bracket(t)-> Format.fprintf out "{%a}" print_term t
-  | Wildcard  -> Format.fprintf out "_"
-  | _         -> Format.fprintf out "(%a)" print_term term
+  let pp_term = print_term
 
-and print_binding out (v, ty) =
-  match ty with
-  | None    -> Format.fprintf out "@[<2>%a@]" print_var v
-  | Some ty -> Format.fprintf out "@[<2>%a :@ %a@]" print_var v print_app ty
+  let print_context out context =
+    Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_var) context
 
-let pp_term = print_term
+  let print fmt = function
+    | Comment(c) -> Format.fprintf fmt "(; %s ;)@." c
+    | Command(cmd, args) ->
+      let print_args fmt = List.iter (Format.fprintf fmt " %s") in
+      Format.fprintf fmt "@[#%s%a.@]@.@." cmd print_args args
+    | Declaration(definable, x, a) ->
+      Format.fprintf fmt "@[<v2>%s%a :@ %a.@]@.@."
+        (if definable then "def " else "") print_var x print_term a
+    | Definition(opaque, x, a, t) ->
+      Format.fprintf fmt "@[<v2>%s %a :@ @ %a :=@ @ %a.@]@.@."
+        (if opaque then "thm" else "def")
+        print_var x print_term a print_term t
+    | UDefinition(opaque, x, t) ->
+      Format.fprintf fmt "@[<v2>%s %a@ @ :=@ @ %a.@]@.@."
+        (if opaque then "thm" else "def")
+        print_var x print_term t
+    | Rewrite(context, left, right) ->
+      Format.fprintf fmt "@[<v2>[ %a]@ @ %a -->@ @ %a.@]@.@."
+        print_context context print_term left print_term right
+    | EmptyLine -> Format.pp_print_newline fmt ()
 
-let print_context out context =
-  Format.fprintf out "@[<v>%a@]" (Debug.pp_list ", " print_var) context
-
-let print fmt = function
-  | Comment(c) -> Format.fprintf fmt "(; %s ;)@." c
-  | Command(cmd, args) ->
-    let print_args fmt = List.iter (Format.fprintf fmt " %s") in
-    Format.fprintf fmt "@[#%s%a.@]@.@." cmd print_args args
-  | Declaration(definable, x, a) ->
-    Format.fprintf fmt "@[<v2>%s%a :@ %a.@]@.@."
-      (if definable then "def " else "") print_var x print_term a
-  | Definition(opaque, x, a, t) ->
-    Format.fprintf fmt "@[<v2>%s %a :@ @ %a :=@ @ %a.@]@.@."
-      (if opaque then "thm" else "def")
-      print_var x print_term a print_term t
-  | UDefinition(opaque, x, t) ->
-    Format.fprintf fmt "@[<v2>%s %a@ @ :=@ @ %a.@]@.@."
-      (if opaque then "thm" else "def")
-      print_var x print_term t
-  | Rewrite(context, left, right) ->
-    Format.fprintf fmt "@[<v2>[ %a]@ @ %a -->@ @ %a.@]@.@."
+  let printc fmt = function
+    | Comment(c) -> Format.fprintf fmt "(; %s ;)@." c
+    | Declaration(definable, x, a) ->
+      Format.fprintf fmt "@[%s%a : %a.@]@."
+        (if definable then "def " else "") print_var x print_term a
+    | Definition(opaque, x, a, t) ->
+      Format.fprintf fmt "@[<v2>%s %a : %a := %a.@]@."
+        (if opaque then "thm" else "def")
+        print_var x print_term a print_term t
+    | UDefinition(opaque, x, t) ->
+      Format.fprintf fmt "@[<v2>%s %a := %a.@]@."
+        (if opaque then "thm" else "def")
+        print_var x print_term t
+    | Rewrite(context, left, right) ->
+      Format.fprintf fmt "@[<v2>[ %a] %a -->  %a.@]@."
       print_context context print_term left print_term right
-  | EmptyLine -> Format.pp_print_newline fmt ()
+    | instruction -> print fmt instruction
+end
 
-let printc fmt = function
-  | Comment(c) -> Format.fprintf fmt "(; %s ;)@." c
-  | Declaration(definable, x, a) ->
-    Format.fprintf fmt "@[%s%a : %a.@]@."
-      (if definable then "def " else "") print_var x print_term a
-  | Definition(opaque, x, a, t) ->
-    Format.fprintf fmt "@[<v2>%s %a : %a := %a.@]@."
-      (if opaque then "thm" else "def")
-      print_var x print_term a print_term t
-  | UDefinition(opaque, x, t) ->
-    Format.fprintf fmt "@[<v2>%s %a := %a.@]@."
-      (if opaque then "thm" else "def")
-      print_var x print_term t
-  | Rewrite(context, left, right) ->
-    Format.fprintf fmt "@[<v2>[ %a] %a -->  %a.@]@."
-      print_context context print_term left print_term right
-  | instruction -> print fmt instruction
+
+(* Supported syntaxes *)
+type supportedSyntax = Dedukti
+(* TODO: add a printer for Lambdapi *)
+
+(* Fetching current export syntax *)
+let syntax () =
+  match Encoding.symb "syntax" with
+  | "Dedukti" -> Dedukti
+  | syntax -> failwith ("Unsupported output syntax: " ^ syntax)
+
+(* Defining printers *)
+let print x =
+  match syntax() with
+  | Dedukti -> DeduktiPrinter.print x
+
+let printc x =
+  match syntax() with
+  | Dedukti -> DeduktiPrinter.printc x
+
+let pp_term x =
+  match syntax() with
+  | Dedukti -> DeduktiPrinter.pp_term x

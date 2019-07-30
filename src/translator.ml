@@ -96,12 +96,18 @@ struct
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b t = apps (vsymb "cast")
-      (if (flag "pred_cast")
+      (if flag "pred_cast"
        then [cu s1; cu s2; a; b; t_I(); t]
        else [cu s1; cu s2; a; b;        t])
   let coq_pcast cu s1 s2 a b t =
-    if (flag "pred_cast")
-    then apps (vsymb "_cast") [cu s1; cu s2; a; b;t]
+    if flag "pred_cast"
+    then
+      if flag "priv_cast"
+      then apps (vsymb "_cast") [cu s1; cu s2; a; b;t]
+      else
+        let ca = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s1); a] in
+        let cb = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s2); b] in
+        apps (vsymb "_uncode") [ cb; apps (vsymb "_code") [ca ; t ] ]
     else coq_cast cu s1 s2 a b t
   let coq_lift cu s1 s2 t = apps (vsymb "lift")
       (if (flag "pred_lift")
@@ -234,10 +240,10 @@ struct
           (if (flag "pred_cast")
            then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
            else [wildcard;wildcard;univ s;uwildcard;t])
-    | "uncodedcode" ->
+    | "recoded" ->
       let s_code = app (vsymb "_code_univ") (var s) in
       apps (vsymb "_uncode") [wildcard;apps (vsymb "_code") [s_code;t]]
-    | s -> assert false
+    | s -> failwith ("Unexpected lifted_type_pattern value: " ^ s)
 
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s

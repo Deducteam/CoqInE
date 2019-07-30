@@ -93,7 +93,7 @@ def ST : Code -> Code -> Bool.
 
 (;
 Normal forms of lifted types are uncoded codes:
-Coqine lifted_type_pattern = uncodedcode
+Coqine lifted_type_pattern = recoded
 
 Coqine _code      = code
 Coqine _uncode    = uncode
