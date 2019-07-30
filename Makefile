@@ -17,9 +17,61 @@ RUN_MATHCOMP_DIR=$(RUNDIR)/mathcomp
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
 CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
-.PHONY: all plugin install uninstall clean fullclean
+define MANUAL
 
-all: check-version .merlin plugin
+---------------------------
+     How to use Coqine
+---------------------------
+
+
+- make -C encodings
+    Generates encodings for Coq in the encodings/_build folder then checks the
+    generated files
+
+
+- make test_fix
+    Translates the file run/test/import.v and all it's dependencies into the
+    run/test/out folder then checks the generated files
+    The translation of import.v itself is run/test/out/Top__import.dk
+    The encoding file generated is run/test/C.dk
+    This translation relies on privates casts
+
+- make test_poly
+    Same as test_fix but the translation relies on private codes
+
+- make debug_fix
+    Translates the files in run/debug/Test and all their dependencies into the
+    run/debug/out folder then checks the generated files
+    This translation relies on privates casts
+
+- make debug_poly
+    Same as debug_fix but the translation relies on private codes
+
+- make tests
+    Run the four targets above successively
+    This must work before pushing to the repo !!
+
+- make geocoq_short
+    GeoCoq needs to be installed. Set correct path in run/geocoq/Makefile.
+    Fetches a subset of the GeoCoq library and translates it with all it's
+    dependencies into the run/geocoq/out folder then checks the generated files
+    This translation relies on privates casts
+
+- make orig_geocoq_short
+    Same as geocoq_short but translates the original proofs
+    from Euclid's Elements in the run/geocoq_orig/out
+
+endef
+export MANUAL
+
+.PHONY: all plugin install uninstall clean fullclean help
+
+all: check-version .merlin plugin help
+
+help:
+	@echo "$$MANUAL"
+
+tests: check-version .merlin plugin
 	make test_fix
 	make test_poly
 	make debug_fix
