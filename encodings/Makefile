@@ -55,9 +55,11 @@ $(eval $(call targ,original_cast,original_cast,original_cast,original_cast,,))
 
 $(eval $(call targ,predicates,predicates,predicates,predicates,,))
 $(eval $(call targ,predicates_eta,predicates,predicates_eta,predicates,,))
-$(eval $(call targ,predicates_eta_fix,predicates,predicates_eta,predicates,generic,))
-$(eval $(call targ,predicates_eta_fix_test,predicates,predicates_eta,predicates,generic,test_fixpoint))
+$(eval $(call targ,predicates_eta_fix,predicates,predicates_eta,predicates,predicates,))
+$(eval $(call targ,predicates_eta_fix_test,predicates,predicates_eta,predicates,predicates,test_fp_predicates))
+
 $(eval $(call targ,lift_predicates,lift-predicates,lift-predicates,lift-predicates,,))
+
 $(eval $(call targ,functional,functional,functional,functional,,))
 $(eval $(call targ,constructors,constructors,functional,functional,,))
 $(eval $(call targ,full_constructors,full_constructors,functional,functional,,))
@@ -78,6 +80,8 @@ $(eval $(call targ,fullcodes_eta_test3,predicates,fullcodes_eta,predicates,,test
 $(eval $(call targ,fullcodes_eta_fix,predicates,fullcodes_eta,predicates,fullcodes,))
 $(eval $(call targ,fullcodes_eta_fix_test2,predicates,fullcodes_eta,predicates,fullcodes,test2))
 $(eval $(call targ,fullcodes_eta_fix_test3,predicates,fullcodes_eta,predicates,fullcodes,test3))
+
+$(eval $(call targ,fullcodes_eta_fix2,predicates,fullcodes_eta,predicates,fullcodes_multis,))
 
 .PHONY: check
 check:

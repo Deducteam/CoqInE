@@ -15,8 +15,6 @@ Dedukti Add Debug "Top.GeoCoq.Meta_theory.Decidability.equivalence_between_decid
 Dedukti Add Debug "Top.GeoCoq.Tarski_dev.Ch08_orthogonality".
  *)
 
-Dedukti Set Encoding "polymorph".
-
 Dedukti Enable Failproofmode.
 
 Dedukti Enable Verbose.

@@ -9,9 +9,7 @@ Dedukti Set Destination "out".
 
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Add Debug "Top.Test.Debuglib".
-
-Dedukti Set Encoding "polymorph".
+Dedukti Add Debug "Coq.Classes.Morphisms".
 
 Require Import import.
 

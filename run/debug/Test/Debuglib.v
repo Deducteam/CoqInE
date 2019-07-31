@@ -53,18 +53,28 @@ Definition expProp  := @exp xProp  xProp.
 Inductive pair (A:Type) (B:Type) : Type :=
 | fst : A -> pair A B
 | snd : B -> pair A B.
+
+(*
 Print pair.
+*)
 (* Type@{Top.1} -> Type@{Top.2} -> Type@{max(Set, Top.1, Top.2)} *)
 
 Definition aux := pair xSet.
+
+(*
 Print aux.
+*)
 (* Type@{Top.2} -> Type@{max(Set, Top.2)} *)
 
 Definition aux_e (B:Type) : aux B := fst xSet B I.
+(*
 Print aux_e.
+ *)
 
 Definition aux2 := aux xSet.
+(*
 Print aux2.
+*)
 (* Type@{max(Set, Top.2)} *)
 
 Definition aux2_e1 : aux2 := fst xSet xSet I.

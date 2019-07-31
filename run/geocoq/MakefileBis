@@ -1,0 +1,28 @@
+# Generic Makefile to run Coqine
+
+# Variables
+DKCHECK      ?= dkcheck
+DKDEP        ?= dkdep
+
+COQINEPATH=../../src
+
+DKS = $(wildcard out/*.dk)
+DKOS = $(DKS:.dk=.dko)
+
+.PHONY: all	depend check
+
+.SUFFIXES: .dk .dko
+
+all: $(DKOS)
+
+# Generate the dependencies of [.dk] files
+depend: pruned
+	$(DKDEP) -I out -I . out/*.dk > .depend
+
+# Check and compile the generated [.dk]
+check: $(DKOS) depend
+
+%.dko: %.dk
+	$(DKCHECK) -I out -I . --eta -e $<
+
+-include .depend

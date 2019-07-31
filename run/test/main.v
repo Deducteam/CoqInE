@@ -11,8 +11,6 @@ Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 Dedukti Add Debug "Coq.Init.Specif".
 
-Dedukti Set Encoding "polymorph".
-
 Require Import import.
 
 Load config.

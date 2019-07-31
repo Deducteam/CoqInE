@@ -3,7 +3,7 @@
 (;-----------------------------------------------------------------;)
 
 (; Required rule ;)
-[s] Rule s s s --> true.
+[s] rule s s --> s.
 
 (; Natural numbers ;)
 N : Type.
@@ -32,20 +32,14 @@ def 9 := _S 8.
    - the index of expected structurally decreasing inductive argument in arity
    We write these pairs (k / A).
 ;)
-SingleArity : Type.
-SAcons : N -> s : Sort -> Univ s -> SingleArity.
-
-(;-----------------  Fetch sort from SingleArity  -----------------;)
-
-(;  Fetches  s  from  (k / A) with A : Us  ;)
-def SA_sort : SingleArity -> Sort.
-[s] SA_sort (SAcons _ s _) --> s.
+SingleArity : Sort -> Type.
+SAcons : N -> s : Sort -> Univ s -> SingleArity s.
 
 (;-----------------  Fetch type from SingleArity  -----------------;)
 
 (;  Fetches  A  from  (k / A)  ;)
-def SA_arity : SA : SingleArity -> Univ (SA_sort SA) .
-[A] SA_arity (SAcons _ _ A) --> A.
+def SA_arity : s : Sort -> SingleArity s -> Univ s.
+[s,A] SA_arity s (SAcons _ _ A) --> A.
 
 
 (;-----------------------------------------------------------------;)
@@ -55,10 +49,10 @@ def SA_arity : SA : SingleArity -> Univ (SA_sort SA) .
 (; [MutualArity s n]  is the type of lists of s-SA of size n
    We write these lists:   { k1 / A1, ..., kn / An }
 ;)
-MutualArity : N -> Type.
+MutualArity : Sort -> N -> Type.
 
 (; Builds {} ;)
-MAnil  : MutualArity 0.
+MAnil  : s : Sort -> MutualArity s 0.
 
 (; Builds { k1 / A1, ..., kn+1 / An+1 }
    from
@@ -66,52 +60,33 @@ MAnil  : MutualArity 0.
      An+1
      { k1 / A1, ..., kn / An }
 ;)
-MAcons : n : N -> SingleArity -> MutualArity n -> MutualArity (_S n).
+MAcons : s : Sort -> n : N -> SingleArity s -> MutualArity s n -> MutualArity s (_S n).
 
 (;-----------------  Fetch Arity from Arity List  -----------------;)
 
 (;  Fetches  (ki / Ai)  from  { k1 / A1, ..., kn / An }  ;)
-def MA_ith_SA  : n : N -> MutualArity n -> N -> SingleArity.
-[SA]     MA_ith_SA _ (MAcons _ SA _ ) 0      --> SA.
-[n,i,MA] MA_ith_SA _ (MAcons n _  MA) (_S i) --> MA_ith_SA n MA i.
-
-(;-----------------  Fetch sort from Arity List  ------------------;)
-
-(;  Fetches  Ai  from  { k1 / A1, ..., kn / An }  ;)
-def MA_ith_sort (n : N) (MA : MutualArity n) (i : N) : Sort :=
-  SA_sort (MA_ith_SA n MA i).
+def MA_ith_SA  : s : Sort -> n : N -> MutualArity s n -> N -> SingleArity s.
+[s,SA]     MA_ith_SA s _ (MAcons _ _ SA _) 0     --> SA.
+[s,n,i,MA] MA_ith_SA s _ (MAcons _ n _ MA) (_S i) --> MA_ith_SA s n MA i.
 
 (;-----------------  Fetch type from Arity List  ------------------;)
 
 (;  Fetches  Ai  from  { k1 / A1, ..., kn / An }  ;)
-def MA_ith_arity (n : N) (MA : MutualArity n) (i : N) : Univ (MA_ith_sort n MA i) :=
-  SA_arity (MA_ith_SA n MA i).
+def MA_ith_arity (s : Sort) (n : N) (MA : MutualArity s n) (i : N) : Univ s :=
+  SA_arity s (MA_ith_SA s n MA i).
 
 (;------  Fetch type with recursive call arguments from Arity List  -----;)
-
-(;  Builds the sort
-      rule s1 (rule s2 (... (rule sn s))...)
-    from  s  and  { k1 / A1, ..., kn / An }  with Ai : si ;)
-def MA_lift_sort : Sort -> m : N -> MutualArity m -> Sort.
-[s] MA_lift_sort s _ MAnil --> s.
-
-[s,m,SA,MA]
-  MA_lift_sort s _ (MAcons m SA MA)
-  -->
-  rule (SA_sort SA) (MA_lift_sort s m MA).
-
-
 
 (;  Builds the type
       A1 -> ... -> An -> B
     from  B  and  { k1 / A1, ..., kn / An }  ;)
 def MA_lift_arity :
-  s : Sort -> Univ s -> m : N -> MA : MutualArity m -> Univ (MA_lift_sort s m MA).
+  s : Sort -> Univ s -> m : N -> MutualArity s m -> Univ s.
 
-[s,ar] MA_lift_arity s ar _ MAnil --> ar.
+[s,ar] MA_lift_arity s ar _ (MAnil _) --> ar.
 
 [s,ar,m,SA,MA]
-  MA_lift_arity s ar _ (MAcons m SA MA)
+  MA_lift_arity s ar _ (MAcons _ m SA MA)
   -->
   prod s s s I (SA_arity s SA) (f => (MA_lift_arity s ar m MA)).
 
@@ -233,7 +208,7 @@ def app_body :
   s2 : Sort ->
   A : Univ s1 ->
   B : (Term s1 A -> Univ s2) ->
-  body : Term s (MA_lift_arity s (prod' s1 s2 s A (x => B x)) n MA) ->
+  body : Term s (MA_lift_arity s (cast' (rule s1 s2) prod s1 s2 A (x => B x)) n MA) ->
   a : Term s1 A ->
   Term s (MA_lift_arity s (lift s2 s (B a)) n MA).
 

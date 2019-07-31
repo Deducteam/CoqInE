@@ -64,7 +64,7 @@ define MANUAL
 endef
 export MANUAL
 
-.PHONY: all plugin install uninstall clean fullclean help
+.PHONY: all plugin install uninstall clean fullclean help tests test
 
 all: check-version .merlin plugin help
 
@@ -76,6 +76,7 @@ tests: check-version .merlin plugin
 	make test_poly
 	make debug_fix
 	make debug_poly
+test: tests
 
 check-version:
 ifeq ("$(CHECK_VERSION)","")
@@ -130,120 +131,120 @@ run: plugin
 	make -C encodings clean _build/$(ENCODING).config
 	cp encodings/_build/$(ENCODING).dk     $(RUNDIR)/
 	cp encodings/_build/$(ENCODING).config $(RUNDIR)/config.v
-	sed -i -e "/Encoding/c\Dedukti Set Encoding \"$(COQINE_FLAGS)\"." $(RUNDIR)/main.v
+	echo "Dedukti Set Encoding \"$(COQINE_FLAGS)\"." >> $(RUNDIR)/config.v
 	make -C $(RUNDIR)
 
 
 
-.PHONY: test
-test: RUNDIR:=$(RUN_TESTS_DIR)
-test: COQINE_FLAGS:=polymorph
-test: run
+.PHONY: _test
+_test: RUNDIR:=$(RUN_TESTS_DIR)
+_test: COQINE_FLAGS:=polymorph
+_test: run
 
-.PHONY: debug
-debug: RUNDIR:=$(RUN_DEBUG_DIR)
-debug: run
+.PHONY: _debug
+_debug: RUNDIR:=$(RUN_DEBUG_DIR)
+_debug: run
 
-.PHONY: mathcomp
-mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
-mathcomp: run
+.PHONY: _mathcomp
+_mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
+_mathcomp: run
 
-.PHONY: orig_geocoq
-orig_geocoq: RUNDIR:=$(RUN_GEOCOQ_ORIG_DIR)
-orig_geocoq: COQINE_FLAGS:=polymorph
-orig_geocoq: run
+.PHONY: _orig_geocoq
+_orig_geocoq: RUNDIR:=$(RUN_GEOCOQ_ORIG_DIR)
+_orig_geocoq: COQINE_FLAGS:=polymorph
+_orig_geocoq: run
 
-.PHONY: geocoq
-geocoq: RUNDIR:=$(RUN_GEOCOQ_DIR)
-geocoq: COQINE_FLAGS:=polymorph
-geocoq: run
+.PHONY: _geocoq
+_geocoq: RUNDIR:=$(RUN_GEOCOQ_DIR)
+_geocoq: COQINE_FLAGS:=polymorph
+_geocoq: run
 
 
 
 .PHONY: test_eta
 test_eta: ENCODING:=predicates_eta/C
-test_eta: test
+test_eta: _test
 
 .PHONY: test_fix
 test_fix: ENCODING:=predicates_eta_fix/C
-test_fix: test
+test_fix: _test
 
 .PHONY: test_poly
 test_poly: ENCODING:=fullcodes_eta_fix/C
-test_poly: test
+test_poly: _test
 
 
 .PHONY: debug_eta
 debug_eta: ENCODING:=predicates_eta/C
 debug_eta: COQINE_FLAGS:=polymorph
-debug_eta: debug
+debug_eta: _debug
 
 .PHONY: debug_fix
 debug_fix: ENCODING:=predicates_eta_fix/C
 debug_fix: COQINE_FLAGS:=polymorph
-debug_fix: debug
+debug_fix: _debug
 
 .PHONY: debug_poly
 debug_poly: ENCODING:=fullcodes_eta_fix/C
 debug_poly: COQINE_FLAGS:=polymorph
-debug_poly: debug
+debug_poly: _debug
 
 .PHONY: debug_default
 debug_default: ENCODING:=original/Coq
 debug_default: COQINE_FLAGS:=
-debug_default: debug
+debug_default: _debug
 
 .PHONY: debug_readable
 debug_readable: ENCODING:=original/C
 debug_readable: COQINE_FLAGS:=
-debug_readable: debug
+debug_readable: _debug
 
 .PHONY: debug_named_cast
 debug_named_cast: ENCODING:=original_cast/Coq
 debug_named_cast: COQINE_FLAGS:=
-debug_named_cast: debug
+debug_named_cast: _debug
 
 .PHONY: debug_cast
 debug_cast: ENCODING:=original_cast/C
 debug_cast: COQINE_FLAGS:=
-debug_cast: debug
+debug_cast: _debug
 
 .PHONY: debug_template
 debug_template: ENCODING:=original_cast/C
 debug_template: COQINE_FLAGS:=template
-debug_template: debug
+debug_template: _debug
 
 .PHONY: debug_named
 debug_named: ENCODING:=original/Coq
 debug_named: COQINE_FLAGS:=named
-debug_named: debug
+debug_named: _debug
 
 
 .PHONY: mathcomp_lift
 mathcomp_lift: ENCODING:=lift_predicates/C
 mathcomp_lift: COQINE_FLAGS:=
-mathcomp_lift: mathcomp
+mathcomp_lift: _mathcomp
 
 .PHONY: mathcomp_debug
 mathcomp_debug: ENCODING:=predicates/C
 mathcomp_debug: COQINE_FLAGS:=polymorph
-mathcomp_debug: mathcomp
+mathcomp_debug: _mathcomp
 
 
 # These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
 .PHONY: orig_geocoq_long
 orig_geocoq_long: ENCODING:=predicates/Coq
-orig_geocoq_long: orig_geocoq
+orig_geocoq_long: _orig_geocoq
 
 .PHONY: orig_geocoq_short
 orig_geocoq_short: ENCODING:=predicates/C
-orig_geocoq_short: orig_geocoq
+orig_geocoq_short: _orig_geocoq
 
 
 .PHONY: geocoq_long
 geocoq_long: ENCODING:=predicates_eta_fix/Coq
-geocoq_long: geocoq
+geocoq_long: _geocoq
 
 .PHONY: geocoq_short
 geocoq_short: ENCODING:= predicates_eta_fix/C
-geocoq_short: geocoq
+geocoq_short: _geocoq

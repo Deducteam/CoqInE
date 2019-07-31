@@ -15,9 +15,10 @@ Require Import
   Test.NestedModules
   Test.NestedLibraries
   Test.Reflexivity
-
 (*
+  Coq.Arith.PeanoNat
   Test.Debuglib
+
   Coq.Logic.Berardi
   Coq.Logic.ChoiceFacts
   Coq.Logic.ClassicalChoice

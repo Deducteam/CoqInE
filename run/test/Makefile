@@ -42,13 +42,13 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-#	$(DKCHECK) -I $(OUTFOLDER) -e $<
 	$(DKCHECK) -I $(OUTFOLDER) --eta -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dk *.dko *.conf
 	rm -f CoqMakefile
+	rm -f debug.out
 
 CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make -o CoqMakefile

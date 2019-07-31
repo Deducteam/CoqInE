@@ -52,10 +52,9 @@ type ind_infos =
 
     arity_sort : Sorts.t;
 
-    (* Universe polymorphic instance (array of universe levels) *)
+    (* Universe polymorphic context : instance (array of universe levels) and constraints *)
+    poly_ctxt : Univ.UContext.t;
     poly_inst : Univ.Instance.t;
-
-    (* Universe polymorphic constraints *)
     poly_cstr : Univ.Constraint.t;
 
     univ_poly_names : Dedukti.var list;
@@ -96,19 +95,17 @@ let get_infos mind_body index =
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
-  let poly_inst, poly_cstr =
+  let poly_ctxt =
     match mind_univs with
-    | Monomorphic_ind univ_ctxt ->
-(*
+    | Monomorphic_ind univ_ctxt -> Univ.UContext.empty
+      (*
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
-*)
-      Univ.Instance.empty, Univ.Constraint.empty
-    | Polymorphic_ind univ_ctxt ->
-      let uctxt = Univ.AUContext.repr univ_ctxt in
-      Univ.UContext.instance uctxt,
-      Univ.UContext.constraints uctxt
+      *)
+    | Polymorphic_ind univ_ctxt -> Univ.AUContext.repr univ_ctxt
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
   in
+  let poly_inst = Univ.UContext.instance    poly_ctxt in
+  let poly_cstr = Univ.UContext.constraints poly_ctxt in
 
   let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
@@ -133,6 +130,7 @@ let get_infos mind_body index =
     n_params;
     n_cons;
     cons_names;
+    poly_ctxt;
     poly_inst;
     poly_cstr;
     univ_poly_names;
@@ -199,7 +197,8 @@ let translate_inductive info env label ind  =
   *)
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
   debug "Arity: %a" pp_coq_term arity;
-  let arity' = Terms.translate_types info env ind.univ_poly_env arity in
+  let poly_env = Environ.push_context ind.poly_ctxt env in
+  let arity' = Terms.translate_types info poly_env ind.univ_poly_env arity in
   let arity' = Tsorts.add_sort_params ind.template_names arity' in
   let arity' = Tsorts.add_sort_params ind.univ_poly_names arity' in
   (* Printing out the type declaration. *)
@@ -312,7 +311,8 @@ let translate_constructors info env label ind =
     debug "Cons_type: %a" pp_coq_type cons_type;
 
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
-    let cons_type' = Terms.translate_types info env ind.univ_poly_env cons_type in
+    let poly_env = Environ.push_context ind.poly_ctxt env in
+    let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
     let template_type' = Tsorts.add_sort_params ind.template_names cons_type' in
     let univ_type'     = Tsorts.add_sort_params ind.univ_poly_names template_type' in
     debug "Cons_type: %a" Dedukti.pp_term univ_type';
@@ -328,6 +328,7 @@ let translate_constructors info env label ind =
       p1 ... (x1 => ... => xl => pj x1 ... xl) ... pr
 *)
 let translate_constructors_subtyping info env label ind =
+  let env = Environ.push_context ind.poly_ctxt env in
   for consid = 0 to ind.n_cons - 1 do
     let cons_name = ind.body.mind_consnames.(consid) in
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
@@ -422,7 +423,7 @@ let translate_match info env label ind =
       Univ.AUContext.instance univ_ctxt
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
   let univ_instance = ind.poly_inst in
-
+  let env = Environ.push_context ind.poly_ctxt env in
   (* Compute universe parameters names and corresponding local environnement *)
   let template_params = ind.template_names in
   let univ_poly_params = ind.univ_poly_names in
