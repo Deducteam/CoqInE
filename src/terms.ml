@@ -493,7 +493,12 @@ and translate_cast info uenv t' enva a envb b =
     let s2' = infer_translate_sort info envb uenv b in
     let a' = translate_constr info enva uenv a in
     let b' = translate_constr info envb uenv b in
-    T.coq_cast s1' s2' a' b' t'
+    if
+    then
+      let _,sa = Term.destArity a in
+      let _,sb = Term.destArity b in
+      T.coq_cast s1' s2' a' b' t'
+    else T.coq_cast s1' s2' a' b' t'
   else
     match Term.kind_of_type a, Term.kind_of_type b with
     | SortType sa, SortType sb ->

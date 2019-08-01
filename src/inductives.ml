@@ -95,17 +95,22 @@ let get_infos mind_body index =
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
-  let poly_ctxt =
+  let poly_ctxt, poly_inst, poly_cstr =
     match mind_univs with
-    | Monomorphic_ind univ_ctxt -> Univ.UContext.empty
+    | Monomorphic_ind univ_ctxt ->
+      Univ.UContext.empty,
+      Univ.Instance.empty,
+      Univ.Constraint.empty
       (*
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
       *)
-    | Polymorphic_ind univ_ctxt -> Univ.AUContext.repr univ_ctxt
+    | Polymorphic_ind univ_ctxt ->
+      let poly_ctxt = Univ.AUContext.repr univ_ctxt in
+      poly_ctxt,
+      Univ.UContext.instance    poly_ctxt,
+      Univ.UContext.constraints poly_ctxt
     | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types"
   in
-  let poly_inst = Univ.UContext.instance    poly_ctxt in
-  let poly_cstr = Univ.UContext.constraints poly_ctxt in
 
   let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
@@ -199,8 +204,8 @@ let translate_inductive info env label ind  =
   debug "Arity: %a" pp_coq_term arity;
   let poly_env = Environ.push_context ind.poly_ctxt env in
   let arity' = Terms.translate_types info poly_env ind.univ_poly_env arity in
-  let arity' = Tsorts.add_sort_params ind.template_names arity' in
-  let arity' = Tsorts.add_sort_params ind.univ_poly_names arity' in
+  let arity' = Tsorts.add_templ_params_type ind.template_names arity' in
+  let arity' = Tsorts.add_poly_params_type ind.univ_poly_names arity' in
   (* Printing out the type declaration. *)
   let definable =
     Encoding.is_templ_polymorphism_on () &&
@@ -313,8 +318,8 @@ let translate_constructors info env label ind =
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let poly_env = Environ.push_context ind.poly_ctxt env in
     let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
-    let template_type' = Tsorts.add_sort_params ind.template_names cons_type' in
-    let univ_type'     = Tsorts.add_sort_params ind.univ_poly_names template_type' in
+    let template_type' = Tsorts.add_templ_params_type ind.template_names cons_type' in
+    let univ_type'     = Tsorts.add_poly_params_type ind.univ_poly_names template_type' in
     debug "Cons_type: %a" Dedukti.pp_term univ_type';
 
     Dedukti.print info.fmt (Dedukti.declaration true cons_name' univ_type');

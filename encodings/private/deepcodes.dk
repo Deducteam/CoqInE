@@ -51,7 +51,7 @@ def code   : t : Code -> Decode t -> Code.
 [s] Cumul s s --> true.
 
 def forall : c : Code -> (Decode c -> Bool) -> Bool.
-[] forall _ (x => true) --> true.
+[B] forall _ (x => B) --> B.
 
 def ST : Code -> Code -> Bool.
 [s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2

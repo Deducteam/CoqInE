@@ -110,7 +110,7 @@ struct
         apps (vsymb "_uncode") [ cb; apps (vsymb "_code") [ca ; t ] ]
     else coq_cast cu s1 s2 a b t
   let coq_lift cu s1 s2 t = apps (vsymb "lift")
-      (if (flag "pred_lift")
+      (if flag "pred_lift"
        then [cu s1; cu s2; t_I(); t]
        else [cu s1; cu s2;        t])
 

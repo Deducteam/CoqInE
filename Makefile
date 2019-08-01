@@ -72,10 +72,10 @@ help:
 	@echo "$$MANUAL"
 
 tests: check-version .merlin plugin
-	make test_fix
-	make test_poly
-	make debug_fix
-	make debug_poly
+	make test_pred_fix
+	make test_codes_fix
+	make debug_pred_fix
+	make debug_codes_fix
 test: tests
 
 check-version:
@@ -138,7 +138,7 @@ run: plugin
 
 .PHONY: _test
 _test: RUNDIR:=$(RUN_TESTS_DIR)
-_test: COQINE_FLAGS:=polymorph
+_test: COQINE_FLAGS:=template
 _test: run
 
 .PHONY: _debug
@@ -161,63 +161,59 @@ _geocoq: run
 
 
 
-.PHONY: test_eta
-test_eta: ENCODING:=predicates_eta/C
-test_eta: _test
+.PHONY: test_pred
+test_pred: ENCODING:=predicates_eta/C
+test_pred: _test
 
-.PHONY: test_fix
-test_fix: ENCODING:=predicates_eta_fix/C
-test_fix: _test
+.PHONY: test_pred_fix
+test_pred_fix: ENCODING:=predicates_eta_fix/C
+test_pred_fix: _test
 
-.PHONY: test_poly
-test_poly: ENCODING:=fullcodes_eta_fix/C
-test_poly: _test
+.PHONY: test_codes_fix
+test_codes_fix: ENCODING:=fullcodes_eta_fix/C
+test_codes_fix: _test
 
 
-.PHONY: debug_eta
-debug_eta: ENCODING:=predicates_eta/C
-debug_eta: COQINE_FLAGS:=polymorph
-debug_eta: _debug
+.PHONY: debug_pred
+debug_pred: ENCODING:=predicates_eta/C
+debug_pred: COQINE_FLAGS:=template
+debug_pred: _debug
 
-.PHONY: debug_fix
-debug_fix: ENCODING:=predicates_eta_fix/C
-debug_fix: COQINE_FLAGS:=polymorph
-debug_fix: _debug
+.PHONY: debug_pred_fix
+debug_pred_fix: ENCODING:=predicates_eta_fix/C
+debug_pred_fix: COQINE_FLAGS:=template
+debug_pred_fix: _debug
 
-.PHONY: debug_poly
-debug_poly: ENCODING:=fullcodes_eta_fix/C
-debug_poly: COQINE_FLAGS:=polymorph
-debug_poly: _debug
+.PHONY: debug_codes_fix
+debug_codes_fix: ENCODING:=fullcodes_eta_fix/C
+debug_codes_fix: COQINE_FLAGS:=template
+debug_codes_fix: _debug
+
+.PHONY: debug_pred_poly
+debug_pred_poly: ENCODING:=predicates_eta_fix/C
+debug_pred_poly: COQINE_FLAGS:=polymorph
+debug_pred_poly: _debug
+
+.PHONY: debug_codes_poly
+debug_codes_poly: ENCODING:=fullcodes_eta_fix/C
+debug_codes_poly: COQINE_FLAGS:=polymorph
+debug_codes_poly: _debug
 
 .PHONY: debug_default
-debug_default: ENCODING:=original/Coq
+debug_default: ENCODING:=original/C
 debug_default: COQINE_FLAGS:=
 debug_default: _debug
-
-.PHONY: debug_readable
-debug_readable: ENCODING:=original/C
-debug_readable: COQINE_FLAGS:=
-debug_readable: _debug
-
-.PHONY: debug_named_cast
-debug_named_cast: ENCODING:=original_cast/Coq
-debug_named_cast: COQINE_FLAGS:=
-debug_named_cast: _debug
 
 .PHONY: debug_cast
 debug_cast: ENCODING:=original_cast/C
 debug_cast: COQINE_FLAGS:=
 debug_cast: _debug
 
-.PHONY: debug_template
-debug_template: ENCODING:=original_cast/C
-debug_template: COQINE_FLAGS:=template
-debug_template: _debug
-
 .PHONY: debug_named
-debug_named: ENCODING:=original/Coq
+debug_named: ENCODING:=original/C
 debug_named: COQINE_FLAGS:=named
 debug_named: _debug
+
 
 
 .PHONY: mathcomp_lift

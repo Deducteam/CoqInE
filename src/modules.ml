@@ -50,7 +50,7 @@ let translate_constant_body info env label const =
 
   let const_type = Vars.subst_instance_constr poly_inst const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in
-  let const_type' = Tsorts.add_sort_params univ_poly_params const_type' in
+  let const_type' = Tsorts.add_poly_params_type univ_poly_params const_type' in
 
   let label' = Cname.translate_element_name info env label in
 
@@ -62,6 +62,7 @@ let translate_constant_body info env label const =
   | Def constr_substituted ->
     let constr = Mod_subst.force_constr constr_substituted in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
+    let constr' = Tsorts.add_poly_params_def univ_poly_params constr' in
     Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
     let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in

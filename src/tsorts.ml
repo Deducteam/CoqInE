@@ -5,8 +5,20 @@ open Translator
 
 open Declarations
 
-let add_sort_params params t =
-  List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
+let add_templ_params_type params t =
+  if Encoding.is_templ_polymorphism_on ()
+  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
+  else t
+
+let add_poly_params_type params t =
+  if Encoding.is_polymorphism_on ()
+  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
+  else t
+
+let add_poly_params_def params t =
+  if Encoding.is_polymorphism_on ()
+  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Sort ()))) params t
+  else t
 
 (** Maping from the string representation of global named universes to
     concrete levels. *)
@@ -50,7 +62,7 @@ let instantiate_poly_univ_params uenv name univ_ctxt univ_instance =
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   let levels = Univ.Instance.to_array univ_instance in
-  let levels = Array.init nb_params (fun i -> levels.(i)) in 
+  let levels = Array.init nb_params (fun i -> levels.(i)) in
   Array.fold_left
     (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
     (Dedukti.var name)
@@ -63,7 +75,7 @@ let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
   then debug "Something suspicious is going on with thoses universes...";
   debug "Instantiating %i template universes %s: %a" nb_params name pp_coq_inst univ_instance;
   debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
-  
+
   let levels = Univ.Instance.to_array univ_instance in
   let rec aux acc i = function
     | None     :: tl -> aux acc (i+1) tl
@@ -74,7 +86,7 @@ let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
   in
   let levels = aux [] 0 univ_ctxt in
   debug "Univ context: %a" (pp_list " " pp_coq_level) levels;
-  
+
   List.fold_left
     (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
     (Dedukti.var name)
@@ -102,7 +114,7 @@ let instantiate_ind_univ_params env uenv name ind univ_instance =
     pp_coq_inst univ_instance
     Dedukti.pp_term res;
   res
-  
+
 
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)
