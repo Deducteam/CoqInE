@@ -493,18 +493,26 @@ and translate_cast info uenv t' enva a envb b =
     let s2' = infer_translate_sort info envb uenv b in
     let a' = translate_constr info enva uenv a in
     let b' = translate_constr info envb uenv b in
-    if
+    if Term.isArity a && Term.isArity b
     then
-      let _,sa = Term.destArity a in
+      let _,sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
       let _,sb = Term.destArity b in
-      T.coq_cast s1' s2' a' b' t'
+      if Sorts.equal sa sb then t'
+      else
+        if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
+        then
+          let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
+          let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
+          T.coq_cast s1' s2' a' b' t'
+        else T.coq_cast s1' s2' a' b' t'
     else T.coq_cast s1' s2' a' b' t'
   else
     match Term.kind_of_type a, Term.kind_of_type b with
     | SortType sa, SortType sb ->
-      T.coq_lift
-        (Tsorts.translate_sort uenv sa)
-        (Tsorts.translate_sort uenv sb) t'
+      if Sorts.equal sa sb then t'
+      else T.coq_lift
+          (Tsorts.translate_sort uenv sa)
+          (Tsorts.translate_sort uenv sb) t'
 
     (* FIXME: CastType are probably not correctly translated.
        They are never used in Coq's kernel but occur in SSReflect module *)

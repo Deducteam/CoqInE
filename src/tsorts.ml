@@ -44,7 +44,10 @@ let translate_level uenv l =
   else if Univ.Level.is_set l then Translator.Set
   else
     match Univ.Level.var_index l with
-    | Some n -> Translator.Local n
+    | Some n ->
+      if Encoding.is_polymorphism_on ()
+      then Translator.Local n (* Locally bounded universe variable *)
+      else failwith "Universe polymorphism no supported by this encoding "
     | None ->
       if Info.is_template_polymorphic uenv l
       then Translator.Template (Info.translate_template_arg uenv l)

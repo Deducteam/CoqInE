@@ -9,10 +9,9 @@ Dedukti Set Destination "out".
 
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Add Debug "Coq.Classes.Morphisms".
 
 Require Import import.
 
 Load config.
 
-Dedukti Export All.
+Dedukti Export All But Top.Test.UPolymorph.

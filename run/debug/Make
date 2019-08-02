@@ -15,3 +15,4 @@ Test/NestedModules.v
 Test/NestedLibraries.v
 Test/Reflexivity.v
 Test/Polymorph.v
+Test/UPolymorph.v

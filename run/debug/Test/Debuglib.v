@@ -95,33 +95,6 @@ Print aux4. (* (fun x : (Set -> Set) => x xSet) (fun B : Set => pair xSet B) *)
 Definition aux4_e1 : aux4 := fst xSet xSet I.
 Definition aux4_e2 : aux4 := snd xSet xSet I.
 
-
-
-(* Universe polymorphism *)
-
-(*
-Definition id {A : Type} (a : A) := a.
-
-Polymorphic Definition pid {A : Type} (a : A) := a.
-
-Print pid.
-
-Definition pid_id      := pid (@id).
-Definition pid_id_expl := @pid (forall A:Type,A->A) (@id).
-
-Definition pid_pid      := pid (@pid).
-Definition pid_pid_expl := @pid (forall A:Type,A->A) (@pid). (* identical *)
-
-Polymorphic Definition p_pid_id      := pid (@id).
-Polymorphic Definition p_pid_id_expl := @pid (forall A:Type,A->A) (@id).
-
-Polymorphic Definition p_pid_pid      := pid (@pid).
-Polymorphic Definition p_pid_pid_expl := @pid (forall A:Type,A->A) (@pid).
-
-*)
-
-
-
 (*
 Inductive foo
           (A:xSet)
