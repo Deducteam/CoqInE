@@ -1,5 +1,6 @@
 # -arg -nois
-import.v
+import_debug.v
+import_poly.v
 Test/Test.v
 Test/Debuglib.v
 Test/Identity.v

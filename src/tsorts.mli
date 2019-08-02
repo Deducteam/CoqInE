@@ -1,7 +1,11 @@
 
 val add_templ_params_type : Dedukti.var list -> Dedukti.term -> Dedukti.term
-val add_poly_params_type : Dedukti.var list -> Dedukti.term -> Dedukti.term
-val add_poly_params_def : Dedukti.var list -> Dedukti.term -> Dedukti.term
+val add_poly_params_type : Dedukti.var list ->
+                           ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
+                           Dedukti.term -> Dedukti.term
+val add_poly_params_def : Dedukti.var list ->
+                           ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
+                           Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before types/definitions *)
 
 val instantiate_poly_univ_params :
@@ -27,4 +31,4 @@ val translate_template_params :
 val translate_univ_poly_params : Univ.Instance.t -> string list
 
 val translate_univ_poly_constraints : Univ.Constraint.t ->
-  (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list
+  ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list

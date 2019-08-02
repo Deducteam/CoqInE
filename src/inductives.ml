@@ -58,7 +58,7 @@ type ind_infos =
     poly_cstr : Univ.Constraint.t;
 
     univ_poly_names : Dedukti.var list;
-    univ_poly_cstr : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list;
+    univ_poly_cstr : ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list;
     univ_poly_nb_params : int;
     univ_poly_env : Info.env;
   }
@@ -205,7 +205,7 @@ let translate_inductive info env label ind  =
   let poly_env = Environ.push_context ind.poly_ctxt env in
   let arity' = Terms.translate_types info poly_env ind.univ_poly_env arity in
   let arity' = Tsorts.add_templ_params_type ind.template_names arity' in
-  let arity' = Tsorts.add_poly_params_type ind.univ_poly_names arity' in
+  let arity' = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
   let definable =
     Encoding.is_templ_polymorphism_on () &&
@@ -319,7 +319,7 @@ let translate_constructors info env label ind =
     let poly_env = Environ.push_context ind.poly_ctxt env in
     let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
     let template_type' = Tsorts.add_templ_params_type ind.template_names cons_type' in
-    let univ_type'     = Tsorts.add_poly_params_type ind.univ_poly_names template_type' in
+    let univ_type'     = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr template_type' in
     debug "Cons_type: %a" Dedukti.pp_term univ_type';
 
     Dedukti.print info.fmt (Dedukti.declaration true cons_name' univ_type');

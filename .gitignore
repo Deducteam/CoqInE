@@ -17,21 +17,19 @@
 
 *.dko
 
-run/debug/**/*.dk
-run/test/**/*.dk
+run/main/**/*.dk
 run/geocoq/**/*.dk
 run/geocoq_orig/**/*.dk
 run/mathcomp/**/*.dk
 
-run/debug/config.v
-run/test/config.v
+run/main/config.v
 run/geocoq/config.v
 run/geocoq_orig/config.v
 run/mathcomp/config.v
 
-run/debug/out
-run/test/out
+run/main/out
 run/geocoq/out
+run/geocoq_orig/out
 run/mathcomp/out
 
 run/geocoq/GeoCoq

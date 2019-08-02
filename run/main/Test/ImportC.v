@@ -1,5 +1,4 @@
 Require ImportA.
-
 Require ImportB.
 
 Import ImportA.

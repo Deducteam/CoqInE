@@ -32,7 +32,7 @@ type env
 
 val make :
   Univ.Level.t list -> Dedukti.var list ->
-  int -> (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list ->
+  int -> ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
   env
 
 val is_template_polymorphic    : env -> Univ.Level.t -> bool

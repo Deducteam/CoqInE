@@ -56,6 +56,10 @@ let _ =
 
       (* Predicate syntax *)
       ("I"    , "I");
+      ("eps"  , "eps");
+      ("Axiom", "Axiom");
+      ("Rule" , "Rule");
+      ("Cumul", "Cumul");
 
       (* Private syntax *)
       ("_lift"  , "lift'");

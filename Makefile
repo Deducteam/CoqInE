@@ -8,10 +8,9 @@ VERBOSE      ?=
 CAMLFLAGS="-bin-annot -annot"
 
 RUNDIR=run
-RUN_TESTS_DIR=$(RUNDIR)/test
 RUN_GEOCOQ_DIR=$(RUNDIR)/geocoq
 RUN_GEOCOQ_ORIG_DIR=$(RUNDIR)/geocoq_orig
-RUN_DEBUG_DIR=$(RUNDIR)/debug
+RUN_MAIN_DIR=$(RUNDIR)/main
 RUN_MATHCOMP_DIR=$(RUNDIR)/mathcomp
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
@@ -101,8 +100,7 @@ uninstall: CoqMakefile
 clean: CoqMakefile
 	make -C encodings - clean
 	make -f CoqMakefile - clean
-	make -C $(RUN_TESTS_DIR)       clean
-	make -C $(RUN_DEBUG_DIR)       clean
+	make -C $(RUN_MAIN_DIR)        clean
 	make -C $(RUN_GEOCOQ_DIR)      clean
 	make -C $(RUN_GEOCOQ_ORIG_DIR) clean
 	make -C $(RUN_MATHCOMP_DIR)    clean
@@ -132,17 +130,19 @@ run: plugin
 	cp encodings/_build/$(ENCODING).dk     $(RUNDIR)/
 	cp encodings/_build/$(ENCODING).config $(RUNDIR)/config.v
 	echo "Dedukti Set Encoding \"$(COQINE_FLAGS)\"." >> $(RUNDIR)/config.v
-	make -C $(RUNDIR)
+	make -C $(RUNDIR) $(EXTRA_FLAGS)
 
 
 
 .PHONY: _test
-_test: RUNDIR:=$(RUN_TESTS_DIR)
+_test: RUNDIR:=$(RUN_MAIN_DIR)
 _test: COQINE_FLAGS:=template
+_test: EXTRA_FLAGS:=MAINFILE=main_test
 _test: run
 
 .PHONY: _debug
-_debug: RUNDIR:=$(RUN_DEBUG_DIR)
+_debug: RUNDIR:=$(RUN_MAIN_DIR)
+_debug: EXTRA_FLAGS:=MAINFILE=main_debug
 _debug: run
 
 .PHONY: _mathcomp

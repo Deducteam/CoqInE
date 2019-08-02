@@ -8,15 +8,15 @@ module StringMap = Map.Make(
 type env =
   {
     template_params : Dedukti.var StringMap.t;
-    constraints : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list
+    constraints : ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list
   }
 
 let make
     (template_levels : Univ.Level.t list)
     (template_names  : Dedukti.var list)
     (nb_polymorphic_args : int)
-    (constraints_args : (Dedukti.term * Dedukti.term * Univ.Constraint.elt) list) =
-  
+    (constraints_args : ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list) =
+
   let aux map k v = StringMap.add k v map in
   let template_params = List.fold_left2 aux StringMap.empty template_levels template_names in
   (* TODO: implement here a mechanism that processes polymorphic constraints *)
@@ -70,4 +70,3 @@ let update info label =
 let close info =
   Format.pp_print_flush info.fmt ();
   close_out info.out
-  

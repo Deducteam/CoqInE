@@ -1,5 +1,5 @@
 (* This script tests the Dedukti plugin by exporting test files and parts
-  of the Coq standard library. *)
+   of the Coq standard library. *)
 
 Declare ML Module "coqine_plugin".
 
@@ -10,8 +10,8 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Require Import import.
+Require Import import_debug.
 
 Load config.
 
-Dedukti Export All But Top.Test.UPolymorph.
+Dedukti Export All.

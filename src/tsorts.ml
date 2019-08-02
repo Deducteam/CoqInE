@@ -10,14 +10,16 @@ let add_templ_params_type params t =
   then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
   else t
 
-let add_poly_params_type params t =
+let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
+  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params
+      (List.fold_right (function (cstr,_) -> Dedukti.pie cstr) cstr t)
   else t
 
-let add_poly_params_def params t =
+let add_poly_params_def params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Sort ()))) params t
+  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Sort ()))) params
+      (List.fold_right (function (cstr,_) -> Dedukti.lam cstr) cstr t)
   else t
 
 (** Maping from the string representation of global named universes to
@@ -160,8 +162,8 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       | Univ.Lt -> T.cstr_lt (translate_level Info.dummy i) (translate_level Info.dummy j)
       | Univ.Le -> T.cstr_le (translate_level Info.dummy i) (translate_level Info.dummy j)
       | Univ.Eq -> Error.not_supported "Eq constraints" in
-      let cstr_name = Dedukti.var (Cname.constraint_name n) in
-      (cstr_name, cstr_type, cstr)
+      let cstr_name = Cname.constraint_name n in
+      ( (cstr_name, cstr_type), cstr)
     in
     List.mapi aux (Univ.Constraint.elements uctxt)
   else []

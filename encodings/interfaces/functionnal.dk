@@ -67,4 +67,8 @@ Coqine cast = cast
 
 Coqine use_cast  = true    Use casts instead of lifts
 Coqine pred_cast = true    Cast is predicative
+
+Coqine I     = I
+Coqine eps   = eps
+Coqine Cumul = Cumul
 ;)

@@ -57,4 +57,10 @@ Coqine lift = lift
 Coqine pred_univ = true    Univ is predicative
 Coqine pred_prod = true    Prod is predicative
 Coqine pred_lift = true    Lift is predicative
+
+Coqine I     = I
+Coqine eps   = eps
+Coqine Axiom = Axiom
+Coqine Rule  = Rule
+Coqine Cumul = Cumul
 ;)

@@ -115,8 +115,8 @@ struct
        else [cu s1; cu s2;        t])
 
 
-  let cstr_le cu s1 s2 = apps (coq_var "Cumul") [cu s1            ; cu s2]
-  let cstr_lt cu s1 s2 = apps (coq_var "Cumul") [coq_axiom (cu s1); cu s2]
+  let cstr_le cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [cu s1            ; cu s2])
+  let cstr_lt cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [coq_axiom (cu s1); cu s2])
 
 end
 

@@ -6,6 +6,7 @@ COQC         ?= coqc
 DKCHECK      ?= dkcheck
 DKDEP        ?= dkdep
 VERBOSE      ?=
+MAINFILE     ?= main_debug
 
 OUTFOLDER = out
 COQINEPATH=../../src
@@ -13,7 +14,7 @@ COQINEPATH=../../src
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
 
-.PHONY:	all compile depend generate check clean
+.PHONY: all	compile generate depend check clean
 
 .SUFFIXES: .dk .dko
 
@@ -24,15 +25,15 @@ all: compile generate depend
 	rm CoqMakefile
 
 # Compile the local [.v] files that are not part of the stdlib
-compile: CoqMakefile $(OUTFOLDER)
+compile: CoqMakefile
 	make -f CoqMakefile
 
 $(OUTFOLDER):
 	mkdir $(OUTFOLDER)
 
-# Generate the [.dk] files by executing [main.v]
+# Generate the [.dk] files by executing [main_???.v]
 generate: compile $(OUTFOLDER)
-	$(COQC) -init-file ../../.coqrc -verbose -w all -R . Top main.v
+	$(COQC) -nois -init-file ../../.coqrc -verbose -R . Top $(MAINFILE).v
 
 # Generate the dependencies of [.dk] files
 depend:
@@ -42,7 +43,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) --eta -e $<
+	$(DKCHECK) -I $(OUTFOLDER) --eta --snf -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
