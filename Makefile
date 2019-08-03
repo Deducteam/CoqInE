@@ -119,7 +119,7 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING ?= original_cast/Coq.dk # Configuration for the encoding generation
+ENCODING ?= original_cast/Coq # Configuration for the encoding generation
 COQINE_FLAGS   ?= original_cast # Configuration for the translator
 
 .PHONY: run
@@ -242,5 +242,5 @@ geocoq_long: ENCODING:=predicates_eta_fix/Coq
 geocoq_long: _geocoq
 
 .PHONY: geocoq_short
-geocoq_short: ENCODING:= predicates_eta_fix/C
+geocoq_short: ENCODING:=predicates_eta_fix/C
 geocoq_short: _geocoq
