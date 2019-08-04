@@ -53,7 +53,7 @@ check: $(DKOS)
 clean: CoqMakefile
 	make -f CoqMakefile - clean
 	rm -rf $(OUTFOLDER) $(PRUNEDFOLDER)
-	rm -rf .depend .*.aux *.vo *.dk *.dko *.conf GeoCoq Make config.dk pruned
+	rm -rf .depend .*.aux *.vo *.dko *.conf GeoCoq Make pruned
 	rm -f CoqMakefile
 
 CoqMakefile: Make

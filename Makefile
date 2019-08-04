@@ -27,20 +27,19 @@ define MANUAL
     Generates encodings for Coq in the encodings/_build folder then checks the
     generated files
 
-
 - make test_fix
-    Translates the file run/test/import.v and all it's dependencies into the
-    run/test/out folder then checks the generated files
-    The translation of import.v itself is run/test/out/Top__import.dk
-    The encoding file generated is run/test/C.dk
+    Translates the file run/main/Test/Fixpoints.v and all it's dependencies into the
+    run/main/out folder then checks the generated files. The translated file can be
+    changed by editing run/main/main_test.v
+    The encoding file generated is run/main/C.dk
     This translation relies on privates casts
 
 - make test_poly
     Same as test_fix but the translation relies on private codes
 
 - make debug_fix
-    Translates the files in run/debug/Test and all their dependencies into the
-    run/debug/out folder then checks the generated files
+    Translates all files in run/main/Test and their dependencies into the
+    run/main/out folder then checks the generated files
     This translation relies on privates casts
 
 - make debug_poly
@@ -104,6 +103,14 @@ clean: CoqMakefile
 	make -C $(RUN_GEOCOQ_DIR)      clean
 	make -C $(RUN_GEOCOQ_ORIG_DIR) clean
 	make -C $(RUN_MATHCOMP_DIR)    clean
+	rm -f $(RUN_MAIN_DIR)/*.dk
+	rm -f $(RUN_GEOCOQ_DIR)/*.dk
+	rm -f $(RUN_GEOCOQ_ORIG_DIR)/*.dk
+	rm -f $(RUN_MATHCOMP_DIR)/*.dk
+	rm -f $(RUN_MAIN_DIR)/config.v
+	rm -f $(RUN_GEOCOQ_DIR)/config.v
+	rm -f $(RUN_GEOCOQ_ORIG_DIR)/config.v
+	rm -f $(RUN_MATHCOMP_DIR)/config.v
 	rm CoqMakefile
 
 fullclean: clean

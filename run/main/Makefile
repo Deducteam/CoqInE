@@ -47,7 +47,7 @@ check: $(DKOS)
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
-	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dk *.dko *.conf
+	rm -rf $(OUTFOLDER) .depend .*.aux *.vo *.dko *.conf
 	rm -f CoqMakefile
 	rm -f debug.out
 
