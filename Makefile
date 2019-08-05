@@ -126,8 +126,8 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING ?= original_cast/Coq # Configuration for the encoding generation
-COQINE_FLAGS   ?= original_cast # Configuration for the translator
+ENCODING     ?= original_cast/Coq # Configuration for the encoding generation
+COQINE_FLAGS ?= original_cast # Configuration for the translator
 
 .PHONY: run
 run: plugin
@@ -149,7 +149,7 @@ _test: run
 
 .PHONY: _debug
 _debug: RUNDIR:=$(RUN_MAIN_DIR)
-debug_pred: COQINE_FLAGS:=template
+_debug: COQINE_FLAGS:=template
 _debug: EXTRA_FLAGS:=MAINFILE=main_debug
 _debug: run
 
