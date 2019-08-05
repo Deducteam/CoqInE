@@ -149,8 +149,15 @@ _test: run
 
 .PHONY: _debug
 _debug: RUNDIR:=$(RUN_MAIN_DIR)
+debug_pred: COQINE_FLAGS:=template
 _debug: EXTRA_FLAGS:=MAINFILE=main_debug
 _debug: run
+
+.PHONY: _poly
+_poly: RUNDIR:=$(RUN_MAIN_DIR)
+_poly: EXTRA_FLAGS:=MAINFILE=main_poly
+_poly: COQINE_FLAGS:=polymorph
+_poly: run
 
 .PHONY: _mathcomp
 _mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
@@ -183,43 +190,40 @@ test_codes_fix: _test
 
 .PHONY: debug_pred
 debug_pred: ENCODING:=predicates_eta/C
-debug_pred: COQINE_FLAGS:=template
 debug_pred: _debug
 
 .PHONY: debug_pred_fix
 debug_pred_fix: ENCODING:=predicates_eta_fix/C
-debug_pred_fix: COQINE_FLAGS:=template
 debug_pred_fix: _debug
 
 .PHONY: debug_codes_fix
 debug_codes_fix: ENCODING:=fullcodes_eta_fix/C
-debug_codes_fix: COQINE_FLAGS:=template
 debug_codes_fix: _debug
 
-.PHONY: debug_pred_poly
-debug_pred_poly: ENCODING:=predicates_eta_fix/C
-debug_pred_poly: COQINE_FLAGS:=polymorph
-debug_pred_poly: _debug
 
-.PHONY: debug_codes_poly
-debug_codes_poly: ENCODING:=fullcodes_eta_fix/C
-debug_codes_poly: COQINE_FLAGS:=polymorph
-debug_codes_poly: _debug
+.PHONY: poly_pred_fix
+poly_pred_fix: ENCODING:=predicates_eta_fix/C
+poly_pred_fix: _poly
 
-.PHONY: debug_default
-debug_default: ENCODING:=original/C
-debug_default: COQINE_FLAGS:=
-debug_default: _debug
+.PHONY: poly_codes_fix
+poly_codes_fix: ENCODING:=fullcodes_eta_fix/C
+poly_codes_fix: _poly
 
-.PHONY: debug_cast
-debug_cast: ENCODING:=original_cast/C
-debug_cast: COQINE_FLAGS:=
-debug_cast: _debug
 
-.PHONY: debug_named
-debug_named: ENCODING:=original/C
-debug_named: COQINE_FLAGS:=named
-debug_named: _debug
+#.PHONY: debug_default
+#debug_default: ENCODING:=original/C
+#debug_default: COQINE_FLAGS:=
+#debug_default: _debug
+
+#.PHONY: debug_cast
+#debug_cast: ENCODING:=original_cast/C
+#debug_cast: COQINE_FLAGS:=
+#debug_cast: _debug
+
+#.PHONY: debug_named
+#debug_named: ENCODING:=original/C
+#debug_named: COQINE_FLAGS:=named
+#debug_named: _debug
 
 
 

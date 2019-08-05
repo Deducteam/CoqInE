@@ -10,7 +10,10 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
+Dedukti Enable Verbose.
+
 Require Import import_poly.
+
 Load config.
 
 Dedukti Export All.

@@ -27,7 +27,6 @@ OTHER_FILES=(
 Tarski_dev/Ch08_orthogonality.v
 Tarski_dev/Annexes/coplanar.v
 
-
 Meta_theory/Continuity/grad.v
 Axioms/continuity_axioms.v
 

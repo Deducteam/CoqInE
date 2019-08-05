@@ -198,7 +198,7 @@ struct
       | App(a, b) -> Format.fprintf out "%a %a" print_app a print_atomic b
       | _         -> Format.fprintf out "%a" print_atomic term
     in
-    Format.fprintf out "@[<2>%a@]" print_app term
+    Format.fprintf out "%a" print_app term
 
   and print_atomic out term =
     match term with

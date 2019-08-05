@@ -161,7 +161,7 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       let cstr_type = match c with
       | Univ.Lt -> T.cstr_lt (translate_level Info.dummy i) (translate_level Info.dummy j)
       | Univ.Le -> T.cstr_le (translate_level Info.dummy i) (translate_level Info.dummy j)
-      | Univ.Eq -> Error.not_supported "Eq constraints" in
+      | Univ.Eq -> Error.not_supported (Format.asprintf "Eq constraints %a = %a" pp_coq_level i pp_coq_level j) in
       let cstr_name = Cname.constraint_name n in
       ( (cstr_name, cstr_type), cstr)
     in

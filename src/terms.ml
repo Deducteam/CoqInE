@@ -499,12 +499,12 @@ and translate_cast info uenv t' enva a envb b =
       let _,sb = Term.destArity b in
       if Sorts.equal sa sb then t'
       else
-        if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
-        then
-          let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
-          let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
-          T.coq_cast s1' s2' a' b' t'
-        else T.coq_cast s1' s2' a' b' t'
+      if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
+      then
+        let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
+        let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
+        T.coq_cast s1' s2' a' b' t'
+      else T.coq_cast s1' s2' a' b' t'
     else T.coq_cast s1' s2' a' b' t'
   else
     match Term.kind_of_type a, Term.kind_of_type b with
@@ -605,7 +605,7 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
   let lifted_types = Array.map (fun ty -> Vars.lift n ty) types in
   (* Bodi ti is translated as   f1' => ... fn' => ti'   *)
   let add_lams t =
-    Array.fold_left (fun t name -> Dedukti.ulam name t) t names' in
+    Array.fold_right (fun name t -> Dedukti.ulam name t) names' t in
   (* Translating the ti to ti' in the extended context *)
   let bodies' = Array.init n (fun i ->
       add_lams (translate_constr ~expected_type:lifted_types.(i) info ext_env uenv bodies.(i))) in
