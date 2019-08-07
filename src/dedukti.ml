@@ -262,7 +262,7 @@ struct
   let print fmt arg = match arg with
     | Declaration(definable, x, a) -> DeduktiPrinter.print fmt arg
     | Definition(opaque, x, a, t) ->
-      Format.fprintf fmt "@[<v2>%s %a :@ %a@]@.@.:= %a@.@."
+      Format.fprintf fmt "@[<v2>%s %a :@ %a@]@.@.:= %a.@.@."
         (if opaque then "thm" else "def")
         print_var x DeduktiPrinter.print_term a DeduktiOnelinePrinter.print_term t
     | _ -> DeduktiOnelinePrinter.print fmt arg
