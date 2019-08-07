@@ -52,7 +52,7 @@ export MANUAL
 
 .PHONY: all plugin install uninstall clean fullclean help tests test
 
-all: check-version .merlin plugin help
+all: check-version .merlin plugin .coqrc help
 
 help:
 	@echo "$$MANUAL"
