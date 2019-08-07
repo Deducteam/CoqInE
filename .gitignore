@@ -18,31 +18,12 @@
 *.dko
 
 run/main/**/*.dk
-run/geocoq/**/*.dk
-run/geocoq_orig/**/*.dk
-run/mathcomp/**/*.dk
-
 run/main/config.v
-run/geocoq/config.v
-run/geocoq_orig/config.v
-run/mathcomp/config.v
-
 run/main/out
-run/geocoq/out
-run/geocoq_orig/out
+
+run/mathcomp/**/*.dk
+run/mathcomp/config.v
 run/mathcomp/out
-
-run/geocoq/GeoCoq
-run/geocoq/Make
-run/geocoq/import.v
-run/geocoq/config.dk
-run/geocoq/pruned
-
-run/geocoq_orig/GeoCoq
-run/geocoq_orig/Make
-run/geocoq_orig/import.v
-run/geocoq_orig/config.dk
-run/geocoq_orig/pruned
 
 encodings/_build
 
@@ -51,6 +32,7 @@ encodings/_build
 *#
 
 CoqMakefile
+.coqrc
 
 # Generated .aux files
 *.aux

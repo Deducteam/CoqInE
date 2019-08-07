@@ -8,8 +8,6 @@ VERBOSE      ?=
 CAMLFLAGS="-bin-annot -annot"
 
 RUNDIR=run
-RUN_GEOCOQ_DIR=$(RUNDIR)/geocoq
-RUN_GEOCOQ_ORIG_DIR=$(RUNDIR)/geocoq_orig
 RUN_MAIN_DIR=$(RUNDIR)/main
 RUN_MATHCOMP_DIR=$(RUNDIR)/mathcomp
 
@@ -46,18 +44,8 @@ define MANUAL
     Same as debug_fix but the translation relies on private codes
 
 - make tests
-    Run the four targets above successively
+    Run all the above targets successively
     This must work before pushing to the repo !!
-
-- make geocoq_short
-    GeoCoq needs to be installed. Set correct path in run/geocoq/Makefile.
-    Fetches a subset of the GeoCoq library and translates it with all it's
-    dependencies into the run/geocoq/out folder then checks the generated files
-    This translation relies on privates casts
-
-- make orig_geocoq_short
-    Same as geocoq_short but translates the original proofs
-    from Euclid's Elements in the run/geocoq_orig/out
 
 endef
 export MANUAL
@@ -70,6 +58,7 @@ help:
 	@echo "$$MANUAL"
 
 tests: check-version .merlin plugin
+	make -C encodings
 	make test_pred_fix
 	make test_codes_fix
 	make debug_pred_fix
@@ -100,18 +89,13 @@ clean: CoqMakefile
 	make -C encodings - clean
 	make -f CoqMakefile - clean
 	make -C $(RUN_MAIN_DIR)        clean
-	make -C $(RUN_GEOCOQ_DIR)      clean
-	make -C $(RUN_GEOCOQ_ORIG_DIR) clean
 	make -C $(RUN_MATHCOMP_DIR)    clean
 	rm -f $(RUN_MAIN_DIR)/*.dk
-	rm -f $(RUN_GEOCOQ_DIR)/*.dk
-	rm -f $(RUN_GEOCOQ_ORIG_DIR)/*.dk
 	rm -f $(RUN_MATHCOMP_DIR)/*.dk
 	rm -f $(RUN_MAIN_DIR)/config.v
-	rm -f $(RUN_GEOCOQ_DIR)/config.v
-	rm -f $(RUN_GEOCOQ_ORIG_DIR)/config.v
 	rm -f $(RUN_MATHCOMP_DIR)/config.v
 	rm CoqMakefile
+	rm .coqrc
 
 fullclean: clean
 	rm src/*.cmt
@@ -122,7 +106,8 @@ CoqMakefile: Make
 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
 	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf
 
-
+.coqrc: plugin
+	echo "Add ML Path \"$(shell pwd)/src\"." > .coqrc
 
 # Targets for several libraries to translate
 
@@ -130,7 +115,7 @@ ENCODING     ?= original_cast/Coq # Configuration for the encoding generation
 COQINE_FLAGS ?= original_cast # Configuration for the translator
 
 .PHONY: run
-run: plugin
+run: plugin .coqrc
 	make -C $(RUNDIR) clean
 	make -C encodings clean _build/$(ENCODING).dk
 	make -C encodings clean _build/$(ENCODING).config
@@ -150,6 +135,7 @@ _test: run
 .PHONY: _debug
 _debug: RUNDIR:=$(RUN_MAIN_DIR)
 _debug: COQINE_FLAGS:=template
+
 _debug: EXTRA_FLAGS:=MAINFILE=main_debug
 _debug: run
 
@@ -162,16 +148,6 @@ _poly: run
 .PHONY: _mathcomp
 _mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
 _mathcomp: run
-
-.PHONY: _orig_geocoq
-_orig_geocoq: RUNDIR:=$(RUN_GEOCOQ_ORIG_DIR)
-_orig_geocoq: COQINE_FLAGS:=polymorph
-_orig_geocoq: run
-
-.PHONY: _geocoq
-_geocoq: RUNDIR:=$(RUN_GEOCOQ_DIR)
-_geocoq: COQINE_FLAGS:=polymorph
-_geocoq: run
 
 
 
@@ -236,22 +212,3 @@ mathcomp_lift: _mathcomp
 mathcomp_debug: ENCODING:=predicates/C
 mathcomp_debug: COQINE_FLAGS:=polymorph
 mathcomp_debug: _mathcomp
-
-
-# These targets require GeoCoq. Set correct path in run/geocoq/Makefile.
-.PHONY: orig_geocoq_long
-orig_geocoq_long: ENCODING:=predicates/Coq
-orig_geocoq_long: _orig_geocoq
-
-.PHONY: orig_geocoq_short
-orig_geocoq_short: ENCODING:=predicates/C
-orig_geocoq_short: _orig_geocoq
-
-
-.PHONY: geocoq_long
-geocoq_long: ENCODING:=predicates_eta_fix/Coq
-geocoq_long: _geocoq
-
-.PHONY: geocoq_short
-geocoq_short: ENCODING:=predicates_eta_fix/C
-geocoq_short: _geocoq

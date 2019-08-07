@@ -78,16 +78,17 @@ let typed_rewrite (context, left, right) = rewrite (List.map fst context, left, 
 let apply_context a context = apps a (List.map var (List.map fst context))
 
 
-(** Pretty-printing using the minimal number of parentheses. *)
 
+(** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
+let print_var out = function
+  | ""    -> Format.fprintf out "__"
+  | "def" -> Format.fprintf out "def__"
+  | x     -> Format.fprintf out "%s" x
+
+
+(** Indented pretty-printing using the minimal number of parentheses. *)
 module DeduktiPrinter =
 struct
-
-  (** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
-  let print_var out = function
-    | ""    -> Format.fprintf out "__"
-    | "def" -> Format.fprintf out "def__"
-    | x     -> Format.fprintf out "%s" x
 
   let rec print_term out term =
     let rec print_term out term =
@@ -171,14 +172,9 @@ end
 
 
 
-module DeduktiCondensedPrinter =
+(** Oneliner pretty-printing using the minimal number of parentheses. *)
+module DeduktiOnelinePrinter =
 struct
-
-  (** Print anonymous variables as "__". The name "_" is not accepted by Dedukti. *)
-  let print_var out = function
-    | ""    -> Format.fprintf out "__"
-    | "def" -> Format.fprintf out "def__"
-    | x     -> Format.fprintf out "%s" x
 
   let rec print_term out term =
     let rec print_term out term =
@@ -260,9 +256,24 @@ struct
     | instruction -> print fmt instruction
 end
 
+module DeduktiCondensedPrinter =
+struct
+
+  let print fmt arg = match arg with
+    | Declaration(definable, x, a) -> DeduktiPrinter.print fmt arg
+    | Definition(opaque, x, a, t) ->
+      Format.fprintf fmt "%s %a : %a := %a.@.@."
+        (if opaque then "thm" else "def")
+        print_var x DeduktiPrinter.print_term a DeduktiOnelinePrinter.print_term t
+    | _ -> DeduktiOnelinePrinter.print fmt arg
+
+  let printc = DeduktiOnelinePrinter.printc
+  let pp_term = DeduktiOnelinePrinter.pp_term
+end
+
 
 (* Supported syntaxes *)
-type supportedSyntax = Dedukti | CondensedDedukti
+type supportedSyntax = Dedukti | CondensedDedukti | OnelineDedukti
 (* TODO: add a printer for Lambdapi *)
 
 (* Fetching current export syntax *)
@@ -270,20 +281,24 @@ let syntax () =
   match Encoding.symb "syntax" with
   | "Dedukti" -> Dedukti
   | "CondensedDedukti" -> CondensedDedukti
+  | "OnelineDedukti" -> CondensedDedukti
   | syntax -> failwith ("Unsupported output syntax: " ^ syntax)
 
 (* Defining printers *)
 let print x =
   match syntax() with
   | Dedukti          -> DeduktiPrinter.print x
+  | OnelineDedukti   -> DeduktiOnelinePrinter.print x
   | CondensedDedukti -> DeduktiCondensedPrinter.print x
 
 let printc x =
   match syntax() with
   | Dedukti          -> DeduktiPrinter.printc x
+  | OnelineDedukti   -> DeduktiOnelinePrinter.printc x
   | CondensedDedukti -> DeduktiCondensedPrinter.printc x
 
 let pp_term x =
   match syntax() with
   | Dedukti          -> DeduktiPrinter.pp_term x
+  | OnelineDedukti   -> DeduktiOnelinePrinter.pp_term x
   | CondensedDedukti -> DeduktiCondensedPrinter.pp_term x
