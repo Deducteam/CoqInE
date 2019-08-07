@@ -308,12 +308,16 @@ let rec translate_constr ?expected_type info env uenv t =
       else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
   | Rel i ->
-    (* If it's a let definition, replace by its value. *)
     let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
     begin match u with
-      | Some u -> translate_constr info env uenv (Vars.lift i u)
-      | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
-    end
+      | Some u ->
+        if Encoding.is_letins_simpl ()
+        then Dedukti.var (Cname.translate_name ~ensure_name:true x)
+        else
+          (* If it's a let definition, replace by its value. *)
+          translate_constr info env uenv (Vars.lift i u)
+        | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
+      end
   | Var x -> Dedukti.var (Cname.translate_identifier x)
   | Sort s -> T.coq_sort (Tsorts.translate_sort uenv s)
   | Cast(t, _, b) ->
@@ -344,11 +348,11 @@ let rec translate_constr ?expected_type info env uenv t =
   | LetIn(x, u, a, t) ->
     if Encoding.is_letins_simpl ()
     then
-      let x2 = Cname.fresh_name info ~default:"_" env x in
-      let x' = Cname.translate_name x2 in
+      let fresh_x = Cname.fresh_name info env x in
+      let x' = Cname.translate_name fresh_x in
       let a' = translate_types  info env uenv a in
       let u' = translate_constr info env uenv u in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(fresh_x, u, a)) env in
       let t' = translate_constr info new_env uenv t in
       Dedukti.letin (x',u',a') t'
     else
@@ -558,11 +562,11 @@ and translate_types info env uenv a =
   | LetInType(x, u, a, b) ->
     if Encoding.is_letins_simpl ()
     then
-      let x2 = Cname.fresh_name info ~default:"_" env x in
-      let x' = Cname.translate_name x2 in
+      let fresh_x = Cname.fresh_name info env x in
+      let x' = Cname.translate_name fresh_x in
       let a' = translate_types  info env uenv a in
       let u' = translate_constr info env uenv u in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(fresh_x, u, a)) env in
       let b' = translate_types info new_env uenv b in
       Dedukti.letin (x',u',a') b'
     else

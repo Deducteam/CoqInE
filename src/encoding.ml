@@ -86,7 +86,7 @@ let _ =
     ];
   List.iter (fun (x,y) -> Hashtbl.replace flags x y)
     [
-      ("simpl_letins"      , true);
+      ("simpl_letins"      , false);
       ("polymorphism"      , false);
       ("templ_polymorphism", false);
       ("float_univ"        , false);

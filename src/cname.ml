@@ -54,7 +54,7 @@ let fresh_of_name info env ?(global=false) ?prefix ~default name =
 
 let fresh_name info env ?prefix ?default name =
   match name, default with
-  | Names.Name(identifier), _ -> Names.Name(fresh_identifier info env ?prefix identifier)
+  | Names.Name(identifier), _ -> Names.Name (fresh_identifier info env ?prefix identifier)
   | Names.Anonymous, None     -> name
   | Names.Anonymous, Some(d)  ->
     Names.Name (fresh_of_string info env ?prefix d)

@@ -12,6 +12,8 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
+Dedukti Add Debug "Coq.Init.Logic".
+
 (* Import some modules to translate *)
 Require Import Test.Fixpoints.
 
