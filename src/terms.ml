@@ -311,13 +311,10 @@ let rec translate_constr ?expected_type info env uenv t =
     let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in
     begin match u with
       | Some u ->
-        if Encoding.is_letins_simpl ()
-        then Dedukti.var (Cname.translate_name ~ensure_name:true x)
-        else
-          (* If it's a let definition, replace by its value. *)
-          translate_constr info env uenv (Vars.lift i u)
-        | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
-      end
+        (* If it's a let definition, replace by its value. *)
+        translate_constr info env uenv (Vars.lift i u)
+      | None   -> Dedukti.var (Cname.translate_name ~ensure_name:true x)
+    end
   | Var x -> Dedukti.var (Cname.translate_identifier x)
   | Sort s -> T.coq_sort (Tsorts.translate_sort uenv s)
   | Cast(t, _, b) ->
@@ -348,11 +345,16 @@ let rec translate_constr ?expected_type info env uenv t =
   | LetIn(x, u, a, t) ->
     if Encoding.is_letins_simpl ()
     then
-      let fresh_x = Cname.fresh_name info env x in
-      let x' = Cname.translate_name fresh_x in
+      let id_x = match x with
+        | Names.Name id -> id
+        | Names.Anonymous -> assert false in
+      let fresh_idx = Cname.fresh_identifier info env id_x in
+      let x' = Cname.translate_identifier fresh_idx in
       let a' = translate_types  info env uenv a in
       let u' = translate_constr info env uenv u in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(fresh_x, u, a)) env in
+      let def = Context.Rel.Declaration.LocalDef
+          (Names.Name.mk_name fresh_idx, Constr.mkVar fresh_idx, a) in
+      let new_env = Environ.push_rel def env in
       let t' = translate_constr info new_env uenv t in
       Dedukti.letin (x',u',a') t'
     else
@@ -562,11 +564,16 @@ and translate_types info env uenv a =
   | LetInType(x, u, a, b) ->
     if Encoding.is_letins_simpl ()
     then
-      let fresh_x = Cname.fresh_name info env x in
-      let x' = Cname.translate_name fresh_x in
+      let id_x = match x with
+        | Names.Name id -> id
+        | Names.Anonymous -> assert false in
+      let fresh_idx = Cname.fresh_identifier info env id_x in
+      let x' = Cname.translate_identifier fresh_idx in
       let a' = translate_types  info env uenv a in
       let u' = translate_constr info env uenv u in
-      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(fresh_x, u, a)) env in
+      let def = Context.Rel.Declaration.LocalDef
+          (Names.Name.mk_name fresh_idx, Constr.mkVar fresh_idx, a) in
+      let new_env = Environ.push_rel def env in
       let b' = translate_types info new_env uenv b in
       Dedukti.letin (x',u',a') b'
     else
