@@ -22,12 +22,12 @@ let translate_qualified_library qualid =
   let info = Info.init module_path filename in
   begin
     (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
-    (*
     ( try Modules.translate_module_body info (Global.env ()) module_body
       with e -> if !fail_on_issue then (Info.close info; raise e)
     );
-    *)
+    (*
     Modules.translate_module_body info (Global.env ()) module_body;
+    *)
     (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
   end;
   debug_stop ();
