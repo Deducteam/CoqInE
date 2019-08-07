@@ -94,8 +94,8 @@ clean: CoqMakefile
 	rm -f $(RUN_MATHCOMP_DIR)/*.dk
 	rm -f $(RUN_MAIN_DIR)/config.v
 	rm -f $(RUN_MATHCOMP_DIR)/config.v
-	rm CoqMakefile
-	rm .coqrc
+	rm -r CoqMakefile
+	rm -r .coqrc
 
 fullclean: clean
 	rm src/*.cmt
