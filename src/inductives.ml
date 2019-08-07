@@ -750,10 +750,12 @@ let translate_match info env label ind =
 
 
 let translate_guarded info env label ind =
+  (*
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
   let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in
   let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
+  *)
 
   let nb_univ_poly_params = List.length ind.univ_poly_names in
   let nb_univ_template_params = List.length ind.template_names in
@@ -765,7 +767,8 @@ let translate_guarded info env label ind =
     let cons_name = ind.body.mind_consnames.(consid) in
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let args = nb_args.(consid) + nb_params in
-    Dedukti.print info.fmt (T.coq_guarded cons_name' args)
+    Dedukti.printc info.fmt (T.coq_guarded cons_name' args);
+    Format.pp_force_newline info.fmt ()
   done
 
 

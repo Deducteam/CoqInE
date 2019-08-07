@@ -98,7 +98,7 @@ struct
       | Lam((x , a), b) -> Format.fprintf out "%a =>@ %a" print_binding (x,      a) print_term b
       | LetIn((x , u, a), b) ->
         Format.fprintf out "(%a := %a) =>@ %a" print_binding (x,Some a) print_atomic u print_term b
-      | _               -> Format.fprintf out "%a" print_app term
+      | _ -> Format.fprintf out "%a" print_app term
     in
     Format.fprintf out "@[<hv0>%a@]" print_term term
 
@@ -139,15 +139,15 @@ struct
       Format.fprintf fmt "@[<v2>%s%a :@ %a.@]@.@."
         (if definable then "def " else "") print_var x print_term a
     | Definition(opaque, x, a, t) ->
-      Format.fprintf fmt "@[<v2>%s %a :@ @ %a :=@ @ %a.@]@.@."
+      Format.fprintf fmt "@[<v2>%s %a :@ %a@.@.:= %a.@]@.@."
         (if opaque then "thm" else "def")
         print_var x print_term a print_term t
     | UDefinition(opaque, x, t) ->
-      Format.fprintf fmt "@[<v2>%s %a@ @ :=@ @ %a.@]@.@."
+      Format.fprintf fmt "@[<v2>%s %a@ := %a.@]@.@."
         (if opaque then "thm" else "def")
         print_var x print_term t
     | Rewrite(context, left, right) ->
-      Format.fprintf fmt "@[<v2>[ %a]@ @ %a -->@ @ %a.@]@.@."
+      Format.fprintf fmt "@[<v2>[ %a]@ %a@ -->@ %a.@]@.@."
         print_context context print_term left print_term right
     | EmptyLine -> Format.pp_print_newline fmt ()
 
@@ -165,7 +165,7 @@ struct
         (if opaque then "thm" else "def")
         print_var x print_term t
     | Rewrite(context, left, right) ->
-      Format.fprintf fmt "@[<v2>[ %a] %a -->  %a.@]@."
+      Format.fprintf fmt "@[<v2>[ %a] %a --> %a.@]@."
       print_context context print_term left print_term right
     | instruction -> print fmt instruction
 end
@@ -262,7 +262,7 @@ struct
   let print fmt arg = match arg with
     | Declaration(definable, x, a) -> DeduktiPrinter.print fmt arg
     | Definition(opaque, x, a, t) ->
-      Format.fprintf fmt "%s %a : %a := %a.@.@."
+      Format.fprintf fmt "@[<v2>%s %a :@ %a@]@.@.:= %a."
         (if opaque then "thm" else "def")
         print_var x DeduktiPrinter.print_term a DeduktiOnelinePrinter.print_term t
     | _ -> DeduktiOnelinePrinter.print fmt arg
