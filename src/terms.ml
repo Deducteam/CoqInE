@@ -346,7 +346,7 @@ let rec translate_constr ?expected_type info env uenv t =
     if Encoding.is_letins_simpl ()
     then
       let id_x = match x with
-        | Names.Name id -> id
+        | Names.Name id -> id (* Assume letin var is named (otherwise what's the point ?) *)
         | Names.Anonymous -> assert false in
       let fresh_idx = Cname.fresh_identifier info env id_x in
       let x' = Cname.translate_identifier fresh_idx in
@@ -354,6 +354,8 @@ let rec translate_constr ?expected_type info env uenv t =
       let u' = translate_constr info env uenv u in
       let def = Context.Rel.Declaration.LocalDef
           (Names.Name.mk_name fresh_idx, Constr.mkVar fresh_idx, a) in
+      (* TODO: This is unsafe, the constant should also be pushed to the environment
+         with its correct type *)
       let new_env = Environ.push_rel def env in
       let t' = translate_constr info new_env uenv t in
       Dedukti.letin (x',u',a') t'
@@ -561,11 +563,12 @@ and translate_types info env uenv a =
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(x, a)) env in
     let b' = translate_types info new_env uenv b in
     Dedukti.pie (x', a') b'
+
   | LetInType(x, u, a, b) ->
     if Encoding.is_letins_simpl ()
     then
       let id_x = match x with
-        | Names.Name id -> id
+        | Names.Name id -> id (* Assume letin var is named (otherwise what's the point ?) *)
         | Names.Anonymous -> assert false in
       let fresh_idx = Cname.fresh_identifier info env id_x in
       let x' = Cname.translate_identifier fresh_idx in
@@ -573,6 +576,8 @@ and translate_types info env uenv a =
       let u' = translate_constr info env uenv u in
       let def = Context.Rel.Declaration.LocalDef
           (Names.Name.mk_name fresh_idx, Constr.mkVar fresh_idx, a) in
+      (* TODO: This is unsafe, the constant should also be pushed to the environment
+         with its correct type *)
       let new_env = Environ.push_rel def env in
       let b' = translate_types info new_env uenv b in
       Dedukti.letin (x',u',a') b'
@@ -626,17 +631,17 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
 
 and lift_let info env uenv x u a =
   let y = Cname.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info env x in
+  let yconstant = make_const info.module_path y in
+  let y' = Cname.translate_constant info env yconstant in
   let rel_context = Environ.rel_context env in
   let a_closed = generalize_rel_context rel_context a in
   let u_closed =   abstract_rel_context rel_context u in
-  let y' = Cname.translate_identifier y in
   (* [a_closed] amd [u_closed] are in the global environment but we still
      have to remember the named variables (i.e. from nested let in). *)
   let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
   let a_closed' = translate_types  info global_env uenv a_closed in
   let u_closed' = translate_constr info global_env uenv u_closed in
   Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
-  let yconstant = make_const info.module_path y in
   let yconstr = apply_rel_context (Constr.mkConst yconstant) rel_context in
   let env = push_const_decl env (yconstant, Some(u_closed), a_closed) in
   let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, yconstr, a)) env in
