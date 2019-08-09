@@ -1,0 +1,102 @@
+(;-----------------------------------------------------------------;)
+(;----------------------  PUBLIC DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+sinf : Sort. (; Not sure we need this... ;)
+
+defac sup [Sort].
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+(; Type for encoded type codes ;)
+Univ : s : Sort -> Type.
+
+(; Type decoding function ;)
+def Term : s : Sort -> a : Univ s -> Type.
+
+
+(;------------------------  CTS predicates  -----------------------;)
+
+Bool : Type.
+eps : Bool -> Type.
+true : Bool.
+I : eps true.
+
+def Axiom : Sort -> Sort -> Bool.
+def Rule  : Sort -> Sort -> Sort -> Bool.
+
+def Cumul : Sort -> Sort -> Bool.
+def Eq : Sort -> Sort -> Bool.
+[x] Eq x x --> true.
+(;
+Note:
+  A -> B  subtype of  C -> D
+iif
+  and (Eq A C) (Cumul B D)
+;)
+
+defac and [Bool].
+[c] and true c --> c.
+
+def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
+[b] pair _ _ I b --> b.
+[a] pair _ _ a I --> a.
+
+def implies : Bool -> Bool -> Bool.
+[     ] implies _         true      --> true
+[a,b,c] implies (and a b) (and a c) --> implies b c.
+[a,  c] implies a         (and a c) --> c.
+[a,b  ] implies (and a b) a         --> true.
+[a    ] implies a         a         --> true.
+
+
+(;--------------------  Term public constructors  -----------------;)
+
+def Impl (a:Bool) (b:Bool) : Type := eps (implies a b).
+
+def univ : s : Sort -> s' : Sort ->
+           c : Bool -> Impl c (Axiom s s') -> Univ s'.
+
+def prod : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+           c : Bool -> Impl c (Rule s1 s2 s3) ->
+           a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ s3.
+
+def SubType : s : Sort -> s' : Sort -> Univ s -> Univ s' -> Bool.
+
+def cast : s : Sort -> s' : Sort ->
+           a : Univ s -> b  : Univ s' ->
+           c : Bool -> Impl c (SubType s s' a b) ->
+           Term s a -> Term s' b.
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ = univ
+Coqine prod = prod
+Coqine cast = cast
+
+Coqine use_cast  = true    Use casts instead of lifts
+Coqine pred_univ = true    Univ is predicative
+Coqine pred_prod = true    Prod is predicative
+Coqine pred_cast = true    Cast is predicative
+
+Coqine pred_prod = true    Prod is predicative
+
+Coqine I     = I
+Coqine eps   = eps
+Coqine Axiom = Axiom
+Coqine Rule  = Rule
+Coqine Cumul = Cumul
+Coqine Eq    = Eq
+;)

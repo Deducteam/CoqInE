@@ -1,0 +1,102 @@
+
+
+(;-----------------------------------------------------------------;)
+(;---------------------  PRIVATE DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+
+Code : Type.
+
+cU : s : Sort -> Code.
+cPi  : Code -> (Code -> Code) -> Code.
+cLam : (Code -> Code) -> Code.
+def cApp : Code -> Code -> Code.
+
+def Decode : Code -> Type.
+def uncode : t : Code -> Code -> Decode t.
+def code : t : Code -> Decode t -> Code.
+
+[s]   Decode (cU s)    --> Univ s.
+[a,b] Decode (cPi a b) --> x : Decode a -> Decode (b (code a x)).
+
+
+
+(;----------------------------  Term  -----------------------------;)
+
+[s,t] Term s t --> Decode (code (cU s) t).
+
+
+(;----------------------------  Axiom  ----------------------------;)
+
+[s,s',p] univ s s' p --> uncode (cU s') (cU s).
+
+
+(;----------------------------  Rule  -----------------------------;)
+
+[s1,s2,s3,p,a,b]
+  prod s1 s2 s3 p a b -->
+  uncode (cU s3) (cPi (code (cU s1) a) (x => code (cU s2) (b (uncode (code (cU s1) a) x)))).
+
+
+(;---------------------------  Casts  -----------------------------;)
+
+[s1,s2,a,b,t] cast s1 s2 a b _ t --> uncode (code (cU s2) b) (code (code (cU s1) a) t).
+
+
+
+(;-------------------------  Subtyping ----------------------------;)
+
+[s] Cumul s s --> true.
+
+def forall : (Code -> Bool) -> Bool.
+[B] forall (x => B) --> B.
+
+def ST : Code -> Code -> Bool.
+[s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
+[a,b,b'] ST (cPi a b) (cPi a b') --> forall (x:Code => ST (b x) (b' x))
+[A]      ST A         A          --> true.
+
+[sa,sb,a,b] SubType sa sb a b --> ST (code (cU sa) a) (code (cU sb) b).
+
+
+
+(;---------------------  Canonicity rules -------------------------;)
+
+[  t] code _ (uncode _ t) --> t.
+
+[A,B,F]
+  code (cPi A B) F -->
+  cLam (x => code (B x) (F (uncode A x))).
+
+[A,B,F,U]
+  uncode (cPi A B) F U -->
+  uncode (B (code A U)) (cApp F (code A U)).
+
+[A,B,F]
+  uncode (cPi A B) (cLam F)
+  -->
+  x => uncode (B (code A x)) (F (code A x)).
+
+[A,B,F,U]
+  cApp (code (cPi A B) F) U -->
+  code (B U) (F (uncode A U)).
+
+[F,U]
+  cApp (cLam F) U --> F U.
+
+[s,t] uncode s (code s t) --> t.
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Normal forms of lifted types are uncoded codes:
+Coqine lifted_type_pattern = recoded
+
+Coqine _code      = code
+Coqine _uncode    = uncode
+Coqine _code_univ = cU
+Coqine _code_prod = cPi
+Coqine _code_app  = cApp
+Coqine _code_abs  = cLam
+;)

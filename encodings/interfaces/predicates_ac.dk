@@ -1,0 +1,103 @@
+(;-----------------------------------------------------------------;)
+(;----------------------  PUBLIC DEFINITIONS  ---------------------;)
+(;-----------------------------------------------------------------;)
+
+(;---------------------------  Sorts  -----------------------------;)
+
+Sort : Type.
+sinf : Sort. (; Not sure we need this... ;)
+
+def sup : Sort -> Sort -> Sort.
+
+
+(;---------------------  Types and terms  -------------------------;)
+
+(; Type for encoded type codes ;)
+Univ : s : Sort -> Type.
+
+(; Type decoding function ;)
+def Term : s : Sort -> a : Univ s -> Type.
+
+
+(;------------------------  CTS predicates  -----------------------;)
+
+Bool : Type.
+eps : Bool -> Type.
+true : Bool.
+I : eps true.
+
+def Axiom : Sort -> Sort -> Bool.
+def Rule  : Sort -> Sort -> Sort -> Bool.
+
+def Cumul : Sort -> Sort -> Bool.
+def Eq : Sort -> Sort -> Bool.
+[x] Eq x x --> true.
+(;
+Note:
+  A -> B  subtype of  C -> D
+iif
+  and (Eq A C) (Cumul B D)
+;)
+
+defac and [Bool].
+[c] and true c --> c.
+
+def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
+[b] pair _ _ I b --> b.
+[a] pair _ _ a I --> a.
+
+(; Idea to compute "remaining" constraints from a set of already build constraints
+   Not particularly useful, dependent type force to write constraint expression ;)
+(;
+def remain : Bool -> Bool -> Bool.
+[     ] remain _         true      --> true
+[a,b,c] remain (and a b) (and a c) --> remain b c.
+[a,  c] remain a         (and a c) --> c.
+[a,b  ] remain (and a b) a         --> true.
+[a    ] remain a         a         --> true.
+;)
+
+(;--------------------  Term public constructors  -----------------;)
+
+def univ : s : Sort -> s' : Sort ->
+           p : eps (Axiom s s') -> Univ s'.
+
+def prod : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+           p : eps (Rule s1 s2 s3) ->
+           a : Univ s1 -> b : (Term s1 a -> Univ s2) -> Univ s3.
+
+def SubType : s : Sort -> s' : Sort -> Univ s -> Univ s' -> Bool.
+
+def cast : s : Sort -> s' : Sort ->
+           a : Univ s -> b  : Univ s' ->
+           p : eps (SubType s s' a b) ->
+           Term s a -> Term s' b.
+
+
+(;------------------------  Coqine parameters  --------------------;)
+
+(;
+Coqine syntax = Dedukti
+
+Coqine Sort = Sort
+Coqine Univ = Univ
+Coqine Term = Term
+Coqine sup  = sup
+Coqine univ = univ
+Coqine prod = prod
+Coqine cast = cast
+
+Coqine use_cast  = true    Use casts instead of lifts
+Coqine pred_univ = true    Univ is predicative
+Coqine pred_prod = true    Prod is predicative
+Coqine pred_cast = true    Cast is predicative
+
+Coqine pred_prod = true    Prod is predicative
+
+Coqine I     = I
+Coqine eps   = eps
+Coqine Axiom = Axiom
+Coqine Rule  = Rule
+Coqine Cumul = Cumul
+Coqine Eq    = Eq
+;)

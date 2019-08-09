@@ -1,0 +1,96 @@
+
+
+(;-----------------------------------------------------------------;)
+(;-------------------------  Coq encoding  ------------------------;)
+(;-----------------------------------------------------------------;)
+
+(;-------------------------  Nat definition  ----------------------;)
+
+Nat : Type.
+nset : Nat.
+z : Nat.
+s : Nat -> Nat.
+
+
+(;----------------------  CTS Sorts definition  -------------------;)
+
+prop : Sort.
+type : Nat -> Sort.
+def set  : Sort := type nset.
+
+(;
+Coqine prop = prop
+Coqine set = set
+Coqine type = type
+Coqine u0 = z
+Coqine uS = s
+;)
+
+
+
+(;-----------------------  LUB wrt Cumulativity  ------------------;)
+
+defac max [Nat].
+[i] max i z --> i.
+
+[s  ] sup prop     s        --> s
+[i  ] sup (type i) set      --> type i
+[i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;---------------------  CTS Axiom definition  --------------------;)
+
+[   ] Axiom prop         (type z    ) --> true
+[   ] Axiom (type nset)  (type z    ) --> true
+[   ] Axiom (type z    ) (type (s z)) --> true
+[i,j] Axiom (type (s i)) (type (s j)) --> Axiom (type i) (type j).
+
+
+(;-----------------------  CTS Rule definition  -------------------;)
+
+[     ] Rule _            prop         prop         --> true
+[i    ] Rule prop         (type i    ) (type i    ) --> true
+[i    ] Rule (type nset ) (type i    ) (type i    ) --> true
+[     ] Rule (type z    ) (type nset ) (type z    ) --> true
+[     ] Rule (type z    ) (type z    ) (type z    ) --> true
+[i    ] Rule (type z    ) (type (s i)) (type (s i)) --> true
+[i    ] Rule (type (s i)) (type nset ) (type (s i)) --> true
+[i    ] Rule (type (s i)) (type z    ) (type (s i)) --> true
+[i,j,k] Rule (type (s i)) (type (s j)) (type (s k)) --> Rule (type i) (type j) (type k).
+
+
+(;-------------------  CTS Cumulativity definition  ---------------;)
+
+[   ] Cumul prop         prop         --> true
+[   ] Cumul prop         set          --> true
+[i  ] Cumul prop         (type i    ) --> true
+[   ] Cumul set          set          --> true
+[i  ] Cumul set          (type i    ) --> true
+[i  ] Cumul (type z)     (type i    ) --> true
+[i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
+
+
+
+(;------------------------  Other definitions  -------------------;)
+
+(; These functions are provided to simplify the translation.
+   - Axiom s (axiom s)       should reduce to true
+   - Rule s1 s2 (rule s1 s2) should reduce to true
+;)
+
+
+def axiom : Sort -> Sort.
+[]  axiom prop     --> type z
+[i] axiom (type i) --> type (s i).
+
+[x] Axiom x (axiom x) --> true.
+
+def rule : Sort -> Sort -> Sort.
+[s  ] rule prop     s        --> s
+[   ] rule _        prop     --> prop
+[   ] rule set      set      --> set
+[i  ] rule set      (type i) --> type i
+[i  ] rule (type i) set      --> type i
+[i,j] rule (type i) (type j) --> type (max i j).
+
+[s1,s2] Rule s1 s2 (rule s1 s2) --> true.
