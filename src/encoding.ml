@@ -60,6 +60,7 @@ let _ =
       ("Axiom", "Axiom");
       ("Rule" , "Rule");
       ("Cumul", "Cumul");
+      ("Eq"   , "Eq");  (* s1 = s2 constraint *)
 
       (* Private syntax *)
       ("_lift"  , "lift'");

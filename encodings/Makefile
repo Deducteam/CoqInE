@@ -34,15 +34,16 @@ $(BUILD)/$1/C.dk: $(BUILD) $(BUILD)/$1 $(BUILD)/$1/Coq.dk
 	@sed -i 's/Coqine_\([^ ]*\)/Coqine \1/g' $(BUILD)/$1/C.dk
 	@echo "(; Coqine readable = true ;)" >> $(BUILD)/$1/C.dk
 
-$1: $(BUILD)/$1/Coq.dk
-
-$1_short: $(BUILD)/$1/C.dk
-
 $(BUILD)/$1/C.dko: $(BUILD)/$1/C.dk
-	$(DKCHECK) -e $(BUILD)/$1/C.dk
+	@$(DKCHECK) $7 -e $(BUILD)/$1/C.dk
 
 $(BUILD)/$1/Coq.dko: $(BUILD)/$1/Coq.dk
-	$(DKCHECK) -e $(BUILD)/$1/Coq.dk
+	@$(DKCHECK) $7 -e $(BUILD)/$1/Coq.dk
+
+# Aliases
+$1: $(BUILD)/$1/Coq.dk
+$1_short: $(BUILD)/$1/C.dk
+$1_check: $(BUILD)/$1/C.dko $(BUILD)/$1/Coq.dko
 
 all: $(BUILD)/$1/Coq.dko
 all: $(BUILD)/$1/C.dko
@@ -83,9 +84,9 @@ $(eval $(call targ,fullcodes_eta_fix_test3,predicates,fullcodes_eta,predicates,f
 
 $(eval $(call targ,fullcodes_eta_fix2,predicates,fullcodes_eta,predicates,fullcodes_multis,))
 
-.PHONY: check
-check:
-	$(foreach file, $(wildcard $(BUILD)/**/*.dk), $(DKCHECK) $(file) ;)
+$(eval $(call targ,fullcodes_poly,predicates_ac,fullcodes_poly,predicates_ac,fullcodes_poly,test_poly,))
+
+$(eval $(call targ,fullcodes_poly_cstr,predicates_ac_cstr,fullcodes_poly_cstr,predicates_ac,fullcodes_poly,test_poly,))
 
 .PHONY: clean
 clean:

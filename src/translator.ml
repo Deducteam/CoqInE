@@ -117,6 +117,7 @@ struct
 
   let cstr_le cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [cu s1            ; cu s2])
   let cstr_lt cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [coq_axiom (cu s1); cu s2])
+  let cstr_eq cu s1 s2 = app (vsymb "eps") (apps (vsymb "Eq"   ) [cu s1            ; cu s2])
 
 end
 
@@ -213,6 +214,7 @@ struct
   let coq_lift     s = Std.coq_lift  (if a () then Std.cu else Short.scu) s
   let cstr_le      s = Std.cstr_le   (if a () then Std.cu else Short.scu) s
   let cstr_lt      s = Std.cstr_lt   (if a () then Std.cu else Short.scu) s
+  let cstr_eq      s = Std.cstr_eq   (if a () then Std.cu else Short.scu) s
 
   let coq_pattern_lifted_from_sort s t =
     match symb "lifted_type_pattern" with

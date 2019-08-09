@@ -22,13 +22,13 @@ define MANUAL
 
 
 - make -C encodings
-    Generates encodings for Coq in the encodings/_build folder then checks the
-    generated files
+    Generates encodings for Coq in the encodings/_build folder
+    then checks the generated files
 
 - make test_pred_fix
-    Translates the file run/main/Test/Fixpoints.v and all it's dependencies into the
-    run/main/out folder then checks the generated files. The translated file can be
-    changed by editing run/main/main_test.v
+    Translates the file run/main/Test/Fixpoints.v and all it's dependencies
+    into the run/main/out folder then checks the generated files.
+    The translated file can be changed by editing run/main/main_test.v
     The encoding file generated is run/main/C.dk
     This translation relies on privates casts
 
@@ -36,12 +36,17 @@ define MANUAL
     Same as test_fix but the translation relies on private codes
 
 - make debug_pred_fix
-    Translates all files in run/main/Test and their dependencies into the
-    run/main/out folder then checks the generated files
+    Translates non universe polymorphis files from run/main/Test and their
+    dependencies into the run/main/out folder then checks the generated files
     This translation relies on privates casts
 
 - make debug_codes_fix
     Same as debug_fix but the translation relies on private codes
+
+- make poly_codes_fix
+    Translates all files from run/main/Test and their dependencies
+    into the run/main/out folder then checks the generated files
+    This translation relies on private codes
 
 - make tests
     Run all the above targets successively
@@ -63,6 +68,7 @@ tests: check-version .merlin plugin
 	make test_codes_fix
 	make debug_pred_fix
 	make debug_codes_fix
+	make poly_codes_fix
 test: tests
 
 check-version:

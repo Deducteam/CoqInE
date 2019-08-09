@@ -6,7 +6,6 @@ Set Printing Universes.
 Definition id {A : Type} (a : A) := a.
 
 Polymorphic Definition pid {A : Type} (a : A) := a.
-Print pid.
 
 Definition pid_id      := pid (@id).
 Definition pid_id_expl := @pid (forall A:Type,A->A) (@id).

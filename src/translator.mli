@@ -70,6 +70,7 @@ sig
 
   val cstr_le : cic_universe -> cic_universe -> term
   val cstr_lt : cic_universe -> cic_universe -> term
+  val cstr_eq : cic_universe -> cic_universe -> term
 
   val coq_header : unit -> instruction list
   val coq_footer : unit -> instruction list
