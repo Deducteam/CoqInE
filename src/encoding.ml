@@ -42,7 +42,8 @@ let init_flags () =
       ("priv_univ"         , false);
       ("priv_prod"         , false);
       ("inlined_fixpoint"  , false);
-      ("fix_arity_sort"    , false)
+      ("fix_arity_sort"    , false);
+      ("code_guarded"      , false)
     ]
 
 let init_empty_symbs () =
@@ -105,6 +106,7 @@ let init_empty_symbs () =
       "fix_proj";
       "fix_oneline";
       "guard";
+      "code_guard";
       "guarded"
     ]
 

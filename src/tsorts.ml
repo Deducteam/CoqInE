@@ -190,3 +190,51 @@ let translate_template_params (ctxt:Univ.Level.t option list) : Univ.Level.t lis
     in
     params, List.map aux params
   else [],[]
+
+
+
+
+
+(* ------------------------   Constraints handling    ------------------------ *)
+
+let destArity a b : Univ.Constraint.t =
+  let open Univ in
+  (* Extracts s from A1 -> ... -> An -> Us *)
+  let decla, sa = Term.destArity a in
+  let declb, sb = Term.destArity b in
+
+  let rec gather_eq_types acc lista listb =
+    match lista, listb with
+    | [], [] -> acc
+    | ( Context.Rel.Declaration.LocalAssum (_,ta) ) :: tla ,
+      ( Context.Rel.Declaration.LocalAssum (_,tb) ) :: tlb ->
+      gather_eq_types ((ta,tb)::acc) tla tlb
+    | _ -> assert false in
+  let eq_types = gather_eq_types [] decla declb in
+
+  let rec enforce_eq_types acc  = function
+    | [] -> acc
+    | (ta,tb) :: tl ->
+      begin
+        match Term.kind_of_type ta, Term.kind_of_type tb with
+        | Term.SortType sa,  Term.SortType sb ->
+          enforce_eq_types
+            (enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
+            tl
+        | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
+        | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
+
+        | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
+          enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
+
+        | _ -> enforce_eq_types acc tl
+      end
+  in
+
+  let cstr : Constraint.t = enforce_eq_types Univ.Constraint.empty eq_types in
+  enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) cstr
+
+
+let translate_constraints uenv cstr =
+  (* TODO: fetch in uenv the constraints *)
+  []

@@ -95,9 +95,12 @@ struct
       (if (flag "pred_prod")
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
-  let coq_cast cu s1 s2 a b t = apps (vsymb "cast")
+  let coq_cast cu s1 s2 a b cstr t =
+    let cstr = t_I() in
+    (* TODO: replace the above to handle an actual list of constraints *)
+    apps (vsymb "cast")
       (if flag "pred_cast"
-       then [cu s1; cu s2; a; b; t_I(); t]
+       then [cu s1; cu s2; a; b; cstr; t]
        else [cu s1; cu s2; a; b;        t])
   let coq_pcast cu s1 s2 a b t =
     if flag "pred_cast"
@@ -108,7 +111,7 @@ struct
         let ca = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s1); a] in
         let cb = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s2); b] in
         apps (vsymb "_uncode") [ cb; apps (vsymb "_code") [ca ; t ] ]
-    else coq_cast cu s1 s2 a b t
+    else coq_cast cu s1 s2 a b [] t
   let coq_lift cu s1 s2 t = apps (vsymb "lift")
       (if flag "pred_lift"
        then [cu s1; cu s2; t_I(); t]
@@ -276,7 +279,10 @@ struct
 
   let coq_guarded consname args =
     let applied_cons = Utils.iterate args (fun x -> app x wildcard) (var consname) in
-    let lhs = apps (vsymb "guard") [wildcard; wildcard; applied_cons] in
+    let lhs =
+      if flag "code_guarded"
+      then apps (vsymb "code_guard")      [wildcard; applied_cons]
+      else apps (vsymb "guard") [wildcard; wildcard; applied_cons] in
     rewrite ([],lhs,vsymb "guarded")
 
 end

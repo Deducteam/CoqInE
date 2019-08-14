@@ -509,11 +509,13 @@ and translate_cast info uenv t' enva a envb b =
       else
       if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
       then
+        let constraints = Tsorts.destArity a b in
         let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
         let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
-        T.coq_cast s1' s2' a' b' t'
-      else T.coq_cast s1' s2' a' b' t'
-    else T.coq_cast s1' s2' a' b' t'
+        let var_cstr = Tsorts.translate_constraints uenv constraints in
+        T.coq_cast s1' s2' a' b' var_cstr t'
+      else T.coq_cast s1' s2' a' b' [] t'
+    else T.coq_cast s1' s2' a' b' [] t'
   else
     match Term.kind_of_type a, Term.kind_of_type b with
     | SortType sa, SortType sb ->

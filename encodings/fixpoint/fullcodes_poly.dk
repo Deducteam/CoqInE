@@ -552,7 +552,8 @@ This is well typed, somehow...
 
 (;
 Coqine inlined_fixpoint = true
-Coqine fix_arity_sort   = true (; Fixpoint sort for each arity ;)
+Coqine fix_arity_sort   = true  (; Fixpoint sort for each arity ;)
+Coqine code_guarded     = true  (; Guards are on code version of constructors ;)
 
 Coqine 0           = 0
 Coqine S           = _S
@@ -562,5 +563,6 @@ Coqine fix         = fix
 Coqine fix_proj    = fix_proj
 Coqine fix_oneline = fixproj
 Coqine guard       = guarded?
+Coqine code_guard  = code_guarded?
 Coqine guarded     = guarded
 ;)

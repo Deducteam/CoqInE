@@ -32,3 +32,7 @@ val translate_univ_poly_params : Univ.Instance.t -> string list
 
 val translate_univ_poly_constraints : Univ.Constraint.t ->
   ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list
+
+val destArity : Constr.types -> Constr.types -> Univ.Constraint.t
+
+val translate_constraints : Info.env -> Univ.Constraint.t -> Dedukti.var list
