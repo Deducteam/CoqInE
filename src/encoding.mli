@@ -91,17 +91,6 @@ val set_param  : string -> string -> unit
 val set_params : (string*string) list -> unit
 (** Sets given parameter to given value *)
 
-val set_encoding : string -> unit
-(** Selects an encoding from its name
-    Some encodings:
-    - original      : Ali's original encoding
-    - original_cast : Ali's original encoding with cast instead of lifted lambdas
-    - polymorph     : Polymorphism implementation
-    - named    : Encoding modifier using named (rewritten) floating universe
-    - readable : Encoding modifier with shorter names and aliases for concrete universes
-    - fixpoint : Encoding modifier to use inlined fixpoint construction
-*)
-
 val is_polymorphism_on : unit -> bool
 (** Is (true) polymorphism translation on ? *)
 

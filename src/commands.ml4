@@ -95,11 +95,6 @@ VERNAC COMMAND EXTEND DeduktiDisableDebug CLASSIFIED AS QUERY
   [ Debug.disable_debug () ]
 END
 
-VERNAC COMMAND EXTEND DeduktiSetEncoding CLASSIFIED AS QUERY
-| [ "Dedukti" "Set" "Encoding" string(enc) ] ->
-  [ Encoding.set_encoding enc ]
-END
-
 VERNAC COMMAND EXTEND DeduktiSetParam CLASSIFIED AS QUERY
 | [ "Dedukti" "Set" "Param" string(key) string(value) ] ->
   [ Encoding.set_param key value ]

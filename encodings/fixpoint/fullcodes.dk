@@ -567,6 +567,8 @@ This is well typed, somehow...
 
 (;
 Coqine inlined_fixpoint = true
+Coqine fix_arity_sort   = false (; Global sort for all arities ;)
+
 Coqine 0           = 0
 Coqine S           = _S
 Coqine SA          = SA

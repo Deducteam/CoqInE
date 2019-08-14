@@ -68,7 +68,7 @@ tests: check-version .merlin plugin
 	make test_codes_fix
 	make debug_pred_fix
 	make debug_codes_fix
-	make poly_codes_fix
+#	make poly_codes_poly
 test: tests
 
 check-version:
@@ -117,104 +117,77 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING     ?= original_cast/Coq # Configuration for the encoding generation
-COQINE_FLAGS ?= original_cast # Configuration for the translator
+ENCODING       ?= original_cast/Coq # Configuration for the encoding generation
+ENCODING_FLAGS ?= original_cast     # Extra encoding configuration
 
-.PHONY: run
-run: plugin .coqrc
-	make -C $(RUNDIR) clean
-	make -C encodings clean _build/$(ENCODING).dk
-	make -C encodings clean _build/$(ENCODING).config
-	cp encodings/_build/$(ENCODING).dk     $(RUNDIR)/
-	cp encodings/_build/$(ENCODING).config $(RUNDIR)/config.v
-	echo "Dedukti Set Encoding \"$(COQINE_FLAGS)\"." >> $(RUNDIR)/config.v
-	make -C $(RUNDIR) $(EXTRA_FLAGS)
+.PHONY: polymorph_config
+polymorph_config:
+	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $(RUNDIR)/config.v
+	echo "Dedukti Set Param \"polymorphism\"       \"true\"." >> $(RUNDIR)/config.v
+	echo "Dedukti Set Param \"constraints\"        \"true\"." >> $(RUNDIR)/config.v
 
+.PHONY: template_config
+template_config:
+	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $(RUNDIR)/config.v
 
+.PHONY: float_config
+float_config:
+	echo "Dedukti Set Param \"float_univ\" \"true\"." >> $(RUNDIR)/config.v
+	echo "Dedukti Set Param \"universe_file\" \"U\"." >> $(RUNDIR)/config.v
 
-.PHONY: _test
-_test: RUNDIR:=$(RUN_MAIN_DIR)
-_test: COQINE_FLAGS:=template
-_test: EXTRA_FLAGS:=MAINFILE=main_test
-_test: run
+.PHONY: named_config
+named_config:
+	echo "Dedukti Set Param \"named_univ\" \"true\"." >> $(RUNDIR)/config.v
 
-.PHONY: _debug
-_debug: RUNDIR:=$(RUN_MAIN_DIR)
-_debug: COQINE_FLAGS:=template
-
-_debug: EXTRA_FLAGS:=MAINFILE=main_debug
-_debug: run
-
-.PHONY: _poly
-_poly: RUNDIR:=$(RUN_MAIN_DIR)
-_poly: EXTRA_FLAGS:=MAINFILE=main_poly
-_poly: COQINE_FLAGS:=polymorph
-_poly: run
-
-.PHONY: _mathcomp
-_mathcomp: RUNDIR:=$(RUN_MATHCOMP_DIR)
-_mathcomp: run
+.PHONY: cast_config
+cast_config:
+	echo "Dedukti Set Param \"use_cast\" \"true\"." >> $(RUNDIR)/config.v
 
 
+# generate : target  ,  path  ,  encoding  ,  C/Coq  ,  polymorph  ,  extra flags
+define generate
 
-.PHONY: test_pred
-test_pred: ENCODING:=predicates_eta/C
-test_pred: _test
+.PHONY: $1
+$1: plugin .coqrc
+	make -C encodings clean _build/$3/$4.dk
+	cp encodings/_build/$3/$4.dk $2/$4.dk
+	make -C encodings clean _build/$3/$4.config
+	cp encodings/_build/$3/$4.config $2/config.v
+ifeq ($5, polymorph)
+	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"polymorphism\"       \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"constraints\"        \"true\"." >> $2/config.v
+else ifeq ($5, template)
+	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $2/config.v
+else ifeq ($5, float)
+	echo "Dedukti Set Param \"float_univ\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"universe_file\" \"U\"." >> $2/config.v
+else ifeq ($5, named)
+	echo "Dedukti Set Param \"named_univ\" \"true\"." >> $2/config.v
+else ifeq ($5, cast)
+	echo "Dedukti Set Param \"use_cast\" \"true\"." >> $2/config.v
+endif
+	echo "Dedukti Set Param \"encoding_name\" \"$5\"." >> $2/config.v
+	make -C $2 clean
+	make -C $2 $6
 
-.PHONY: test_pred_fix
-test_pred_fix: ENCODING:=predicates_eta_fix/C
-test_pred_fix: _test
+endef
 
-.PHONY: test_codes_fix
-test_codes_fix: ENCODING:=fullcodes_eta_fix/C
-test_codes_fix: _test
+$(eval $(call generate,test_pred,run/main,predicates_eta,C,template,MAINFILE=main_test))
+$(eval $(call generate,test_pred_fix ,run/main,predicates_eta_fix,C,template,MAINFILE=main_test))
+$(eval $(call generate,test_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_test))
 
+$(eval $(call generate,debug_pred,run/main,predicates_eta,C,template,MAINFILE=main_debug))
+$(eval $(call generate,debug_pred_fix,run/main,predicates_eta_fix,C,template,MAINFILE=main_debug))
+$(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_debug))
 
-.PHONY: debug_pred
-debug_pred: ENCODING:=predicates_eta/C
-debug_pred: _debug
+$(eval $(call generate,poly_pred_fix,run/main,predicates_eta_fix,C,polymorph,MAINFILE=main_poly))
+$(eval $(call generate,poly_codes_fix,run/main,fullcodes_eta_fix,C,polymorph,MAINFILE=main_poly))
+$(eval $(call generate,poly_codes_poly,run/main,fullcodes_poly,C,polymorph,MAINFILE=main_poly))
 
-.PHONY: debug_pred_fix
-debug_pred_fix: ENCODING:=predicates_eta_fix/C
-debug_pred_fix: _debug
+$(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
+$(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 
-.PHONY: debug_codes_fix
-debug_codes_fix: ENCODING:=fullcodes_eta_fix/C
-debug_codes_fix: _debug
-
-
-.PHONY: poly_pred_fix
-poly_pred_fix: ENCODING:=predicates_eta_fix/C
-poly_pred_fix: _poly
-
-.PHONY: poly_codes_fix
-poly_codes_fix: ENCODING:=fullcodes_eta_fix/C
-poly_codes_fix: _poly
-
-
-#.PHONY: debug_default
-#debug_default: ENCODING:=original/C
-#debug_default: COQINE_FLAGS:=
-#debug_default: _debug
-
-#.PHONY: debug_cast
-#debug_cast: ENCODING:=original_cast/C
-#debug_cast: COQINE_FLAGS:=
-#debug_cast: _debug
-
-#.PHONY: debug_named
-#debug_named: ENCODING:=original/C
-#debug_named: COQINE_FLAGS:=named
-#debug_named: _debug
-
-
-
-.PHONY: mathcomp_lift
-mathcomp_lift: ENCODING:=lift_predicates/C
-mathcomp_lift: COQINE_FLAGS:=
-mathcomp_lift: _mathcomp
-
-.PHONY: mathcomp_debug
-mathcomp_debug: ENCODING:=predicates/C
-mathcomp_debug: COQINE_FLAGS:=polymorph
-mathcomp_debug: _mathcomp
+#$(eval $(call generate,orig,run/main,original,C,,MAINFILE=main_test))
+#$(eval $(call generate,orig_cast,run/main,original_cast,C,cast,MAINFILE=main_test))
+#$(eval $(call generate,orig_named,run/main,original,C,named,MAINFILE=main_test))

@@ -251,13 +251,13 @@ struct
   let coq_header   s = if a () then coq_header   s else Short.coq_header s
   let coq_footer  () = coq_footer
 
-  let coq_fixpoint sort n arities bodies i =
+  let coq_fixpoint n arities bodies i =
     let coq_N n =
       assert (n >= 0);
       if n < 10 then coq_var (string_of_int n)
       else Utils.iterate n (app (vsymb "S")) (vsymb "0") in
-    let coq_arity (k,a) =
-      apps (vsymb "SA") [coq_N k; sort; a] in
+    let coq_arity (s,k,a) =
+      apps (vsymb "SA") [coq_N k; s; a] in
     assert (Encoding.is_fixpoint_inlined ());
     assert (Array.length arities = n);
     assert (Array.length bodies = n);
@@ -266,9 +266,13 @@ struct
       ulam "c" (apps (var "c") (Array.to_list (Array.map coq_arity arities))) in
     let make_bodies =
       ulam "c" (apps (var "c") (Array.to_list bodies)) in
-    apps
-      (vsymb "fix_oneline")
-      [ sort; coq_N n; make_arities; make_bodies; coq_N i]
+    apps (vsymb "fix_oneline")
+      (if flag "fix_arity_sort"
+       then [ coq_N n; make_arities; make_bodies; coq_N i]
+       else
+         let (sort,_,_) = arities.(0) in
+         [ sort; coq_N n; make_arities; make_bodies; coq_N i]
+      )
 
   let coq_guarded consname args =
     let applied_cons = Utils.iterate args (fun x -> app x wildcard) (var consname) in

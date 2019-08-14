@@ -604,14 +604,14 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
   let (rec_indices, i), (names, types, bodies) = fp in
   debug "Translating fixpoint:@.%a" pp_fixpoint fp;
   let n = Array.length names in
-  (* Retrieving the sorts si of all the Ai these have to be made explicit in the translation. *)
-  let sort' = Array.map (translate_sort uenv) sorts in
-  let sort' = sort'.(0) in
-  (* List of all (ki, Ai') where Ai' is Ai translated in current context *)
+  (* List of all (si,ki, Ai') where Ai' is Ai translated in current context *)
   let arities' =
     Array.init n
-      (fun i -> rec_indices.(i),
-                translate_constr ~expected_type:sorts.(i) info env uenv types.(i) ) in
+      (fun i ->
+         translate_sort uenv sorts.(i),
+         rec_indices.(i),
+         translate_constr ~expected_type:sorts.(i) info env uenv types.(i)
+      ) in
   (* Fresh names fi' for the fi *)
   let fresh_names = Array.map (Cname.fresh_name ~default:"_" info env) names in
   let names' = Array.map Cname.translate_name fresh_names in
@@ -625,7 +625,7 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
   (* Translating the ti to ti' in the extended context *)
   let bodies' = Array.init n (fun i ->
       add_lams (translate_constr ~expected_type:lifted_types.(i) info ext_env uenv bodies.(i))) in
-  T.coq_fixpoint sort' n arities' bodies' i
+  T.coq_fixpoint n arities' bodies' i
 
 
 

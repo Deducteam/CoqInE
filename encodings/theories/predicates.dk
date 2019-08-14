@@ -83,8 +83,10 @@ def max : Nat -> Nat -> Nat.
 def axiom : Sort -> Sort.
 []  axiom prop     --> type z
 [i] axiom (type i) --> type (s i).
+(;  Coqine axiom = axiom  ;)
 
 [x] Axiom x (axiom x) --> true.
+
 
 def rule : Sort -> Sort -> Sort.
 [s  ] rule prop     s        --> s
@@ -93,5 +95,6 @@ def rule : Sort -> Sort -> Sort.
 [i  ] rule set      (type i) --> type i
 [i  ] rule (type i) set      --> type i
 [i,j] rule (type i) (type j) --> type (max i j).
+(;  Coqine rule = rule  ;)
 
 [s1,s2] Rule s1 s2 (rule s1 s2) --> true.

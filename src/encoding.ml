@@ -1,11 +1,10 @@
 let flags     = Hashtbl.create 15
 let encodings = Hashtbl.create 15
 
-
 let flag = Hashtbl.find flags
 let symb key =
   match Hashtbl.find encodings key with
-  | "" -> failwith "Symbol \"" ^ key ^ "\" is not available in this encoding."
+  | "" -> failwith ("Symbol [" ^ key ^ "] is not available in this encoding.")
   | value -> value
 
 let set_param key value =
@@ -23,68 +22,7 @@ let set_param key value =
 
 let set_params = List.iter (fun (x,y) -> set_param x y)
 
-let _ =
-  List.iter (fun (x,y) -> Hashtbl.replace encodings x y)
-    [
-      (* General encoding parameters *)
-      ("syntax"       , "Dedukti");
-      ("encoding_name", "original");
-      ("encoding_file", "Coq");
-      ("universe_file", "U");
-      ("lifted_type_pattern", "lift");
-
-      (* Public construction syntax *)
-      ("Sort" , "Sort");
-      ("Univ" , "Univ");
-      ("Term" , "Term");
-      ("univ" , "univ");
-      ("prod" , "prod");
-      ("lift" , "lift");
-      ("cast" , "cast");
-
-      (* Infinite hierarchy of universes constructors *)
-      ("prop" , "prop");
-      ("set"  , "set");
-      ("type" , "type");
-      ("u0"   , "z");
-      ("uS"   , "s");
-
-      (* Functionnal universe constructors *)
-      ("axiom", "axiom");
-      ("sup"  , "sup");
-      ("rule" , "rule");
-
-      (* Predicate syntax *)
-      ("I"    , "I");
-      ("eps"  , "eps");
-      ("Axiom", "Axiom");
-      ("Rule" , "Rule");
-      ("Cumul", "Cumul");
-      ("Eq"   , "Eq");  (* s1 = s2 constraint *)
-
-      (* Private syntax *)
-      ("_lift"  , "lift'");
-      ("_cast"  , "cast'");
-      ("_univ"  , "univ'");
-      ("_prod"  , "prod'");
-      ("_code"  , "code");
-      ("_uncode", "uncode");
-      ("_code_app" , "cApp");
-      ("_code_abs" , "cLam");
-      ("_code_univ", "cU");
-      ("_code_prod", "cPi");
-
-      (* Fixpoint syntax *)
-      ("0"          , "0");
-      ("S"          , "_S");
-      ("SA"         , "SA");
-      ("MA"         , "make_MA");
-      ("fix"        , "fix");
-      ("fix_proj"   , "fix_proj");
-      ("fix_oneline", "fixproj");
-      ("guard"      , "guarded?");
-      ("guarded"    , "guarded")
-    ];
+let init_flags () =
   List.iter (fun (x,y) -> Hashtbl.replace flags x y)
     [
       ("simpl_letins"      , false);
@@ -103,38 +41,76 @@ let _ =
       ("priv_cast"         , false);
       ("priv_univ"         , false);
       ("priv_prod"         , false);
-      ("inlined_fixpoint"  , false)
+      ("inlined_fixpoint"  , false);
+      ("fix_arity_sort"    , false)
     ]
 
+let init_empty_symbs () =
+  List.iter (fun x -> Hashtbl.replace encodings x "")
+    [
+      (* General encoding parameters *)
+      "syntax";
+      "encoding_name";
+      "encoding_file";
+      "universe_file";
+      "lifted_type_pattern";
 
-let floating_univ () =
-  set_param "float_univ" "true";
-  set_param "universe_file" "U"
+      (* Public construction syntax *)
+      "Sort";
+      "Univ";
+      "Term";
+      "univ";
+      "prod";
+      "lift";
+      "cast";
 
-let template () =
-  set_param "templ_polymorphism" "true" (* Template polymorphism *)
+      (* Infinite hierarchy of universes constructors *)
+      "prop";
+      "set";
+      "type";
+      "u0";
+      "uS";
 
-let polymorphism () =
-  set_params [
-    "templ_polymorphism" , "true";
-    "polymorphism"       , "true";
-    "constraints"        , "true";
-  ]
+      (* Functionnal universe constructors *)
+      "axiom";
+      "sup";
+      "rule";
 
-let named () = set_param "named_univ" "true"
+      (* Predicate syntax *)
+      "I";
+      "eps";
+      "Axiom";
+      "Rule";
+      "Cumul";
+      "Eq";  (* s1 = s2 constraint *)
 
-let set_encoding s =
-  let keywords = Str.split (Str.regexp "[ \t]+") s in
-  List.iter
-    (function
-      | "float"      -> floating_univ ()
-      | "named"      -> named ()
-      | "template"   -> template ()
-      | "polymorph"  -> polymorphism ()
-      | invalid_name ->
-        failwith (Format.sprintf "Unknown encoding keyword: %s" invalid_name))
-    keywords;
-  set_param "encoding_name" s
+      (* Private syntax *)
+      "_lift";
+      "_cast";
+      "_univ";
+      "_prod";
+      "_code";
+      "_uncode";
+      "_code_app";
+      "_code_abs";
+      "_code_univ";
+      "_code_prod";
+
+      (* Fixpoint syntax *)
+      "0";
+      "S";
+      "SA";
+      "MA";
+      "fix";
+      "fix_proj";
+      "fix_oneline";
+      "guard";
+      "guarded"
+    ]
+
+let _ =
+  init_flags();
+  init_empty_symbs ()
 
 let is_polymorphism_on       () = flag "polymorphism"
 let is_templ_polymorphism_on () = flag "templ_polymorphism"

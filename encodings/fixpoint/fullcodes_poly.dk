@@ -505,14 +505,13 @@ def fixproj :
     (MF (fix n (MA (make_MA n)))).
 
 
-
 (;-----------------------------------------------------------------;)
 (;--------------------------  Recap  ------------------------------;)
 (;-----------------------------------------------------------------;)
 (;
 
 To build a SingleArity   (k / A)
-  SA : N -> Univ s -> SingleArity
+  SA : N -> s : Sort -> Univ s -> SingleArity
 
 To build a MutualArity  { k1 / A1, ..., kn / An }
   make_MA : SingleArity -> ... (n) ... -> SingleArity -> MutualArity
@@ -553,6 +552,8 @@ This is well typed, somehow...
 
 (;
 Coqine inlined_fixpoint = true
+Coqine fix_arity_sort   = true (; Fixpoint sort for each arity ;)
+
 Coqine 0           = 0
 Coqine S           = _S
 Coqine SA          = SA
