@@ -68,10 +68,14 @@ let instantiate_poly_univ_params uenv name univ_ctxt univ_instance =
   then debug "Something suspicious is going on with thoses universes...";
   let levels = Univ.Instance.to_array univ_instance in
   let levels = Array.init nb_params (fun i -> levels.(i)) in
-  Array.fold_left
-    (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
-    (Dedukti.var name)
-    levels
+  let res = Array.fold_left
+      (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+      (Dedukti.var name)
+      levels in
+  if Encoding.is_constraints_on ()
+  then res
+  (* TODO: compute the required constraints argument *)
+  else res
 
 let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
   let nb_instance = Univ.Instance.length univ_instance in
@@ -154,19 +158,11 @@ let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   else []
 
 let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
-  if Encoding.is_polymorphism_on ()
+  if Encoding.is_constraints_on ()
   then
     let aux n cstr =
       let (i, c, j) = cstr in
-      let cstr_type = match c with
-      | Univ.Lt -> T.cstr_lt (translate_level Info.dummy i) (translate_level Info.dummy j)
-      | Univ.Le -> T.cstr_le (translate_level Info.dummy i) (translate_level Info.dummy j)
-      | Univ.Eq -> T.cstr_le (translate_level Info.dummy i) (translate_level Info.dummy j)
-      (*
-      Error.not_supported
-       (Format.asprintf "Eq constraints %a = %a" pp_coq_level i pp_coq_level j)
-      *)
-      in
+      let cstr_type = T.coq_cstr c (translate_level Info.dummy i) (translate_level Info.dummy j) in
       let cstr_name = Cname.constraint_name n in
       ( (cstr_name, cstr_type), cstr)
     in
@@ -230,9 +226,8 @@ let destArity a b : Univ.Constraint.t =
         | _ -> enforce_eq_types acc tl
       end
   in
-
-  let cstr : Constraint.t = enforce_eq_types Univ.Constraint.empty eq_types in
-  enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) cstr
+  enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
+    (enforce_eq_types Univ.Constraint.empty eq_types)
 
 
 let translate_constraints uenv cstr =

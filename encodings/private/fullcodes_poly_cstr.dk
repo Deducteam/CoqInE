@@ -52,11 +52,28 @@ def forall : (Code -> Bool) -> Bool.
 [B] forall (x => B) --> B.
 
 def ST : Code -> Code -> Bool.
-[s1, s2] ST (cU s1)   (cU s2)    --> Cumul s1 s2
-[a,b,b'] ST (cPi a b) (cPi a b') --> forall (x:Code => ST (b x) (b' x))
-[A]      ST A         A          --> true.
+def EQ : Code -> Code -> Bool.
 
-[sa,sb,a,b] SubType sa sb a b --> ST (code (cU sa) a) (code (cU sb) b).
+[s1, s2] ST (cU s1) (cU s2) --> Cumul s1 s2.
+[s1, s2] EQ (cU s1) (cU s2) --> Eq s1 s2.
+
+[a,a',b,b']
+  ST (cPi a b) (cPi a' b')
+  -->
+  and (EQ a a') (forall (x:Code => ST (b x) (b' x))).
+
+[a,a',b,b']
+  EQ (cPi a b) (cPi a' b')
+  -->
+  and (EQ a a') (forall (x:Code => EQ (b x) (b' x))).
+
+[A] EQ A A --> true.
+[A] ST A A --> true.
+
+[sa,sb,a,b]
+  SubType sa sb a b
+  -->
+  ST (code (cU sa) a) (code (cU sb) b).
 
 
 

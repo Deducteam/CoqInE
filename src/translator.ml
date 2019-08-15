@@ -96,12 +96,15 @@ struct
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b cstr t =
-    let cstr = t_I() in
-    (* TODO: replace the above to handle an actual list of constraints *)
+    let rec coq_cstr_inhabitant = function
+      | [] -> t_I ()
+      | [ c ] -> var c
+      | c :: tl -> apps (vsymb "pair") [var c; coq_cstr_inhabitant tl]
+    in
     apps (vsymb "cast")
       (if flag "pred_cast"
-       then [cu s1; cu s2; a; b; cstr; t]
-       else [cu s1; cu s2; a; b;        t])
+       then [cu s1; cu s2; a; b; coq_cstr_inhabitant cstr; t]
+       else [cu s1; cu s2; a; b;                           t])
   let coq_pcast cu s1 s2 a b t =
     if flag "pred_cast"
     then
@@ -215,9 +218,15 @@ struct
   let coq_cast     s = Std.coq_cast  (if a () then Std.cu else Short.scu) s
   let coq_pcast    s = Std.coq_pcast (if a () then Std.cu else Short.scu) s
   let coq_lift     s = Std.coq_lift  (if a () then Std.cu else Short.scu) s
+
+
   let cstr_le      s = Std.cstr_le   (if a () then Std.cu else Short.scu) s
   let cstr_lt      s = Std.cstr_lt   (if a () then Std.cu else Short.scu) s
   let cstr_eq      s = Std.cstr_eq   (if a () then Std.cu else Short.scu) s
+  let coq_cstr = function
+    | Univ.Lt -> cstr_lt
+    | Univ.Le -> cstr_le
+    | Univ.Eq -> cstr_eq
 
   let coq_pattern_lifted_from_sort s t =
     match symb "lifted_type_pattern" with

@@ -82,8 +82,9 @@ let init_empty_symbs () =
       "eps";
       "Axiom";
       "Rule";
-      "Cumul";
-      "Eq";  (* s1 = s2 constraint *)
+      "Cumul"; (* s1 <= s2 constraint *)
+      "Eq";    (* s1 == s2 constraint *)
+      "pair";  (* constraint inhabitant constructor *)
 
       (* Private syntax *)
       "_lift";

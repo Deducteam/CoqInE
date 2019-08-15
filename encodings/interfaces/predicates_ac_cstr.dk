@@ -100,4 +100,5 @@ Coqine Axiom = Axiom
 Coqine Rule  = Rule
 Coqine Cumul = Cumul
 Coqine Eq    = Eq
+Coqine pair  = pair      This is used to build inhabitants of constraints
 ;)

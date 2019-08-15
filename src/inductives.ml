@@ -195,6 +195,7 @@ let translate_inductive info env label ind  =
   debug "--- Translating inductive type: %s ---" name';
 
   (*  I : s1 : Sort -> ... -> sk : Sort ->
+          [  eps (cstr1 and ... and cstrn) ->  ]
           p1 : ||P1|| ->
           ... ->
           pr : ||Pr|| ->
@@ -756,7 +757,6 @@ let translate_guarded info env label ind =
   let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   *)
-
   let nb_univ_poly_params = List.length ind.univ_poly_names in
   let nb_univ_template_params = List.length ind.template_names in
   let nb_params = ind.n_params + nb_univ_poly_params + nb_univ_template_params in

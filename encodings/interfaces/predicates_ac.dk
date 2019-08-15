@@ -46,16 +46,6 @@ def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
 [b] pair _ _ I b --> b.
 [a] pair _ _ a I --> a.
 
-(; Idea to compute "remaining" constraints from a set of already build constraints
-   Not particularly useful, dependent type force to write constraint expression ;)
-(;
-def remain : Bool -> Bool -> Bool.
-[     ] remain _         true      --> true
-[a,b,c] remain (and a b) (and a c) --> remain b c.
-[a,  c] remain a         (and a c) --> c.
-[a,b  ] remain (and a b) a         --> true.
-[a    ] remain a         a         --> true.
-;)
 
 (;--------------------  Term public constructors  -----------------;)
 
@@ -100,4 +90,5 @@ Coqine Axiom = Axiom
 Coqine Rule  = Rule
 Coqine Cumul = Cumul
 Coqine Eq    = Eq
+Coqine pair  = pair      This is used to build inhabitants of constraints
 ;)

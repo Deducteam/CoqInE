@@ -60,7 +60,7 @@ let universe_encoding_float_noconstr (universes:UGraph.t) =
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 
 (** Instructions for universe declaration as constant symbols and
-  constant constraints constructors. *)
+    constant constraints constructors. *)
 let universe_encoding_float_constr (universes:UGraph.t) =
   let unames, cstr = get_universes_constraints universes in
   let counter = ref 0 in
@@ -70,11 +70,7 @@ let universe_encoding_float_constr (universes:UGraph.t) =
     Dedukti.declaration false fresh_name cstr_type
   in
   let register inst (j, jd, constraint_type, k, kd) =
-    match constraint_type with
-    | Univ.Eq -> (decl (T.cstr_le jd kd)) ::
-                 (decl (T.cstr_le kd jd)) :: inst
-    | Univ.Le -> (decl (T.cstr_le jd kd)) :: inst
-    | Univ.Lt -> (decl (T.cstr_lt  jd kd)) :: inst in
+    (decl (T.coq_cstr constraint_type jd kd)) :: inst in
   let decl_u u = Dedukti.declaration false (T.coq_univ_name u) (T.coq_Sort ()) in
   (List.map decl_u unames) @ Dedukti.EmptyLine :: (List.fold_left register [] cstr)
 
