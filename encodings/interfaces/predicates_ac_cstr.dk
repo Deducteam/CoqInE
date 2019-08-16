@@ -94,11 +94,11 @@ Coqine pred_cast = true    Cast is predicative
 
 Coqine pred_prod = true    Prod is predicative
 
-Coqine I     = I
 Coqine eps   = eps
-Coqine Axiom = Axiom
-Coqine Rule  = Rule
 Coqine Cumul = Cumul
 Coqine Eq    = Eq
-Coqine pair  = pair      This is used to build inhabitants of constraints
+
+--- Predicate constructors:
+Coqine I     = I
+Coqine pair  = pair
 ;)

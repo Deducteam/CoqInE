@@ -9,13 +9,6 @@ let symb_filter = ref []
 let filter_out symb = symb_filter := symb :: !symb_filter
 let not_filtered symb = not (List.mem symb !symb_filter)
 
-let dest_const_univ universes =
-  match universes with
-  | Monomorphic_const univ_ctxt -> Univ.Instance.empty, Univ.Constraint.empty
-  | Polymorphic_const univ_ctxt ->
-    let uctxt = Univ.AUContext.repr univ_ctxt in
-    Univ.UContext.instance uctxt, Univ.UContext.constraints uctxt
-
 
 (** Constant definitions have a type and a body.
     - The type can be non-polymorphic (normal type) or
@@ -43,10 +36,9 @@ let translate_constant_body info env label const =
       instance, constraints, env'
   in
 
-  let poly_inst, poly_cstr = dest_const_univ const.const_universes in
   let univ_poly_params = Tsorts.translate_univ_poly_params poly_inst in
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let uenv = Info.make [] [] (List.length univ_poly_params) univ_poly_cstr  in
+  let uenv = Info.make [] [] (List.length univ_poly_params) univ_poly_cstr in
 
   let const_type = Vars.subst_instance_constr poly_inst const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in

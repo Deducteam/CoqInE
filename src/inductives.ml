@@ -58,7 +58,7 @@ type ind_infos =
     poly_cstr : Univ.Constraint.t;
 
     univ_poly_names : Dedukti.var list;
-    univ_poly_cstr : ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list;
+    univ_poly_cstr : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list;
     univ_poly_nb_params : int;
     univ_poly_env : Info.env;
   }

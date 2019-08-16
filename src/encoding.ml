@@ -78,13 +78,19 @@ let init_empty_symbs () =
       "rule";
 
       (* Predicate syntax *)
-      "I";
-      "eps";
-      "Axiom";
-      "Rule";
-      "Cumul"; (* s1 <= s2 constraint *)
-      "Eq";    (* s1 == s2 constraint *)
-      "pair";  (* constraint inhabitant constructor *)
+      "eps";   (* Constraint proof space *)
+      "Cumul"; (* s1 <= s2 predicate *)
+      "Eq";    (* s1 == s2 predicate *)
+
+      (* Predicate constructors *)
+      "I";            (* trivial predicate                  *)
+      "pair";         (* C1   ->   C2   ->   C1 /\ C2       *)
+      "cumul_trans";  (* A < B   ->   B < C   ->   A < C    *)
+      "cumul_eq";     (* A = B   ->   A < B                 *)
+      "eq_sym";       (* A = B   ->   B = A                 *)
+      "cumul_rule_1"; (* A < B   ->   rule(A,C) < rule(B,C)  for functionnal CTS *)
+      "cumul_rule_2"; (* B < C   ->   rule(A,B) < rule(A,C)  for functionnal CTS  *)
+      "cumul_axiom";  (* A < B   ->   axiom(A)  < axiom(B)   for functionnal CTS  *)
 
       (* Private syntax *)
       "_lift";

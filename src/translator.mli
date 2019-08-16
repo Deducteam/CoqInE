@@ -56,7 +56,13 @@ sig
   val coq_term : cic_universe -> term -> term
   val coq_sort : cic_universe -> term
   val coq_prod : cic_universe -> cic_universe -> term -> term -> term
-  val coq_cast : cic_universe -> cic_universe -> term -> term -> var list -> term -> term
+
+  val coq_cast : cic_universe -> cic_universe -> term -> term -> term list -> term -> term
+  (** [coq_cast s1 s2 A B [c1; ...; cn] t]
+      build the cast representation of t from type A : Us1 to B : Us2
+      using the given list of constraints
+  *)
+
   val coq_lift : cic_universe -> cic_universe -> term -> term
 
   val coq_pcast : cic_universe -> cic_universe -> term -> term -> term -> term

@@ -1,10 +1,10 @@
 
 val add_templ_params_type : Dedukti.var list -> Dedukti.term -> Dedukti.term
 val add_poly_params_type : Dedukti.var list ->
-                           ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
+                           ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
                            Dedukti.term -> Dedukti.term
 val add_poly_params_def : Dedukti.var list ->
-                           ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
+                           ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
                            Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before types/definitions *)
 
@@ -31,8 +31,41 @@ val translate_template_params :
 val translate_univ_poly_params : Univ.Instance.t -> string list
 
 val translate_univ_poly_constraints : Univ.Constraint.t ->
-  ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list
+  ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
 
 val destArity : Constr.types -> Constr.types -> Univ.Constraint.t
 
-val translate_constraints : Info.env -> Univ.Constraint.t -> Dedukti.var list
+
+
+
+val translate_constraint : Info.env -> Univ.univ_constraint -> Dedukti.term
+(** From local environment
+    [
+      c1  :  a1  =/<  b1,
+      ...,
+      cn  :  an  =/<  bn
+    ]
+  builds the constraint cstr inhabitant of the given constraint type
+    cstr : u =/< v
+
+  This constraint may be trivial (I), one of the ci of a more complex object
+  relying on transitivity construction (cumul_trans ...).
+*)
+
+val translate_constraint_set : Info.env -> Univ.Constraint.t -> Dedukti.term list
+(** From local environment
+    [
+      c1  :  a1  =/<  b1,
+      ...,
+      cn  :  an  =/<  bn
+    ]
+  builds a list of constraint names
+    [ cstri ; cstrk ]
+  for the given constraint set
+    { ui =/< vi, ..., uk =/< vk }
+
+  This will later be translated into
+    pair cstri (pair ... (pair cstrj cstrk)...)
+  of type
+    and (Eq/Cumul ui vi) (and ... (and (Eq/Cumul uj vj) (Eq/Cumul uk vk))...)
+*)

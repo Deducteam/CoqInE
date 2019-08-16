@@ -42,9 +42,21 @@ iif
 defac and [Bool].
 [c] and true c --> c.
 
+
+
+(;-------------------  CTS predicates constructors  ---------------;)
+
 def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
 [b] pair _ _ I b --> b.
 [a] pair _ _ a I --> a.
+
+cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
+              eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
+
+cumul_eq : s1 : Sort -> s2 : Sort -> eps (Eq s1 s2) -> eps (Cumul s1 s2).
+
+eq_sym   : s1 : Sort -> s2 : Sort -> eps (Eq s1 s2) -> eps (Eq s2 s1).
+
 
 
 (;--------------------  Term public constructors  -----------------;)
@@ -84,11 +96,14 @@ Coqine pred_cast = true    Cast is predicative
 
 Coqine pred_prod = true    Prod is predicative
 
-Coqine I     = I
 Coqine eps   = eps
-Coqine Axiom = Axiom
-Coqine Rule  = Rule
 Coqine Cumul = Cumul
 Coqine Eq    = Eq
-Coqine pair  = pair      This is used to build inhabitants of constraints
+
+--- Predicate constructors:
+Coqine I     = I
+Coqine pair  = pair
+Coqine cumul_trans = cumul_trans
+Coqine cumul_eq    = cumul_eq
+Coqine eq_sym      = eq_sym
 ;)

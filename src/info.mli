@@ -22,17 +22,17 @@ val update : info -> Names.Label.t -> info
 val close : info -> unit
 
 
-(** Universe and constraints environment.
+(** Universes and constraints local environment.
   Contains information about:
   - locally bounded universe variables from universe polymorphism
+  - local polymorphic constraints
   - template polymorphic named variables
-  - local constraints
 *)
 type env
 
 val make :
   Univ.Level.t list -> Dedukti.var list ->
-  int -> ( (Dedukti.var * Dedukti.term) * Univ.Constraint.elt) list ->
+  int -> ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
   env
 
 val is_template_polymorphic    : env -> Univ.Level.t -> bool
@@ -40,5 +40,7 @@ val translate_template_arg     : env -> Univ.Level.t -> Dedukti.var
 val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
 
 val replace_template_name : env -> Univ.Level.t -> Dedukti.var -> env
+
+val fetch_constraint : env -> Univ.univ_constraint -> Dedukti.var option
 
 val dummy : env

@@ -98,8 +98,8 @@ struct
   let coq_cast cu s1 s2 a b cstr t =
     let rec coq_cstr_inhabitant = function
       | [] -> t_I ()
-      | [ c ] -> var c
-      | c :: tl -> apps (vsymb "pair") [var c; coq_cstr_inhabitant tl]
+      | [ c ] -> c
+      | c :: tl -> apps (vsymb "pair") [c; coq_cstr_inhabitant tl]
     in
     apps (vsymb "cast")
       (if flag "pred_cast"

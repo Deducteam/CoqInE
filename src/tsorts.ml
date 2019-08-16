@@ -13,13 +13,13 @@ let add_templ_params_type params t =
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params
-      (List.fold_right (function (cstr,_) -> Dedukti.pie cstr) cstr t)
+      (List.fold_right (function (_,cstr) -> Dedukti.pie cstr) cstr t)
   else t
 
 let add_poly_params_def params cstr t =
   if Encoding.is_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Sort ()))) params
-      (List.fold_right (function (cstr,_) -> Dedukti.lam cstr) cstr t)
+      (List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t)
   else t
 
 (** Maping from the string representation of global named universes to
@@ -164,7 +164,7 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       let (i, c, j) = cstr in
       let cstr_type = T.coq_cstr c (translate_level Info.dummy i) (translate_level Info.dummy j) in
       let cstr_name = Cname.constraint_name n in
-      ( (cstr_name, cstr_type), cstr)
+      ( cstr, (cstr_name, cstr_type) )
     in
     List.mapi aux (Univ.Constraint.elements uctxt)
   else []
@@ -230,6 +230,12 @@ let destArity a b : Univ.Constraint.t =
     (enforce_eq_types Univ.Constraint.empty eq_types)
 
 
-let translate_constraints uenv cstr =
-  (* TODO: fetch in uenv the constraints *)
+let translate_constraint :
+  Info.env -> Univ.univ_constraint -> Dedukti.term = fun uenv ((i,c,j) as cstr) ->
+  match Info.fetch_constraint uenv cstr with
+  | Some v -> Dedukti.var v
+  | None -> assert false (* TODO: build complicated constraint here *)
+
+let translate_constraint_set :
+  Info.env -> Univ.Constraint.t -> Dedukti.term list = fun uenv cstr ->
   []
