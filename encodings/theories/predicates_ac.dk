@@ -29,6 +29,7 @@ Coqine set = set
 Coqine type = type
 Coqine u0 = z
 Coqine uS = s
+Coqine Nat = Nat
 ;)
 
 
@@ -36,8 +37,17 @@ Coqine uS = s
 (;-----------------------  LUB wrt Cumulativity  ------------------;)
 
 defac max [Nat].
-[i  ] max i     nset  --> i.
-[i,j] max (s i) (s j) --> s (max i j).
+[i  ] max i     nset  --> i
+[i,j] max (s i) (s j) --> s (max i j)
+
+[i  ] max i i --> i
+[i,j] max i (max i j) --> max i j
+
+[i    ] max i (s i) --> s i
+[i,j  ] max i (max (s i) j) --> max (s i) j
+[i,j  ] max i (s (max i j)) --> s (max i j)
+[i,j,k] max (max i k) (s (max i j)) --> max k (s (max i j)).
+
 
 [s  ] sup prop     s        --> s
 [s  ] sup s        prop     --> s

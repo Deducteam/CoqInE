@@ -123,5 +123,16 @@ let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
   fprintf fmt "Fix %a@.  { %a }" pp_coq_name names.(i) (pp_array "@." pp_bodies) bodies
 
 
+let pp_coq_constraint fmt (i,rel,j) =
+  let open Univ in
+  let pp_coq_rel = function Eq -> "=" | Lt -> "<" | Le -> "<=" in
+  Format.fprintf fmt "%a %s %a" pp_coq_level i (pp_coq_rel rel) pp_coq_level j
+
+let pp_uenv_cstr fmt constraints =
+  let pp_cstr fmt (cstr,(name,_)) = Format.fprintf fmt "%s : %a" name pp_coq_constraint cstr in
+  fprintf fmt "[%a]" (pp_list ", " pp_cstr) constraints
+
+
+
 let pp_globname fmt n =
   fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)

@@ -144,15 +144,15 @@ let translate_sort uenv = function
 let convertible_sort uenv s1 s2 =
   translate_sort uenv s1 = translate_sort uenv s2
 
-let translate_local_level l =
-  assert (not (Univ.Level.is_small l));
-  match Univ.Level.var_index l with
-  | None -> assert false
-  | Some n -> T.coq_var_univ_name n
 
 let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
+    let translate_local_level l =
+      assert (not (Univ.Level.is_small l));
+      match Univ.Level.var_index l with
+      | None -> assert false
+      | Some n -> T.coq_var_univ_name n in
     let params_lst = Array.to_list (Univ.Instance.to_array uctxt) in
     List.map translate_local_level params_lst
   else []
@@ -234,8 +234,16 @@ let translate_constraint :
   Info.env -> Univ.univ_constraint -> Dedukti.term = fun uenv ((i,c,j) as cstr) ->
   match Info.fetch_constraint uenv cstr with
   | Some v -> Dedukti.var v
-  | None -> assert false (* TODO: build complicated constraint here *)
+  | None -> T.coq_I ()
+  | _ ->
+    (* TODO: build complicated constraint here *)
+    failwith
+      (Format.asprintf "Could not find constraint %a in context" pp_coq_constraint cstr)
 
 let translate_constraint_set :
   Info.env -> Univ.Constraint.t -> Dedukti.term list = fun uenv cstr ->
-  []
+  let res = ref [] in
+  Univ.Constraint.iter
+    (fun cstr -> res := (translate_constraint uenv cstr) :: !res)
+    cstr;
+  !res

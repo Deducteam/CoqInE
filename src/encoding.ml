@@ -58,6 +58,7 @@ let init_empty_symbs () =
 
       (* Public construction syntax *)
       "Sort";
+      "Nat";
       "Univ";
       "Term";
       "univ";

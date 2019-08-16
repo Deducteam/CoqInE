@@ -75,6 +75,7 @@ sig
   val coq_proj : int -> term -> term
 
   val coq_cstr : Univ.constraint_type -> cic_universe -> cic_universe -> term
+  val coq_I : unit -> term
 
   val coq_header : unit -> instruction list
   val coq_footer : unit -> instruction list

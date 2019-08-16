@@ -29,6 +29,15 @@ let vsymb s = coq_var (symb s)
 
 let coq_Sort () = vsymb "Sort"
 
+let coq_Nat () = vsymb "Nat"
+
+let coq_s () = vsymb "us"
+let coq_z () = vsymb "u0"
+let coq_nat n = Utils.iterate n (app (coq_s ())) (coq_z())
+let coq_prop ()    = vsymb "prop"
+let coq_set  ()    = vsymb "set"
+let coq_type i     = app (vsymb "type") (coq_nat i)
+
 let coq_var_univ_name n = "s" ^ string_of_int n
 
 let coq_univ_name s = String.concat "__" (String.split_on_char '.' s)
@@ -43,12 +52,6 @@ let coq_footer = [ comment "End of translation." ]
 
 module Std =
 struct
-
-  let coq_nat n = Utils.iterate n (app (coq_var "s")) (coq_var "z")
-
-  let coq_prop ()    = vsymb "prop"
-  let coq_set  ()    = vsymb "set"
-  let coq_type i     = app (vsymb "type") (coq_nat i)
 
   let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
 
@@ -101,10 +104,11 @@ struct
       | [ c ] -> c
       | c :: tl -> apps (vsymb "pair") [c; coq_cstr_inhabitant tl]
     in
+    let cstr = coq_cstr_inhabitant (List.filter (fun c -> c <> t_I()) cstr) in
     apps (vsymb "cast")
       (if flag "pred_cast"
-       then [cu s1; cu s2; a; b; coq_cstr_inhabitant cstr; t]
-       else [cu s1; cu s2; a; b;                           t])
+       then [cu s1; cu s2; a; b; cstr; t]
+       else [cu s1; cu s2; a; b;       t])
   let coq_pcast cu s1 s2 a b t =
     if flag "pred_cast"
     then
@@ -200,6 +204,7 @@ end
 module T =
 struct
 
+  let coq_Nat           = coq_Nat
   let coq_Sort          = coq_Sort
   let coq_var_univ_name = coq_var_univ_name
   let coq_univ_name     = coq_univ_name
@@ -227,6 +232,7 @@ struct
     | Univ.Lt -> cstr_lt
     | Univ.Le -> cstr_le
     | Univ.Eq -> cstr_eq
+  let coq_I = Std.t_I
 
   let coq_pattern_lifted_from_sort s t =
     match symb "lifted_type_pattern" with
