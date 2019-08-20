@@ -3,9 +3,11 @@ let encodings = Hashtbl.create 15
 
 let flag = Hashtbl.find flags
 let symb key =
-  match Hashtbl.find encodings key with
-  | "" -> failwith ("Symbol [" ^ key ^ "] is not available in this encoding.")
-  | value -> value
+  try
+    match Hashtbl.find encodings key with
+    | "" -> failwith ("Symbol [" ^ key ^ "] is not available in this encoding.")
+    | value -> value
+  with Not_found -> failwith ("Symbol [" ^ key ^ "] is not a valid encoding identifier.")
 
 let set_param key value =
   if Hashtbl.mem flags key
@@ -70,8 +72,10 @@ let init_empty_symbs () =
       "prop";
       "set";
       "type";
-      "u0";
-      "uS";
+
+      "uSet";
+      "uType0";
+      "uSucc";
 
       (* Functionnal universe constructors *)
       "axiom";
@@ -115,7 +119,8 @@ let init_empty_symbs () =
       "fix_oneline";
       "guard";
       "code_guard";
-      "guarded"
+      "guarded";
+      "level"
     ]
 
 let _ =

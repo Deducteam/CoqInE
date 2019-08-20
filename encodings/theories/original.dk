@@ -26,8 +26,10 @@ type : Nat -> Sort.
 Coqine prop = prop
 Coqine set = set
 Coqine type = type
-Coqine u0 = z
-Coqine uS = s
+
+Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
+Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
+Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
 ;)
 
 

@@ -12,13 +12,20 @@ type cic_universe =
   (** Locally bounded template polymorphic universe  "Coq.Module.index"  *)
   | Global   of string
   (** Global universe "Coq.Module.index" *)
-  | Succ     of cic_universe * int (** l + n *)
+  | Succ     of cic_universe * int
+  (** [Succ u n] = u + n
+      Notes:
+        Succ(u,0) = u
+        Succ(Prop,1) = Axiom(Prop) = Type@{0} = Succ(Set ,1)  *)
   | Max      of cic_universe list  (** sup {u | u \in l} *)
   | Rule     of cic_universe * cic_universe
   (** Universe *)
 
 val mk_type : int -> cic_universe
-(** [mk_type i] represents Type_i = Set + (i+1) = Prop + (i+1)  *)
+(** [mk_type i] represents Type@{i} in the hierarchy
+        Set < Type@{0} < Type@{1} < ...
+    Type@{i} = Set + (i+1) = Prop + (i+1)
+*)
 
 (*
 Note: in Coq cumulativity (subtyping) and axioms are not the same:
@@ -32,6 +39,9 @@ but
 
 module T :
 sig
+  val coq_Nat : unit -> term
+  (** Term representing the type of Type levels (for universe polymorphism). *)
+
   val coq_Sort : unit -> term
   (** Term representing the type of sorts. *)
 
@@ -51,6 +61,9 @@ sig
 
   val coq_pattern_universe : cic_universe -> term
   (** Translate a universe level as a rule rhs pattern *)
+
+  val coq_nat_universe : cic_universe -> term
+  (** Nat level of universe *)
 
   val coq_U    : cic_universe -> term
   val coq_term : cic_universe -> term -> term

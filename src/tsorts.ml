@@ -12,14 +12,18 @@ let add_templ_params_type params t =
 
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params
-      (List.fold_right (function (_,cstr) -> Dedukti.pie cstr) cstr t)
+  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Nat ()))) params
+      ( if Encoding.is_constraints_on ()
+        then List.fold_right (function (_,cstr) -> Dedukti.pie cstr) cstr t
+        else t )
   else t
 
 let add_poly_params_def params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Sort ()))) params
-      (List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t)
+  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Nat ()))) params
+      ( if Encoding.is_constraints_on ()
+        then List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t
+        else t )
   else t
 
 (** Maping from the string representation of global named universes to

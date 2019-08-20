@@ -6,13 +6,11 @@
 
 (;-------------------------  Nat definition  ----------------------;)
 
-Nat : Type.
-
-
+Nat : Type.         (; Type of predicative Type levels ;)
 nset : Nat.         (; Set is the smallest (predicative) Type. ;)
 s    : Nat -> Nat.
 
-(; Coq's   Type@{0} = Type@{Set+1}   is    type (s nset)  ;)
+(; Careful:  Coq's   Type@{0} = Type@{Set+1}   is    type (s nset)  ;)
 def z : Nat := s nset.
 
 
@@ -23,13 +21,20 @@ prop : Sort.
 type : Nat -> Sort.
 def set  : Sort := type nset.
 
+def level : Sort -> Nat.
+[l] level (type l) --> l.
+
+def v (u:Sort) : Sort := type (level u).
+
 (;
 Coqine prop = prop
-Coqine set = set
+Coqine set  = set
 Coqine type = type
-Coqine u0 = z
-Coqine uS = s
-Coqine Nat = Nat
+
+Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
+Coqine uSet   = nset   (; Nat representation of Set ;)
+Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
+Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
 ;)
 
 

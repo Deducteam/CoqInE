@@ -12,31 +12,27 @@ type cic_universe =
   | Max of cic_universe list
   | Rule of cic_universe * cic_universe
 
-(* Note:
-  Succ(Prop,0) = Prop
-  Succ(Prop,1) = Axiom(Prop) = Type_0
-  ... *)
 let mk_type i = Succ (Prop, i+1)
 
 
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
-
-
 let coq_var  x = Var (add_prefix (symb "encoding_file")   x)
 let univ_var x = Var (add_prefix (symb "universe_file") x)
 
 let vsymb s = coq_var (symb s)
 
 let coq_Sort () = vsymb "Sort"
+let coq_Nat  () = vsymb "Nat"
 
-let coq_Nat () = vsymb "Nat"
-
-let coq_s () = vsymb "us"
-let coq_z () = vsymb "u0"
+let coq_uset () = vsymb "uSet"
+let coq_s () = vsymb "uSucc"
+let coq_z () = vsymb "uType0"
 let coq_nat n = Utils.iterate n (app (coq_s ())) (coq_z())
 let coq_prop ()    = vsymb "prop"
 let coq_set  ()    = vsymb "set"
-let coq_type i     = app (vsymb "type") (coq_nat i)
+let coq_type u     = app (vsymb "type") u
+
+let coq_nat_of_univ u = app (vsymb "level") u
 
 let coq_var_univ_name n = "s" ^ string_of_int n
 
@@ -67,10 +63,12 @@ struct
     | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
     | Prop          -> coq_prop ()
     | Set           -> coq_set ()
-    | Succ (Set ,i) -> coq_type (i-1)
-    | Succ (Prop,i) -> coq_type (i-1)
+    | Succ (Set ,i) -> coq_type (coq_nat (i-1))
+    | Succ (Prop,i) -> coq_type (coq_nat (i-1))
     | LocalNamed name -> var name
-    | Local n       -> var ("s" ^ string_of_int n)
+    | Local n       -> coq_type (var ("s" ^ string_of_int n))
+    (* Locally quantified universe variable v is translated as "type v"
+       when used as a Sort *)
     | Template name -> var (coq_univ_name name)
     | Global name   -> univ_var (coq_univ_name name)
     | Succ (u,i)    -> coq_axioms (cu u) i
@@ -85,6 +83,7 @@ struct
     | Rule (s1,s2)  -> coq_rule (cpu s1) (cpu s2)
     | u -> cu u
   let coq_pattern_universe u = cpu u
+  let coq_nat_universe u = assert false
 
   let coq_U    s           = app  (vsymb "Univ") (cu s)
   let coq_term s  a        = apps (vsymb "Term") [cu s; a]
@@ -146,10 +145,10 @@ struct
   let code_var  u = (var (code_name u))
 
   let rec short_nat i =
-    if i <= 9 then nat_var i else app (vsymb "uS") (short_nat (i-1))
+    if i <= 9 then nat_var i else app (coq_s()) (short_nat (i-1))
 
   let short_type i =
-    if i <= 9 then sort_var i else app (vsymb "type") (short_nat i)
+    if i <= 9 then sort_var i else coq_type (short_nat i)
 
   let rec scu = function
     | Succ (u,0)    -> scu u
@@ -183,9 +182,9 @@ struct
   let coq_header () =
     let res = ref [] in
     let add n t = res := (udefinition false n t) :: !res in
-    add (nat_name 0) (vsymb "u0");
-    for i = 1 to 9 do add ( nat_name i) (app (vsymb "uS"   ) (nat_var (i-1))) done;
-    for i = 0 to 9 do add (sort_name i) (app (vsymb "type") (nat_var i    )) done;
+    add (nat_name 0) (coq_z ());
+    for i = 1 to 9 do add ( nat_name i) (app (coq_s ()    ) (nat_var (i-1))) done;
+    for i = 0 to 9 do add (sort_name i) (coq_type           (nat_var i    )) done;
     for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type i)) done;
     add "_Set"  (Std.coq_U    Set );
     add "_Prop" (Std.coq_U    Prop);
@@ -209,8 +208,8 @@ struct
   let coq_var_univ_name = coq_var_univ_name
   let coq_univ_name     = coq_univ_name
   let coq_global_univ   = univ_var
-
   let coq_pattern_universe = Std.coq_pattern_universe
+  let coq_nat_universe = Std.coq_nat_universe
 
   let a () = not (is_readable_on ())
 

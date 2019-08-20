@@ -27,3 +27,13 @@ Print Universes.
 
 Polymorphic Definition p_pid_pid      := pid (@pid).
 Polymorphic Definition p_pid_pid_expl := @pid (forall A:Type,A->A) (@pid).
+
+
+
+
+Polymorphic Definition templ_poly_f (A:Type) := A.
+
+Inductive templ_poly_g (A:Type) : Type :=
+| templ_poly_cons : templ_poly_f A -> templ_poly_g A.
+
+Definition templ_poly_t := @templ_poly_cons True I.

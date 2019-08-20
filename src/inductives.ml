@@ -176,8 +176,12 @@ let extract_rel_context info env =
   in
   aux (env, [])
 
-
-(* I : s1 : Sort -> ... -> sk : Sort ->
+(* Inductive can either be
+      "True" Polymorphic (Nat quantified with constraints)
+      Template Polymorphic (Sort quantified, no constraints)
+  I :    s1 : Sort -> ... -> sk : Sort ->
+       <
+          s1 : Nat -> ... -> sk : Nat -> c1 : eps |C1| -> ... -> cc : eps |Cc| ->
        p1 : ||P1|| ->
        ... ->
        pr : ||Pr|| ->
@@ -194,8 +198,9 @@ let translate_inductive info env label ind  =
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
   debug "--- Translating inductive type: %s ---" name';
 
-  (*  I : s1 : Sort -> ... -> sk : Sort ->
-          [  eps (cstr1 and ... and cstrn) ->  ]
+  (*  I :    s1 : Sort -> ... -> sk : Sort ->
+          <
+             s1 : Nat -> ... -> sk : Nat -> c1 : eps |C1| -> ... -> cc : eps |Cc| ->
           p1 : ||P1|| ->
           ... ->
           pr : ||Pr|| ->
