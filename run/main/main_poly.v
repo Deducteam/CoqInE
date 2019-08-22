@@ -10,6 +10,8 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
+Dedukti Add Debug "Top.Test.UPolymorph".
+
 Dedukti Enable Verbose.
 
 Require Import import_poly.
