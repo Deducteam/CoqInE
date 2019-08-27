@@ -177,9 +177,9 @@ let extract_rel_context info env =
   aux (env, [])
 
 (* Inductive can either be
-      "True" Polymorphic (Nat quantified with constraints)
+      "True" Polymorphic (Level quantified with constraints)
       Template Polymorphic (Sort quantified, no constraints)
-  I :    s1 : Sort -> ... -> sk : Sort ->
+  I :     s1 : Sort -> ... -> sk : Sort ->
        <
           s1 : Nat -> ... -> sk : Nat -> c1 : eps |C1| -> ... -> cc : eps |Cc| ->
        p1 : ||P1|| ->
@@ -220,7 +220,11 @@ let translate_inductive info env label ind  =
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
 
-(* I s1 ... si' ... sk
+(* Template inductives types are "sort-irrelevant" in all their arguments
+   This means that instances where the arguments are lifted should be
+   convertible with instances of lower sorts with non-lifted arguments.
+
+   I s1 ... si' ... sk
      p1
      ...
      (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
@@ -228,14 +232,18 @@ let translate_inductive info env label ind  =
      pr
      a1 ...  ... an
    -->
-   lift s[s1 ... si ..., sk]  s[s1 ... si' ... sk]
+   lift l[s1 ... si ..., sk]  l[s1 ... si' ... sk]
      (I s1 ... si ... sk
         p1  ... (x1 => ... => xl => pj x1 ... xl) ... pr
         a1 ... an)
 *)
-let translate_inductive_subtyping info env label ind =
+let translate_template_inductive_subtyping info env label ind =
+  match ind.arity with
+  | RegularArity ria -> () (* Ignore non-template inductives *)
+  | TemplateArity ta ->
+begin
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
-  debug "--- Translating inductive subtyping: %s ---" name';
+  debug "--- Translating sort-irrelevance in template inductive type: %s ---" name';
   let inductive' = Dedukti.var name' in
   let _, arity_ctxt_names = extract_rel_context info env ind.arity_context in
   let translate_name name =
@@ -298,6 +306,13 @@ let translate_inductive_subtyping info env label ind =
       end
   in
   List.iter print_param_ST_elim ind.mind_params_ctxt
+end
+
+(* Prints all template global universes. *)
+let translate_template_inductive_levels info env label ind =
+  List.iter
+    (fun u -> Dedukti.print info.fmt (Dedukti.declaration false u (T.coq_Sort())))
+    ind.template_names
 
 
 

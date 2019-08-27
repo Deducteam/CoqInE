@@ -197,15 +197,15 @@ let remember_subst u subst =
     Univ.LMap.add u (Univ.sup (Univ.LMap.find u subst) su) subst
   with Not_found -> subst
 
-(* This is exactly  Inductive.make_subst *)
+(* This is exactly Inductive.make_subst *)
 let make_subst env =
   let rec make subst = function
     | Context.Rel.Declaration.LocalDef _ :: sign, exp, args ->
       make subst (sign, exp, args)
-    | d::sign, None::exp, args ->
+    | _::sign, None::exp, args ->
       let args = match args with _::args -> args | [] -> [] in
       make subst (sign, exp, args)
-    | d::sign, Some u::exp, a::args ->
+    | _::sign, Some u::exp, a::args ->
       let s = Sorts.univ_of_sort (snd (Reduction.dest_arity env (Lazy.force a))) in
       make (cons_subst u s subst) (sign, exp, args)
     | Context.Rel.Declaration.LocalAssum (na,t) :: sign, Some u::exp, [] ->
@@ -226,23 +226,24 @@ let instantiate_universes env ctx ar argsorts =
     if Univ.is_type0m_univ level then Sorts.prop
     else if Univ.is_type0_univ level then Sorts.set
     else Sorts.Type level
-  in (ty, subst, safe_subst_fn) (* original returns (ctx, ty) *)
+  in (ctx,ty, subst, safe_subst_fn)
 
-let infer_template_polymorph_ind_applied info env uenv ind args =
+let infer_template_polymorph_ind_applied info env uenv (ind,u) args =
+  debug "Inferring template polymorphic inductive: %a (%i)"
+    pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   match mip.mind_arity with
-  | RegularArity a -> a.mind_user_arity, []
+  | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
   | TemplateArity ar ->
-    debug "Inferring template polymorph: %a (%i)"
-      pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    (* Do we really need to apply safe_subst to arity ? *)
-    let subst_type = Universes.subst_univs_constr subst arity in
-    debug "Substituted type: %a" pp_coq_term subst_type;
-    subst_type,
+    (* Do we really need to apply safe_subst to arity ?
+    *)
+    let arity = Universes.subst_univs_constr subst arity in
+    debug "Substituted type: %a" pp_coq_term arity;
+    arity,
     if Encoding.is_templ_polymorphism_on ()
     then List.map
         (Tsorts.translate_universe uenv)
@@ -251,6 +252,8 @@ let infer_template_polymorph_ind_applied info env uenv ind args =
 
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
+  debug "Inferring template polymorphic constructor: %a (%i)"
+    pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   assert (i <= Array.length mip.mind_consnames);
   match mip.mind_arity with
@@ -259,7 +262,7 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx, s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
     (* FIXME: subst_univs_constr fails here when one of the substituted level is Prop
        1)   Universes.level_subst_of
@@ -271,7 +274,8 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
        -> Univ.Instance.subst_fn
        -> Univ.Instance.of_array   which assumes all substituted level are not Prop
     *)
-    Universes.subst_univs_constr subst type_c,
+    let subst_type = Universes.subst_univs_constr subst type_c in
+    subst_type,
     if Encoding.is_templ_polymorphism_on () then
       let aux = (List.map safe_subst
                    (Utils.filter_some ar.template_param_levels)) in
@@ -279,6 +283,8 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     else []
 
 let infer_template_polymorph_dest_applied info env uenv ind args =
+  debug "Inferring template polymorphic destructor: %a (%i)"
+    pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   match mip.mind_arity with
   | RegularArity a -> a.mind_user_arity, []
@@ -287,12 +293,13 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
       pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    (* Do we really need to apply safe_subst to arity ? *)
-    let subst_type = Universes.subst_univs_constr subst arity in
-    debug "Substituted type: %a" pp_coq_term subst_type;
-    subst_type,
+    (* Do we really need to apply safe_subst to arity ?
+    *)
+    let arity = Universes.subst_univs_constr subst arity in
+    debug "Substituted type: %a" pp_coq_term arity;
+    arity,
     if Encoding.is_templ_polymorphism_on () then
       List.map
         (Tsorts.translate_universe uenv)
@@ -309,11 +316,13 @@ let rec translate_constr ?expected_type info env uenv t =
       (* TODO: We have an issue here for applied Template Polymorphic Inductives:
          Type inferred of "True List" is Prop.
          However, inductive translation generate a Type1 when ignoring template poly
+         -> This should be fixed:
+              List (type 1) (lift prop (type 1) True)  -->  List Prop True
       *)
       debug "Inferring type for %a" pp_coq_term t;
-      debug "Expecting %a" pp_coq_term a;
+      debug " - Expecting %a" pp_coq_term a;
       let b = infer_type env t in
-      debug "Inferred %a" pp_coq_term b;
+      debug " - Inferred %a" pp_coq_term b;
       if convertible info env uenv a b then t
       else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
@@ -379,7 +388,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let type_f, univ_params =
       match Constr.kind f with
       | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env ->
-        infer_template_polymorph_ind_applied info env uenv ind tmpl_args
+        infer_template_polymorph_ind_applied info env uenv (ind,u) tmpl_args
       | Construct ((ind, c), u) when Environ.template_polymorphic_pind (ind,u) env ->
         infer_template_polymorph_construct_applied info env uenv ((ind, c), u) tmpl_args
       | Const (cst,u) when Environ.polymorphic_pconstant (cst,u) env ->

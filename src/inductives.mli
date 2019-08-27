@@ -43,9 +43,12 @@ val translate_inductive :
            a1 ... an)
     Note: we might generate identity lifts which shouldn't be an issue.
 *)
-val translate_inductive_subtyping :
+val translate_template_inductive_subtyping :
   Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
 
+(** Translate the global universe level for given template inductive type. *)
+val translate_template_inductive_levels :
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
 
 (** Translate the constructors of the given inductive type.
     cj : [s1 : Sort] -> ... -> [sr : Sort] ->

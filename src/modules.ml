@@ -72,9 +72,13 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then extend subtyping to inductive types *)
+  (* Then encode sort irrelevance for template polymorphism (if needed) *)
   for i = 0 to pred ntypes do
-    Inductives.translate_inductive_subtyping info env label inds.(i)
+    Inductives.translate_template_inductive_subtyping info env label inds.(i)
+  done;
+  (* Then encode global universes for template polymorphism (if needed) *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_template_inductive_levels info env label inds.(i)
   done;
   (* Then declare all the constructors *)
   for i = 0 to pred ntypes do
@@ -110,11 +114,14 @@ let translate_mutual_coinductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_inductive info env label inds.(i)
   done;
-  (* Then extend subtyping if we have template polymorphic inductives *)
-  if Encoding.is_templ_polymorphism_on () then
-    for i = 0 to pred ntypes do
-      Inductives.translate_inductive_subtyping info env label inds.(i)
-    done;
+  (* Then encode sort irrelevance for template polymorphism (if needed) *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_template_inductive_subtyping info env label inds.(i)
+  done;
+  (* Then encode global universes for template polymorphism (if needed) *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_template_inductive_levels info env label inds.(i)
+  done;
   (* Then declare all the constructors *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
