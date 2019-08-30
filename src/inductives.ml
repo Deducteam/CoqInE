@@ -216,6 +216,7 @@ let translate_inductive info env label ind  =
   let definable =
     Encoding.is_templ_polymorphism_on () &&
     List.exists (fun p -> Option.has_some (is_template_parameter ind p)) ind.mind_params_ctxt
+      && not (Encoding.is_templ_polymorphism_code_on ())
   in
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
@@ -239,8 +240,8 @@ let translate_inductive info env label ind  =
 *)
 let translate_template_inductive_subtyping info env label ind =
   match ind.arity with
-  | RegularArity ria -> () (* Ignore non-template inductives *)
-  | TemplateArity ta ->
+  | RegularArity _ -> () (* Ignore non-template inductives *)
+  | TemplateArity _ ->
 begin
   let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
   debug "--- Translating sort-irrelevance in template inductive type: %s ---" name';
@@ -310,10 +311,13 @@ end
 
 (* Prints all template global universes. *)
 let translate_template_inductive_levels info env label ind =
-  List.iter
-    (fun u -> Dedukti.print info.fmt (Dedukti.declaration false u (T.coq_Sort())))
-    ind.template_names
-
+  if Encoding.is_templ_polymorphism_code_on ()
+  then
+    match ind.arity with
+    | RegularArity _ -> ()
+    | TemplateArity ta ->
+      List.iter (Dedukti.print info.fmt)
+        (Tsorts.translate_template_global_level_decl ta.template_param_levels)
 
 
 (* cj : s1 : Sort -> ... -> sk : Sort ->
@@ -339,11 +343,15 @@ let translate_constructors info env label ind =
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let poly_env = Environ.push_context ind.poly_ctxt env in
     let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
-    let template_type' = Tsorts.add_templ_params_type ind.template_names cons_type' in
-    let univ_type'     = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr template_type' in
-    debug "Cons_type: %a" Dedukti.pp_term univ_type';
-
-    Dedukti.print info.fmt (Dedukti.declaration true cons_name' univ_type');
+    let cons_type' =
+      if Encoding.is_templ_polymorphism_code_on ()
+      then cons_type'
+      (* Template inductive constructors do *not* have universe parameters. Only the type. *)
+      else Tsorts.add_templ_params_type ind.template_names cons_type'
+    in
+    let cons_type'     = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr cons_type' in
+    debug "Cons_type: %a" Dedukti.pp_term cons_type';
+    Dedukti.print info.fmt (Dedukti.declaration true cons_name' cons_type');
   done
 
 
@@ -353,7 +361,10 @@ let translate_constructors info env label ind =
    cl s1 ... si ... sk
       p1 ... (x1 => ... => xl => pj x1 ... xl) ... pr
 *)
-let translate_constructors_subtyping info env label ind =
+let translate_template_constructors_subtyping info env label ind =
+  match ind.arity with
+  | TemplateArity _ when Tsorts.template_constructor_upoly () ->
+begin
   let env = Environ.push_context ind.poly_ctxt env in
   for consid = 0 to ind.n_cons - 1 do
     let cons_name = ind.body.mind_consnames.(consid) in
@@ -364,7 +375,7 @@ let translate_constructors_subtyping info env label ind =
       let name = Cname.fresh_name ~default:"_" info env name in
       Cname.translate_name name in
     let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
-    (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
+    (* Translate the rule for lift elimination in j-th parameters if template polymorphic *)
     let print_param_ST_elim decl =
       match is_template_parameter ind decl with
       | None -> () (* When parameter in not template polymorphic: no rule *)
@@ -393,7 +404,7 @@ let translate_constructors_subtyping info env label ind =
               ) in
           let rhs =
             Dedukti.apps cons'
-              (List.map translate_replace_sort ind.univ_poly_names @
+              (List.map Dedukti.var ind.univ_poly_names @
                List.map translate_replace_sort ind.template_names @
                List.map Dedukti.var arity_ctxt_names'
               ) in
@@ -409,7 +420,23 @@ let translate_constructors_subtyping info env label ind =
     in
     List.iter print_param_ST_elim ind.mind_params_ctxt
   done
+end
+  | _ -> ()
 
+(* cl s1 ... si' ... sk
+      p1 ... (x1 => ... => xl => lift (u si) _ (pj x1 ... xl)) ... pr
+   -->
+   cl s1 ... si ... sk
+      p1 ... (x1 => ... => xl => pj x1 ... xl) ... pr
+  Constructor subtyping is only required for Irrelevant arguments of
+  Cumulative Inductive types.
+*)
+let translate_cumulative_constructors_subtyping info env label ind =
+  match ind.mind_univs with
+  | Monomorphic_ind _
+  | Polymorphic_ind _ -> ()
+  (* Constructor subtyping is only required for Cumulative Inductive types. *)
+  | Cumulative_ind _ -> assert false
 
 
 
@@ -451,7 +478,6 @@ let translate_match info env label ind =
   let univ_instance = ind.poly_inst in
   let env = Environ.push_context ind.poly_ctxt env in
   (* Compute universe parameters names and corresponding local environnement *)
-  let template_params = ind.template_names in
   let univ_poly_params = ind.univ_poly_names in
   let uenv = ind.univ_poly_env in
 
@@ -572,8 +598,9 @@ let translate_match info env label ind =
 
   let cases_context' = Array.to_list (Array.init ind.n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
   let template_poly_context' =
-    if Encoding.is_templ_polymorphism_on ()
-    then List.map (fun x -> (x, T.coq_Sort())) template_params else [] in
+    if Tsorts.template_constructor_upoly ()
+    then List.map (fun x -> (x, T.coq_Sort())) ind.template_names
+    else [] in
   let univ_poly_context' =
     if Encoding.is_polymorphism_on ()
     then List.map (fun x -> (x, T.coq_Sort())) univ_poly_params else [] in
@@ -626,7 +653,9 @@ let translate_match info env label ind =
   let match_function_applied' =
     Dedukti.apps match_function_var'
       (List.map Dedukti.var univ_poly_params @
-       List.map Dedukti.var template_params @
+       ( if Tsorts.template_constructor_upoly ()
+         then List.map Dedukti.var ind.template_names
+       else [] ) @
        Dedukti.var return_sort_name' ::
        params' @
        return_type_var' ::
@@ -669,9 +698,15 @@ let translate_match info env label ind =
   done;
 
   (* Translate the rule for lift elimination in match polymorphism *)
-  (* match_I s1 ... sr p1  ... pr _ a1 ... an (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
+  (* match_I
+       s1 ... sr
+       p1  ... pr _ a1 ... an
+       (x1 => ... => xn => x => lift _ (u s) (P x1 ... xn x))
      -->
-     match_I s1 ... sr p1  ... pr s a1 ... an (x1 => ... => xn => x => P x1 ... xn x)
+     match_I
+       s1 ... sr
+       p1  ... pr s a1 ... an
+       (x1 => ... => xn => x => P x1 ... xn x)
   *)
   let new_sort_name = "s'" in (* TODO: change that to ensure no conflicts *)
   let local_ctxt_names = List.map fst arity_real_context' @ ["x"]  in
@@ -681,14 +716,18 @@ let translate_match info env label ind =
   let pattern_match =
     Dedukti.apps match_function_var'
       (List.map Dedukti.var univ_poly_params @
-       List.map Dedukti.var template_params @
+       (if Tsorts.template_constructor_upoly ()
+        then List.map Dedukti.var ind.template_names
+        else [] ) @
        Dedukti.var return_sort_name' ::
        List.map (fun x -> Dedukti.var (fst x)) params_context' @
        [Dedukti.ulams local_ctxt_names pattern]) in
   let rhs_match =
     Dedukti.apps match_function_var'
       (List.map Dedukti.var univ_poly_params @
-       List.map Dedukti.var template_params @
+       (if Tsorts.template_constructor_upoly ()
+        then List.map Dedukti.var ind.template_names
+        else [] ) @
        Dedukti.var new_sort_name ::
        List.map (fun x -> Dedukti.var (fst x)) params_context' @
        [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
@@ -701,6 +740,7 @@ let translate_match info env label ind =
 
   (* Printing out the rule for lift elimination *)
   Dedukti.print info.fmt (Dedukti.typed_rewrite (context, pattern_match, rhs_match));
+
 
   (* TODO: add match equivalences:
       match_I s1 ... si' ... sk
@@ -716,7 +756,14 @@ let translate_match info env label ind =
            (x1 => ... => xl => pj x1 ... xl)
            ...
            pr
+  when pj : A1 -> ... -> An -> Type@{s}  with s an irrelevant universe argument
+  Only for a Template Inductive when codes are off
   *)
+    match ind.arity with
+    | TemplateArity _ when Tsorts.template_constructor_upoly () ->
+begin
+  (* FIXME: this was originally mistakingly written for template polymorphic universe arguments
+     use the same idea for cumulative irrelevant universe arguments *)
   let _, arity_ctxt_names = extract_rel_context info env ind.mind_params_ctxt in
   let translate_name name =
     let name = Cname.fresh_name ~default:"_" info env name in
@@ -768,6 +815,30 @@ let translate_match info env label ind =
         end
   in
   List.iter print_param_ST_elim ind.mind_params_ctxt
+end
+    | _ -> ();
+
+(* TODO: add match equivalences:
+      match_I s1 ... si' ... sk
+           p1
+           ...
+           (x1 => ... => xl => lift (u si) _ (pj x1 ... xl))
+           ...
+           pr
+       -->
+       match_I s1 ... si ... sk
+           p1
+           ...
+           (x1 => ... => xl => pj x1 ... xl)
+           ...
+           pr
+    when  pj : A1 -> ... -> An -> Type@{s}  with s an irrelevant universe argument
+    Only for a Cumulative Inductive Type with invariant sorts  (WIP)
+  *)
+   match ind.mind_univs with
+  | Monomorphic_ind _
+  | Polymorphic_ind _ -> ()
+  | Cumulative_ind _ -> assert false
 
 
 let translate_guarded info env label ind =
@@ -777,9 +848,13 @@ let translate_guarded info env label ind =
   let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
   *)
-  let nb_univ_poly_params = List.length ind.univ_poly_names in
-  let nb_univ_template_params = List.length ind.template_names in
-  let nb_params = ind.n_params + nb_univ_poly_params + nb_univ_template_params in
+  let nb_params =
+    ind.n_params
+    + (List.length ind.univ_poly_names)
+    + (if Tsorts.template_constructor_upoly ()
+       then List.length ind.template_names
+       else 0)
+  in
   let nb_args = ind.body.mind_consnrealargs in
  (* Number of expected proper arguments of the constructors (w/o params) *)
 
@@ -810,5 +885,5 @@ let translate_guarded info env label ind =
      ...
      pr
 *)
-let translate_match_subtyping info env label ind =
-  () (* TODO This is currently implemented above. Maybe move it here... *)
+let translate_match_subtyping info env label ind = ()
+(* TODO This is currently implemented above. Maybe move it here... *)

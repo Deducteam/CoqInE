@@ -90,9 +90,13 @@ let translate_mutual_inductive_body info env label mind_body =
     for i = 0 to pred ntypes do
       Inductives.translate_guarded info env label inds.(i)
     done;
-  (* Then extend subtyping to inductive constructors *)
+  (* Then extend subtyping to template inductive constructors *)
   for i = 0 to pred ntypes do
-    Inductives.translate_constructors_subtyping info env label inds.(i)
+    Inductives.translate_template_constructors_subtyping info env label inds.(i)
+  done;
+  (* Then extend subtyping to cumulative inductive constructors *)
+  for i = 0 to pred ntypes do
+    Inductives.translate_cumulative_constructors_subtyping info env label inds.(i)
   done;
   (* Then declare all the match functions *)
   for i = 0 to pred ntypes do

@@ -1,4 +1,8 @@
 
+val template_constructor_upoly : unit -> bool
+(** Returns true if the constructors of template universe polymorphic
+    inductive types should have quantified universe parameters. *)
+
 val add_templ_params_type : Dedukti.var list -> Dedukti.term -> Dedukti.term
 val add_poly_params_type : Dedukti.var list ->
                            ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
@@ -9,15 +13,22 @@ val add_poly_params_def : Dedukti.var list ->
 (** Prepend universe parameters before types/definitions *)
 
 val instantiate_poly_univ_params :
-  Info.env -> Dedukti.var -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term
+  Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
 
-val instantiate_template_univ_params :
-  Info.env -> Dedukti.var -> Univ.Level.t option list -> Univ.Instance.t -> Dedukti.term
+val instantiate_poly_ind_univ_params :
+  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
 
+val instantiate_template_ind_univ_params :
+  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+
+(*
 val instantiate_ind_univ_params :
   Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> Univ.Instance.t -> Dedukti.term
+*)
 
 val set_universes : UGraph.t -> unit
+
+val translate_template_global_level_decl : Univ.Level.t option list -> Dedukti.instruction list
 
 val translate_level    : Info.env -> Univ.Level.t    -> Translator.cic_universe
 val translate_universe : Info.env -> Univ.Universe.t -> Translator.cic_universe

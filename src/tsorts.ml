@@ -5,6 +5,11 @@ open Translator
 
 open Declarations
 
+let template_constructor_upoly () =
+  Encoding.is_templ_polymorphism_on ()
+  && not (Encoding.is_templ_polymorphism_code_on ())
+
+
 let add_templ_params_type params t =
   if Encoding.is_templ_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
@@ -44,7 +49,28 @@ let set_universes universes =
   end
 
 
-(** Translates a universe level in a given local universe environment  *)
+let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
+  if Encoding.is_templ_polymorphism_on ()
+  then
+    let params = Utils.filter_some ctxt in
+    let aux l =
+      match Univ.Level.name l with
+      | Some (d,n) ->
+        let name = Univ.Level.to_string l in
+        let name' = T.coq_univ_name name in
+        if Encoding.is_float_univ_on ()
+        then Dedukti.declaration false name' (T.coq_Sort())
+        else
+          let univ = Translator.mk_type (Hashtbl.find universe_table name) in
+          Dedukti.definition false name' (T.coq_Sort()) (T.coq_universe univ)
+      | None -> assert false
+      (* No small levels (Prop/Set) or (true) polymorphism variables in template params. *)
+    in
+    List.map aux params
+  else []
+
+(** Translates a universe level in a given local universe environment
+    using universe_table global environment for named universes.  *)
 let translate_level uenv l =
   if Univ.Level.is_prop l then Translator.Prop
   else if Univ.Level.is_set l then Translator.Set
@@ -65,46 +91,65 @@ let translate_level uenv l =
           try Translator.mk_type (Hashtbl.find universe_table name)
           with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
-let instantiate_poly_univ_params uenv name univ_ctxt univ_instance =
+let instantiate_poly_univ_params uenv univ_ctxt univ_instance term =
   let nb_params = Univ.AUContext.size univ_ctxt in
-  debug "Instantiating %i polymorphic universes %s: %a" nb_params name pp_coq_inst univ_instance;
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   let levels = Univ.Instance.to_array univ_instance in
   let levels = Array.init nb_params (fun i -> levels.(i)) in
-  let res = Array.fold_left
+  Array.fold_left
       (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
-      (Dedukti.var name)
-      levels in
-  if Encoding.is_constraints_on ()
-  then res
-  (* TODO: compute the required constraints argument *)
-  else res
+      term
+      levels
 
-let instantiate_template_univ_params uenv name univ_ctxt univ_instance =
-  let nb_instance = Univ.Instance.length univ_instance in
-  let nb_params = List.length univ_ctxt in
-  if nb_instance < nb_params
-  then debug "Something suspicious is going on with thoses universes...";
-  debug "Instantiating %i template universes %s: %a" nb_params name pp_coq_inst univ_instance;
-  debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
+let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
+  if Encoding.is_polymorphism_on () &&
+     Environ.polymorphic_ind ind env
+  then
+    begin
+      let (mib,oib) = Inductive.lookup_mind_specif env ind in
+      debug "Instantiating polymorphic inductive instance %a : {%a}"
+        Dedukti.pp_term term
+        pp_coq_inst univ_instance;
+      let res = instantiate_poly_univ_params uenv
+          (Declareops.inductive_polymorphic_context mib)
+          univ_instance term in
+      if Encoding.is_constraints_on ()
+      then res
+      (* TODO: compute the required constraints argument *)
+      else res
+    end
+  else term
 
-  let levels = Univ.Instance.to_array univ_instance in
-  let rec aux acc i = function
-    | None     :: tl -> aux acc (i+1) tl
-    | (Some a) :: tl when i < nb_instance ->
-      let lvl = if i < nb_instance then levels.(i) else a in
-      aux (lvl::acc) (i+1) tl
-    | _             -> List.rev acc
-  in
-  let levels = aux [] 0 univ_ctxt in
-  debug "Univ context: %a" (pp_list " " pp_coq_level) levels;
+let instantiate_template_ind_univ_params env uenv ind univ_instance term =
+  let (mib,oib) = Inductive.lookup_mind_specif env ind in
+  match oib.mind_arity with
+  | TemplateArity ar when Encoding.is_templ_polymorphism_on () ->
+    debug "Instantiating template inductive instance %a : {%a}"
+      Dedukti.pp_term term
+      pp_coq_inst univ_instance;
+    let univ_ctxt = ar.template_param_levels in
+    let nb_instance = Univ.Instance.length univ_instance in
+    let nb_params = List.length univ_ctxt in
+    if nb_instance < nb_params
+    then debug "Something suspicious is going on with thoses universes...";
+    debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
+    let levels = Univ.Instance.to_array univ_instance in
+    let rec aux acc i = function
+      | None     :: tl -> aux acc (i+1) tl
+      | (Some a) :: tl when i < nb_instance ->
+        let lvl = if i < nb_instance then levels.(i) else a in
+        aux (lvl::acc) (i+1) tl
+      | _             -> List.rev acc
+    in
+    let levels = aux [] 0 univ_ctxt in
+    debug "Univ context: %a" (pp_list " " pp_coq_level) levels;
+    List.fold_left
+      (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+      term levels
+  | _ -> term
 
-  List.fold_left
-    (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
-    (Dedukti.var name)
-    levels
-
+(*
 let instantiate_ind_univ_params env uenv name ind univ_instance =
   let (mib,oib) = Inductive.lookup_mind_specif env ind in
   let indtype, res =
@@ -123,11 +168,11 @@ let instantiate_ind_univ_params env uenv name ind univ_instance =
         instantiate_template_univ_params uenv name ar.template_param_levels univ_instance
       | _ -> "", Dedukti.var name
   in
-  debug "Printing %s inductive constructor: %s@@{%a} : %a" indtype name
+  debug "Printing %s inductive: %s@@{%a} : %a" indtype name
     pp_coq_inst univ_instance
     Dedukti.pp_term res;
   res
-
+*)
 
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)

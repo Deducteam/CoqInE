@@ -80,7 +80,10 @@ val translate_constructors :
          a1 ... an
     Note: we might generate identity lifts which shouldn't be an issue.
 *)
-val translate_constructors_subtyping :
+val translate_template_constructors_subtyping :
+  Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
+
+val translate_cumulative_constructors_subtyping :
   Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
 
 

@@ -7,7 +7,7 @@
 
 Code : Type.
 
-cU : s : Sort -> Code.
+cU : Sort -> Code.
 cPi  : Code -> (Code -> Code) -> Code.
 cLam : (Code -> Code) -> Code.
 def cApp : Code -> Code -> Code.

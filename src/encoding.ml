@@ -27,25 +27,26 @@ let set_params = List.iter (fun (x,y) -> set_param x y)
 let init_flags () =
   List.iter (fun (x,y) -> Hashtbl.replace flags x y)
     [
-      ("simpl_letins"      , false);
-      ("polymorphism"      , false);
-      ("templ_polymorphism", false);
-      ("float_univ"        , false);
-      ("constraints"       , false);
-      ("named_univ"        , false);
-      ("readable"          , false);
-      ("use_cast"          , false);
-      ("pred_univ"         , false);
-      ("pred_prod"         , false);
-      ("pred_lift"         , false);
-      ("pred_cast"         , false);
-      ("priv_lift"         , false);
-      ("priv_cast"         , false);
-      ("priv_univ"         , false);
-      ("priv_prod"         , false);
-      ("inlined_fixpoint"  , false);
-      ("fix_arity_sort"    , false);
-      ("code_guarded"      , false)
+      ("simpl_letins"    , false);
+      ("upolymorphism"   , false);
+      ("tpolymorphism"   , false);
+      ("tpoly_code"      , false);
+      ("float_univ"      , false);
+      ("constraints"     , false);
+      ("named_univ"      , false);
+      ("readable"        , false);
+      ("use_cast"        , false);
+      ("pred_univ"       , false);
+      ("pred_prod"       , false);
+      ("pred_lift"       , false);
+      ("pred_cast"       , false);
+      ("priv_lift"       , false);
+      ("priv_cast"       , false);
+      ("priv_univ"       , false);
+      ("priv_prod"       , false);
+      ("inlined_fixpoint", false);
+      ("fix_arity_sort"  , false);
+      ("code_guarded"    , false)
     ]
 
 let init_empty_symbs () =
@@ -127,8 +128,9 @@ let _ =
   init_flags();
   init_empty_symbs ()
 
-let is_polymorphism_on       () = flag "polymorphism"
-let is_templ_polymorphism_on () = flag "templ_polymorphism"
+let is_polymorphism_on       () = flag "upolymorphism"
+let is_templ_polymorphism_on () = flag "tpolymorphism"
+let is_templ_polymorphism_code_on () = flag "tpoly_code"
 let is_constraints_on        () = flag "constraints"
 let is_named_univ_on         () = flag "named_univ"
 let is_float_univ_on         () = flag "float_univ"

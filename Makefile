@@ -154,11 +154,14 @@ $1: plugin .coqrc
 	make -C encodings clean _build/$3/$4.config
 	cp encodings/_build/$3/$4.config $2/config.v
 ifeq ($5, polymorph)
-	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $2/config.v
-	echo "Dedukti Set Param \"polymorphism\"       \"true\"." >> $2/config.v
-	echo "Dedukti Set Param \"constraints\"        \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"upolymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"constraints\"   \"true\"." >> $2/config.v
 else ifeq ($5, template)
-	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
+else ifeq ($5, ctemplate)
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpoly_code\" \"true\"." >> $2/config.v
 else ifeq ($5, float)
 	echo "Dedukti Set Param \"float_univ\" \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"universe_file\" \"U\"." >> $2/config.v

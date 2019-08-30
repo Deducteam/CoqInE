@@ -1,48 +1,55 @@
 (**
-    simpl_letins : bool;
+    simpl_letins
     (** Translate let-in as simpl beta redices or not ? *)
 
-    polymorphism_flag : bool;
+    polymorphism_flag
     (** Is (true) polymorphism translation on ? *)
 
-    templ_polymorphism_flag : bool;
+    templ_polymorphism_flag
     (** Is template polymorphism translation on ? *)
 
-    float_univ_flag : bool;
+    float_univ_flag
     (** Is floating universe translation on ? *)
 
-    constraints_flag : bool;
+    constraints_flag
     (** Constraints translation ? Only has meaning when float is true. *)
 
-    named_univ_flag : bool;
+    named_univ_flag
     (** Should we use universe names or value ? Only has meaning when float is false. *)
 
-    readable_translation_flag : bool;
+    readable_translation_flag
     (** Is (pseudo-)readable translation mode on ? *)
 
-    cast_flag : bool;
+    cast_flag
     (** Are we allowed to use casts (for casted lambdas) ?
         Or should we turn them into lifted lambdas instead ? *)
 
-    (*    lift_flag : bool; *)
+    (*    lift_flag *)
     (** Are we allowed to use lifts (for lifted type) ?
         Or should we use casts instead ? *)
 
     lifted_type_pattern : string;
     (** What's the normal form of a lifted type ? To use in pattern. *)
 
-    pred_univ_flag            : bool;
-    pred_prod_flag            : bool;
-    pred_lift_flag            : bool;
-    pred_cast_flag            : bool;
+    pred_univ_flag
+    pred_prod_flag
+    pred_lift_flag
+    pred_cast_flag
     (** Predicate symbols ? *)
 
-    priv_lift_flag            : bool;
-    priv_cast_flag            : bool;
-    priv_univ_flag            : bool;
-    priv_prod_flag            : bool;
+    priv_lift_flag
+    priv_cast_flag
+    priv_univ_flag
+    priv_prod_flag
     (** Private version of symbols ? *)
 
+    inlined_fixpoint_flag
+    (** Translate fixpoints as external body or inlined generic fixpoint operator ?
+        This is a very experimental feature. *)
+*)
+val flag : string -> bool
+
+(**
     encoding_name : string;
 
     (* Module names *)
@@ -70,9 +77,6 @@
     t_priv_code   : string;
     t_priv_uncode : string;
 
-    inlined_fixpoint_flag : bool;
-    (** Translate fixpoints as external body or inlined generic fixpoint operator ?
-        This is a very experimental feature. *)
     t_0            : string;
     t_S            : string;
     t_SA           : string;
@@ -83,8 +87,6 @@
     t_guard        : string;
     t_guarded      : string;
 *)
-
-val flag : string -> bool
 val symb : string -> string
 
 val set_param  : string -> string -> unit
@@ -96,6 +98,10 @@ val is_polymorphism_on : unit -> bool
 
 val is_templ_polymorphism_on : unit -> bool
 (** Is template polymorphism translation on ? *)
+
+val is_templ_polymorphism_code_on : unit -> bool
+(** Is there a private version of template polymorphic types
+    to properly handle template polymorphism sort irrelevance ? *)
 
 val is_float_univ_on : unit -> bool
 (** Is floating universe translation on ? *)

@@ -264,23 +264,26 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     let ctx = List.rev mip.mind_arity_ctxt in
     let ctx, s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
-    (* FIXME: subst_univs_constr fails here when one of the substituted level is Prop
-       1)   Universes.level_subst_of
+    if not (Encoding.is_templ_polymorphism_on ())
+    then Universes.subst_univs_constr subst type_c, []
+    else if Encoding.is_templ_polymorphism_code_on ()
+    then type_c, []
+    else
+      (* FIXME: subst_univs_constr fails here when one of the substituted level is Prop
+         1)   Universes.level_subst_of
           turns   Sorts.Type Univ.type0m
           into    Sorts.Prop  in the substitution
-       2) Then
-          Universes.subst_univs_constr
-       -> Universes.subst_univs_fn_constr
-       -> Univ.Instance.subst_fn
-       -> Univ.Instance.of_array   which assumes all substituted level are not Prop
-    *)
-    let subst_type = Universes.subst_univs_constr subst type_c in
-    subst_type,
-    if Encoding.is_templ_polymorphism_on () then
+         2) Then
+            Universes.subst_univs_constr
+         -> Universes.subst_univs_fn_constr
+         -> Univ.Instance.subst_fn
+         -> Univ.Instance.of_array   which assumes all substituted level are not Prop
+      *)
+      Universes.subst_univs_constr subst type_c,
       let aux = (List.map safe_subst
                    (Utils.filter_some ar.template_param_levels)) in
       List.map (Tsorts.translate_universe uenv) aux
-    else []
+
 
 let infer_template_polymorph_dest_applied info env uenv ind args =
   debug "Inferring template polymorphic destructor: %a (%i)"
@@ -295,16 +298,17 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
     let ctx = List.rev mip.mind_arity_ctxt in
     let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    (* Do we really need to apply safe_subst to arity ?
-    *)
-    let arity = Universes.subst_univs_constr subst arity in
-    debug "Substituted type: %a" pp_coq_term arity;
-    arity,
-    if Encoding.is_templ_polymorphism_on () then
+    if not (Encoding.is_templ_polymorphism_on ()) ||
+       Encoding.is_templ_polymorphism_code_on ()
+    then arity, []
+    else
+      (* Do we really need to apply safe_subst to arity ? *)
+      let arity = Universes.subst_univs_constr subst arity in
+      debug "Substituted type: %a" pp_coq_term arity;
+      arity,
       List.map
         (Tsorts.translate_universe uenv)
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
-    else []
 
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
@@ -396,7 +400,6 @@ let rec translate_constr ?expected_type info env uenv t =
         Environ.constant_type_in env (cst,u), []
       | _ -> infer_type env f, []
     in
-    let _ = debug "test" in
     let univ_params' = List.map T.coq_universe univ_params in
     let f' = Dedukti.apps (translate_constr info env uenv f) univ_params' in
     let translate_app (f', type_f) u =
@@ -418,19 +421,25 @@ let rec translate_constr ?expected_type info env uenv t =
     then
       let cb = Environ.lookup_constant kn env in
       let univ_ctxt = Declareops.constant_polymorphic_context cb in
-      Tsorts.instantiate_poly_univ_params uenv name univ_ctxt univ_instance
+      Tsorts.instantiate_poly_univ_params uenv univ_ctxt univ_instance (Dedukti.var name)
     else Dedukti.var name
 
   | Ind (ind, univ_instance) ->
     let name = Cname.translate_inductive info env ind in
     debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
-    Tsorts.instantiate_ind_univ_params env uenv name ind univ_instance
+    Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
+      (Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
+         (Dedukti.var name))
 
   | Construct (kn, univ_instance) ->
     let name = Cname.translate_constructor info env kn in
     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
     let ind = Names.inductive_of_constructor kn in
-    Tsorts.instantiate_ind_univ_params env uenv name ind univ_instance
+    Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
+      ( if Tsorts.template_constructor_upoly ()
+        then Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
+            (Dedukti.var name)
+        else Dedukti.var name )
 
   | Fix (((rec_indices, i), ((names, types, bodies) as rec_declaration)) as fp) ->
     if Encoding.is_fixpoint_inlined ()
@@ -459,6 +468,7 @@ let rec translate_constr ?expected_type info env uenv t =
             env fix_declarations in
         translate_constr info new_env uenv (Constr.mkRel (n - i))
       end
+
   | Case(case_info, return_type, matched, branches) ->
     debug "Test";
     let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
@@ -466,17 +476,14 @@ let rec translate_constr ?expected_type info env uenv t =
     let n_params = mind_body.Declarations.mind_nparams   in
     let n_reals  =  ind_body.Declarations.mind_nrealargs in
     let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
-
     (*
     let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
     *)
-
     let params, reals = Utils.list_chop n_params ind_args in
     (* Probably put that back
     let params = List.map (Reduction.whd_all env) params in
     *)
-
-    debug "Template params: %a" (pp_list ", " pp_coq_term) params;
+    debug "Template universe params: %a" (pp_list ", " pp_coq_term) params;
     let arity, univ_params =
       infer_template_polymorph_dest_applied info env uenv
         case_info.ci_ind (Array.of_list params)
