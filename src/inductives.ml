@@ -214,14 +214,13 @@ let translate_inductive info env label ind  =
   let arity' = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
   let definable =
-    Encoding.is_templ_polymorphism_on () &&
+    Tsorts.template_constructor_upoly () &&
     List.exists (fun p -> Option.has_some (is_template_parameter ind p)) ind.mind_params_ctxt
-      && not (Encoding.is_templ_polymorphism_code_on ())
   in
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
 
-(* Template inductives types are "sort-irrelevant" in all their arguments
+(* Template polymorphic inductives types are "sort-irrelevant" in some of their arguments
    This means that instances where the arguments are lifted should be
    convertible with instances of lower sorts with non-lifted arguments.
 
@@ -237,27 +236,57 @@ let translate_inductive info env label ind  =
      (I s1 ... si ... sk
         p1  ... (x1 => ... => xl => pj x1 ... xl) ... pr
         a1 ... an)
+
+   This trick only works when we can guarantee minimal subtyping.
+   Otherwise, we use the other trick below.
+
+   code (univ _)
+     (I s1 ... sk
+        p1
+        ...
+        pr
+        a1 ...  ... an)
+   -->
+   I'
+     p1
+     ...
+     (x1 => ... => xni => code si (pi x1 ... xni))
+     ...
+     pr
+     a1 ... an
+  with I' a "private version" of I
+  I' :
+    Arity_1 ->                      (; "Normal" parameters are left the same ;)
+    ...
+    (Ai -> ... -> Ani -> Code) ->   (; Polymorphic parameters are no codes ;)
+    ...
+    Arity_r ->
+    Code                            (; Return type is a code as well ;)
 *)
 let translate_template_inductive_subtyping info env label ind =
   match ind.arity with
-  | RegularArity _ -> () (* Ignore non-template inductives *)
+  | RegularArity _ -> ()    (* Ignore non-template inductives *)
   | TemplateArity _ ->
+    assert (ind.univ_poly_names = []);
+    let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
+    debug "--- Translating sort-irrelevance in template inductive type: %s ---" name';
+    let inductive' = Dedukti.var name' in
+    let _, arity_ctxt_names = extract_rel_context info env ind.arity_context in
+    let translate_name name =
+      let name = Cname.fresh_name ~default:"_" info env name in
+      Cname.translate_name name in
+
+    if Tsorts.template_constructor_upoly ()
+    then
 begin
-  let name' = Cname.translate_element_name info env (Names.Label.of_id ind.typename) in
-  debug "--- Translating sort-irrelevance in template inductive type: %s ---" name';
-  let inductive' = Dedukti.var name' in
-  let _, arity_ctxt_names = extract_rel_context info env ind.arity_context in
-  let translate_name name =
-    let name = Cname.fresh_name ~default:"_" info env name in
-    Cname.translate_name name in
-  let arity_ctxt_names' = List.map translate_name arity_ctxt_names in
   (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
   let print_param_ST_elim decl =
     match is_template_parameter ind decl with
     | None -> () (* When parameter in not template polymorphic: no rule *)
     | Some (tparam_name,locals,level,level_name') ->
       begin
-        debug "Printing lift extraction for param decl %a of level %a" pp_coq_decl decl pp_coq_level level;
+        debug "Printing lift extraction for param decl %a of level %a"
+          pp_coq_decl decl pp_coq_level level;
         let new_level_name' = level_name' ^ "'" in
         let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
         let tparam_name' = Cname.translate_name tparam_name' in
@@ -275,8 +304,7 @@ begin
         in
         let lhs =
           Dedukti.apps inductive'
-            (List.map Dedukti.var ind.univ_poly_names @
-             List.map Dedukti.var ind.template_names @
+            (List.map Dedukti.var ind.template_names @
              List.map translate_name_with_lifted arity_ctxt_names
             ) in
         let origin_sort =
@@ -287,21 +315,18 @@ begin
           Tsorts.translate_sort new_uenv ind.arity_sort in
         let rhs =
           Dedukti.apps inductive'
-            (List.map translate_replace_sort ind.univ_poly_names @
-             List.map translate_replace_sort ind.template_names @
-             List.map Dedukti.var arity_ctxt_names'
+            (List.map translate_replace_sort ind.template_names @
+             List.map (fun x -> Dedukti.var (translate_name x)) arity_ctxt_names
             ) in
         let rhs = T.coq_pcast
-            (Translator.Succ (small_sort, 1))
+            (Translator.Succ (small_sort , 1))
             (Translator.Succ (origin_sort, 1))
             (T.coq_sort small_sort)
             (T.coq_sort origin_sort) rhs in
         let context =
           new_level_name' ::
-          ind.univ_poly_names @
           ind.template_names @
-          arity_ctxt_names' in
-
+          List.map translate_name arity_ctxt_names in
         (* Printing out the rule for lift elimination *)
         Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
       end
@@ -309,15 +334,57 @@ begin
   List.iter print_param_ST_elim ind.mind_params_ctxt
 end
 
+    else
+begin
+  let lhs =
+    T.coq_coded Dedukti.wildcard
+      ( Dedukti.apps inductive'
+          (List.map Dedukti.var ind.template_names @
+           List.map (fun x -> Dedukti.var (translate_name x)) arity_ctxt_names
+          )
+      ) in
+  let priv_inductive' = Dedukti.var (name' ^ "'") in
+  let rec process_decl acc = function
+    | [] -> acc
+    | decl :: tl ->
+      process_decl
+        (match is_template_parameter ind decl with
+         | Some (tparam_name,locals,level,level_name') ->
+           (tparam_name, (locals,level,level_name')) :: acc
+         | None -> acc ) tl
+  in
+  let templ_params = process_decl [] ind.mind_params_ctxt in
+  (* Build the assoc list of [  (param_name, param_infos) :: ... ]  *)
+  let translate_replace_sort param =
+    let param' = translate_name param in
+    let vp = Dedukti.var param' in
+    try
+      let locals,level,level_name' = List.assoc param templ_params in
+      (*   x1 => ... => xl => code s (pj x1 ... xl)   *)
+      Dedukti.ulams
+        locals
+        (T.coq_coded
+           (T.coq_universe (Tsorts.translate_level ind.univ_poly_env level))
+           (Dedukti.apps vp (List.map Dedukti.var locals)))
+    with Not_found -> vp
+  in
+  let rhs =
+    Dedukti.apps priv_inductive'
+      (List.map translate_replace_sort arity_ctxt_names) in
+  let context =
+    ind.template_names @
+    List.map translate_name arity_ctxt_names in
+  (* Printing out the rule for lift elimination *)
+  Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
+end
+
 (* Prints all template global universes. *)
 let translate_template_inductive_levels info env label ind =
-  if Encoding.is_templ_polymorphism_code_on ()
-  then
-    match ind.arity with
-    | RegularArity _ -> ()
-    | TemplateArity ta ->
-      List.iter (Dedukti.print info.fmt)
-        (Tsorts.translate_template_global_level_decl ta.template_param_levels)
+  match ind.arity with
+  | TemplateArity ta when Encoding.is_templ_polymorphism_code_on () ->
+    List.iter (Dedukti.print info.fmt)
+      (Tsorts.translate_template_global_level_decl ta.template_param_levels)
+  | _ -> ()
 
 
 (* cj : s1 : Sort -> ... -> sk : Sort ->
@@ -344,10 +411,10 @@ let translate_constructors info env label ind =
     let poly_env = Environ.push_context ind.poly_ctxt env in
     let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
     let cons_type' =
-      if Encoding.is_templ_polymorphism_code_on ()
-      then cons_type'
+      if Tsorts.template_constructor_upoly ()
+      then Tsorts.add_templ_params_type ind.template_names cons_type'
+      else cons_type'
       (* Template inductive constructors do *not* have universe parameters. Only the type. *)
-      else Tsorts.add_templ_params_type ind.template_names cons_type'
     in
     let cons_type'     = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr cons_type' in
     debug "Cons_type: %a" Dedukti.pp_term cons_type';

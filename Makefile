@@ -177,11 +177,16 @@ endif
 endef
 
 $(eval $(call generate,test_pred,run/main,predicates_eta,C,template,MAINFILE=main_test))
+
 $(eval $(call generate,test_pred_fix ,run/main,predicates_eta_fix,C,template,MAINFILE=main_test))
 $(eval $(call generate,test_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_test))
+$(eval $(call generate,test_tcodes_fix,run/main,fullcodes_eta_fix,C,ctemplate,MAINFILE=main_test))
 
 $(eval $(call generate,debug_pred,run/main,predicates_eta,C,template,MAINFILE=main_debug))
 $(eval $(call generate,debug_pred_fix,run/main,predicates_eta_fix,C,template,MAINFILE=main_debug))
+
+$(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_debug))
+
 $(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_debug))
 
 $(eval $(call generate,poly_pred_fix,run/main,predicates_eta_fix,C,polymorph,MAINFILE=main_poly))

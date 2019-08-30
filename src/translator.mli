@@ -81,6 +81,9 @@ sig
   val coq_pcast : cic_universe -> cic_universe -> term -> term -> term -> term
   (** Private cast. Use only in inductive subtyping. *)
 
+  val coq_coded : term -> term -> term
+  (** returns [code t a]  where a : D t *)
+
   val coq_pattern_lifted_from_sort : var -> term -> term
   (** [coq_pattern_lifted_from_sort s t] Returns a pattern matching a term lifted from
       sort pattern [s] (for instance a variable). *)

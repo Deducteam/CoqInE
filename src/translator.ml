@@ -108,14 +108,16 @@ struct
       (if flag "pred_cast"
        then [cu s1; cu s2; a; b; cstr; t]
        else [cu s1; cu s2; a; b;       t])
+  let coq_coded u t =
+    apps (vsymb "_code") [ app (vsymb "_code_univ") u; t]
   let coq_pcast cu s1 s2 a b t =
     if flag "pred_cast"
     then
       if flag "priv_cast"
       then apps (vsymb "_cast") [cu s1; cu s2; a; b;t]
       else
-        let ca = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s1); a] in
-        let cb = apps (vsymb "_code") [ app (vsymb "_code_univ") (cu s2); b] in
+        let ca = coq_coded (cu s1) a in
+        let cb = coq_coded (cu s2) b in
         apps (vsymb "_uncode") [ cb; apps (vsymb "_code") [ca ; t ] ]
     else coq_cast cu s1 s2 a b [] t
   let coq_lift cu s1 s2 t = apps (vsymb "lift")
@@ -222,7 +224,7 @@ struct
   let coq_cast     s = Std.coq_cast  (if a () then Std.cu else Short.scu) s
   let coq_pcast    s = Std.coq_pcast (if a () then Std.cu else Short.scu) s
   let coq_lift     s = Std.coq_lift  (if a () then Std.cu else Short.scu) s
-
+  let coq_coded = Std.coq_coded
 
   let cstr_le      s = Std.cstr_le   (if a () then Std.cu else Short.scu) s
   let cstr_lt      s = Std.cstr_lt   (if a () then Std.cu else Short.scu) s
