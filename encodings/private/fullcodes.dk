@@ -89,6 +89,22 @@ def ST : Code -> Code -> Bool.
 (; def delta_delta := cApp (cLam (x => cApp x x)) (cLam (x => cApp x x)). ;)
 
 
+
+(;--------------------  Extra private definitions  ----------------;)
+
+def univ' (s:Sort) (s':Sort) := uncode (cU s') (cU s).
+
+def lift' (s:Sort) (s':Sort) (t:Univ s) := uncode (cU s') (code (cU s) t).
+
+def prod' (s1:Sort) (s2:Sort) (s:Sort) (A:Univ s1) (B:(Term s1 A -> Univ s2)) : Univ s :=
+  uncode
+    (cU s)
+    (cPi
+      (code (cU s1) A)
+      (x => code (cU s2) (B (uncode (code (cU s1) A) x)))).
+
+
+
 (;------------------------  Coqine parameters  --------------------;)
 
 (;

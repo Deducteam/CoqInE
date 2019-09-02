@@ -5,7 +5,6 @@
 (;---------------------------  Sorts  -----------------------------;)
 
 Sort : Type.
-sinf : Sort. (; Not sure we need this... ;)
 
 defac sup [Sort].
 

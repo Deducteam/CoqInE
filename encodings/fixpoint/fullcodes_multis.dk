@@ -187,17 +187,6 @@ def fix_body' :
 (;---------------------------  Utils  -----------------------------;)
 (;-----------------------------------------------------------------;)
 
-(; We should not need this ! ;)
-def lift' (s : Sort) (s' : Sort) (t:Univ s) := uncode (cU s') (code (cU s) t).
-
-def prod' (s1:Sort) (s2:Sort) (s:Sort) (A:Univ s1) (B:(Term s1 A -> Univ s2)) : Univ s :=
-  uncode
-    (cU s)
-    (cPi
-      (code (cU s1) A)
-      (x => code (cU s2) (B (uncode (code (cU s1) A) x)))).
-
-
 (; Input:
      { k1 / A1, ..., kn / An }
      body : A1 -> ... -> An -> x : A -> B x

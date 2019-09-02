@@ -842,44 +842,44 @@ begin
     | None -> () (* When parameter in not template polymorphic: no rule *)
     | Some (tparam_name,locals,level,level_name') ->
       begin
-          let new_level_name' = level_name' ^ "'" in
-          let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
-          let tparam_name' = Cname.translate_name tparam_name' in
-          let applied_param =  (* pj x1 ... xl *)
-            Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
-          let lifted_param_pat = Dedukti.ulams locals
-              (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
-          let translate_name_with_lifted name =
-            if name = tparam_name
-            then lifted_param_pat
-            else Dedukti.var (translate_name name)
-          in
-          let translate_replace_sort s =
-            Dedukti.var (if s = level_name' then new_level_name' else s)
-          in
-          let lhs =
-            Dedukti.apps match_function_var'
-              (List.map Dedukti.var ind.univ_poly_names @
-               List.map Dedukti.var ind.template_names @
-               Dedukti.var return_sort_name' ::
-               List.map translate_name_with_lifted arity_ctxt_names
-              ) in
-          let rhs =
-            Dedukti.apps match_function_var'
-              (List.map translate_replace_sort ind.univ_poly_names @
-               List.map translate_replace_sort ind.template_names @
-               Dedukti.var return_sort_name' ::
-               List.map Dedukti.var arity_ctxt_names'
-              ) in
-          let context =
-            new_level_name' :: return_sort_name' ::
-            ind.univ_poly_names @
-            ind.template_names @
-            arity_ctxt_names' in
+        let new_level_name' = level_name' ^ "'" in
+        let tparam_name' = Cname.fresh_name ~default:"_" info env tparam_name in
+        let tparam_name' = Cname.translate_name tparam_name' in
+        let applied_param =  (* pj x1 ... xl *)
+          Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
+        let lifted_param_pat = Dedukti.ulams locals
+            (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+        let translate_name_with_lifted name =
+          if name = tparam_name
+          then lifted_param_pat
+          else Dedukti.var (translate_name name)
+        in
+        let translate_replace_sort s =
+          Dedukti.var (if s = level_name' then new_level_name' else s)
+        in
+        let lhs =
+          Dedukti.apps match_function_var'
+            (List.map Dedukti.var ind.univ_poly_names @
+             List.map Dedukti.var ind.template_names @
+             Dedukti.var return_sort_name' ::
+             List.map translate_name_with_lifted arity_ctxt_names
+            ) in
+        let rhs =
+          Dedukti.apps match_function_var'
+            (List.map translate_replace_sort ind.univ_poly_names @
+             List.map translate_replace_sort ind.template_names @
+             Dedukti.var return_sort_name' ::
+             List.map Dedukti.var arity_ctxt_names'
+            ) in
+        let context =
+          new_level_name' :: return_sort_name' ::
+          ind.univ_poly_names @
+          ind.template_names @
+          arity_ctxt_names' in
 
-          (* Printing out the rule for lift elimination *)
-          Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
-        end
+        (* Printing out the rule for lift elimination *)
+        Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
+      end
   in
   List.iter print_param_ST_elim ind.mind_params_ctxt
 end

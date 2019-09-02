@@ -84,6 +84,9 @@ $(eval $(call targ,fullcodes_eta_fix_test3,predicates,fullcodes_eta,predicates,f
 
 $(eval $(call targ,fullcodes_eta_fix2,predicates,fullcodes_eta,predicates,fullcodes_multis,))
 
+$(eval $(call targ,fullcodes_templ,predicates,fullcodes_templ,predicates,fullcodes_templ,))
+
+
 $(eval $(call targ,fullcodes_poly,predicates_ac,fullcodes_poly,predicates_ac,fullcodes_poly,test_poly,))
 
 $(eval $(call targ,fullcodes_poly_cstr,predicates_ac_cstr,fullcodes_poly_cstr,predicates_ac,fullcodes_poly,test_poly,))

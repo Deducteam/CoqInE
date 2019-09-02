@@ -109,6 +109,7 @@ let init_empty_symbs () =
       "_code_abs";
       "_code_univ";
       "_code_prod";
+      "_code_sinf";
 
       (* Fixpoint syntax *)
       "0";

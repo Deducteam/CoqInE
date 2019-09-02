@@ -16,9 +16,9 @@ CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
 
 define MANUAL
 
----------------------------
-     How to use Coqine
----------------------------
+---------------------------------------
+            How to use Coqine
+---------------------------------------
 
 
 - make -C encodings
@@ -26,27 +26,33 @@ define MANUAL
     then checks the generated files
 
 - make test_pred_fix
-    Translates the file run/main/Test/Fixpoints.v and all it's dependencies
-    into the run/main/out folder then checks the generated files.
+    Translates the file run/main/Test/Fixpoints.v and all its dependencies
+    from Init into the run/main/out folder then checks the generated files.
     The translated file can be changed by editing run/main/main_test.v
     The encoding file generated is run/main/C.dk
     This translation relies on privates casts
 
 - make test_codes_fix
-    Same as test_fix but the translation relies on private codes
+    Same as test_pred_fix but the translation relies on private codes
+
+- make test_tcodes_fix
+    Same as test_codes_fix but the translation relies on private version
+    of template inductive types.
 
 - make debug_pred_fix
     Translates non universe polymorphis files from run/main/Test and their
-    dependencies into the run/main/out folder then checks the generated files
+    dependencies into the run/main/out folder then checks the generated files.
+    The translated file can be changed by editing run/main/main_debug.v
+    The encoding file generated is run/main/C.dk
     This translation relies on privates casts
 
 - make debug_codes_fix
     Same as debug_fix but the translation relies on private codes
 
-- make poly_codes_fix
-    Translates all files from run/main/Test and their dependencies
-    into the run/main/out folder then checks the generated files
-    This translation relies on private codes
+- make poly_codes_poly
+    Translates all files from run/main/Test and their dependencies including universe
+    polymorphism into the run/main/out folder then checks the generated files
+    This translation relies on private codes and private version of template inductives
 
 - make tests
     Run all the above targets successively
