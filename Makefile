@@ -72,6 +72,7 @@ tests: check-version .merlin plugin
 	make -C encodings
 	make test_pred_fix
 	make test_codes_fix
+	make test_tcodes_fix
 	make debug_pred_fix
 	make debug_codes_fix
 #	make poly_codes_poly
@@ -186,7 +187,7 @@ $(eval $(call generate,test_pred,run/main,predicates_eta,C,template,MAINFILE=mai
 
 $(eval $(call generate,test_pred_fix ,run/main,predicates_eta_fix,C,template,MAINFILE=main_test))
 $(eval $(call generate,test_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_test))
-$(eval $(call generate,test_tcodes_fix,run/main,fullcodes_eta_fix,C,ctemplate,MAINFILE=main_test))
+$(eval $(call generate,test_tcodes_fix,run/main,fullcodes_templ,C,ctemplate,MAINFILE=main_test))
 
 $(eval $(call generate,debug_pred,run/main,predicates_eta,C,template,MAINFILE=main_debug))
 $(eval $(call generate,debug_pred_fix,run/main,predicates_eta_fix,C,template,MAINFILE=main_debug))

@@ -7,13 +7,13 @@ module LevelMap = Map.Make(
 
 type env =
   {
-    template_params : Dedukti.var LevelMap.t;
+    template_params : Translator.cic_universe LevelMap.t;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
   }
 
 let make
     (template_levels : Univ.Level.t list)
-    (template_names  : Dedukti.var list)
+    (template_names  : Translator.cic_universe list)
     (nb_polymorphic_args : int)
     (constraints_args : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term)) list) =
 
@@ -31,10 +31,6 @@ let replace_template_name uenv lvl new_name =
 let is_template_polymorphic (e:env) a = LevelMap.mem a e.template_params
 
 let translate_template_arg (e:env) a = LevelMap.find a e.template_params
-
-let try_translate_template_arg (e:env) a =
-  try Some (translate_template_arg e a)
-  with Not_found -> None
 
 let fetch_constraint uenv cstr =
   try Some (fst (List.assoc cstr uenv.constraints))

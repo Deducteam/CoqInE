@@ -21,6 +21,8 @@ def cApp : Code -> Code -> Code.
 [s]   Decode (cU s)    --> Univ s.
 [a,b] Decode (cPi a b) --> x : Decode a -> Decode (b x).
 
+[t]   code (cU sinf) t --> t.
+[t] uncode (cU sinf) t --> t.
 
 (;----------------------------  Term  -----------------------------;)
 

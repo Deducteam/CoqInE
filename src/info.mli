@@ -31,15 +31,17 @@ val close : info -> unit
 type env
 
 val make :
-  Univ.Level.t list -> Dedukti.var list ->
+  Univ.Level.t list -> Translator.cic_universe list ->
   int -> ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
   env
 
 val is_template_polymorphic    : env -> Univ.Level.t -> bool
-val translate_template_arg     : env -> Univ.Level.t -> Dedukti.var
+val translate_template_arg     : env -> Univ.Level.t -> Translator.cic_universe
+(*
 val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
+*)
 
-val replace_template_name : env -> Univ.Level.t -> Dedukti.var -> env
+val replace_template_name : env -> Univ.Level.t -> Translator.cic_universe -> env
 
 val fetch_constraint : env -> Univ.univ_constraint -> Dedukti.var option
 

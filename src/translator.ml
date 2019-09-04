@@ -11,6 +11,7 @@ type cic_universe =
   | Succ of cic_universe * int
   | Max of cic_universe list
   | Rule of cic_universe * cic_universe
+  | SInf
 
 let mk_type i = Succ (Prop, i+1)
 
@@ -74,6 +75,7 @@ struct
     | Succ (u,i)    -> coq_axioms (cu u) i
     | Max u_list    -> coq_sup (List.map cu u_list)
     | Rule (s1,s2)  -> coq_rule (cu s1) (cu s2)
+    | SInf          -> vsymb "_code_sinf"
 
   let rec cpu = function
     | Succ (u, 0)   -> cpu u

@@ -36,8 +36,11 @@ val translate_sort     : Info.env -> Sorts.t         -> Translator.cic_universe
 
 val convertible_sort   : Info.env -> Sorts.t -> Sorts.t -> bool
 
+val translate_template_name : Univ.Level.t -> Dedukti.var
+
 val translate_template_params :
-  Univ.Level.t option list -> Univ.Level.t list * Dedukti.var list
+  Univ.Level.t option list ->
+  Univ.Level.t list * Dedukti.var list * Translator.cic_universe list
 
 val translate_univ_poly_params : Univ.Instance.t -> string list
 

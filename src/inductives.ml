@@ -80,9 +80,9 @@ let get_infos mind_body index =
   let arity_real_context, _ = Utils.list_chop body.mind_nrealdecls arity_context in
 
   (* Compute a map of template parameters and a sort for given declaration. *)
-  let (template_levels, template_names), arity_sort =
+  let (template_levels, template_names, template_univ'), arity_sort =
     match arity with
-    | RegularArity ria -> ([],[]), ria.mind_sort
+    | RegularArity ria -> ([],[],[]), ria.mind_sort
     | TemplateArity ta ->
       begin
         debug "Template params levels:";
@@ -116,7 +116,7 @@ let get_infos mind_body index =
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
   let univ_poly_nb_params = List.length univ_poly_names in
   let univ_poly_env =
-    Info.make template_levels template_names univ_poly_nb_params univ_poly_cstr  in
+    Info.make template_levels template_univ' univ_poly_nb_params univ_poly_cstr  in
 
   {
     mind_body;
@@ -154,8 +154,10 @@ let is_template_parameter ind = function
         (match Univ.Universe.level u with
          | None -> None
          | Some lvl ->
-           Utils.map_opt (fun lvl_name -> (name, List.rev acc, lvl, lvl_name))
-             (Info.try_translate_template_arg ind.univ_poly_env lvl)
+           try
+             let _ = Info.translate_template_arg ind.univ_poly_env lvl in
+             Some (name, List.rev acc, lvl, Tsorts.translate_template_name lvl)
+           with Not_found -> None
         )
       | _ -> None
     in
@@ -310,7 +312,8 @@ begin
         let origin_sort =
           Tsorts.translate_sort ind.univ_poly_env ind.arity_sort in
         let new_uenv = (* Env remapping level to new_level_name *)
-          Info.replace_template_name ind.univ_poly_env level new_level_name' in
+          Info.replace_template_name ind.univ_poly_env level
+            (Translator.Template new_level_name') in
         let small_sort =
           Tsorts.translate_sort new_uenv ind.arity_sort in
         let rhs =
@@ -343,7 +346,19 @@ begin
            List.map (fun x -> Dedukti.var (translate_name x)) arity_ctxt_names
           )
       ) in
-  let priv_inductive' = Dedukti.var (name' ^ "'") in
+  let priv_inductive' = name' ^ "'" in
+  let priv_levels = List.map (fun _ -> Translator.SInf) ind.template_levels in
+  let priv_uenv =
+    Info.make ind.template_levels priv_levels 0 [] in
+  let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
+  let arity' = Terms.translate_types info env priv_uenv arity in
+  let rec replace_return_sort = function
+    | Dedukti.Pie (decl, b) -> Dedukti.pie decl (replace_return_sort b)
+    | Dedukti.App _ -> T.coq_U Translator.SInf
+    | _ -> assert false
+  in
+  let arity' = replace_return_sort arity' in
+  Dedukti.print info.fmt (Dedukti.declaration false priv_inductive' arity');
   let rec process_decl acc = function
     | [] -> acc
     | decl :: tl ->
@@ -369,7 +384,7 @@ begin
     with Not_found -> vp
   in
   let rhs =
-    Dedukti.apps priv_inductive'
+    Dedukti.apps (Dedukti.var priv_inductive')
       (List.map translate_replace_sort arity_ctxt_names) in
   let context =
     ind.template_names @

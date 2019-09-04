@@ -19,7 +19,7 @@ type cic_universe =
         Succ(Prop,1) = Axiom(Prop) = Type@{0} = Succ(Set ,1)  *)
   | Max      of cic_universe list  (** sup {u | u \in l} *)
   | Rule     of cic_universe * cic_universe
-  (** Universe *)
+  | SInf (** Private sort representing codes *)
 
 val mk_type : int -> cic_universe
 (** [mk_type i] represents Type@{i} in the hierarchy
