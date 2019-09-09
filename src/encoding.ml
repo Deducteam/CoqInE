@@ -77,6 +77,7 @@ let init_empty_symbs () =
       "uSet";
       "uType0";
       "uSucc";
+      "uMax";
 
       (* Functionnal universe constructors *)
       "axiom";

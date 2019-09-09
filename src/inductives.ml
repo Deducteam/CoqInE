@@ -379,7 +379,7 @@ begin
       Dedukti.ulams
         locals
         (T.coq_coded
-           (T.coq_universe (Tsorts.translate_level ind.univ_poly_env level))
+           (T.coq_universe (Tsorts.translate_univ_level ind.univ_poly_env level))
            (Dedukti.apps vp (List.map Dedukti.var locals)))
     with Not_found -> vp
   in
@@ -544,46 +544,29 @@ let translate_cumulative_constructors_subtyping info env label ind =
     Term s (P x1 ... xn x)
 *)
 let translate_match info env label ind =
-  let mind_body = ind.mind_body in
-  (* Body of the current inductive type *)
-  let ind_body = ind.body in
-
-  (* Instance (array of universe levels) corresponding to the mutually inductive
-     universe parameters  *)
-  let univ_instance =
-    match ind.mind_univs with
-    | Monomorphic_ind univ_ctxt ->
-      Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt)
-    | Polymorphic_ind univ_ctxt ->
-      Univ.AUContext.instance univ_ctxt
-    | Cumulative_ind _ -> Error.not_supported "Mutual Cumulative inductive types" in
-  let univ_instance = ind.poly_inst in
   let env = Environ.push_context ind.poly_ctxt env in
-  (* Compute universe parameters names and corresponding local environnement *)
-  let univ_poly_params = ind.univ_poly_names in
   let uenv = ind.univ_poly_env in
+  let univ_poly_names = ind.univ_poly_names in
+  let univ_poly_params = List.map Dedukti.var univ_poly_names in
+  let mind_body = ind.mind_body in
+  let univ_instance = ind.poly_inst in
 
   let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-  (*
-  let ind_terms = Array.init n_types (fun i -> Constr.mkIndU((mind, i), univ_instance)) in
-  This is only used for ind_terms.(index), why build the whole array ?
-  *)
-  let ind_term = Constr.mkIndU((mind, ind.index), univ_instance) in
-
+  let ind_term = Constr.mkIndU((mind, ind.index), ind.poly_inst) in
   let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
 
   (* Constructor names start from 1. *)
   let cons_terms = Array.init ind.n_cons
       (fun j -> Constr.mkConstructU(((mind, ind.index), j + 1), univ_instance)) in
 
-  let indtype_name = ind_body.mind_typename in
+  let indtype_name = ind.body.mind_typename in
   let match_function_name' = Cname.match_function info env info.module_path indtype_name in
 
   let match_function_var'  = Dedukti.var match_function_name' in
   debug "###  %s" match_function_name';
 
   (* Use the normalized types in the rest. *)
-  let cons_types = Array.map (Vars.substl ind_subst) ind_body.mind_nf_lc in
+  let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
   let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
 
   (* Translate the match function: match_I *)
@@ -593,7 +576,7 @@ let translate_match info env label ind =
   let cons_contexts = Array.map fst cons_context_types in
   let cons_types    = Array.map snd cons_context_types in
   let cons_real_contexts = Array.init ind.n_cons (fun j ->
-    fst (Utils.list_chop ind_body.mind_consnrealdecls.(j) cons_contexts.(j))) in
+    fst (Utils.list_chop ind.body.mind_consnrealdecls.(j) cons_contexts.(j))) in
   let cons_ind_args = Array.map
       (fun a -> snd (Constr.decompose_app (Reduction.whd_all env a))) cons_types in
   let cons_ind_real_args = Array.init ind.n_cons (fun j ->
@@ -685,7 +668,7 @@ let translate_match info env label ind =
     else [] in
   let univ_poly_context' =
     if Encoding.is_polymorphism_on ()
-    then List.map (fun x -> (x, T.coq_Sort())) univ_poly_params else [] in
+    then List.map (fun x -> (x, T.coq_Sort())) univ_poly_names else [] in
   let return_sort_binding = (return_sort_name', T.coq_Sort()) in
   let return_type_type = Dedukti.pies
       arity_real_context'
@@ -734,10 +717,10 @@ let translate_match info env label ind =
 
   let match_function_applied' =
     Dedukti.apps match_function_var'
-      (List.map Dedukti.var univ_poly_params @
+      (univ_poly_params @
        ( if Tsorts.template_constructor_upoly ()
          then List.map Dedukti.var ind.template_names
-       else [] ) @
+         else [] ) @
        Dedukti.var return_sort_name' ::
        params' @
        return_type_var' ::
@@ -797,7 +780,7 @@ let translate_match info env label ind =
       (Dedukti.apps return_type_var' local_ctxt) in
   let pattern_match =
     Dedukti.apps match_function_var'
-      (List.map Dedukti.var univ_poly_params @
+      (univ_poly_params @
        (if Tsorts.template_constructor_upoly ()
         then List.map Dedukti.var ind.template_names
         else [] ) @
@@ -806,7 +789,7 @@ let translate_match info env label ind =
        [Dedukti.ulams local_ctxt_names pattern]) in
   let rhs_match =
     Dedukti.apps match_function_var'
-      (List.map Dedukti.var univ_poly_params @
+      (univ_poly_params @
        (if Tsorts.template_constructor_upoly ()
         then List.map Dedukti.var ind.template_names
         else [] ) @

@@ -30,9 +30,9 @@ val set_universes : UGraph.t -> unit
 
 val translate_template_global_level_decl : Univ.Level.t option list -> Dedukti.instruction list
 
-val translate_level    : Info.env -> Univ.Level.t    -> Translator.cic_universe
-val translate_universe : Info.env -> Univ.Universe.t -> Translator.cic_universe
-val translate_sort     : Info.env -> Sorts.t         -> Translator.cic_universe
+val translate_univ_level : Info.env -> Univ.Level.t    -> Translator.cic_universe
+val translate_universe   : Info.env -> Univ.Universe.t -> Translator.cic_universe
+val translate_sort       : Info.env -> Sorts.t         -> Translator.cic_universe
 
 val convertible_sort   : Info.env -> Sorts.t -> Sorts.t -> bool
 

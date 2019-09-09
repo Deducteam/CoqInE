@@ -52,6 +52,28 @@ struct
 
   let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
 
+  let coq_succ s    = app  (vsymb "uSucc") s
+  let coq_succs s i = Utils.iterate i coq_succ s
+  let rec coq_max  = function
+    | [] -> assert false
+    | [u] -> u
+    | (u :: u_list) -> apps (vsymb "uMax") [u; coq_max u_list]
+  let rec cl = function
+    | Succ (u   ,0) -> cl u
+    | Succ (Succ(u,i), j) -> cl (Succ (u,i+j))
+    | Prop          -> assert false
+    | Set           -> vsymb "uSet"
+    | Succ (Set ,i) -> coq_nat (i-1)
+    | Succ (Prop,i) -> coq_nat (i-1)
+    | LocalNamed _  -> assert false
+    | Local n       -> var ("s" ^ string_of_int n)
+    | Template name -> assert false
+    | Global name   -> assert false
+    | Succ (u,i)    -> coq_succs (cl u) i
+    | Max u_list    -> coq_max (List.map cl u_list)
+    | Rule (s1,s2)  -> coq_max [cl s1; cl s2]
+    | SInf          -> assert false
+
   let coq_axiom s    = app  (vsymb "axiom") s
   let coq_axioms s i = Utils.iterate i coq_axiom s
   let coq_rule s1 s2 = apps (vsymb "rule") [s1; s2]
@@ -154,6 +176,16 @@ struct
   let short_type i =
     if i <= 9 then sort_var i else coq_type (short_nat i)
 
+  let rec scl = function
+    | Succ (u,0)    -> scl u
+    | Succ (Succ(u,i), j) -> scl (Succ (u,i+j))
+    | Succ (Set ,i) -> short_nat (i-1)
+    | Succ (Prop,i) -> assert (i > 0); short_nat (i-1)
+    | Succ (u,i)    -> Std.coq_succs (scl u) i
+    | Max u_list    -> Std.coq_max (List.map scl u_list)
+    | Rule (s1,s2)  -> Std.coq_max [scl s1; scl s2]
+    | s -> Std.cl s
+
   let rec scu = function
     | Succ (u,0)    -> scu u
     | Succ (Succ(u,i), j) -> scu (Succ (u,i+j))
@@ -217,6 +249,7 @@ struct
 
   let a () = not (is_readable_on ())
 
+  let coq_level    s = if a () then Std.cl       s else Short.scl        s
   let coq_universe s = if a () then Std.cu       s else Short.scu        s
   let coq_U        s = if a () then Std.coq_U    s else Short.short_U    s
   let coq_term     s = if a () then Std.coq_term s else Short.short_term s

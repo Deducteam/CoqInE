@@ -56,8 +56,11 @@ sig
   (** Global universe name translation to Dedukti variable
       e.g.  Coq.Arith.0 --> Var "U.Coq__Arith__0"  *)
 
-  val coq_universe   : cic_universe -> term
+  val coq_level : cic_universe -> term
   (** Translate a universe level *)
+
+  val coq_universe : cic_universe -> term
+  (** Translate a universe *)
 
   val coq_pattern_universe : cic_universe -> term
   (** Translate a universe level as a rule rhs pattern *)

@@ -6,7 +6,7 @@ open Translator
 open Declarations
 
 let template_constructor_upoly () =
-  Encoding.is_templ_polymorphism_on ()
+          Encoding.is_templ_polymorphism_on ()
   && not (Encoding.is_templ_polymorphism_code_on ())
 
 
@@ -17,7 +17,7 @@ let add_templ_params_type params t =
 
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Nat ()))) params
+  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Nat (*Sort or Nat ?*) ()))) params
       ( if Encoding.is_constraints_on ()
         then List.fold_right (function (_,cstr) -> Dedukti.pie cstr) cstr t
         else t )
@@ -25,7 +25,7 @@ let add_poly_params_type params cstr t =
 
 let add_poly_params_def params cstr t =
   if Encoding.is_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Nat ()))) params
+  then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Nat (*Sort or Nat ?*) ()))) params
       ( if Encoding.is_constraints_on ()
         then List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t
         else t )
@@ -71,7 +71,7 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
 
 (** Translates a universe level in a given local universe environment
     using universe_table global environment for named universes.  *)
-let translate_level uenv l =
+let translate_univ_level uenv l =
   if Univ.Level.is_prop l then Translator.Prop
   else if Univ.Level.is_set l then Translator.Set
   else
@@ -98,7 +98,7 @@ let instantiate_poly_univ_params uenv univ_ctxt univ_instance term =
   let levels = Univ.Instance.to_array univ_instance in
   let levels = Array.init nb_params (fun i -> levels.(i)) in
   Array.fold_left
-      (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+      (fun t l -> Dedukti.app t (T.coq_level (translate_univ_level uenv l)))
       term
       levels
 
@@ -145,7 +145,7 @@ let instantiate_template_ind_univ_params env uenv ind univ_instance term =
     let levels = aux [] 0 univ_ctxt in
     debug "Univ context: %a" (pp_list " " pp_coq_level) levels;
     List.fold_left
-      (fun t l -> Dedukti.app t (T.coq_universe (translate_level uenv l)))
+      (fun t l -> Dedukti.app t (T.coq_universe (translate_univ_level uenv l)))
       term levels
   | _ -> term
 
@@ -177,7 +177,7 @@ let instantiate_ind_univ_params env uenv name ind univ_instance =
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)
   let translate (lvl, i) =
-    let univ = translate_level uenv lvl in
+    let univ = translate_univ_level uenv lvl in
     if i = 0 then univ else Translator.Succ (univ,i)
   in
   match Univ.Universe.map translate u with
@@ -211,7 +211,9 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
   then
     let aux n cstr =
       let (i, c, j) = cstr in
-      let cstr_type = T.coq_cstr c (translate_level Info.dummy i) (translate_level Info.dummy j) in
+      let i' = translate_univ_level Info.dummy i in
+      let j' = translate_univ_level Info.dummy j in
+      let cstr_type = T.coq_cstr c i' j' in
       let cstr_name = Cname.constraint_name n in
       ( cstr, (cstr_name, cstr_type) )
     in

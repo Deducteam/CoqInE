@@ -26,17 +26,6 @@ def level : Sort -> Nat.
 
 def v (u:Sort) : Sort := type (level u).
 
-(;
-Coqine prop = prop
-Coqine set  = set
-Coqine type = type
-
-Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
-Coqine uSet   = nset   (; Nat representation of Set ;)
-Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
-Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
-;)
-
 
 
 (;-----------------------  LUB wrt Cumulativity  ------------------;)
@@ -57,6 +46,19 @@ defac max [Nat].
 [s  ] sup prop     s        --> s
 [s  ] sup s        prop     --> s
 [i,j] sup (type i) (type j) --> type (max i j).
+
+
+(;
+Coqine prop = prop
+Coqine set  = set
+Coqine type = type
+
+Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
+Coqine uSet   = nset   (; Nat representation of Set ;)
+Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
+Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
+Coqine uMax   = max    (; Nat representation of Type@{max(i,j)} ;)
+;)
 
 
 (;---------------------  CTS Axiom definition  --------------------;)

@@ -164,6 +164,11 @@ ifeq ($5, polymorph)
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"upolymorphism\" \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"constraints\"   \"true\"." >> $2/config.v
+else ifeq ($5, cpolymorph)
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpoly_code\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"upolymorphism\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"constraints\"   \"true\"." >> $2/config.v
 else ifeq ($5, template)
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
 else ifeq ($5, ctemplate)
@@ -199,6 +204,8 @@ $(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,template,MAI
 $(eval $(call generate,poly_pred_fix,run/main,predicates_eta_fix,C,polymorph,MAINFILE=main_poly))
 $(eval $(call generate,poly_codes_fix,run/main,fullcodes_eta_fix,C,polymorph,MAINFILE=main_poly))
 $(eval $(call generate,poly_codes_poly,run/main,fullcodes_poly,C,polymorph,MAINFILE=main_poly))
+
+$(eval $(call generate,fullcodes_poly_templ,run/main,fullcodes_poly_templ,C,cpolymorph,MAINFILE=main_poly))
 
 $(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
 $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))

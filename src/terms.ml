@@ -10,6 +10,7 @@ open Term
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
 
+(*
 module ISet = Set.Make(
   struct
     type t = int
@@ -52,8 +53,8 @@ let fixpoint_signature env rec_decl =
          message "Type is : %a" pp_coq_type ty;
          ty) fv in
   (fv_types, rec_decl)
+*)
 let fixpoint_signature env rec_decl = (env, rec_decl)
-
 
 
 
@@ -539,8 +540,10 @@ and translate_cast info uenv t' enva a envb b =
       if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
       then
         let constraints = Tsorts.destArity a b in
+        (*
         let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
         let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
+        *)
         let var_cstr = Tsorts.translate_constraint_set uenv constraints in
         T.coq_cast s1' s2' a' b' var_cstr t'
       else T.coq_cast s1' s2' a' b' [] t'
