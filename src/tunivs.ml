@@ -32,7 +32,7 @@ let get_universes_constraints (universes:UGraph.t) =
     else begin
       if not (StringSet.mem u !defined_univs)
       then defined_univs := StringSet.add u !defined_univs;
-      Translator.Global u
+      Translator.GlobalLevel u
     end
   in
   let res = ref [] in

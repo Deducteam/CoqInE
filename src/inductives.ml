@@ -60,7 +60,8 @@ type ind_infos =
     univ_poly_names : Dedukti.var list;
     univ_poly_cstr : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list;
     univ_poly_nb_params : int;
-    univ_poly_env : Info.env;
+    inductive_uenv : Info.env;
+    constructor_uenv : Info.env;
   }
 
 let get_infos mind_body index =
@@ -80,9 +81,9 @@ let get_infos mind_body index =
   let arity_real_context, _ = Utils.list_chop body.mind_nrealdecls arity_context in
 
   (* Compute a map of template parameters and a sort for given declaration. *)
-  let (template_levels, template_names, template_univ'), arity_sort =
+  let (template_levels, template_names), arity_sort =
     match arity with
-    | RegularArity ria -> ([],[],[]), ria.mind_sort
+    | RegularArity ria -> ([],[]), ria.mind_sort
     | TemplateArity ta ->
       begin
         debug "Template params levels:";
@@ -115,8 +116,19 @@ let get_infos mind_body index =
   let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
   let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
   let univ_poly_nb_params = List.length univ_poly_names in
-  let univ_poly_env =
-    Info.make template_levels template_univ' univ_poly_nb_params univ_poly_cstr  in
+  let univ_poly_env f =
+    Info.make
+      template_levels
+      (List.map f template_names)
+      univ_poly_nb_params
+      univ_poly_cstr  in
+  let inductive_uenv =
+    univ_poly_env (fun x -> Translator.NamedSort x) in
+  let constructor_uenv =
+    univ_poly_env
+      (if Encoding.is_templ_polymorphism_code_on ()
+       then fun x -> Translator.NamedLevel x
+       else fun x -> Translator.NamedSort x ) in
 
   {
     mind_body;
@@ -141,7 +153,8 @@ let get_infos mind_body index =
     univ_poly_names;
     univ_poly_cstr;
     univ_poly_nb_params;
-    univ_poly_env;
+    inductive_uenv;
+    constructor_uenv;
   }
 
 
@@ -155,7 +168,7 @@ let is_template_parameter ind = function
          | None -> None
          | Some lvl ->
            try
-             let _ = Info.translate_template_arg ind.univ_poly_env lvl in
+             let _ = Info.translate_template_arg ind.inductive_uenv lvl in
              Some (name, List.rev acc, lvl, Tsorts.translate_template_name lvl)
            with Not_found -> None
         )
@@ -211,13 +224,7 @@ let translate_inductive info env label ind  =
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
   debug "Arity: %a" pp_coq_term arity;
   let poly_env = Environ.push_context ind.poly_ctxt env in
-  let univ_poly_env =
-    Info.make
-      ind.template_levels
-      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
-      ind.univ_poly_nb_params
-      ind.univ_poly_cstr in
-  let arity' = Terms.translate_types info poly_env univ_poly_env arity in
+  let arity' = Terms.translate_types info poly_env ind.inductive_uenv arity in
   let arity' = Tsorts.add_inductive_params ind.template_names
       ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
@@ -283,12 +290,6 @@ let translate_template_inductive_subtyping info env label ind =
     let translate_name name =
       let name = Cname.fresh_name ~default:"_" info env name in
       Cname.translate_name name in
-  let uenv =
-    Info.make
-      ind.template_levels
-      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
-      ind.univ_poly_nb_params
-      ind.univ_poly_cstr in
 
     if Tsorts.template_constructor_upoly ()
     then
@@ -322,9 +323,9 @@ begin
              List.map translate_name_with_lifted arity_ctxt_names
             ) in
         let origin_sort =
-          Tsorts.translate_sort uenv ind.arity_sort in
+          Tsorts.translate_sort ind.inductive_uenv ind.arity_sort in
         let new_uenv = (* Env remapping sort to new_level_name *)
-          Info.replace_template_name uenv level
+          Info.replace_template_name ind.inductive_uenv level
             (Translator.NamedSort new_level_name') in
         let small_sort =
           Tsorts.translate_sort new_uenv ind.arity_sort in
@@ -391,7 +392,7 @@ begin
       Dedukti.ulams
         locals
         (T.coq_coded
-           (T.coq_universe (Tsorts.translate_univ_level uenv level))
+           (T.coq_universe (Tsorts.translate_univ_level ind.inductive_uenv level))
            (Dedukti.apps vp (List.map Dedukti.var locals)))
     with Not_found -> vp
   in
@@ -436,7 +437,7 @@ let translate_constructors info env label ind =
 
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let poly_env = Environ.push_context ind.poly_ctxt env in
-    let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
+    let cons_type' = Terms.translate_types info poly_env ind.constructor_uenv cons_type in
     let cons_type' = Tsorts.add_constructor_params ind.template_names
         ind.univ_poly_names ind.univ_poly_cstr cons_type' in
     debug "Cons_type: %a" Dedukti.pp_term cons_type';
@@ -552,12 +553,7 @@ let translate_cumulative_constructors_subtyping info env label ind =
 *)
 let translate_match info env label ind =
   let env = Environ.push_context ind.poly_ctxt env in
-  let uenv =
-    Info.make
-      ind.template_levels
-      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
-      ind.univ_poly_nb_params
-      ind.univ_poly_cstr in
+  let uenv = ind.constructor_uenv in
   let univ_poly_names = ind.univ_poly_names in
   let univ_poly_params = List.map Dedukti.var univ_poly_names in
   let mind_body = ind.mind_body in

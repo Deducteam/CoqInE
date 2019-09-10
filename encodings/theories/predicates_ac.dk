@@ -21,11 +21,6 @@ prop : Sort.
 type : Nat -> Sort.
 def set  : Sort := type nset.
 
-def level : Sort -> Nat.
-[l] level (type l) --> l.
-
-def v (u:Sort) : Sort := type (level u).
-
 
 
 (;-----------------------  LUB wrt Cumulativity  ------------------;)
@@ -60,29 +55,32 @@ Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
 Coqine uMax   = max    (; Nat representation of Type@{max(i,j)} ;)
 ;)
 
+def Leq : Nat -> Nat -> Bool.
+[  j  ] Leq nset      j         --> true
+[i,j  ] Leq (s i)     (s j)     --> Leq i j
+[i    ] Leq i         i         --> true
+[i    ] Leq i         (s i)     --> true
+[i,j  ] Leq i         (max i j) --> true.
+[i,j,k] Leq (max i j) (max i k) --> Leq j k.
 
 (;---------------------  CTS Axiom definition  --------------------;)
 
-[i  ] Axiom prop         (type i       ) --> true
-[   ] Axiom (type nset ) (type (s nset)) --> true
-[i,j] Axiom (type (s i)) (type (s j   )) --> Axiom (type i) (type j).
+[   ] Axiom prop     (type _) --> true
+[i,j] Axiom (type i) (type j) --> Leq i j.
 
 
 (;-----------------------  CTS Rule definition  -------------------;)
 
-[     ] Rule _            prop         prop         --> true
-[i    ] Rule prop         (type i    ) (type i    ) --> true
-[i    ] Rule (type nset ) (type i    ) (type i    ) --> true
-[i    ] Rule (type i    ) (type nset ) (type i    ) --> true
-[i,j,k] Rule (type (s i)) (type (s j)) (type (s k)) --> Rule (type i) (type j) (type k).
+[     ] Rule _        prop      prop    --> true
+[i    ] Rule prop     (type i) (type i) --> true
+[i,j,k] Rule (type i) (type j) (type k) --> Leq (max i j) k.
 
 
 (;-------------------  CTS Cumulativity definition  ---------------;)
 
-[   ] Cumul prop         prop         --> true
-[i  ] Cumul prop         (type i    ) --> true
-[i  ] Cumul (type nset)  (type i    ) --> true
-[i,j] Cumul (type (s i)) (type (s j)) --> Cumul (type i) (type j).
+[   ] Cumul prop     prop     --> true
+[i  ] Cumul prop     (type i) --> true
+[i,j] Cumul (type i) (type j) --> Leq i j.
 
 
 

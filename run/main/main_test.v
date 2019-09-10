@@ -12,7 +12,7 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Dedukti Add Debug "Coq.Init.Specif".
+Dedukti Add Debug "Coq.Init.Datatype".
 
 (* Import some modules to translate *)
 Require Import Test.Fixpoints.

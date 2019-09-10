@@ -91,10 +91,10 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
         let name = Univ.Level.to_string l in
         let name' = T.coq_univ_name name in
         if Encoding.is_float_univ_on ()
-        then Dedukti.declaration false name' (T.coq_Sort())
+        then Dedukti.declaration false name' (T.coq_Nat())
         else
           let univ = Translator.mk_type (Hashtbl.find universe_table name) in
-          Dedukti.definition false name' (T.coq_Sort()) (T.coq_universe univ)
+          Dedukti.definition false name' (T.coq_Nat()) (T.coq_level univ)
       | None -> assert false
       (* No small levels (Prop/Set) or (true) polymorphism variables in template params. *)
     in
@@ -118,7 +118,7 @@ let translate_univ_level uenv l =
       else
         let name = Univ.Level.to_string l in
         if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
-        then Translator.Global name
+        then Translator.NamedLevel name
         else
           try Translator.mk_type (Hashtbl.find universe_table name)
           with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
@@ -262,17 +262,12 @@ let translate_template_name l =
 (** Extracts template parameters levels and returns them with their dedukti names
     e.g.: Level(Top,42) -> "Top__42"
 *)
-let translate_template_params (ctxt:Univ.Level.t option list) :
-  Univ.Level.t list * Dedukti.var list * Translator.cic_universe list =
+let translate_template_params (ctxt:Univ.Level.t option list) =
   if Encoding.is_templ_polymorphism_on ()
   then
     let params = Utils.filter_some ctxt in
-    let params_names = List.map translate_template_name params in
-    let params_univs = List.map (fun x -> Translator.NamedSort x) params_names in
-    params, params_names, params_univs
-  else [],[],[]
-
-
+    params, List.map translate_template_name params
+  else [],[]
 
 
 

@@ -4,14 +4,16 @@ open Dedukti
 type cic_universe =
   | Prop (** Impredicative Prop *)
   | Set  (** Predicative   Set *)
+  | GlobalSort of string
+  (** Global universe "Coq.Module.index" *)
+  | GlobalLevel of string
+  (** Global level "Coq.Module.index" *)
   | NamedSort  of string
   (** Locally bounded polymorphic universe  *)
   | NamedLevel of string
   (** Locally bounded polymorphic level  *)
   | Local  of int
   (** Locally bounded universe polymorphic variable. *)
-  | Global of string
-  (** Global universe "Coq.Module.index" *)
   | Succ   of cic_universe * int
   (** [Succ u n] = u + n
       Notes:

@@ -4,10 +4,11 @@ open Encoding
 type cic_universe =
   | Prop
   | Set
-  | NamedSort  of string
-  | NamedLevel of string
+  | GlobalSort  of string
+  | GlobalLevel of string
+  | NamedSort   of string
+  | NamedLevel  of string
   | Local of int
-  | Global of string
   | Succ of cic_universe * int
   | Max of cic_universe list
   | Rule of cic_universe * cic_universe
@@ -65,10 +66,11 @@ struct
     | Set           -> vsymb "uSet"
     | Succ (Set ,i) -> coq_nat (i-1)
     | Succ (Prop,i) -> coq_nat (i-1)
-    | NamedLevel name  -> var (coq_univ_name name)
-    | NamedSort name  -> assert false
+    | GlobalLevel n -> var (coq_univ_name n)
+    | GlobalSort _  -> assert false
+    | NamedLevel n  -> var (coq_univ_name n)
+    | NamedSort _   -> assert false
     | Local n       -> var ("s" ^ string_of_int n)
-    | Global name   -> assert false
     | Succ (u,i)    -> coq_succs (cl u) i
     | Max u_list    -> coq_max (List.map cl u_list)
     | Rule (s1,s2)  -> assert false (* coq_max [cl s1; cl s2] *)
@@ -88,12 +90,13 @@ struct
     | Set           -> coq_set ()
     | Succ (Set ,i) -> coq_type (coq_nat (i-1))
     | Succ (Prop,i) -> coq_type (coq_nat (i-1))
-    | NamedSort name -> var (coq_univ_name name)
-    | NamedLevel name -> coq_type (var (coq_univ_name name))
-    | Local n       -> coq_type (var ("s" ^ string_of_int n))
+    | GlobalSort name  -> univ_var (coq_univ_name name)
+    | GlobalLevel name -> coq_type (univ_var (coq_univ_name name))
+    | NamedSort name   -> var (coq_univ_name name)
+    | NamedLevel name  -> coq_type (var (coq_univ_name name))
+    | Local n          -> coq_type (var ("s" ^ string_of_int n))
     (* Locally quantified universe variable v is translated as "type v"
        when used as a Sort *)
-    | Global name   -> univ_var (coq_univ_name name)
     | Succ (u,i)    -> coq_axioms (cu u) i
     | Max u_list    -> coq_sup (List.map cu u_list)
     | Rule (s1,s2)  -> coq_rule (cu s1) (cu s2)
