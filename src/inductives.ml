@@ -211,9 +211,15 @@ let translate_inductive info env label ind  =
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
   debug "Arity: %a" pp_coq_term arity;
   let poly_env = Environ.push_context ind.poly_ctxt env in
-  let arity' = Terms.translate_types info poly_env ind.univ_poly_env arity in
-  let arity' = Tsorts.add_templ_params_type ind.template_names arity' in
-  let arity' = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr arity' in
+  let univ_poly_env =
+    Info.make
+      ind.template_levels
+      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
+      ind.univ_poly_nb_params
+      ind.univ_poly_cstr in
+  let arity' = Terms.translate_types info poly_env univ_poly_env arity in
+  let arity' = Tsorts.add_inductive_params ind.template_names
+      ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
   let definable =
     Tsorts.template_constructor_upoly () &&
@@ -277,6 +283,12 @@ let translate_template_inductive_subtyping info env label ind =
     let translate_name name =
       let name = Cname.fresh_name ~default:"_" info env name in
       Cname.translate_name name in
+  let uenv =
+    Info.make
+      ind.template_levels
+      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
+      ind.univ_poly_nb_params
+      ind.univ_poly_cstr in
 
     if Tsorts.template_constructor_upoly ()
     then
@@ -295,7 +307,7 @@ begin
         let applied_param =  (* pj x1 ... xl *)
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
         let lifted_param_pat = Dedukti.ulams locals
-            (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+            (T.coq_pattern_lifted_from_sort (Dedukti.var new_level_name') applied_param) in
         let translate_name_with_lifted name =
           if name = tparam_name
           then lifted_param_pat
@@ -310,10 +322,10 @@ begin
              List.map translate_name_with_lifted arity_ctxt_names
             ) in
         let origin_sort =
-          Tsorts.translate_sort ind.univ_poly_env ind.arity_sort in
-        let new_uenv = (* Env remapping level to new_level_name *)
-          Info.replace_template_name ind.univ_poly_env level
-            (Translator.Template new_level_name') in
+          Tsorts.translate_sort uenv ind.arity_sort in
+        let new_uenv = (* Env remapping sort to new_level_name *)
+          Info.replace_template_name uenv level
+            (Translator.NamedSort new_level_name') in
         let small_sort =
           Tsorts.translate_sort new_uenv ind.arity_sort in
         let rhs =
@@ -379,7 +391,7 @@ begin
       Dedukti.ulams
         locals
         (T.coq_coded
-           (T.coq_universe (Tsorts.translate_univ_level ind.univ_poly_env level))
+           (T.coq_universe (Tsorts.translate_univ_level uenv level))
            (Dedukti.apps vp (List.map Dedukti.var locals)))
     with Not_found -> vp
   in
@@ -425,13 +437,8 @@ let translate_constructors info env label ind =
     let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
     let poly_env = Environ.push_context ind.poly_ctxt env in
     let cons_type' = Terms.translate_types info poly_env ind.univ_poly_env cons_type in
-    let cons_type' =
-      if Tsorts.template_constructor_upoly ()
-      then Tsorts.add_templ_params_type ind.template_names cons_type'
-      else cons_type'
-      (* Template inductive constructors do *not* have universe parameters. Only the type. *)
-    in
-    let cons_type'     = Tsorts.add_poly_params_type ind.univ_poly_names ind.univ_poly_cstr cons_type' in
+    let cons_type' = Tsorts.add_constructor_params ind.template_names
+        ind.univ_poly_names ind.univ_poly_cstr cons_type' in
     debug "Cons_type: %a" Dedukti.pp_term cons_type';
     Dedukti.print info.fmt (Dedukti.declaration true cons_name' cons_type');
   done
@@ -469,7 +476,7 @@ begin
           let applied_param =  (* pj x1 ... xl *)
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
           let lifted_param_pat = Dedukti.ulams locals
-              (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+              (T.coq_pattern_lifted_from_sort (Dedukti.var new_level_name') applied_param) in
           let translate_name_with_lifted name =
             if name = tparam_name
             then lifted_param_pat
@@ -545,7 +552,12 @@ let translate_cumulative_constructors_subtyping info env label ind =
 *)
 let translate_match info env label ind =
   let env = Environ.push_context ind.poly_ctxt env in
-  let uenv = ind.univ_poly_env in
+  let uenv =
+    Info.make
+      ind.template_levels
+      (List.map (fun x -> Translator.NamedSort x) ind.template_names)
+      ind.univ_poly_nb_params
+      ind.univ_poly_cstr in
   let univ_poly_names = ind.univ_poly_names in
   let univ_poly_params = List.map Dedukti.var univ_poly_names in
   let mind_body = ind.mind_body in
@@ -591,7 +603,7 @@ let translate_match info env label ind =
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Cname.fresh_of_string info params_env "s" in
   let return_sort_name' = Cname.translate_identifier return_sort_name in
-  let return_sort' = Translator.LocalNamed return_sort_name' in
+  let return_sort' = Translator.NamedSort return_sort_name' in
   let params_env = Cname.push_identifier return_sort_name params_env in
 
   (* Create a fresh variable P and add it to the environment *)
@@ -662,13 +674,11 @@ let translate_match info env label ind =
   if ind.n_cons > 0 then debug "Test: %a" Dedukti.pp_term cons_applieds'.(0);
 
   let cases_context' = Array.to_list (Array.init ind.n_cons (fun j -> (case_names'.(j), case_types'.(j)))) in
-  let template_poly_context' =
-    if Tsorts.template_constructor_upoly ()
-    then List.map (fun x -> (x, T.coq_Sort())) ind.template_names
-    else [] in
-  let univ_poly_context' =
-    if Encoding.is_polymorphism_on ()
-    then List.map (fun x -> (x, T.coq_Sort())) univ_poly_names else [] in
+  let univ_poly_context' = Tsorts.get_constructor_params
+      ind.template_names
+      ind.univ_poly_names
+      ind.univ_poly_cstr
+  in
   let return_sort_binding = (return_sort_name', T.coq_Sort()) in
   let return_type_type = Dedukti.pies
       arity_real_context'
@@ -681,7 +691,6 @@ let translate_match info env label ind =
     cases_context' in
   let match_function_context' =
     univ_poly_context' @
-    template_poly_context' @
     common_context' @
     arity_real_context' @
     [matched_name', ind_applied'] in
@@ -746,7 +755,7 @@ let translate_match info env label ind =
      guaranteed by typing *)
   for j = 0 to ind.n_cons-1 do
     let case_rule_context' =
-      univ_poly_context' @ template_poly_context' @ common_context' @ cons_real_contexts'.(j) in
+      univ_poly_context' @ common_context' @ cons_real_contexts'.(j) in
     (* Note: a1 ... an are patterns in coq (expected return type parameters)
        They should however be translated as brackets patterns. Well-typedness of
        redices matching this left-hand side ensures the terms matched to a1 ... an
@@ -776,7 +785,7 @@ let translate_match info env label ind =
   let new_sort_name = "s'" in (* TODO: change that to ensure no conflicts *)
   let local_ctxt_names = List.map fst arity_real_context' @ ["x"]  in
   let local_ctxt       = List.map Dedukti.var local_ctxt_names in
-  let pattern = T.coq_pattern_lifted_from_sort new_sort_name
+  let pattern = T.coq_pattern_lifted_from_sort (Dedukti.var new_sort_name)
       (Dedukti.apps return_type_var' local_ctxt) in
   let pattern_match =
     Dedukti.apps match_function_var'
@@ -798,7 +807,6 @@ let translate_match info env label ind =
        [Dedukti.ulams local_ctxt_names (Dedukti.apps return_type_var' local_ctxt)]) in
   let context =
     univ_poly_context' @
-    template_poly_context' @
     return_sort_binding ::
     params_context' @
     [return_type_binding; (new_sort_name, T.coq_Sort())] in
@@ -846,7 +854,7 @@ begin
         let applied_param =  (* pj x1 ... xl *)
           Dedukti.apps (Dedukti.var tparam_name') (List.map Dedukti.var locals) in
         let lifted_param_pat = Dedukti.ulams locals
-            (T.coq_pattern_lifted_from_sort new_level_name' applied_param) in
+            (T.coq_pattern_lifted_from_sort (Dedukti.var new_level_name') applied_param) in
         let translate_name_with_lifted name =
           if name = tparam_name
           then lifted_param_pat

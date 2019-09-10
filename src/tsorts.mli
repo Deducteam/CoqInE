@@ -3,14 +3,42 @@ val template_constructor_upoly : unit -> bool
 (** Returns true if the constructors of template universe polymorphic
     inductive types should have quantified universe parameters. *)
 
-val add_templ_params_type : Dedukti.var list -> Dedukti.term -> Dedukti.term
+
 val add_poly_params_type : Dedukti.var list ->
                            ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
                            Dedukti.term -> Dedukti.term
+(** Prepend universe parameters before universe poymorphic type definition *)
+
 val add_poly_params_def : Dedukti.var list ->
                            ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
                            Dedukti.term -> Dedukti.term
-(** Prepend universe parameters before types/definitions *)
+(** Prepend universe parameters before universe poymorphic definition *)
+
+val get_inductive_params :
+    Dedukti.var list ->
+    Dedukti.var list ->
+    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    (Dedukti.var * Dedukti.term) list
+val add_inductive_params :
+    Dedukti.var list ->
+    Dedukti.var list ->
+    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    Dedukti.term -> Dedukti.term
+(** Prepend universe parameters before inductive types *)
+
+val get_constructor_params :
+    Dedukti.var list ->
+    Dedukti.var list ->
+    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    (Dedukti.var * Dedukti.term) list
+val add_constructor_params :
+    Dedukti.var list ->
+    Dedukti.var list ->
+    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    Dedukti.term -> Dedukti.term
+(** Prepend universe parameters before inductive constructor *)
+
+
 
 val instantiate_poly_univ_params :
   Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term -> Dedukti.term

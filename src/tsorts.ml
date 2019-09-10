@@ -10,11 +10,6 @@ let template_constructor_upoly () =
   && not (Encoding.is_templ_polymorphism_code_on ())
 
 
-let add_templ_params_type params t =
-  if Encoding.is_templ_polymorphism_on ()
-  then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Sort ()))) params t
-  else t
-
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Nat (*Sort or Nat ?*) ()))) params
@@ -30,6 +25,43 @@ let add_poly_params_def params cstr t =
         then List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t
         else t )
   else t
+
+let get_inductive_params templ_params poly_params poly_cstr =
+  (
+    if Encoding.is_templ_polymorphism_on ()
+    then List.map (function u -> (u, T.coq_Sort())) templ_params
+    else []
+  ) @ (
+    if Encoding.is_polymorphism_on ()
+    then List.map (function u -> (u, T.coq_Nat() (*Sort or Nat ?*) )) poly_params
+    else []
+  ) @ (
+    if Encoding.is_constraints_on ()
+    then List.map snd poly_cstr
+    else []
+  )
+let add_inductive_params templ_params poly_params poly_cstr arity =
+  List.fold_right Dedukti.pie
+    (get_inductive_params templ_params poly_params poly_cstr) arity
+
+let get_constructor_params templ_params poly_params poly_cstr =
+  (
+    if Encoding.is_templ_polymorphism_on () &&
+       template_constructor_upoly ()
+    then List.map (function u -> (u, T.coq_Sort ())) templ_params
+    else []
+  ) @ (
+    if Encoding.is_polymorphism_on ()
+    then List.map (function u -> (u, T.coq_Nat (*Sort or Nat ?*) ())) poly_params
+    else []
+  ) @ (
+    if Encoding.is_constraints_on ()
+    then List.map snd poly_cstr
+    else []
+  )
+let add_constructor_params templ_params poly_params poly_cstr arity =
+  List.fold_right Dedukti.pie
+    (get_constructor_params templ_params poly_params poly_cstr) arity
 
 (** Maping from the string representation of global named universes to
     concrete levels. *)
@@ -236,7 +268,7 @@ let translate_template_params (ctxt:Univ.Level.t option list) :
   then
     let params = Utils.filter_some ctxt in
     let params_names = List.map translate_template_name params in
-    let params_univs = List.map (fun x -> Translator.Template x) params_names in
+    let params_univs = List.map (fun x -> Translator.NamedSort x) params_names in
     params, params_names, params_univs
   else [],[],[]
 

@@ -4,9 +4,9 @@ open Encoding
 type cic_universe =
   | Prop
   | Set
-  | LocalNamed of string
+  | NamedSort  of string
+  | NamedLevel of string
   | Local of int
-  | Template of string
   | Global of string
   | Succ of cic_universe * int
   | Max of cic_universe list
@@ -65,13 +65,13 @@ struct
     | Set           -> vsymb "uSet"
     | Succ (Set ,i) -> coq_nat (i-1)
     | Succ (Prop,i) -> coq_nat (i-1)
-    | LocalNamed _  -> assert false
+    | NamedLevel name  -> var (coq_univ_name name)
+    | NamedSort name  -> assert false
     | Local n       -> var ("s" ^ string_of_int n)
-    | Template name -> assert false
     | Global name   -> assert false
     | Succ (u,i)    -> coq_succs (cl u) i
     | Max u_list    -> coq_max (List.map cl u_list)
-    | Rule (s1,s2)  -> coq_max [cl s1; cl s2]
+    | Rule (s1,s2)  -> assert false (* coq_max [cl s1; cl s2] *)
     | SInf          -> assert false
 
   let coq_axiom s    = app  (vsymb "axiom") s
@@ -88,11 +88,11 @@ struct
     | Set           -> coq_set ()
     | Succ (Set ,i) -> coq_type (coq_nat (i-1))
     | Succ (Prop,i) -> coq_type (coq_nat (i-1))
-    | LocalNamed name -> var name
+    | NamedSort name -> var (coq_univ_name name)
+    | NamedLevel name -> coq_type (var (coq_univ_name name))
     | Local n       -> coq_type (var ("s" ^ string_of_int n))
     (* Locally quantified universe variable v is translated as "type v"
        when used as a Sort *)
-    | Template name -> var (coq_univ_name name)
     | Global name   -> univ_var (coq_univ_name name)
     | Succ (u,i)    -> coq_axioms (cu u) i
     | Max u_list    -> coq_sup (List.map cu u_list)
@@ -274,17 +274,17 @@ struct
     match symb "lifted_type_pattern" with
     | "lift" ->
       (if (flag "pred_lift")
-         then apps (vsymb "_lift") [var s;wildcard;t]
-         else apps (vsymb "lift")      [var s;wildcard;t])
+         then apps (vsymb "_lift") [s;wildcard;t]
+         else apps (vsymb  "lift") [s;wildcard;t])
     | "cast" ->
       let univ s =
         if (flag "priv_univ")
-        then apps (vsymb "_univ") [var s; wildcard]
+        then apps (vsymb "_univ") [s; wildcard]
         else
           apps (vsymb "univ")
             (if (flag "pred_univ")
-             then [var s; wildcard; wildcard]
-             else [var s]) in
+             then [s; wildcard; wildcard]
+             else [s]) in
       if (flag "priv_cast")
       then apps (vsymb "_cast") [wildcard;wildcard;univ s;wildcard;t]
       else
@@ -297,9 +297,11 @@ struct
            then [wildcard;wildcard;univ s;uwildcard;wildcard;t]
            else [wildcard;wildcard;univ s;uwildcard;t])
     | "recoded" ->
-      let s_code = app (vsymb "_code_univ") (var s) in
+      let s_code = app (vsymb "_code_univ") s in
       apps (vsymb "_uncode") [wildcard;apps (vsymb "_code") [s_code;t]]
     | s -> failwith ("Unexpected lifted_type_pattern value: " ^ s)
+  let coq_pattern_lifted_from_level l t =
+    coq_pattern_lifted_from_sort (coq_type (Dedukti.var l)) t
 
   let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
   let coq_header   s = if a () then coq_header   s else Short.coq_header s

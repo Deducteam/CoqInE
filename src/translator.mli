@@ -4,15 +4,15 @@ open Dedukti
 type cic_universe =
   | Prop (** Impredicative Prop *)
   | Set  (** Predicative   Set *)
-  | LocalNamed of string
-  (** Special variable for match *)
-  | Local    of int
+  | NamedSort  of string
+  (** Locally bounded polymorphic universe  *)
+  | NamedLevel of string
+  (** Locally bounded polymorphic level  *)
+  | Local  of int
   (** Locally bounded universe polymorphic variable. *)
-  | Template of string
-  (** Locally bounded template polymorphic universe  "Coq.Module.index"  *)
-  | Global   of string
+  | Global of string
   (** Global universe "Coq.Module.index" *)
-  | Succ     of cic_universe * int
+  | Succ   of cic_universe * int
   (** [Succ u n] = u + n
       Notes:
         Succ(u,0) = u
@@ -87,9 +87,12 @@ sig
   val coq_coded : term -> term -> term
   (** returns [code t a]  where a : D t *)
 
-  val coq_pattern_lifted_from_sort : var -> term -> term
+  val coq_pattern_lifted_from_sort : term -> term -> term
   (** [coq_pattern_lifted_from_sort s t] Returns a pattern matching a term lifted from
       sort pattern [s] (for instance a variable). *)
+  val coq_pattern_lifted_from_level : var -> term -> term
+  (** [coq_pattern_lifted_from_level lvl t] Returns a pattern matching a term lifted from
+      sort [type lvl] . *)
 
   val coq_proj : int -> term -> term
 

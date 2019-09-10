@@ -246,8 +246,9 @@ let infer_template_polymorph_ind_applied info env uenv (ind,u) args =
     debug "Substituted type: %a" pp_coq_term arity;
     arity,
     if Encoding.is_templ_polymorphism_on ()
-    then List.map
-        (Tsorts.translate_universe uenv)
+    then
+      List.map
+        (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
     else []
 
@@ -281,10 +282,9 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
          -> Univ.Instance.of_array   which assumes all substituted level are not Prop
       *)
       Universes.subst_univs_constr subst type_c,
-      let aux = (List.map safe_subst
-                   (Utils.filter_some ar.template_param_levels)) in
-      List.map (Tsorts.translate_universe uenv) aux
-
+      List.map
+        (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
+        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
 let infer_template_polymorph_dest_applied info env uenv ind args =
   debug "Inferring template polymorphic destructor: %a (%i)"
@@ -308,7 +308,7 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
       debug "Substituted type: %a" pp_coq_term arity;
       arity,
       List.map
-        (Tsorts.translate_universe uenv)
+        (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
 (** Translate the Coq term [t] as a Dedukti term. *)
@@ -390,7 +390,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | App(f, args) ->
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
     debug "Application: %a : [%a]" pp_coq_term f (pp_array ", " pp_coq_term) args;
-    let type_f, univ_params =
+    let type_f, univ_params' =
       match Constr.kind f with
       | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env ->
         infer_template_polymorph_ind_applied info env uenv (ind,u) tmpl_args
@@ -401,7 +401,6 @@ let rec translate_constr ?expected_type info env uenv t =
         Environ.constant_type_in env (cst,u), []
       | _ -> infer_type env f, []
     in
-    let univ_params' = List.map T.coq_universe univ_params in
     let f' = Dedukti.apps (translate_constr info env uenv f) univ_params' in
     let translate_app (f', type_f) u =
       let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
@@ -485,12 +484,10 @@ let rec translate_constr ?expected_type info env uenv t =
     let params = List.map (Reduction.whd_all env) params in
     *)
     debug "Template universe params: %a" (pp_list ", " pp_coq_term) params;
-    let arity, univ_params =
+    let arity, univ_params' =
       infer_template_polymorph_dest_applied info env uenv
         case_info.ci_ind (Array.of_list params)
     in
-    let univ_params' = List.map T.coq_universe univ_params in
-
     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
     (* Translate params using expected types to make sure we use proper casts. *)
