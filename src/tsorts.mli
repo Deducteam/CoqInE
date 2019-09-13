@@ -74,8 +74,10 @@ val translate_univ_poly_params : Univ.Instance.t -> string list
 val translate_univ_poly_constraints : Univ.Constraint.t ->
   ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
 
-val destArity : Constr.types -> Constr.types -> Univ.Constraint.t
 
+val gather_eq_types : Context.Rel.t -> Context.Rel.t -> (Constr.types * Constr.types) list
+val enforce_eq_types :
+  Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t
 
 
 

@@ -49,10 +49,11 @@ define MANUAL
 - make debug_codes_fix
     Same as debug_fix but the translation relies on private codes
 
-- make poly_codes_poly
+- make fullcodes_poly_templ
     Translates all files from run/main/Test and their dependencies including universe
     polymorphism into the run/main/out folder then checks the generated files
-    This translation relies on private codes and private version of template inductives
+    This translation relies on private codes, private version of template inductives
+    and constraints for true polymorphism.
 
 - make tests
     Run all the above targets successively
@@ -75,6 +76,7 @@ tests: check-version .merlin plugin
 	make test_tcodes_fix
 	make debug_pred_fix
 	make debug_codes_fix
+	make fullcodes_poly_templ
 #	make poly_codes_poly
 test: tests
 
@@ -207,6 +209,7 @@ $(eval $(call generate,poly_codes_poly,run/main,fullcodes_poly,C,polymorph,MAINF
 
 $(eval $(call generate,fullcodes_poly_templ,run/main,fullcodes_poly_templ,C,cpolymorph,MAINFILE=main_poly))
 
+$(eval $(call generate,mathcomp,run/mathcomp,fullcodes_eta_fix,C,template,))
 $(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
 $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 

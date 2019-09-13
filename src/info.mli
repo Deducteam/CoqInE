@@ -45,4 +45,6 @@ val replace_template_name : env -> Univ.Level.t -> Translator.cic_universe -> en
 
 val fetch_constraint : env -> Univ.univ_constraint -> Dedukti.var option
 
+val pp_constraints : env Debug.printer
+
 val dummy : env

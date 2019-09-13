@@ -36,6 +36,12 @@ let fetch_constraint uenv cstr =
   try Some (fst (List.assoc cstr uenv.constraints))
   with Not_found -> None
 
+let pp_constraints : env Debug.printer = fun fmt s ->
+  let open Debug in
+  let p fmt (a,(b,c)) =
+  Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
+  Format.fprintf fmt "{ %a }" (pp_list ", " p) s.constraints
+
 let dummy = make [] [] 0 []
 
 

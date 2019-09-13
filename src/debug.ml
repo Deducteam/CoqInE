@@ -72,6 +72,7 @@ let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
 let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
 let pp_coq_label = printer_of_std_ppcmds Names.Label.print
+let pp_coq_constraint_type = printer_of_std_ppcmds Univ.pr_constraint_type
 
 let pp_coq_lvl_arr = pp_array " " pp_coq_level
 
@@ -124,9 +125,7 @@ let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
 
 
 let pp_coq_constraint fmt (i,rel,j) =
-  let open Univ in
-  let pp_coq_rel = function Eq -> "=" | Lt -> "<" | Le -> "<=" in
-  Format.fprintf fmt "%a %s %a" pp_coq_level i (pp_coq_rel rel) pp_coq_level j
+  Format.fprintf fmt "%a %a %a" pp_coq_level i pp_coq_constraint_type rel pp_coq_level j
 
 let pp_uenv_cstr fmt constraints =
   let pp_cstr fmt (cstr,(name,_)) = Format.fprintf fmt "%s : %a" name pp_coq_constraint cstr in

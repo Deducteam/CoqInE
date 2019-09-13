@@ -273,45 +273,41 @@ let translate_template_params (ctxt:Univ.Level.t option list) =
 
 (* ------------------------   Constraints handling    ------------------------ *)
 
-let destArity a b : Univ.Constraint.t =
-  let open Univ in
-  (* Extracts s from A1 -> ... -> An -> Us *)
-  let decla, sa = Term.destArity a in
-  let declb, sb = Term.destArity b in
 
-  let rec gather_eq_types acc lista listb =
+let gather_eq_types decla declb =
+  let rec aux acc lista listb =
     match lista, listb with
     | [], [] -> acc
     | ( Context.Rel.Declaration.LocalAssum (_,ta) ) :: tla ,
       ( Context.Rel.Declaration.LocalAssum (_,tb) ) :: tlb ->
-      gather_eq_types ((ta,tb)::acc) tla tlb
-    | _ -> assert false in
-  let eq_types = gather_eq_types [] decla declb in
-
-  let rec enforce_eq_types acc  = function
-    | [] -> acc
-    | (ta,tb) :: tl ->
-      begin
-        match Term.kind_of_type ta, Term.kind_of_type tb with
-        | Term.SortType sa,  Term.SortType sb ->
-          enforce_eq_types
-            (enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
-            tl
-        | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
-        | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
-
-        | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
-          enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
-
-        | _ -> enforce_eq_types acc tl
-      end
+      aux ((ta,tb)::acc) tla tlb
+    | ( Context.Rel.Declaration.LocalDef (_,ta,va) ) :: tla ,
+      ( Context.Rel.Declaration.LocalDef (_,tb,vb) ) :: tlb ->
+      aux ((ta,tb)::(va,vb)::acc) tla tlb
+    | _ -> assert false
   in
-  enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
-    (enforce_eq_types Univ.Constraint.empty eq_types)
+  aux [] decla declb
 
+let rec enforce_eq_types acc  = function
+  | [] -> acc
+  | (ta,tb) :: tl ->
+      match Term.kind_of_type ta, Term.kind_of_type tb with
+      | Term.SortType sa,  Term.SortType sb ->
+        enforce_eq_types
+          (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
+          tl
+      | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
+      | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
+
+      | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
+        enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
+
+      | _ -> enforce_eq_types acc tl
 
 let translate_constraint :
   Info.env -> Univ.univ_constraint -> Dedukti.term = fun uenv ((i,c,j) as cstr) ->
+  debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
+  debug "In constraints: %a" Info.pp_constraints uenv;
   match Info.fetch_constraint uenv cstr with
   | Some v -> Dedukti.var v
   | None -> T.coq_I ()
@@ -322,8 +318,6 @@ let translate_constraint :
 
 let translate_constraint_set :
   Info.env -> Univ.Constraint.t -> Dedukti.term list = fun uenv cstr ->
-  let res = ref [] in
-  Univ.Constraint.iter
-    (fun cstr -> res := (translate_constraint uenv cstr) :: !res)
-    cstr;
-  !res
+  Univ.Constraint.fold
+    (fun cstr res -> (translate_constraint uenv cstr) :: res)
+    cstr []

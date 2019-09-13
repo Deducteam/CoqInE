@@ -528,23 +528,32 @@ and translate_cast info uenv t' enva a envb b =
     let s2' = infer_translate_sort info envb uenv b in
     let a' = translate_constr info enva uenv a in
     let b' = translate_constr info envb uenv b in
-    if Term.isArity a && Term.isArity b
+    if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
     then
-      let _,sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
-      let _,sb = Term.destArity b in
-      if Sorts.equal sa sb then t'
-      else
-      if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
+      let constraints =
+        if Term.isArity a && Term.isArity b
+        then
+          let decla, sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
+          let declb, sb = Term.destArity b in
+          let eq_types = Tsorts.gather_eq_types decla declb in
+          debug "Gathering eq types %a = %a |-> { %a }"
+            pp_coq_type a pp_coq_type b
+            (pp_list ", " (fun fmt (a,b) -> Format.fprintf fmt "%a = %a"
+                              pp_coq_type a pp_coq_type b)) eq_types;
+          Univ.enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
+            (Tsorts.enforce_eq_types Univ.Constraint.empty eq_types)
+        else
+          Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]
+      in
+      let var_cstr = Tsorts.translate_constraint_set uenv constraints in
+      T.coq_cast s1' s2' a' b' var_cstr t'
+    else
+      if Term.isArity a && Term.isArity b
       then
-        let constraints = Tsorts.destArity a b in
-        (*
-        let sa' = T.coq_sort (Tsorts.translate_sort uenv sa) in
-        let sb' = T.coq_sort (Tsorts.translate_sort uenv sb) in
-        *)
-        let var_cstr = Tsorts.translate_constraint_set uenv constraints in
-        T.coq_cast s1' s2' a' b' var_cstr t'
+        let _,sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
+        let _,sb = Term.destArity b in
+        if Sorts.equal sa sb then t' else T.coq_cast s1' s2' a' b' [] t'
       else T.coq_cast s1' s2' a' b' [] t'
-    else T.coq_cast s1' s2' a' b' [] t'
   else
     match Term.kind_of_type a, Term.kind_of_type b with
     | SortType sa, SortType sb ->
