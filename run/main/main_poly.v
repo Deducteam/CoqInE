@@ -10,6 +10,7 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
+Dedukti Add Debug "Coq.Init.Datatypes".
 Dedukti Add Debug "Top.Test.UPolymorph".
 
 Dedukti Enable Verbose.

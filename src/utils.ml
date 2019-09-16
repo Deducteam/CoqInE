@@ -1,5 +1,5 @@
 
-let rec list_init (e:'a) : int -> 'a list =
+let list_init (e:'a) : int -> 'a list =
   let rec aux acc = function
   | 0 -> acc
   | n -> aux (e::acc) (n-1) in

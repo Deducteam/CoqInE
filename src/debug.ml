@@ -132,6 +132,5 @@ let pp_uenv_cstr fmt constraints =
   fprintf fmt "[%a]" (pp_list ", " pp_cstr) constraints
 
 
-
 let pp_globname fmt n =
   fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)

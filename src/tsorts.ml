@@ -65,7 +65,7 @@ let add_constructor_params templ_params poly_params poly_cstr arity =
 
 (** Maping from the string representation of global named universes to
     concrete levels. *)
-let universe_table : (string, int) Hashtbl.t = Hashtbl.create 10007
+let universe_table : (string, cic_universe) Hashtbl.t = Hashtbl.create 10007
 
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
@@ -75,7 +75,8 @@ let set_universes universes =
     let universes = UGraph.sort_universes universes in
     let register constraint_type j k =
       match constraint_type with
-      | Univ.Eq -> Scanf.sscanf k "Type.%d" (fun k -> Hashtbl.add universe_table j k)
+      | Univ.Eq -> Scanf.sscanf k "Type.%d"
+                     (fun k -> Hashtbl.add universe_table j (mk_type k))
       | Univ.Lt | Univ.Le -> () in
     UGraph.dump_universes register universes
   end
@@ -93,7 +94,7 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
         if Encoding.is_float_univ_on ()
         then Dedukti.declaration false name' (T.coq_Nat())
         else
-          let univ = Translator.mk_type (Hashtbl.find universe_table name) in
+          let univ = Hashtbl.find universe_table name in
           Dedukti.definition false name' (T.coq_Nat()) (T.coq_level univ)
       | None -> assert false
       (* No small levels (Prop/Set) or (true) polymorphism variables in template params. *)
@@ -120,7 +121,7 @@ let translate_univ_level uenv l =
         if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
         then Translator.NamedLevel name
         else
-          try Translator.mk_type (Hashtbl.find universe_table name)
+          try Hashtbl.find universe_table name
           with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
 let instantiate_poly_univ_params uenv univ_ctxt univ_instance term =
@@ -304,17 +305,25 @@ let rec enforce_eq_types acc  = function
 
       | _ -> enforce_eq_types acc tl
 
+let trivial_cstr = function
+  | i,Univ.Le,j ->
+    Univ.Level.is_small i || true
+  | _ -> true (* return false is both sides are non trivial  *)
+
 let translate_constraint :
   Info.env -> Univ.univ_constraint -> Dedukti.term = fun uenv ((i,c,j) as cstr) ->
   debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
   debug "In constraints: %a" Info.pp_constraints uenv;
   match Info.fetch_constraint uenv cstr with
   | Some v -> Dedukti.var v
-  | None -> T.coq_I ()
-  | _ ->
+  | None ->
+    if trivial_cstr cstr
+    then T.coq_I ()
     (* TODO: build complicated constraint here *)
-    failwith
-      (Format.asprintf "Could not find constraint %a in context" pp_coq_constraint cstr)
+    else failwith
+        (Format.asprintf "Could not find constraint %a in context %a"
+           pp_coq_constraint cstr
+           Info.pp_constraints uenv)
 
 let translate_constraint_set :
   Info.env -> Univ.Constraint.t -> Dedukti.term list = fun uenv cstr ->

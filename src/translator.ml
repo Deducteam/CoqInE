@@ -22,19 +22,18 @@ let coq_var  x = Var (add_prefix (symb "encoding_file")   x)
 let univ_var x = Var (add_prefix (symb "universe_file") x)
 
 let vsymb s = coq_var (symb s)
+let vsymbu s () = vsymb s
 
-let coq_Sort () = vsymb "Sort"
-let coq_Nat  () = vsymb "Nat"
-
-let coq_uset () = vsymb "uSet"
-let coq_s () = vsymb "uSucc"
-let coq_z () = vsymb "uType0"
+let coq_Sort  = vsymbu "Sort"
+let coq_Nat   = vsymbu "Nat"
+let coq_uset  = vsymbu "uSet"
+let coq_s     = vsymbu "uSucc"
+let coq_z     = vsymbu "uType0"
 let coq_nat n = Utils.iterate n (app (coq_s ())) (coq_z())
-let coq_prop ()    = vsymb "prop"
-let coq_set  ()    = vsymb "set"
-let coq_type u     = app (vsymb "type") u
-
-let coq_nat_of_univ u = app (vsymb "level") u
+let coq_prop  = vsymbu "prop"
+let coq_set   = vsymbu "set"
+let coq_type u = app (vsymb "type") u
+(* let coq_nat_of_univ = app (vsymb "level")  *)
 
 let coq_var_univ_name n = "s" ^ string_of_int n
 
@@ -115,7 +114,7 @@ struct
   let coq_U    s           = app  (vsymb "Univ") (cu s)
   let coq_term s  a        = apps (vsymb "Term") [cu s; a]
 
-  let t_I () = vsymb "I"
+  let t_I = vsymbu "I"
   let coq_sort cu s = apps (vsymb "univ")
       (if (flag "pred_univ")
        then [cu s; cu (Succ (s,1)); t_I()]
@@ -126,7 +125,7 @@ struct
        else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b cstr t =
     let rec coq_cstr_inhabitant = function
-      | [] -> t_I ()
+      | [] -> t_I()
       | [ c ] -> c
       | c :: tl -> apps (vsymb "pair") [c; coq_cstr_inhabitant tl]
     in
@@ -221,15 +220,15 @@ struct
   let coq_header () =
     let res = ref [] in
     let add n t = res := (udefinition false n t) :: !res in
-    add (nat_name 0) (coq_z ());
-    for i = 1 to 9 do add ( nat_name i) (app (coq_s ()    ) (nat_var (i-1))) done;
+    add (nat_name 0) (coq_z());
+    for i = 1 to 9 do add ( nat_name i) (app (coq_s()     ) (nat_var (i-1))) done;
     for i = 0 to 9 do add (sort_name i) (coq_type           (nat_var i    )) done;
     for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type i)) done;
     add "_Set"  (Std.coq_U    Set );
     add "_Prop" (Std.coq_U    Prop);
     add "_set"  (Std.coq_sort scu Set );
     add "_prop" (Std.coq_sort scu Prop);
-    coq_header () @
+    coq_header() @
     (comment "------------  Short definitions  -----------") ::
     EmptyLine ::
     (List.rev !res) @
@@ -252,21 +251,21 @@ struct
 
   let a () = not (is_readable_on ())
 
-  let coq_level    s = if a () then Std.cl       s else Short.scl        s
-  let coq_universe s = if a () then Std.cu       s else Short.scu        s
-  let coq_U        s = if a () then Std.coq_U    s else Short.short_U    s
-  let coq_term     s = if a () then Std.coq_term s else Short.short_term s
-  let coq_sort     s = if a () then Std.coq_sort Std.cu s else Short.short_sort s
+  let coq_level    s = if a() then Std.cl       s else Short.scl        s
+  let coq_universe s = if a() then Std.cu       s else Short.scu        s
+  let coq_U        s = if a() then Std.coq_U    s else Short.short_U    s
+  let coq_term     s = if a() then Std.coq_term s else Short.short_term s
+  let coq_sort     s = if a() then Std.coq_sort Std.cu s else Short.short_sort s
 
-  let coq_prod     s = Std.coq_prod  (if a () then Std.cu else Short.scu) s
-  let coq_cast     s = Std.coq_cast  (if a () then Std.cu else Short.scu) s
-  let coq_pcast    s = Std.coq_pcast (if a () then Std.cu else Short.scu) s
-  let coq_lift     s = Std.coq_lift  (if a () then Std.cu else Short.scu) s
+  let coq_prod     s = Std.coq_prod  (if a() then Std.cu else Short.scu) s
+  let coq_cast     s = Std.coq_cast  (if a() then Std.cu else Short.scu) s
+  let coq_pcast    s = Std.coq_pcast (if a() then Std.cu else Short.scu) s
+  let coq_lift     s = Std.coq_lift  (if a() then Std.cu else Short.scu) s
   let coq_coded = Std.coq_coded
 
-  let cstr_le      s = Std.cstr_le   (if a () then Std.cu else Short.scu) s
-  let cstr_lt      s = Std.cstr_lt   (if a () then Std.cu else Short.scu) s
-  let cstr_eq      s = Std.cstr_eq   (if a () then Std.cu else Short.scu) s
+  let cstr_le      s = Std.cstr_le   (if a() then Std.cu else Short.scu) s
+  let cstr_lt      s = Std.cstr_lt   (if a() then Std.cu else Short.scu) s
+  let cstr_eq      s = Std.cstr_eq   (if a() then Std.cu else Short.scu) s
   let coq_cstr = function
     | Univ.Lt -> cstr_lt
     | Univ.Le -> cstr_le
@@ -306,8 +305,8 @@ struct
   let coq_pattern_lifted_from_level l t =
     coq_pattern_lifted_from_sort (coq_type (Dedukti.var l)) t
 
-  let coq_proj     s = if a () then Std.coq_proj s else Short.short_proj s
-  let coq_header   s = if a () then coq_header   s else Short.coq_header s
+  let coq_proj     s = if a() then Std.coq_proj s else Short.short_proj s
+  let coq_header   s = if a() then coq_header   s else Short.coq_header s
   let coq_footer  () = coq_footer
 
   let coq_fixpoint n arities bodies i =
