@@ -23,15 +23,15 @@ $(BUILD)/$1/Coq.dk: $(BUILD) $(BUILD)/$1
 
 $(BUILD)/$1/C.dk: $(BUILD) $(BUILD)/$1 $(BUILD)/$1/Coq.dk
 	@cp $(BUILD)/$1/Coq.dk $(BUILD)/$1/C.dk
-	@sed -i'' 's/Coqine *\([^ ]*\)/Coqine_\1/g' $(BUILD)/$1/C.dk
-	@sed -i'' 's/\(^\|[^_A-Za-z0-9]\)Sort/\1S/g;   \
-                s/\(^\|[^_A-Za-z0-9]\)Term/\1T/g;   \
-                s/\(^\|[^_A-Za-z0-9]\)Univ/\1U/g;   \
-                s/\(^\|[^_A-Za-z0-9]\)univ/\1u/g;   \
-                s/\(^\|[^_A-Za-z0-9]\)Decode/\1_D/g;\
-                s/\(^\|[^_A-Za-z0-9]\)uncode/\1_u/g;\
-                s/\(^\|[^_A-Za-z0-9]\)code/\1_c/g'   $(BUILD)/$1/C.dk
-	@sed -i'' 's/Coqine_\([^ ]*\)/Coqine \1/g' $(BUILD)/$1/C.dk
+	@sed -i 's/Coqine *\([^ ]*\)/Coqine_\1/g' $(BUILD)/$1/C.dk
+	@sed -i 's/\(^\|[^_A-Za-z0-9]\)Sort/\1S/g;   \
+             s/\(^\|[^_A-Za-z0-9]\)Term/\1T/g;   \
+             s/\(^\|[^_A-Za-z0-9]\)Univ/\1U/g;   \
+             s/\(^\|[^_A-Za-z0-9]\)univ/\1u/g;   \
+             s/\(^\|[^_A-Za-z0-9]\)Decode/\1_D/g;\
+             s/\(^\|[^_A-Za-z0-9]\)uncode/\1_u/g;\
+             s/\(^\|[^_A-Za-z0-9]\)code/\1_c/g'   $(BUILD)/$1/C.dk
+	@sed -i 's/Coqine_\([^ ]*\)/Coqine \1/g' $(BUILD)/$1/C.dk
 	@echo "(; Coqine readable = true ;)" >> $(BUILD)/$1/C.dk
 
 $(BUILD)/$1/C.dko: $(BUILD)/$1/C.dk
