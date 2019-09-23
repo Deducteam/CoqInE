@@ -9,7 +9,6 @@ type term =
   | Lam of (var * term option) * term
   | LetIn of (var * term * term) * term
   | App of term * term
-  | Dot of term (* Dot patterns *)
   | Cmt of string * term (* Comment annotations *)
   | Bracket of term
   | Wildcard
@@ -40,8 +39,6 @@ let letin (x, u, a) b = LetIn((x,u,a), b)
 let ulam x b = Lam((x, None), b)
 
 let app a b = App(a, b)
-
-let dot a = Dot(a)
 
 let cmt s a = Cmt(s, a)
 
@@ -114,7 +111,6 @@ struct
     match term with
     | Type      -> Format.fprintf out "Type"
     | Var(x)    -> Format.fprintf out "%a" print_var x
-    | Dot(a)    -> Format.fprintf out "{%a}" print_term a
     | Cmt(s, a) -> Format.fprintf out "(; %s ;) (%a)" s print_term a
     | Bracket(t)-> Format.fprintf out "{%a}" print_term t
     | Wildcard  -> Format.fprintf out "_"
@@ -200,7 +196,6 @@ struct
     match term with
     | Type      -> Format.fprintf out "Type"
     | Var(x)    -> Format.fprintf out "%a" print_var x
-    | Dot(a)    -> Format.fprintf out "{%a}" print_term a
     | Cmt(s, a) -> Format.fprintf out "(; %s ;) (%a)" s print_term a
     | Bracket(t)-> Format.fprintf out "{%a}" print_term t
     | Wildcard  -> Format.fprintf out "_"

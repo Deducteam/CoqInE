@@ -11,7 +11,6 @@ type term =
   | Lam of (var * term option) * term
   | LetIn of (var * term * term) * term
   | App of term * term
-  | Dot of term
   | Cmt of string * term
   | Bracket of term
   | Wildcard
@@ -36,7 +35,6 @@ val lam : var * term -> term -> term
 val letin : var * term * term -> term -> term
 val ulam : var -> term -> term
 val app : term -> term -> term
-val dot : term -> term
 val cmt : string -> term -> term
 val wildcard : term
 val bracket : term -> term
