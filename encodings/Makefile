@@ -92,6 +92,8 @@ $(eval $(call targ,fullcodes_poly_templ,predicates_ac,fullcodes_poly_templ,predi
 
 $(eval $(call targ,fullcodes_poly_cstr,predicates_ac_cstr,fullcodes_poly_cstr,predicates_ac,fullcodes_poly,test_poly,))
 
+$(eval $(call targ,fullcodes_poly_cstr2,predicates_ac_cstr2,fullcodes_poly_templ,predicates_ac,fullcodes_poly_templ,test_poly,))
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD)

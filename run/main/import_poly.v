@@ -14,9 +14,9 @@ Require Import
   Test.NestedModules
   Test.NestedLibraries
   Test.Reflexivity
-
   Test.UPolymorph
   Test.Debuglib
+  Test.Debug
 
 (*
   Coq.Arith.PeanoNat
@@ -26,10 +26,8 @@ Require Import
   Coq.Logic.ClassicalDescription
   Coq.Logic.ClassicalEpsilon
   Coq.Logic.ClassicalFacts
-  Coq.Logic.Classical_Pred_Set
   Coq.Logic.Classical_Pred_Type
   Coq.Logic.Classical_Prop
-  Coq.Logic.Classical_Type
   Coq.Logic.ClassicalUniqueChoice
   Coq.Logic.Classical
   Coq.Logic.ConstructiveEpsilon

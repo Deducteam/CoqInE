@@ -17,3 +17,4 @@ Test/NestedLibraries.v
 Test/Reflexivity.v
 Test/Polymorph.v
 Test/UPolymorph.v
+Test/Debug.v

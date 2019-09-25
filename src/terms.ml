@@ -541,6 +541,8 @@ and translate_cast info uenv t' enva a envb b =
             (pp_list ", " (fun fmt (a,b) -> Format.fprintf fmt "%a = %a"
                               pp_coq_type a pp_coq_type b)) eq_types;
           Univ.enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
+            (* Careful, this enforces a bit too many constraints : max(a,b) < max(c,d) =>  a<c, a<d, b<c, b<d *)
+            (* Maybe: have an encoding that accepts too many constraints *)
             (Tsorts.enforce_eq_types Univ.Constraint.empty eq_types)
         else
           Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]

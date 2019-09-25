@@ -594,7 +594,8 @@ let translate_match info env label ind =
 
   if ind.n_cons > 0 then debug "Test: %a" pp_coq_term cons_applieds.(0);
   let params_env, params_context' =
-    Terms.translate_rel_context info (Global.env ()) uenv params_context in
+    let global_env_with_poly = Environ.push_context ind.poly_ctxt (Global.env ()) in
+    Terms.translate_rel_context info global_env_with_poly uenv params_context in
 
   (* Create a fresh variable s and add it to the environment *)
   let return_sort_name = Cname.fresh_of_string info params_env "s" in

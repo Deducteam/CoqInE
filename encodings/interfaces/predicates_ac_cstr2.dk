@@ -6,7 +6,7 @@
 
 Sort : Type.
 
-def sup : Sort -> Sort -> Sort.
+defac sup [Sort].
 
 
 (;---------------------  Types and terms  -------------------------;)
@@ -21,9 +21,28 @@ def Term : s : Sort -> a : Univ s -> Type.
 (;------------------------  CTS predicates  -----------------------;)
 
 Bool : Type.
-eps : Bool -> Type.
 true : Bool.
+
+defac and [Bool].
+[c] and true c --> c.
+
+def implies : Bool -> Bool -> Bool.
+[     ] implies _         true      --> true
+[    c] implies true      c         --> c
+[a,  c] implies a         (and a c) --> c
+[a,b,c] implies (and a b) (and a c) --> implies b c
+[a,b  ] implies (and a b) a         --> true
+[a    ] implies a         a         --> true.
+
+def eps : Bool -> Type.
+[A] eps A --> B:Bool -> eps B -> eps (implies B A).
+
 I : eps true.
+(;
+def I : eps true.
+[] I --> _ => _ => I.
+;)
+
 
 def Axiom : Sort -> Sort -> Bool.
 def Rule  : Sort -> Sort -> Sort -> Bool.
@@ -32,33 +51,14 @@ def Cumul : Sort -> Sort -> Bool.
 def Eq : Sort -> Sort -> Bool.
 [x] Eq x x --> true.
 (;
-Note:
-  A -> B  subtype of  C -> D
-iif
-  and (Eq A C) (Cumul B D)
+Note:  A -> B  subtype of  C -> D
+ iif   and (Eq A C) (Cumul B D)
 ;)
-
-defac and [Bool].
-[c] and true c --> c.
-
-
-
-(;-------------------  CTS predicates constructors  ---------------;)
-
-def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
-[b] pair _ _ I b --> b.
-[a] pair _ _ a I --> a.
-
-cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
-              eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
-
-cumul_eq : s1 : Sort -> s2 : Sort -> eps (Eq s1 s2) -> eps (Cumul s1 s2).
-
-eq_sym   : s1 : Sort -> s2 : Sort -> eps (Eq s1 s2) -> eps (Eq s2 s1).
-
 
 
 (;--------------------  Term public constructors  -----------------;)
+
+def Impl (a:Bool) (b:Bool) : Type := eps (implies a b).
 
 def univ : s : Sort -> s' : Sort ->
            eps (Axiom s s') -> Univ s'.
@@ -102,7 +102,4 @@ Coqine Eq    = Eq
 --- Predicate constructors:
 Coqine I     = I
 Coqine pair  = pair
-Coqine cumul_trans = cumul_trans
-Coqine cumul_eq    = cumul_eq
-Coqine eq_sym      = eq_sym
 ;)
