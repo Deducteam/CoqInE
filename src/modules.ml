@@ -5,6 +5,10 @@ open Debug
 open Info
 
 
+let fail_on_issue = ref true
+let  enable_failproofmode () = message "Failproof mode enabled." ; fail_on_issue := false
+let disable_failproofmode () = message "Failproof mode disabled."; fail_on_issue := true
+
 let symb_filter = ref []
 let filter_out symb = symb_filter := symb :: !symb_filter
 let not_filtered symb = not (List.mem symb !symb_filter)
@@ -207,17 +211,22 @@ and translate_structure_field_body info env (label, sfb) =
   if not_filtered full_name
   then
     begin
-      verbose "-> %s" full_name;
-      match sfb with
-      | SFBconst cb -> translate_constant_body info env label cb
-      | SFBmind mib ->
-        (match mib.mind_finite with
-         | Declarations.Finite   -> translate_mutual_inductive_body
-         | Declarations.CoFinite -> translate_mutual_coinductive_body
-         | Declarations.BiFinite -> translate_record_body
-        ) info env label mib
-      | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
-      | SFBmodtype _  -> ()
+      try
+        verbose "-> %s" full_name;
+        match sfb with
+        | SFBconst cb -> translate_constant_body info env label cb
+        | SFBmind mib ->
+          (match mib.mind_finite with
+           | Declarations.Finite   -> translate_mutual_inductive_body
+           | Declarations.CoFinite -> translate_mutual_coinductive_body
+           | Declarations.BiFinite -> translate_record_body
+          ) info env label mib
+        | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
+        | SFBmodtype _  -> ()
+      with e ->
+        if !fail_on_issue
+        then (Info.close info; raise e)
+        else message "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
     end
   else
     begin

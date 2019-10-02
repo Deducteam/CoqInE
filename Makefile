@@ -206,6 +206,8 @@ $(eval $(call generate,poly_codes_fix,run/main,fullcodes_eta_fix,C,polymorph,MAI
 $(eval $(call generate,poly_codes_poly,run/main,fullcodes_poly,C,polymorph,MAINFILE=main_poly))
 
 $(eval $(call generate,fullcodes_poly_templ,run/main,fullcodes_poly_templ,C,cpolymorph,MAINFILE=main_poly))
+$(eval $(call generate,fullcodes_poly_cstr,run/main,fullcodes_poly_cstr,C,cpolymorph,MAINFILE=main_poly))
+$(eval $(call generate,fullcodes_poly_cstr2,run/main,fullcodes_poly_cstr2,C,cpolymorph,MAINFILE=main_poly))
 
 $(eval $(call generate,mathcomp,run/mathcomp,fullcodes_eta_fix,C,template,))
 $(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))

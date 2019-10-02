@@ -3,11 +3,6 @@
 open Debug
 open Translator
 
-let fail_on_issue = ref true
-
-let  enable_failproofmode () = message "Failproof mode enabled." ; fail_on_issue := false
-let disable_failproofmode () = message "Failproof mode disabled."; fail_on_issue := true
-
 (** Translate the library referred to by [qualid].
     A libray is a module that corresponds to a file on disk. **)
 let translate_qualified_library qualid =
@@ -22,12 +17,7 @@ let translate_qualified_library qualid =
   let info = Info.init module_path filename in
   begin
     (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
-    ( try Modules.translate_module_body info (Global.env ()) module_body
-      with e -> if !fail_on_issue then (Info.close info; raise e)
-    );
-    (*
-    Modules.translate_module_body info (Global.env ()) module_body;
-    *)
+    (Modules.translate_module_body info (Global.env ()) module_body);
     (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_footer ())
   end;
   debug_stop ();

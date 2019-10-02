@@ -1,8 +1,5 @@
 (** Translation of Coq libraries *)
 
-val  enable_failproofmode : unit -> unit
-val disable_failproofmode : unit -> unit
-
 val translate_qualified_library : Libnames.qualid -> unit
 
 (** Translates the given library *)

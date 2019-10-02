@@ -35,7 +35,10 @@ def implies : Bool -> Bool -> Bool.
 [a    ] implies a         a         --> true.
 
 def eps : Bool -> Type.
-[A] eps A --> B:Bool -> eps B -> eps (implies B A).
+def aux : Bool -> Bool -> Type.
+
+[A,B] eps (and A B)   --> C:Bool -> aux C (and A B).
+[B,C] aux C (and C B) --> eps B.
 
 I : eps true.
 (;
