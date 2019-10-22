@@ -1,3 +1,4 @@
+
 opam-version: "0.1"
 name: "CoqInE"
 version: "devel"
@@ -12,7 +13,7 @@ remove: [make "uninstall"]
 available: [ ocaml-version >= "4.06" ]
 depends: [
   "menhir"
-  "coq"
+  "coq"  {>= "8.8.2"}
   "ocamlbuild" {build}
   "ocamlfind" {build}
 ]

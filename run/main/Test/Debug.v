@@ -30,24 +30,26 @@ Set Printing All.
 
 Definition crelation (A : Type) := A -> A -> Type.
 
+(*
 Print crelation.
+*)
 
 Definition arrow (A B : Type) := A -> B.
 
 Definition flip {A B C : Type} (f : A -> B -> C) := fun x y => f y x.
 
+(*
 Print flip.
+*)
 Definition iffT (A B : Type) := ((A -> B) * (B -> A))%type.
 
+(*
 Print iffT.
-
 Check (fun A : Type => fun B : Type => ((A -> B) * (B -> A))%type).
-
-Set Printing All.
-Set Printing Universes.
 
 Print iffT.
 Print arrow.
+ *)
 
 (** We allow to unfold the [crelation] definition while doing morphism search. *)
 
@@ -68,8 +70,10 @@ Section Defs.
   (** These are convertible. *)
   Lemma complement_inverse R : complement (flip R) = flip (complement R).
   Proof. reflexivity. Qed.
+  (*
   Print A.
   Print complement_inverse.
+   *)
 
   Class Irreflexive (R : crelation A) :=
     irreflexivity : Reflexive (complement R).

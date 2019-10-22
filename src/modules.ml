@@ -226,7 +226,7 @@ and translate_structure_field_body info env (label, sfb) =
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
-        else message "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
+        else verbose "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
     end
   else
     begin

@@ -28,6 +28,8 @@ before_install:
   - opam update
   - opam switch "$OCAML_VERSION"
   - eval $(opam env)
+  - opam pin add dedukti https://github.com/Deducteam/Dedukti.git#acu-state
+  - opam install dedukti
   - opam pin add --no-action coqine .
   - opam install --deps-only coqine
 

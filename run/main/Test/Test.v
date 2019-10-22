@@ -6,7 +6,9 @@ Inductive list {A:Type} : Type :=
 Definition f : nat -> nat :=
   fun x => (fix aux (n:nat) : nat := 0) x.
 
+(*
 Eval compute in (fun x => f x).
+ *)
 
 Definition map {A B:Type} (f:A -> B) (l1:list) : list :=
   (fix aux (l:list) : list :=
@@ -30,4 +32,6 @@ Definition aux {A B:Type} (f:A -> B) (map' : (A -> B) -> list -> list) (l:list) 
 
 Fixpoint map3 {A B:Type} (f:A -> B) (l:list) : list := aux f map3 l.
 
+(*
 Print map3.
+ *)

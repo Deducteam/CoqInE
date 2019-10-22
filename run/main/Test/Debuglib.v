@@ -81,7 +81,9 @@ Definition aux2_e1 : aux2 := fst xSet xSet I.
 Definition aux2_e2 : aux2 := snd xSet xSet I.
 
 Definition aux3 := pair xSet xSet.
+(*
 Print aux3.
+*)
 (* Set *)
 
 Definition aux3_e1 : aux3 := fst xSet xSet I.
@@ -89,7 +91,9 @@ Definition aux3_e2 : aux3 := snd xSet xSet I.
 
 
 Definition aux4 := (fun x => x xSet) (pair xSet).
+(*
 Print aux4. (* (fun x : (Set -> Set) => x xSet) (fun B : Set => pair xSet B) *)
+*)
 (* Set *)
 
 Definition aux4_e1 : aux4 := fst xSet xSet I.
