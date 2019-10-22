@@ -1,12 +1,12 @@
-
 opam-version: "0.1"
 name: "CoqInE"
 version: "devel"
+synopsis: "A translator from Coq to Dedukti"
 maintainer: "dedukti-dev@inria.fr"
 authors: "Ali Assaf, Mathieu Boespflug, Guillaume Burel, Quentin Carbonneaux, Gaspard Férey and François Thiré"
 homepage: "https://github.com/Deducteam/CoqInE"
 bug-reports: "https://github.com/Deducteam/CoqInE/issues"
-dev-repo: "https://github.com/Deducteam/CoqInE"
+dev-repo: "git+https://github.com/Deducteam/CoqInE"
 build: [make "plugin"]
 install: [make "install"]
 remove: [make "uninstall"]
