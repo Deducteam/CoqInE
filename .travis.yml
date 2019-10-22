@@ -38,8 +38,9 @@ install:
 
 script:
   - make plugin
-  - echo "Add Rec LoadPath \"$(pwd)/dedukti/\" as Coqine."             >> $HOME/.coqrc
   - echo "Add ML Path \"$(pwd)/src\"." >> $HOME/.coqrc
-  - make -C test generate
-  - if [ -z "$(find test/ -name Coq__Init__*.dk)" ]; then exit 1; fi
+  - cat $HOME/.coqrc
+  - make -C encodings
+  - make
+  - make tests
   - make clean
