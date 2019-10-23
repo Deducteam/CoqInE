@@ -16,9 +16,8 @@ Require Import
   Test.Reflexivity
   Test.UPolymorph
   Test.Debuglib
-  Test.Debug
-
 (*
+  Test.Debug
   Coq.Arith.PeanoNat
   Coq.Logic.Berardi
   Coq.Logic.ChoiceFacts
