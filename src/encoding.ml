@@ -9,6 +9,11 @@ let symb key =
     | value -> value
   with Not_found -> failwith ("Symbol [" ^ key ^ "] is not a valid encoding identifier.")
 
+let set_flag key value =
+  if Hashtbl.mem flags key
+  then Hashtbl.replace flags key value
+  else failwith ("Wrong key: " ^ key)
+
 let set_param key value =
   if Hashtbl.mem flags key
   then
@@ -28,14 +33,32 @@ let init_flags () =
   List.iter (fun (x,y) -> Hashtbl.replace flags x y)
     [
       ("simpl_letins"    , false);
+      (** Translate let-in as simpl beta redices or not ? *)
+
       ("upolymorphism"   , false);
+      (** Is (true) polymorphism translation on ? *)
+
       ("tpolymorphism"   , false);
+      (** Is template polymorphism translation on ? *)
+
       ("tpoly_code"      , false);
+
       ("float_univ"      , false);
+      (** Is floating universe translation on ? *)
+
       ("constraints"     , false);
+      (** Constraints translation ? Only has meaning when float is true. *)
+
       ("named_univ"      , false);
+      (** Should we use universe names or value ? Only has meaning when float is false. *)
+
       ("readable"        , false);
+      (** Is (pseudo-)readable translation mode on ? *)
+
       ("use_cast"        , false);
+      (** Are we allowed to use casts (for casted lambdas) ?
+          Or should we turn them into lifted lambdas instead ? *)
+
       ("pred_univ"       , false);
       ("pred_prod"       , false);
       ("pred_lift"       , false);
@@ -44,8 +67,17 @@ let init_flags () =
       ("priv_cast"       , false);
       ("priv_univ"       , false);
       ("priv_prod"       , false);
+
       ("inlined_fixpoint", false);
+      (** Translate fixpoints as external body or inlined generic fixpoint operator ?
+          This is a very experimental feature. *)
+
       ("fix_arity_sort"  , false);
+
+      ("cast_arguments"  , false);
+      (** Should arguments of an application be systematically be casted to
+          their expected type ? *)
+
       ("code_guarded"    , false)
     ]
 
@@ -140,3 +172,4 @@ let is_readable_on           () = flag "readable"
 let is_cast_on               () = flag "use_cast"
 let is_letins_simpl          () = flag "simpl_letins"
 let is_fixpoint_inlined      () = flag "inlined_fixpoint"
+let is_argument_casted       () = flag "cast_arguments"

@@ -654,10 +654,13 @@ let translate_match info env label ind =
       (fun j -> Terms.translate_args info cons_real_envs.(j) uenv)
       cons_ind_real_args in
 
+  let aux = Encoding.flag "cast_arguments" in
+  Encoding.set_flag "cast_arguments" false;
   let cons_applieds' =
     Array.mapi
       (fun j -> Terms.translate_constr info cons_real_envs.(j) uenv)
       cons_applieds in
+  Encoding.set_flag "cast_arguments" aux;
 
   (* Combine the above. *)
   let case_types' =
@@ -768,7 +771,7 @@ let translate_match info env label ind =
     Dedukti.print info.fmt rw_rule
   done;
 
-  (* Translate the rule for lift elimination in match polymorphism *)
+  (* Translate the rule for lift elimination (sort irrelevance) in match polymorphism *)
   (* match_I
        s1 ... sr
        p1  ... pr _ a1 ... an

@@ -311,6 +311,7 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
         (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
+
 (** Translate the Coq term [t] as a Dedukti term. *)
 let rec translate_constr ?expected_type info env uenv t =
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
@@ -328,7 +329,7 @@ let rec translate_constr ?expected_type info env uenv t =
       debug " - Expecting %a" pp_coq_term a;
       let b = infer_type env t in
       debug " - Inferred %a" pp_coq_term b;
-      if convertible info env uenv a b then t
+      if not (Encoding.is_argument_casted ()) && convertible info env uenv a b then t
       else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
   | Rel i ->
@@ -507,7 +508,7 @@ let rec translate_constr ?expected_type info env uenv t =
     Dedukti.apps match_function'
       (univ_params' @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
 
-  (* Not supported cases: *)
+  (* Not yet supported cases: *)
   | Proj (p,t) ->
     begin
       let kn = Names.Projection.constant p in
