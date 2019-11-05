@@ -654,13 +654,24 @@ let translate_match info env label ind =
       (fun j -> Terms.translate_args info cons_real_envs.(j) uenv)
       cons_ind_real_args in
 
+  let cons_applieds' =
+    Array.mapi
+      (fun j -> Terms.translate_constr info cons_real_envs.(j) uenv)
+      cons_applieds
+  in
+
   let aux = Encoding.flag "cast_arguments" in
   Encoding.set_flag "cast_arguments" false;
-  let cons_applieds' =
+  let cons_pat_applieds' =
     Array.mapi
       (fun j -> Terms.translate_constr info cons_real_envs.(j) uenv)
       cons_applieds in
   Encoding.set_flag "cast_arguments" aux;
+  let cons_pat_applieds' =
+    if Encoding.flag "cast_arguments"
+    then Array.map (T.coq_pattern_lifted_from_sort Dedukti.wildcard) cons_pat_applieds'
+    else cons_pat_applieds'
+  in
 
   (* Combine the above. *)
   let case_types' =
@@ -765,7 +776,7 @@ let translate_match info env label ind =
     let case_rule_left' =
       Dedukti.apps
         match_function_applied'
-        (brackets @ [cons_applieds'.(j)]) in
+        (brackets @ [cons_pat_applieds'.(j)]) in
     let case_rule_right' = Dedukti.apply_context cases'.(j) cons_real_contexts'.(j) in
     let rw_rule = Dedukti.typed_rewrite (case_rule_context', case_rule_left', case_rule_right') in
     Dedukti.print info.fmt rw_rule

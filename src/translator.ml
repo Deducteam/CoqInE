@@ -272,6 +272,20 @@ struct
     | Univ.Eq -> cstr_eq
   let coq_I = Std.t_I
 
+  let coq_pattern_lifted a b t =
+    match symb "lifted_type_pattern" with
+    | "cast" ->
+      if flag "priv_cast"
+      then apps (vsymb "_cast") [wildcard;wildcard;a;b;t]
+      else
+        apps (vsymb "cast")
+          (if (flag "pred_cast")
+           then [wildcard;wildcard;a;b;wildcard;t]
+           else [wildcard;wildcard;a;b;t])
+    | s -> failwith ("Value lifted_type_pattern [" ^ s ^ "] incompatible with pattern lifting.")
+
+  let coq_pattern_lifted_from_type a b t = coq_pattern_lifted a wildcard t
+
   let coq_pattern_lifted_from_sort s t =
     match symb "lifted_type_pattern" with
     | "lift" ->
@@ -280,14 +294,14 @@ struct
          else apps (vsymb  "lift") [s;wildcard;t])
     | "cast" ->
       let univ s =
-        if (flag "priv_univ")
+        if flag "priv_univ"
         then apps (vsymb "_univ") [s; wildcard]
         else
           apps (vsymb "univ")
             (if (flag "pred_univ")
              then [s; wildcard; wildcard]
              else [s]) in
-      if (flag "priv_cast")
+      if flag "priv_cast"
       then apps (vsymb "_cast") [wildcard;wildcard;univ s;wildcard;t]
       else
         let uwildcard =
@@ -302,6 +316,7 @@ struct
       let s_code = app (vsymb "_code_univ") s in
       apps (vsymb "_uncode") [wildcard;apps (vsymb "_code") [s_code;t]]
     | s -> failwith ("Unexpected lifted_type_pattern value: " ^ s)
+
   let coq_pattern_lifted_from_level l t =
     coq_pattern_lifted_from_sort (coq_type (Dedukti.var l)) t
 
