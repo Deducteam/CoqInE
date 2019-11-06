@@ -35,3 +35,12 @@ Fixpoint map3 {A B:Type} (f:A -> B) (l:list) : list := aux f map3 l.
 (*
 Print map3.
  *)
+
+
+Fixpoint iter {A:Type} (n:nat) (f:A->A) (x:A) :=
+  match n with
+  | 0   => x
+  | S n => iter n f (f x)
+  end.
+
+Definition f4 := iter 4 (fun x : nat => x) 2.

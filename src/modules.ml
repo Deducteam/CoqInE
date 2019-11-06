@@ -57,6 +57,13 @@ let translate_constant_body info env label const =
     Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
   | Def constr_substituted ->
     let constr = Mod_subst.force_constr constr_substituted in
+    let constr =
+      if Encoding.flag "unfold_letin"
+      then
+        let open CClosure in
+        let flags = RedFlags.mkflags [RedFlags.fZETA] in
+        norm_val (create_clos_infos flags env) (create_tab ()) (inject constr)
+      else constr in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')

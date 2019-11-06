@@ -1,3 +1,4 @@
+
 (*   Entry point script for the Dedukti plugin.   *)
 
 Declare ML Module "coqine_plugin".

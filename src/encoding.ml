@@ -78,7 +78,9 @@ let init_flags () =
       (** Should arguments of an application be systematically be casted to
           their expected type ? *)
 
-      ("code_guarded"    , false)
+      ("code_guarded"    , false);
+
+      ("unfold_letin"    , false)
     ]
 
 let init_empty_symbs () =
