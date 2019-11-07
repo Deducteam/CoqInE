@@ -382,8 +382,12 @@ let rec translate_constr ?expected_type info env uenv t =
       (* TODO: This is unsafe, the constant should also be pushed to the environment
          with its correct type *)
       let new_env = Environ.push_rel def env in
-      let t' = translate_constr info new_env uenv t in
-      Dedukti.letin (x',u',a') t'
+      try
+        let t' = translate_constr info new_env uenv t in
+        Dedukti.letin (x',u',a') t'
+      with Type_errors.TypeError _ ->
+        let new_env = lift_let info env uenv x u a in
+        translate_constr info new_env uenv t
     else
       let new_env = lift_let info env uenv x u a in
       translate_constr info new_env uenv t

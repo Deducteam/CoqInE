@@ -25,6 +25,10 @@ run/mathcomp/**/*.dk
 run/mathcomp/config.v
 run/mathcomp/out
 
+run/logipedia/**/*.dk
+run/logipedia/config.v
+run/logipedia/out
+
 encodings/_build
 
 # emacs tmp files

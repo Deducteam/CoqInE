@@ -217,3 +217,7 @@ $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 #$(eval $(call generate,orig,run/main,original,C,,MAINFILE=main_test))
 #$(eval $(call generate,orig_cast,run/main,original_cast,C,cast,MAINFILE=main_test))
 #$(eval $(call generate,orig_named,run/main,original,C,named,MAINFILE=main_test))
+
+
+$(eval $(call generate,logipedia,run/logipedia,predicates_eta_fix,C,template,OUTFOLDER=std))
+$(eval $(call generate,logipedia_upoly,run/logipedia,fullcodes_poly_templ,C,cpolymorph,OUTFOLDER=polystd))
