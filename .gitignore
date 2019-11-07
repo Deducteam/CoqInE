@@ -16,6 +16,7 @@
 .merlin
 
 *.dko
+*.tar.bz2
 
 run/main/**/*.dk
 run/main/config.v

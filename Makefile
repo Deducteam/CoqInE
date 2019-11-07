@@ -239,7 +239,12 @@ logipedia: plugin .coqrc
 	echo "Dedukti Set Param \"encoding_file\" \"ctpicef\"."      >> run/logipedia/config.v
 	make -C run/logipedia clean
 	make -C run/logipedia
-
+	rm -rf std ctpicef.dk
+	mkdir std
+	cp run/logipedia/out/Coq*.dk std/
+	cp run/logipedia/ctpicef.dk ./
+	tar cj ctpicef.dk std > ctpicef.tar.bz2
+	rm -rf std ctpicef.dk
 
 .PHONY: upoly_logipedia
 upoly_logipedia: plugin .coqrc
@@ -255,3 +260,9 @@ upoly_logipedia: plugin .coqrc
 	echo "Dedukti Set Param \"encoding_file\" \"cupicef\"."      >> run/upoly_logipedia/config.v
 	make -C run/upoly_logipedia clean
 	make -C run/upoly_logipedia
+	rm -rf std cupicef.dk
+	mkdir std
+	cp run/upoly_logipedia/out/Coq*.dk std/
+	cp run/upoly_logipedia/cupicef.dk ./
+	tar cj cupicef.dk std > cupicef.tar.bz2
+	rm -rf std cupicef.dk
