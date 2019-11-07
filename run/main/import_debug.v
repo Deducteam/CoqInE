@@ -29,18 +29,7 @@ Fixpoint A m := fix A_m n :=
 
 Definition t'' := A 2 2.
 
-Require Export Notations.
-Require Export Logic.
-Require Export Logic_Type.
-Require Export Datatypes.
-Require Export Specif.
-  Coq.Init.Byte.
-  Coq.Init.Decimal.
-  Coq.Init.Nat.
-  Coq.Init.Peano.
-  Coq.Init.Wf.
-  Coq.Init.Tactics.
-  Coq.Init.Tauto.
+
 Require Import
   Test.Test
   Test.Identity

@@ -8,8 +8,6 @@ VERBOSE      ?=
 CAMLFLAGS="-bin-annot -annot"
 
 RUNDIR=run
-RUN_MAIN_DIR=$(RUNDIR)/main
-RUN_MATHCOMP_DIR=$(RUNDIR)/mathcomp
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
 CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
@@ -76,6 +74,8 @@ tests: check-version .merlin plugin
 	make test_tcodes_fix
 	make debug_pred_fix
 	make debug_codes_fix
+	make upoly_logipedia
+	make logipedia
 	make fullcodes_poly_templ
 #	make poly_codes_poly
 test: tests
@@ -103,12 +103,21 @@ uninstall: CoqMakefile
 clean: CoqMakefile
 	make -C encodings - clean
 	make -f CoqMakefile - clean
-	make -C $(RUN_MAIN_DIR)        clean
-	make -C $(RUN_MATHCOMP_DIR)    clean
-	rm -f $(RUN_MAIN_DIR)/*.dk
-	rm -f $(RUN_MATHCOMP_DIR)/*.dk
-	rm -f $(RUN_MAIN_DIR)/config.v
-	rm -f $(RUN_MATHCOMP_DIR)/config.v
+
+	make -C $(RUNDIR)/main            clean
+	make -C $(RUNDIR)/mathcomp        clean
+	make -C $(RUNDIR)/logipedia       clean
+	make -C $(RUNDIR)/upoly_logipedia clean
+
+	rm -f $(RUNDIR)/main/*.dk
+	rm -f $(RUNDIR)/mathcomp/*.dk
+	rm -f $(RUNDIR)/logipedia/*.dk
+	rm -f $(RUNDIR)/upoly_logipedia/*.dk
+
+	rm -f $(RUNDIR)/main/config.v
+	rm -f $(RUNDIR)/mathcomp/config.v
+	rm -f $(RUNDIR)/logipedia/config.v
+	rm -f $(RUNDIR)/upoly_logipedia/config.v
 	rm -f CoqMakefile
 	rm -f .coqrc
 
@@ -219,5 +228,5 @@ $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 #$(eval $(call generate,orig_named,run/main,original,C,named,MAINFILE=main_test))
 
 
-$(eval $(call generate,logipedia,run/logipedia,predicates_eta_fix,C,template,OUTFOLDER=std))
-$(eval $(call generate,logipedia_upoly,run/logipedia,fullcodes_poly_templ,C,cpolymorph,OUTFOLDER=polystd))
+$(eval $(call generate,logipedia,run/logipedia,predicates_eta_fix,C,template,))
+$(eval $(call generate,upoly_logipedia,run/upoly_logipedia,fullcodes_poly_templ,C,cpolymorph,))
