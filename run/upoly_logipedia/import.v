@@ -15,4 +15,5 @@ Require Import
   Coq.Bool.DecBool
   Coq.Bool.IfProp
   Coq.Bool.Sumbool
+  Coq.Numbers.BinNums
 .

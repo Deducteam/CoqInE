@@ -10,4 +10,10 @@ Require Import
   Coq.Init.Wf
   Coq.Init.Tactics
   Coq.Init.Tauto
+  Coq.Bool.Bool
+  Coq.Bool.BoolEq
+  Coq.Bool.DecBool
+  Coq.Bool.IfProp
+  Coq.Bool.Sumbool
+  Coq.Numbers.BinNums
 .
