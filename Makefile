@@ -135,9 +135,6 @@ CoqMakefile: Make
 
 # Targets for several libraries to translate
 
-ENCODING       ?= original_cast/Coq # Configuration for the encoding generation
-ENCODING_FLAGS ?= original_cast     # Extra encoding configuration
-
 .PHONY: polymorph_config
 polymorph_config:
 	echo "Dedukti Set Param \"templ_polymorphism\" \"true\"." >> $(RUNDIR)/config.v
@@ -229,5 +226,32 @@ $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 
 
 
-$(eval $(call generate,logipedia,run/logipedia,predicates_eta_fix,C,template,))
-$(eval $(call generate,upoly_logipedia,run/upoly_logipedia,fullcodes_poly_templ,C,cpolymorph,))
+# Manual targets for Logipedia exports
+
+.PHONY: logipedia
+logipedia: plugin .coqrc
+	make -C encodings clean _build/predicates_eta_fix/C.dk
+	cp encodings/_build/predicates_eta_fix/C.dk run/logipedia/ctpicef.dk
+	make -C encodings clean _build/predicates_eta_fix/C.config
+	cp encodings/_build/predicates_eta_fix/C.config run/logipedia/config.v
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."         >> run/logipedia/config.v
+	echo "Dedukti Set Param \"encoding_name\" \"template_cic\"." >> run/logipedia/config.v
+	echo "Dedukti Set Param \"encoding_file\" \"ctpicef\"."      >> run/logipedia/config.v
+	make -C run/logipedia clean
+	make -C run/logipedia
+
+
+.PHONY: upoly_logipedia
+upoly_logipedia: plugin .coqrc
+	make -C encodings clean _build/fullcodes_poly_templ/C.dk
+	cp encodings/_build/fullcodes_poly_templ/C.dk run/upoly_logipedia/cupicef.dk
+	make -C encodings clean _build/fullcodes_poly_templ/C.config
+	cp encodings/_build/fullcodes_poly_templ/C.config run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."         >> run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"tpoly_code\"    \"true\"."         >> run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"upolymorphism\" \"true\"."         >> run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"constraints\"   \"true\"."         >> run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"encoding_name\" \"template_cic\"." >> run/upoly_logipedia/config.v
+	echo "Dedukti Set Param \"encoding_file\" \"cupicef\"."      >> run/upoly_logipedia/config.v
+	make -C run/upoly_logipedia clean
+	make -C run/upoly_logipedia
