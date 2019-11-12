@@ -30,6 +30,9 @@ val is_constraints_on : unit -> bool
 val is_named_univ_on : unit -> bool
 (** Should we use universe names or value ? Only has meaning when float is false. *)
 
+val need_universe_file : unit -> bool
+(** Do we need a universe file ? *)
+
 val is_readable_on : unit -> bool
 (** Is (pseudo-)readable translation mode on ? *)
 

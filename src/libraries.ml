@@ -34,15 +34,17 @@ let translate_library reference =
   translate_qualified_library qualid
 
 let translate_universes () =
-  (* U.dk is the file for universe definitions  *)
-  let info = Info.init Names.ModPath.initial "U" in
-  begin
-    try
-      (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
-      Tunivs.translate_all_universes info (Global.universes ())
-    with e -> Info.close info; raise e
-  end;
-  Info.close info
+  if Encoding.need_universe_file ()
+  then
+    (* "universe_file" is the file for global universe definitions  *)
+    let info = Info.init Names.ModPath.initial (Encoding.symb "universe_file") in
+    begin
+      try
+        (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
+        Tunivs.translate_all_universes info (Global.universes ())
+      with e -> Info.close info; raise e
+    end;
+    Info.close info
 
 (** Translate all loaded libraries but expressions. **)
 let translate_all_but refs =

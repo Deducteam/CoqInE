@@ -4,27 +4,33 @@
 (;-------------------------  Coq encoding  ------------------------;)
 (;-----------------------------------------------------------------;)
 
-(;-------------------------  Nat definition  ----------------------;)
+(;----------------------  CTS Sorts definition  -------------------;)
 
 Nat : Type.
 z : Nat.
 s : Nat -> Nat.
 
-
-(;----------------------  CTS Sorts definition  -------------------;)
-
 prop : Sort.
-set  : Sort.
 type : Nat -> Sort.
 
-(;
-Coqine prop = prop
-Coqine set = set
-Coqine type = type
+def set   : Sort := type z.
+def type0 : Sort := type (s z).
 
-Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
-Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
-Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i
+[  j] max z     j     --> j
+[i,j] max (s i) (s j) --> s (max i j).
+
+(;
+Coqine prop  = prop
+Coqine type  = type
+Coqine set   = set
+Coqine type0 = type0
+
+Coqine Lvl    = Nat (; Universe polymorphism quantification space ;)
+Coqine lvl0   = z   (; Nat representation of lowest level (Set)   ;)
+Coqine lvlS   = s   (; Nat representation of Type@{i+1}           ;)
+Coqine lvlMax = max (; Nat representation of Type@{max(i,j)} ;)
 ;)
 
 
@@ -64,11 +70,6 @@ def axiom : Sort -> Sort.
 [ ] axiom set      --> (type z)
 [i] axiom (type i) --> (type (s i)).
 (; Coqine axiom = axiom ;)
-
-def max : Nat -> Nat -> Nat.
-[i  ] max i     z     --> i
-[  j] max z     j     --> j
-[i,j] max (s i) (s j) --> s (max i j).
 
 def sup : Sort -> Sort -> Sort.
 [   ] sup  prop     prop     --> prop.

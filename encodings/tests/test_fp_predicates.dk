@@ -25,9 +25,9 @@ def a    : Term set A := fix_proj set 3 MA MFT 0.
 def b    : Term set B := fix_proj set 3 MA MFT 1.
 def c    : Term set C := fix_proj set 3 MA MFT 2.
 
-[] guarded? set A a --> guarded.
-[] guarded? set B b --> guarded.
-[] guarded? set C c --> guarded.
+[] guarded? _ _ a --> guarded.
+[] guarded? _ _ b --> guarded.
+[] guarded? _ _ c --> guarded.
 
 
 
@@ -89,8 +89,8 @@ nat : Univ set.
 def Z    : Term set nat.
 def Succ : Term set nat -> Term set nat.
 
-[] guarded? set nat Z        --> guarded.
-[] guarded? set nat (Succ _) --> guarded.
+[] guarded? _ _ Z        --> guarded.
+[] guarded? _ _ (Succ _) --> guarded.
 
 def match____nat :
   s : Sort ->
@@ -127,57 +127,60 @@ def _8 := Succ _7.
 def _9 := Succ _8.
 
 
+def type1 := type (s z).
+def type2 := type (s (s z)).
+
 (; First give ourselves some parameters to play with:
  a dependent type  P : nat -> Type1
  an element  f0  of  P 0
  a function  f1  from  P n  to  P (Succ n)
 ;)
 
-P  : Term set nat -> Univ (type z).
-f0 : Term (type z) (P Z).
-f1 : n : Term set nat -> Term (type z) (P n) -> Term (type z) (P (Succ n)).
+P  : Term set nat -> Univ type1.
+f0 : Term type1 (P Z).
+f1 : n : Term set nat -> Term type1 (P n) -> Term type1 (P (Succ n)).
 
 
 (;     f0  /  0  :  forall n:nat, P n     ;)
-def nat__rect__SA : SingleArity (type z) :=
-  SA 0 (type z) (prod set (type z) (type z) I nat (n => P n)).
+def nat__rect__SA : SingleArity type1 :=
+  SA 0 type1 (prod set type1 type1 I nat (n => P n)).
 
 (;   { f0  /  0  :  forall n:nat, P n }   ;)
-def nat__rect__MA : MutualArity (type z) 1 :=
-  make_MA (type z) 1 nat__rect__SA.
+def nat__rect__MA : MutualArity type1 1 :=
+  make_MA type1 1 nat__rect__SA.
 
 (;   fix { f0  /  0  :  forall n:nat, P n }   ;)
-def nat__rect__FP : MutualFixpoint (type z) 1 nat__rect__MA :=
-  fix (type z) 1 nat__rect__MA
+def nat__rect__FP : MutualFixpoint type1 1 nat__rect__MA :=
+  fix type1 1 nat__rect__MA
     (nat__rect => n =>
-      match____nat (type z) (n0 : Term set nat => P n0)
+      match____nat type1 (n0 : Term set nat => P n0)
         f0
         (n0 : Term set nat => f1 n0 (nat__rect n0))
         n).
 
-def nat__rect__proj := fix_proj (type z) 1 nat__rect__MA nat__rect__FP 0.
+def nat__rect__proj := fix_proj type1 1 nat__rect__MA nat__rect__FP 0.
 
 
 #PRINT "  nat_rect : Nat -> P n ?".
-#CHECK nat__rect__proj  :  ( n : Term set nat -> Term (type z) (P n) ).
+#CHECK nat__rect__proj  :  ( n : Term set nat -> Term type1 (P n) ).
 
 
 def nat__rect :
-  P : (n : Term set nat -> Univ (type z)) ->
-  f0 : Term (type z) (P Z) ->
+  P : (n : Term set nat -> Univ type1) ->
+  f0 : Term type1 (P Z) ->
   f1 : (n : Term set nat ->
-       __ : Term (type z) (P n) ->
-       Term (type z) (P (Succ n)) ) ->
+       __ : Term type1 (P n) ->
+       Term type1 (P (Succ n)) ) ->
   n: Term set nat ->
-  Term (type z) (P n)
+  Term type1 (P n)
   :=
   P => f0 => f1 =>
-  fixproj (type z) 1
+  fixproj type1 1
     (c => c
-       (SA 0 (type z) (prod set (type z) (type z) I nat (n => P n))))
+       (SA 0 type1 (prod set type1 type1 I nat (n => P n))))
     (c => c
       (nat__rect => n =>
-        match____nat (type z) (n0 : Term set nat => P n0)
+        match____nat type1 (n0 : Term set nat => P n0)
           f0
           (n0 : Term set nat => f1 n0 (nat__rect n0))
           n))
@@ -197,16 +200,16 @@ def nat__rec :
 
   P : (n : Term set nat -> Univ set) =>
   nat__rect
-    (cast (rule set (type z))
-       (rule set (type (s z)))
-       (prod set (type z) (rule set (type z))
+    (cast (rule set type1)
+       (rule set type2)
+       (prod set type1 (rule set type1)
           I nat
           (n : Term set nat =>
-           univ set (type z) I))
-       (prod set (type (s z))
-          (rule set (type (s z))) I nat
+           univ set type1 I))
+       (prod set type2
+          (rule set type2) I nat
           (n : Term set nat =>
-           univ (type z) (type (s z)) I))
+           univ type1 type2 I))
        I P).
 
 def plus :
@@ -271,8 +274,8 @@ def cons :
   _0 : Term set (vect n) ->
   Term set (vect (Succ n)).
 
-[] guarded? set (vect _) nil          --> guarded.
-[] guarded? set (vect _) (cons _ _ _) --> guarded.
+[] guarded? _ _ nil          --> guarded.
+[] guarded? _ _ (cons _ _ _) --> guarded.
 
 def match____vect :
   s : Sort ->
@@ -313,38 +316,38 @@ def vect__rect :
   P :
     (n : Term set nat ->
      v : Term set (vect n) ->
-     Univ (type z)) ->
-  f0 : Term (type z) (P Z nil) ->
+     Univ type1) ->
+  f0 : Term type1 (P Z nil) ->
   f1 :
     (n : Term set nat ->
      n0 : Term set nat ->
      v : Term set (vect n) ->
-     __ : Term (type z) (P n v) ->
-     Term (type z) (P (Succ n) (cons n n0 v))) ->
+     __ : Term type1 (P n v) ->
+     Term type1 (P (Succ n) (cons n n0 v))) ->
   n : Term set nat ->
   v : Term set (vect n) ->
-  Term (type z) (P n v) :=
+  Term type1 (P n v) :=
 
   P :
     (n : Term set nat ->
      v : Term set (vect n) ->
-     Univ (type z)) =>
-  f0 : Term (type z) (P Z nil) =>
+     Univ type1) =>
+  f0 : Term type1 (P Z nil) =>
   f1 :
     (n : Term set nat ->
      n0 : Term set nat ->
      v : Term set (vect n) ->
-     __ : Term (type z) (P n v) ->
-     Term (type z) (P (Succ n) (cons n n0 v))) =>
+     __ : Term type1 (P n v) ->
+     Term type1 (P (Succ n) (cons n n0 v))) =>
 
-  fixproj (type z) 1
+  fixproj type1 1
     (c=>c
-      (SA 0 (type z)
-        (prod set (type z) (type z) I nat
-          (n => prod set (type z) (type z) I (vect n) (v => P n v)))))
+      (SA 0 type1
+        (prod set type1 type1 I nat
+          (n => prod set type1 type1 I (vect n) (v => P n v)))))
     (c=>c
       (vect__rect => n => v =>
-        match____vect (type z)
+        match____vect type1
           (n0 : Term set nat => v0 : Term set (vect n0) => P n0 v0)
           f0
           (n0 : Term set nat =>
@@ -377,23 +380,23 @@ def vect__rec :
      v : Term set (vect n) ->
      Univ set) =>
   vect__rect
-    (cast (rule set (rule set (type z)))
-       (rule set (rule set (type (s z))))
-       (prod set (rule set (type z))
-          (rule set (rule set (type z))) I nat
+    (cast (rule set (rule set type1))
+       (rule set (rule set type2))
+       (prod set (rule set type1)
+          (rule set (rule set type1)) I nat
           (n : Term set nat =>
-           prod set (type z)
-             (rule set (type z)) I (vect n)
+           prod set type1
+             (rule set type1) I (vect n)
              (v : Term set (vect n) =>
-              univ set (type z) I)))
-       (prod set (rule set (type (s z)))
-          (rule set (rule set (type (s z))))
+              univ set type1 I)))
+       (prod set (rule set type2)
+          (rule set (rule set type2))
           I nat
           (n : Term set nat =>
-           prod set (type (s z))
-             (rule set (type (s z))) I (vect n)
+           prod set type2
+             (rule set type2) I (vect n)
              (v : Term set (vect n) =>
-              univ (type z) (type (s z)) I)))
+              univ type1 type2 I)))
        I P).
 
 

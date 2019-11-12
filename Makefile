@@ -161,9 +161,12 @@ cast_config:
 
 # generate : target  ,  path  ,  encoding  ,  C/Coq  ,  polymorph  ,  extra flags
 define generate
-
 .PHONY: $1
 $1: plugin .coqrc
+	@echo ""
+	@echo "------------------------------------------"
+	@echo "  Building Target: $1"
+	@echo "------------------------------------------"
 	make -C encodings clean _build/$3/$4.dk
 	cp encodings/_build/$3/$4.dk $2/$4.dk
 	make -C encodings clean _build/$3/$4.config
@@ -230,11 +233,17 @@ $(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 
 .PHONY: logipedia
 logipedia: plugin .coqrc
-	make -C encodings clean _build/predicates_eta_fix/C.dk
-	cp encodings/_build/predicates_eta_fix/C.dk run/logipedia/ctpicef.dk
-	make -C encodings clean _build/predicates_eta_fix/C.config
-	cp encodings/_build/predicates_eta_fix/C.config run/logipedia/config.v
+	@echo ""
+	@echo "------------------------------------------"
+	@echo "  Building Target: Logipedia"
+	@echo "------------------------------------------"
+	make -C encodings clean _build/predicates_eta_fix/Coq.dk
+	cp encodings/_build/predicates_eta_fix/Coq.dk run/logipedia/ctpicef.dk
+	make -C encodings clean _build/predicates_eta_fix/Coq.config
+	cp encodings/_build/predicates_eta_fix/Coq.config run/logipedia/config.v
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."         >> run/logipedia/config.v
+	echo "Dedukti Set Param \"named_univ\"    \"true\"."         >> run/logipedia/config.v
+	echo "Dedukti Set Param \"universe_file\" \"U\"."            >> run/logipedia/config.v
 	echo "Dedukti Set Param \"encoding_name\" \"template_cic\"." >> run/logipedia/config.v
 	echo "Dedukti Set Param \"encoding_file\" \"ctpicef\"."      >> run/logipedia/config.v
 	make -C run/logipedia clean
@@ -248,10 +257,14 @@ logipedia: plugin .coqrc
 
 .PHONY: upoly_logipedia
 upoly_logipedia: plugin .coqrc
-	make -C encodings clean _build/fullcodes_poly_templ/C.dk
-	cp encodings/_build/fullcodes_poly_templ/C.dk run/upoly_logipedia/cupicef.dk
-	make -C encodings clean _build/fullcodes_poly_templ/C.config
-	cp encodings/_build/fullcodes_poly_templ/C.config run/upoly_logipedia/config.v
+	@echo ""
+	@echo "------------------------------------------"
+	@echo "  Building Target: U. Poly. Logipedia"
+	@echo "------------------------------------------"
+	make -C encodings clean _build/fullcodes_poly_templ/Coq.dk
+	cp encodings/_build/fullcodes_poly_templ/Coq.dk run/upoly_logipedia/cupicef.dk
+	make -C encodings clean _build/fullcodes_poly_templ/Coq.config
+	cp encodings/_build/fullcodes_poly_templ/Coq.config run/upoly_logipedia/config.v
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."         >> run/upoly_logipedia/config.v
 	echo "Dedukti Set Param \"tpoly_code\"    \"true\"."         >> run/upoly_logipedia/config.v
 	echo "Dedukti Set Param \"upolymorphism\" \"true\"."         >> run/upoly_logipedia/config.v

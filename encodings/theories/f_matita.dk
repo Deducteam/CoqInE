@@ -13,6 +13,26 @@ s : Nat -> Nat.
 prop : Sort.
 type : Nat -> Sort.
 
+def set   : Sort := type z.
+def type0 : Sort := type (s z).
+
+def max : Nat -> Nat -> Nat.
+[i  ] max i     z     --> i
+[  j] max z     j     --> j
+[i,j] max (s i) (s j) --> s (max i j).
+
+(;
+Coqine prop  = prop
+Coqine type  = type
+Coqine set   = set
+Coqine type0 = type0
+
+Coqine Lvl    = Nat (; Universe polymorphism quantification space ;)
+Coqine lvl0   = z   (; Nat representation of lowest level (Set)   ;)
+Coqine lvlS   = s   (; Nat representation of Type@{i+1}           ;)
+Coqine lvlMax = max (; Nat representation of Type@{max(i,j)} ;)
+;)
+
 (;
 Coqine prop = prop
 Coqine type = type
@@ -30,11 +50,6 @@ Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
 
 
 (;-----------------------  CTS Rule definition  -------------------;)
-
-def max : Nat -> Nat -> Nat.
-[i  ] max i z --> i
-[  j] max z j --> j
-[i,j] max (s i) (s j) --> s (s (max i j)).
 
 [i  ] rule i    prop         --> prop
 [  j] rule prop j            --> j

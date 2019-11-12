@@ -7,13 +7,13 @@ module LevelMap = Map.Make(
 
 type env =
   {
-    template_params : Translator.cic_universe LevelMap.t;
+    template_params : Translator.universe_expr LevelMap.t;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
   }
 
 let make
     (template_levels : Univ.Level.t list)
-    (template_names  : Translator.cic_universe list)
+    (template_names  : Translator.universe_expr list)
     (nb_polymorphic_args : int)
     (constraints_args : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term)) list) =
 

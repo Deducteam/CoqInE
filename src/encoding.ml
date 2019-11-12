@@ -95,7 +95,7 @@ let init_empty_symbs () =
 
       (* Public construction syntax *)
       "Sort";
-      "Nat";
+      "Lvl";
       "Univ";
       "Term";
       "univ";
@@ -107,11 +107,11 @@ let init_empty_symbs () =
       "prop";
       "set";
       "type";
+      "type0";
 
-      "uSet";
-      "uType0";
-      "uSucc";
-      "uMax";
+      "lvl0";
+      "lvlS";
+      "lvlMax";
 
       (* Functionnal universe constructors *)
       "axiom";
@@ -171,6 +171,7 @@ let is_constraints_on        () = flag "constraints"
 let is_named_univ_on         () = flag "named_univ"
 let is_float_univ_on         () = flag "float_univ"
 let is_readable_on           () = flag "readable"
+let need_universe_file       () = is_float_univ_on () || is_named_univ_on ()
 let is_cast_on               () = flag "use_cast"
 let is_letins_simpl          () = flag "simpl_letins"
 let is_fixpoint_inlined      () = flag "inlined_fixpoint"

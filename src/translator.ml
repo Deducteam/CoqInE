@@ -1,20 +1,30 @@
 open Dedukti
 open Encoding
 
-type cic_universe =
-  | Prop
-  | Set
-  | GlobalSort  of string
+type level_expr =
+  | Lvl of int
+  | S of int * level_expr
   | GlobalLevel of string
-  | NamedSort   of string
   | NamedLevel  of string
   | Local of int
-  | Succ of cic_universe * int
-  | Max of cic_universe list
-  | Rule of cic_universe * cic_universe
+  | Max of level_expr list
+
+type universe_expr =
+  | Prop
+  | Set
+  | Type of level_expr
+  | GlobalSort  of string
+  | NamedSort   of string
+  | LocalU of int
+  | Succ of universe_expr * int
+  | Rule of universe_expr * universe_expr
+  | Sup  of universe_expr list
   | SInf
 
-let mk_type i = Succ (Prop, i+1)
+let mk_level  i = Lvl (i+1)
+let mk_type   i = Type (mk_level i)
+let set_level = Lvl 0
+let set_univ  = Type (set_level)
 
 
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
@@ -25,11 +35,12 @@ let vsymb s = coq_var (symb s)
 let vsymbu s () = vsymb s
 
 let coq_Sort  = vsymbu "Sort"
-let coq_Nat   = vsymbu "Nat"
-let coq_uset  = vsymbu "uSet"
-let coq_s     = vsymbu "uSucc"
-let coq_z     = vsymbu "uType0"
-let coq_nat n = Utils.iterate n (app (coq_s ())) (coq_z())
+let coq_Lvl   = vsymbu "Lvl"
+let coq_s     = vsymbu "lvlS"
+let coq_z     = vsymbu "lvl0"
+let coq_succ s = app (coq_s()) s
+let coq_succs s i = Utils.iterate i coq_succ s
+let coq_nat n = coq_succs (coq_z()) n
 let coq_prop  = vsymbu "prop"
 let coq_set   = vsymbu "set"
 let coq_type u = app (vsymb "type") u
@@ -47,33 +58,25 @@ let coq_header () =
   ]
 let coq_footer = [ comment "End of translation." ]
 
+let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
+
+let rec coq_max  = function
+  | [] -> assert false
+  | [u] -> u
+  | (u :: u_list) -> apps (vsymb "lvlMax") [u; coq_max u_list]
+
 module Std =
 struct
-
-  let coq_proj i t   = app (app (coq_var "proj") (coq_nat i)) t
-
-  let coq_succ s    = app  (vsymb "uSucc") s
-  let coq_succs s i = Utils.iterate i coq_succ s
-  let rec coq_max  = function
-    | [] -> assert false
-    | [u] -> u
-    | (u :: u_list) -> apps (vsymb "uMax") [u; coq_max u_list]
   let rec cl = function
-    | Succ (u   ,0) -> cl u
-    | Succ (Succ(u,i), j) -> cl (Succ (u,i+j))
-    | Prop          -> assert false
-    | Set           -> vsymb "uSet"
-    | Succ (Set ,i) -> coq_nat (i-1)
-    | Succ (Prop,i) -> coq_nat (i-1)
-    | GlobalLevel n -> var (coq_univ_name n)
-    | GlobalSort _  -> assert false
-    | NamedLevel n  -> var (coq_univ_name n)
-    | NamedSort _   -> assert false
-    | Local n       -> var ("s" ^ string_of_int n)
-    | Succ (u,i)    -> coq_succs (cl u) i
-    | Max u_list    -> coq_max (List.map cl u_list)
-    | Rule (s1,s2)  -> assert false (* coq_max [cl s1; cl s2] *)
-    | SInf          -> assert false
+    | Lvl i          -> coq_nat i
+    | S (0,lvl)      -> cl lvl
+    | S (i,S(j,lvl)) -> cl (S(i+j,lvl))
+    | S (i,Lvl j)    -> cl (Lvl (i+j))
+    | S (i,lvl)      -> Utils.iterate i (app (coq_s ())) (cl lvl)
+    | GlobalLevel n  -> univ_var (coq_univ_name n)
+    | NamedLevel  n  ->      var (coq_univ_name n)
+    | Local i        -> var ("s" ^ string_of_int i)
+    | Max u_list     -> coq_max (List.map cl u_list)
 
   let coq_axiom s    = app  (vsymb "axiom") s
   let coq_axioms s i = Utils.iterate i coq_axiom s
@@ -83,36 +86,34 @@ struct
     | [u] -> u
     | (u :: u_list) -> apps (vsymb "sup") [u; coq_sup u_list]
   let rec cu = function
-    | Succ (u   ,0) -> cu u
-    | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
     | Prop          -> coq_prop ()
     | Set           -> coq_set ()
-    | Succ (Set ,i) -> coq_type (coq_nat (i-1))
-    | Succ (Prop,i) -> coq_type (coq_nat (i-1))
+    | Type lvl      -> coq_type (cl lvl)
+    | Succ (u,0)    -> cu u
+    | Succ (Succ(u,i), j) -> cu (Succ (u,i+j))
+    | Succ (Set ,i) -> coq_type (cl (Lvl i))
+    | Succ (Prop,i) -> coq_type (cl (Lvl i))
+    | Succ (u,i)    -> coq_axioms (cu u) i
     | GlobalSort name  -> univ_var (coq_univ_name name)
-    | GlobalLevel name -> coq_type (univ_var (coq_univ_name name))
-    | NamedSort name   -> var (coq_univ_name name)
-    | NamedLevel name  -> coq_type (var (coq_univ_name name))
-    | Local n          -> coq_type (var ("s" ^ string_of_int n))
+    | NamedSort name   ->      var (coq_univ_name name)
+    | LocalU n         -> assert false (* coq_type (var ("s" ^ string_of_int n)) *)
     (* Locally quantified universe variable v is translated as "type v"
        when used as a Sort *)
-    | Succ (u,i)    -> coq_axioms (cu u) i
-    | Max u_list    -> coq_sup (List.map cu u_list)
     | Rule (s1,s2)  -> coq_rule (cu s1) (cu s2)
+    | Sup u_list    -> coq_sup (List.map cu u_list)
     | SInf          -> vsymb "_code_sinf"
-
   let rec cpu = function
     | Succ (u, 0)   -> cpu u
     | Succ (Succ(u,i), j) -> cpu (Succ (u,i+j))
     | Succ (u,i)    -> coq_axioms (cu u) i
-    | Max u_list    -> coq_sup (List.map cpu u_list)
+    | Sup u_list    -> coq_sup (List.map cpu u_list)
     | Rule (s1,s2)  -> coq_rule (cpu s1) (cpu s2)
     | u -> cu u
   let coq_pattern_universe u = cpu u
   let coq_nat_universe u = assert false
 
-  let coq_U    s           = app  (vsymb "Univ") (cu s)
-  let coq_term s  a        = apps (vsymb "Term") [cu s; a]
+  let coq_U    s   = app  (vsymb "Univ") (cu s)
+  let coq_term s a = apps (vsymb "Term") [cu s; a]
 
   let t_I = vsymbu "I"
   let coq_sort cu s = apps (vsymb "univ")
@@ -179,22 +180,24 @@ struct
     if i <= 9 then sort_var i else coq_type (short_nat i)
 
   let rec scl = function
-    | Succ (u,0)    -> scl u
-    | Succ (Succ(u,i), j) -> scl (Succ (u,i+j))
-    | Succ (Set ,i) -> short_nat (i-1)
-    | Succ (Prop,i) -> assert (i > 0); short_nat (i-1)
-    | Succ (u,i)    -> Std.coq_succs (scl u) i
-    | Max u_list    -> Std.coq_max (List.map scl u_list)
-    | Rule (s1,s2)  -> Std.coq_max [scl s1; scl s2]
-    | s -> Std.cl s
+    | Lvl i          -> short_nat i
+    | S (0,lvl)      -> scl lvl
+    | S (i,S(j,lvl)) -> scl (S(i+j,lvl))
+    | S (i,Lvl j)    -> scl (Lvl (i+j))
+    | S (i,lvl)      -> coq_succs (scl lvl) i
+    | GlobalLevel n  -> univ_var (coq_univ_name n)
+    | NamedLevel  n  ->      var (coq_univ_name n)
+    | Local i        -> var ("s" ^ string_of_int i)
+    | Max u_list     -> coq_max (List.map scl u_list)
 
   let rec scu = function
+    | Type (Lvl i)  -> short_type i
+    | Succ (Set ,i) -> short_type i
+    | Succ (Prop,i) -> short_type i
     | Succ (u,0)    -> scu u
     | Succ (Succ(u,i), j) -> scu (Succ (u,i+j))
-    | Succ (Set ,i) -> short_type (i-1)
-    | Succ (Prop,i) -> short_type (i-1)
     | Succ (u,i)    -> Std.coq_axioms (scu u) i
-    | Max u_list    -> Std.coq_sup (List.map scu u_list)
+    | Sup u_list    -> Std.coq_sup (List.map scu u_list)
     | Rule (s1,s2)  -> Std.coq_rule (scu s1) (scu s2)
     | s -> Std.cu s
 
@@ -206,10 +209,10 @@ struct
   let rec short_sort = function
     | Succ (u   ,0) -> short_sort u
     | Succ (Succ(u,i), j) -> short_sort (Succ (u,i+j))
-    | Max [] -> var "_prop"
-    | Max [u] -> short_sort u
-    | Succ (Set ,i) -> short_code (i-1)
-    | Succ (Prop,i) -> short_code (i-1)
+    | Sup [] -> var "_prop"
+    | Sup [u] -> short_sort u
+    | Succ (Set ,i) -> short_code i
+    | Succ (Prop,i) -> short_code i
     | Set  -> var "_set"
     | Prop -> var "_prop"
     | u -> Std.coq_sort scu u
@@ -221,9 +224,9 @@ struct
     let res = ref [] in
     let add n t = res := (udefinition false n t) :: !res in
     add (nat_name 0) (coq_z());
-    for i = 1 to 9 do add ( nat_name i) (app (coq_s()     ) (nat_var (i-1))) done;
-    for i = 0 to 9 do add (sort_name i) (coq_type           (nat_var i    )) done;
-    for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type i)) done;
+    for i = 1 to 9 do add ( nat_name i) (coq_succ     (nat_var (i-1))) done;
+    for i = 0 to 9 do add (sort_name i) (coq_type     (nat_var i    )) done;
+    for i = 0 to 9 do add (code_name i) (Std.coq_sort scu (mk_type (i-1))) done;
     add "_Set"  (Std.coq_U    Set );
     add "_Prop" (Std.coq_U    Prop);
     add "_set"  (Std.coq_sort scu Set );
@@ -241,7 +244,7 @@ end
 module T =
 struct
 
-  let coq_Nat           = coq_Nat
+  let coq_Lvl           = coq_Lvl
   let coq_Sort          = coq_Sort
   let coq_var_univ_name = coq_var_univ_name
   let coq_univ_name     = coq_univ_name
@@ -263,15 +266,16 @@ struct
   let coq_lift     s = Std.coq_lift  (if a() then Std.cu else Short.scu) s
   let coq_coded = Std.coq_coded
 
-  let cstr_le      s = Std.cstr_le   (if a() then Std.cu else Short.scu) s
-  let cstr_lt      s = Std.cstr_lt   (if a() then Std.cu else Short.scu) s
-  let cstr_eq      s = Std.cstr_eq   (if a() then Std.cu else Short.scu) s
+  let cstr_le      s = Std.cstr_le (if a() then Std.cu else Short.scu) s
+  let cstr_lt      s = Std.cstr_lt (if a() then Std.cu else Short.scu) s
+  let cstr_eq      s = Std.cstr_eq (if a() then Std.cu else Short.scu) s
   let coq_cstr = function
     | Univ.Lt -> cstr_lt
     | Univ.Le -> cstr_le
     | Univ.Eq -> cstr_eq
   let coq_I = Std.t_I
 
+(*
   let coq_pattern_lifted a b t =
     match symb "lifted_type_pattern" with
     | "cast" ->
@@ -285,6 +289,7 @@ struct
     | s -> failwith ("Value lifted_type_pattern [" ^ s ^ "] incompatible with pattern lifting.")
 
   let coq_pattern_lifted_from_type a b t = coq_pattern_lifted a wildcard t
+*)
 
   let coq_pattern_lifted_from_sort s t =
     match symb "lifted_type_pattern" with
@@ -320,8 +325,8 @@ struct
   let coq_pattern_lifted_from_level l t =
     coq_pattern_lifted_from_sort (coq_type (Dedukti.var l)) t
 
-  let coq_proj     s = if a() then Std.coq_proj s else Short.short_proj s
-  let coq_header   s = if a() then coq_header   s else Short.coq_header s
+  let coq_proj     s = if a() then coq_proj   s else Short.short_proj s
+  let coq_header   s = if a() then coq_header s else Short.coq_header s
   let coq_footer  () = coq_footer
 
   let coq_fixpoint n arities bodies i =

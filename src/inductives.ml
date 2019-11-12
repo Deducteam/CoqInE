@@ -127,7 +127,7 @@ let get_infos mind_body index =
   let constructor_uenv =
     univ_poly_env
       (if Encoding.is_templ_polymorphism_code_on ()
-       then fun x -> Translator.NamedLevel x
+       then fun x -> Type (Translator.NamedLevel x)
        else fun x -> Translator.NamedSort x ) in
 
   {
@@ -392,7 +392,7 @@ begin
       Dedukti.ulams
         locals
         (T.coq_coded
-           (T.coq_universe (Tsorts.translate_univ_level ind.inductive_uenv level))
+           (T.coq_universe (Tsorts.level_as_universe ind.inductive_uenv level))
            (Dedukti.apps vp (List.map Dedukti.var locals)))
     with Not_found -> vp
   in

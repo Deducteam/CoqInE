@@ -1,17 +1,17 @@
 
 
+
 (;-----------------------------------------------------------------;)
 (;-------------------------  Coq encoding  ------------------------;)
 (;-----------------------------------------------------------------;)
 
 (;-------------------------  Nat definition  ----------------------;)
 
-Nat : Type.         (; Type of predicative Type levels ;)
-nset : Nat.         (; Set is the smallest (predicative) Type. ;)
-s    : Nat -> Nat.
-
-(; Careful:  Coq's   Type@{0} = Type@{Set+1}   is    type (s nset)  ;)
-def z : Nat := s nset.
+Nat : Type.     (; Type of predicative Type levels ;)
+s : Nat -> Nat.
+z : Nat.
+(; Set is the smallest (predicative) Type. ;)
+(; Careful:  Coq's   Type@{0} = Type@{Set+1}   is    type (s z)  ;)
 
 
 
@@ -19,14 +19,28 @@ def z : Nat := s nset.
 
 prop : Sort.
 type : Nat -> Sort.
-def set  : Sort := type nset.
+
+def set   : Sort := type z.
+def type0 : Sort := type (s z).
+
+(;
+Coqine prop  = prop
+Coqine type  = type
+Coqine set   = set
+Coqine type0 = type0
+
+Coqine Lvl    = Nat (; Universe polymorphism quantification space ;)
+Coqine lvl0   = z   (; Nat representation of lowest level (Set)   ;)
+Coqine lvlS   = s   (; Nat representation of Type@{i+1}           ;)
+Coqine lvlMax = max (; Nat representation of Type@{max(i,j)} ;)
+;)
 
 
 
 (;-----------------------  LUB wrt Cumulativity  ------------------;)
 
 defac max [Nat].
-[i  ] max i     nset  --> i
+[i  ] max i     z  --> i
 [i,j] max (s i) (s j) --> s (max i j)
 
 [i  ] max i i --> i
@@ -43,20 +57,8 @@ defac max [Nat].
 [i,j] sup (type i) (type j) --> type (max i j).
 
 
-(;
-Coqine prop = prop
-Coqine set  = set
-Coqine type = type
-
-Coqine Nat    = Nat    (; Universe polymorphism quantification space ;)
-Coqine uSet   = nset   (; Nat representation of Set ;)
-Coqine uType0 = z      (; Nat representation of Type@{0}   (> Set) ;)
-Coqine uSucc  = s      (; Nat representation of Type@{i+1} ;)
-Coqine uMax   = max    (; Nat representation of Type@{max(i,j)} ;)
-;)
-
 def Leq : Nat -> Nat -> Bool.
-[  j  ] Leq nset      j         --> true
+[  j  ] Leq z      j         --> true
 [i,j  ] Leq (s i)     (s j)     --> Leq i j
 [i    ] Leq i         i         --> true
 [i    ] Leq i         (s i)     --> true
