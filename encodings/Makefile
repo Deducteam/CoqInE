@@ -59,6 +59,10 @@ $(eval $(call targ,predicates_eta,predicates,predicates_eta,predicates,,))
 $(eval $(call targ,predicates_eta_fix,predicates,predicates_eta,predicates,predicates,))
 $(eval $(call targ,predicates_eta_fix_test,predicates,predicates_eta,predicates,predicates,test_fp_predicates))
 
+$(eval $(call targ,fpredicates_eta,predicates,fpredicates_eta,fpredicates,,))
+$(eval $(call targ,fpredicates_eta_fix,predicates,fpredicates_eta,fpredicates,fpredicates,))
+$(eval $(call targ,fpredicates_eta_fix_test,predicates,fpredicates_eta,fpredicates,fpredicates,test_fp_fpredicates))
+
 $(eval $(call targ,lift_predicates,lift-predicates,lift-predicates,lift-predicates,,))
 
 $(eval $(call targ,functional,functional,functional,functional,,))

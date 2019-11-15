@@ -42,24 +42,12 @@ Coqine lvlMax = max (; Nat representation of Type@{max(i,j)} ;)
 def Eq : Nat -> Nat -> Bool.
 [i] Eq i i --> true.
 
-(;---------------------  CTS Axiom definition  --------------------;)
-
-[  j] Axiom prop     (type j) --> true
-[i,j] Axiom (type i) (type j) --> Eq (s i) j.
-
-
-(;-----------------------  CTS Rule definition  -------------------;)
-
-[     ] Rule _        prop     prop     --> true
-[i    ] Rule prop     i        i        --> true
-[i,j,k] Rule (type i) (type j) (type k) --> Eq (max i j) k.
-
-
 (;-------------------  CTS Cumulativity definition  ---------------;)
 
 [   ] Cumul prop     prop     --> true
 [i  ] Cumul prop     (type i) --> true
-[i,j] Cumul (type i) (type j) --> Eq (max i j) j.
+[i,j] Cumul (type i) (type j) --> Eq (max i j) j
+[s  ] Cumul s s               --> true.
 
 
 (;-----------------------------  Level LUB  -----------------------;)
@@ -76,19 +64,10 @@ def Eq : Nat -> Nat -> Bool.
    - Rule s1 s2 (rule s1 s2) should reduce to true
 ;)
 
-
-def axiom : Sort -> Sort.
 []  axiom prop     --> type z
 [i] axiom (type i) --> type (s i).
-(;  Coqine axiom = axiom  ;)
 
-[x] Axiom x (axiom x) --> true.
-
-
-def rule : Sort -> Sort -> Sort.
 [s  ] rule prop     s        --> s
 [   ] rule _        prop     --> prop
-[i,j] rule (type i) (type j) --> type (max i j).
-(;  Coqine rule = rule  ;)
-
-[s1,s2] Rule s1 s2 (rule s1 s2) --> true.
+[i,j] rule (type i) (type j) --> type (max i j)
+[s  ] rule s s               --> s.

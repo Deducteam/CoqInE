@@ -114,7 +114,9 @@ let level_as_level uenv l =
       else failwith "Universe polymorphism no supported by this encoding "
     | None ->
       if Info.is_template_polymorphic uenv l
-      then assert false
+      then
+        match Info.translate_template_arg uenv l
+        with Type l -> l | _ -> assert false
       else
         let name = Univ.Level.to_string l in
         if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()

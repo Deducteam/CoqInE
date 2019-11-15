@@ -53,6 +53,14 @@ define MANUAL
     This translation relies on private codes, private version of template inductives
     and constraints for true polymorphism.
 
+- make logipedia
+    Generate Logipedia compatible export of standard library: ctpicef.tar.bz2
+    This uses STTfa compatible functional encoding.
+
+- make upoly_logipedia
+    Generate Logipedia compatible export of standard library: cupicef.tar.bz2
+    This uses the encoding with the most supported features.
+
 - make tests
     Run all the above targets successively
     This must work before pushing to the repo !!
