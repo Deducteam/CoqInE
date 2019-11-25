@@ -406,7 +406,11 @@ begin
   Dedukti.print info.fmt (Dedukti.rewrite (context, lhs, rhs))
 end
 
-(* Prints all template global universes. *)
+(* Prints all template global universes.
+   s1 : Lvl
+   ...
+   sk : Lvl
+*)
 let translate_template_inductive_levels info env label ind =
   match ind.arity with
   | TemplateArity ta when Encoding.is_templ_polymorphism_code_on () ->
@@ -415,8 +419,7 @@ let translate_template_inductive_levels info env label ind =
   | _ -> ()
 
 
-(* cj : s1 : Sort -> ... -> sk : Sort ->
-        |p1| : ||P1|| ->
+(* cj : |p1| : ||P1|| ->
         ... ->
         |pr| : ||Pr|| ->
         y1  : ||Bj1||(s1,...,sr) ->

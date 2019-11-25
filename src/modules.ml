@@ -91,11 +91,12 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_template_inductive_levels info env label inds.(i)
   done;
-  (* Then declare all the constructors *)
+  (* Then declare all the constructors.
+     Template constructors are usually universe monomorphic. *)
   for i = 0 to pred ntypes do
     Inductives.translate_constructors info env label inds.(i)
   done;
-  (* Then declare all the guard definitions *)
+  (* Then declare all the guard definitions for fixpoint compatibility. *)
   if Encoding.is_fixpoint_inlined ()
   then
     for i = 0 to pred ntypes do
@@ -109,7 +110,7 @@ let translate_mutual_inductive_body info env label mind_body =
   for i = 0 to pred ntypes do
     Inductives.translate_cumulative_constructors_subtyping info env label inds.(i)
   done;
-  (* Then declare all the match functions *)
+  (* Then declare all the match functions and their rewrite rules *)
   for i = 0 to pred ntypes do
     Inductives.translate_match info env label inds.(i)
   done;
