@@ -126,9 +126,9 @@ let get_infos mind_body index =
     univ_poly_env (fun x -> Translator.NamedSort x) in
   let constructor_uenv =
     univ_poly_env
-      (if Encoding.is_templ_polymorphism_code_on ()
-       then fun x -> Type (Translator.NamedLevel x)
-       else fun x -> Translator.NamedSort x ) in
+      (if Tsorts.template_constructor_upoly ()
+       then fun x -> Translator.NamedSort x
+       else fun x -> Type (Translator.NamedLevel x)) in
 
   {
     mind_body;
@@ -229,7 +229,7 @@ let translate_inductive info env label ind  =
       ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
   let definable =
-    Tsorts.template_constructor_upoly () &&
+    Encoding.is_templ_polymorphism_ind_code() ||
     List.exists (fun p -> Option.has_some (is_template_parameter ind p)) ind.mind_params_ctxt
   in
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
@@ -273,12 +273,13 @@ let translate_inductive info env label ind  =
   I' :
     Arity_1 ->                      (; "Normal" parameters are left the same ;)
     ...
-    (Ai -> ... -> Ani -> Code) ->   (; Polymorphic parameters are no codes ;)
+    (Ai -> ... -> Ani -> Code) ->   (; Polymorphic parameters are now codes ;)
     ...
     Arity_r ->
     Code                            (; Return type is a code as well ;)
 *)
 let translate_template_inductive_subtyping info env label ind =
+  if not (Encoding.is_templ_polymorphism_on ()) then () else
   match ind.arity with
   | RegularArity _ -> ()    (* Ignore non-template inductives *)
   | TemplateArity _ ->
@@ -291,7 +292,7 @@ let translate_template_inductive_subtyping info env label ind =
       let name = Cname.fresh_name ~default:"_" info env name in
       Cname.translate_name name in
 
-    if Tsorts.template_constructor_upoly ()
+    if not (Encoding.is_templ_polymorphism_ind_code ())
     then
 begin
   (* Translate the rule for lift elimination in j-th parameters if polymorphic *)
@@ -407,13 +408,14 @@ begin
 end
 
 (* Prints all template global universes.
-   s1 : Lvl
-   ...
-   sk : Lvl
+     s1 : Lvl
+     ...
+     sk : Lvl
+   These levels are needed for the monomorphic template constructors.
 *)
 let translate_template_inductive_levels info env label ind =
   match ind.arity with
-  | TemplateArity ta when Encoding.is_templ_polymorphism_code_on () ->
+  | TemplateArity ta when not (Tsorts.template_constructor_upoly ()) ->
     List.iter (Dedukti.print info.fmt)
       (Tsorts.translate_template_global_level_decl ta.template_param_levels)
   | _ -> ()

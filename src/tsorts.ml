@@ -5,10 +5,9 @@ open Translator
 
 open Declarations
 
-let template_constructor_upoly () =
-          Encoding.is_templ_polymorphism_on ()
-  && not (Encoding.is_templ_polymorphism_code_on ())
 
+let template_constructor_upoly () =
+  Encoding.is_templ_polymorphism_on () && Encoding.is_templ_polymorphism_cons_poly ()
 
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()

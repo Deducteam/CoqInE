@@ -17,9 +17,15 @@ val is_polymorphism_on : unit -> bool
 val is_templ_polymorphism_on : unit -> bool
 (** Is template polymorphism translation on ? *)
 
-val is_templ_polymorphism_code_on : unit -> bool
+val is_templ_polymorphism_cons_poly : unit -> bool
+(** Are template polymorphic constructors polymorphic (true)
+    or monomorphic (false) as they should be *)
+
+val is_templ_polymorphism_ind_code : unit -> bool
 (** Is there a private version of template polymorphic types
-    to properly handle template polymorphism sort irrelevance ? *)
+    to properly handle template polymorphism sort-irrelevance (true)
+    or should template polymorphic inductives parameter sort-irrelevance
+    be achieved through lift/cast elimination (false, default) ? *)
 
 val is_float_univ_on : unit -> bool
 (** Is floating universe translation on ? *)

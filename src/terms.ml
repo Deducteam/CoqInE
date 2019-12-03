@@ -268,7 +268,7 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
     if not (Encoding.is_templ_polymorphism_on ())
     then Universes.subst_univs_constr subst type_c, []
-    else if Encoding.is_templ_polymorphism_code_on ()
+    else if not (Encoding.is_templ_polymorphism_cons_poly ())
     then type_c, []
     else
       (* FIXME: subst_univs_constr fails here when one of the substituted level is Prop
@@ -299,10 +299,9 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
     let ctx = List.rev mip.mind_arity_ctxt in
     let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    if not (Encoding.is_templ_polymorphism_on ()) ||
-       Encoding.is_templ_polymorphism_code_on ()
-    then arity, []
-    else
+    if Encoding.is_templ_polymorphism_on () &&
+       Encoding.is_templ_polymorphism_cons_poly ()
+    then
       (* Do we really need to apply safe_subst to arity ? *)
       let arity = Universes.subst_univs_constr subst arity in
       debug "Substituted type: %a" pp_coq_term arity;
@@ -310,6 +309,7 @@ let infer_template_polymorph_dest_applied info env uenv ind args =
       List.map
         (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+    else arity, []
 
 
 (** Translate the Coq term [t] as a Dedukti term. *)

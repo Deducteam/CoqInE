@@ -41,7 +41,12 @@ let init_flags () =
       ("tpolymorphism"   , false);
       (** Is template polymorphism translation on ? *)
 
+      ("tpoly_cons"      , false);
+      (** Are template polymorphic constructors polymorphic ? *)
+
       ("tpoly_code"      , false);
+      (** Should template polymorphic inductives parameter sort-irrelevance
+          be obtained through lift elimination (false) or a private code (true) ? *)
 
       ("float_univ"      , false);
       (** Is floating universe translation on ? *)
@@ -166,7 +171,8 @@ let _ =
 
 let is_polymorphism_on       () = flag "upolymorphism"
 let is_templ_polymorphism_on () = flag "tpolymorphism"
-let is_templ_polymorphism_code_on () = flag "tpoly_code"
+let is_templ_polymorphism_cons_poly () = flag "tpoly_cons"
+let is_templ_polymorphism_ind_code () = flag "tpoly_code"
 let is_constraints_on        () = flag "constraints"
 let is_named_univ_on         () = flag "named_univ"
 let is_float_univ_on         () = flag "float_univ"

@@ -23,6 +23,14 @@ define MANUAL
     Generates encodings for Coq in the encodings/_build folder
     then checks the generated files
 
+- make test_pred
+    Translates the file run/main/Test/Fixpoints.v and all its dependencies
+    from Init into the run/main/out folder then checks the generated files.
+    The translated file can be changed by editing run/main/main_test.v
+    The encoding file generated is run/main/C.dk
+    This translation relies on privates casts and encodes fixpoints as
+    generated auxiliary symbols with rewrite rules.
+
 - make test_pred_fix
     Translates the file run/main/Test/Fixpoints.v and all its dependencies
     from Init into the run/main/out folder then checks the generated files.
@@ -32,10 +40,6 @@ define MANUAL
 
 - make test_codes_fix
     Same as test_pred_fix but the translation relies on private codes
-
-- make test_tcodes_fix
-    Same as test_codes_fix but the translation relies on private version
-    of template inductive types.
 
 - make debug_pred_fix
     Translates non universe polymorphis files from run/main/Test and their
@@ -79,7 +83,6 @@ tests: check-version .merlin plugin
 	make -C encodings
 	make test_pred_fix
 	make test_codes_fix
-	make test_tcodes_fix
 	make debug_pred_fix
 	make debug_codes_fix
 	make upoly_logipedia
@@ -185,14 +188,14 @@ ifeq ($5, polymorph)
 	echo "Dedukti Set Param \"constraints\"   \"true\"." >> $2/config.v
 else ifeq ($5, cpolymorph)
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
-	echo "Dedukti Set Param \"tpoly_code\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpoly_code\"    \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"upolymorphism\" \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"constraints\"   \"true\"." >> $2/config.v
 else ifeq ($5, template)
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
 else ifeq ($5, ctemplate)
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"." >> $2/config.v
-	echo "Dedukti Set Param \"tpoly_code\" \"true\"." >> $2/config.v
+	echo "Dedukti Set Param \"tpoly_cons\"    \"true\"." >> $2/config.v
 else ifeq ($5, float)
 	echo "Dedukti Set Param \"float_univ\" \"true\"." >> $2/config.v
 	echo "Dedukti Set Param \"universe_file\" \"U\"." >> $2/config.v
@@ -207,30 +210,29 @@ endif
 
 endef
 
-$(eval $(call generate,test_pred,run/main,predicates_eta,C,template,MAINFILE=main_test))
+$(eval $(call generate,test_pred,run/main,predicates_eta,C,ctemplate,MAINFILE=main_test))
 
-$(eval $(call generate,test_pred_fix ,run/main,predicates_eta_fix,C,template,MAINFILE=main_test))
-$(eval $(call generate,test_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_test))
-$(eval $(call generate,test_tcodes_fix,run/main,fullcodes_templ,C,ctemplate,MAINFILE=main_test))
+$(eval $(call generate,test_pred_fix ,run/main,predicates_eta_fix,C,ctemplate,MAINFILE=main_test))
+$(eval $(call generate,test_codes_fix,run/main,fullcodes_templ,C,ctemplate,MAINFILE=main_test))
 
-$(eval $(call generate,debug_pred,run/main,predicates_eta,C,template,MAINFILE=main_debug))
-$(eval $(call generate,debug_pred_fix,run/main,predicates_eta_fix,C,template,MAINFILE=main_debug))
 
-$(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,template,MAINFILE=main_debug))
+$(eval $(call generate,debug_pred_fix,run/main,predicates_eta_fix,C,ctemplate,MAINFILE=main_debug))
+$(eval $(call generate,debug_codes_fix,run/main,fullcodes_eta_fix,C,ctemplate,MAINFILE=main_debug))
+
+$(eval $(call generate,fullcodes_poly_templ,run/main,fullcodes_poly_templ,C,cpolymorph,MAINFILE=main_poly))
+
 
 $(eval $(call generate,poly_pred_fix,run/main,predicates_eta_fix,C,polymorph,MAINFILE=main_poly))
 $(eval $(call generate,poly_codes_fix,run/main,fullcodes_eta_fix,C,polymorph,MAINFILE=main_poly))
 $(eval $(call generate,poly_codes_poly,run/main,fullcodes_poly,C,polymorph,MAINFILE=main_poly))
 
-$(eval $(call generate,fullcodes_poly_templ,run/main,fullcodes_poly_templ,C,cpolymorph,MAINFILE=main_poly))
 $(eval $(call generate,fullcodes_poly_cstr,run/main,fullcodes_poly_cstr,C,cpolymorph,MAINFILE=main_poly))
 $(eval $(call generate,fullcodes_poly_cstr2,run/main,fullcodes_poly_cstr2,C,cpolymorph,MAINFILE=main_poly))
 $(eval $(call generate,fullcodes_poly_templ_linear,run/main,fullcodes_poly_templ_linear,C,cpolymorph,MAINFILE=main_poly))
 
-$(eval $(call generate,mathcomp,run/mathcomp,fullcodes_eta_fix,C,template,))
-$(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
-$(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
-
+#$(eval $(call generate,mathcomp,run/mathcomp,fullcodes_eta_fix,C,template,))
+#$(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
+#$(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
 #$(eval $(call generate,orig,run/main,original,C,,MAINFILE=main_test))
 #$(eval $(call generate,orig_cast,run/main,original_cast,C,cast,MAINFILE=main_test))
 #$(eval $(call generate,orig_named,run/main,original,C,named,MAINFILE=main_test))
@@ -250,6 +252,7 @@ logipedia: plugin .coqrc
 	make -C encodings clean _build/predicates_eta_fix/Coq.config
 	cp encodings/_build/predicates_eta_fix/Coq.config run/logipedia/config.v
 	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."         >> run/logipedia/config.v
+	echo "Dedukti Set Param \"tpoly_cons\"    \"true\"."         >> run/logipedia/config.v
 	echo "Dedukti Set Param \"named_univ\"    \"true\"."         >> run/logipedia/config.v
 	echo "Dedukti Set Param \"universe_file\" \"U\"."            >> run/logipedia/config.v
 	echo "Dedukti Set Param \"encoding_name\" \"template_cic\"." >> run/logipedia/config.v
