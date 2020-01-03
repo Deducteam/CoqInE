@@ -42,7 +42,7 @@ define MANUAL
     Same as test_pred_fix but the translation relies on private codes
 
 - make debug_pred_fix
-    Translates non universe polymorphis files from run/main/Test and their
+    Translates non universe polymorphic files from run/main/Test and their
     dependencies into the run/main/out folder then checks the generated files.
     The translated file can be changed by editing run/main/main_debug.v
     The encoding file generated is run/main/C.dk
@@ -290,3 +290,18 @@ upoly_logipedia: plugin .coqrc
 	cp run/upoly_logipedia/cupicef.dk ./
 	tar cj cupicef.dk std > cupicef.tar.bz2
 	rm -rf std cupicef.dk
+
+.PHONY: debug
+debug: plugin .coqrc
+	make -C encodings clean _build/fullcodes_poly_templ/C.dk _build/fullcodes_poly_templ/C.config
+	cp encodings/_build/fullcodes_poly_templ/C.dk run/main/C.dk
+	cp encodings/_build/fullcodes_poly_templ/C.config run/main/config.v
+	echo "Dedukti Set Param \"tpolymorphism\" \"true\"."  >> run/main/config.v
+	echo "Dedukti Set Param \"tpoly_code\"    \"true\"."  >> run/main/config.v
+	echo "Dedukti Set Param \"upolymorphism\" \"true\"."  >> run/main/config.v
+	echo "Dedukti Set Param \"constraints\"   \"true\"."  >> run/main/config.v
+	echo "Dedukti Set Param \"encoding_name\" \"debug\"." >> run/main/config.v
+	echo "Dedukti Set Param \"encoding_file\" \"C\"."     >> run/main/config.v
+	make -C run/main clean
+	make -C run/main MAINFILE=debug
+	cat run/main/out/Top__import.dk

@@ -29,7 +29,6 @@ Fixpoint A m := fix A_m n :=
 
 Definition t'' := A 2 2.
 
-
 Require Import
   Test.Test
   Test.Identity
@@ -44,10 +43,12 @@ Require Import
   Test.Fixpoints
   Test.Sections
   Test.NestedModules
+  Test.Functors
   Test.NestedLibraries
   Test.Reflexivity
 
 (*
+
   Coq.Arith.PeanoNat
   Test.Debuglib
 

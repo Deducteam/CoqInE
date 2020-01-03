@@ -12,6 +12,7 @@ Require Import
   Test.Fixpoints
   Test.Sections
   Test.NestedModules
+  Test.Functors
   Test.NestedLibraries
   Test.Reflexivity
   Test.UPolymorph

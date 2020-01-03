@@ -1,4 +1,5 @@
 # -arg -nois
+import.v
 import_debug.v
 import_poly.v
 Test/Test.v
@@ -13,6 +14,7 @@ Test/Inductives.v
 Test/Fixpoints.v
 Test/Sections.v
 Test/NestedModules.v
+Test/Functors.v
 Test/NestedLibraries.v
 Test/Reflexivity.v
 Test/Polymorph.v

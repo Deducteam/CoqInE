@@ -194,17 +194,34 @@ let rec translate_module_body info env mb =
   if not_filtered mod_name
   then
     match mb.mod_expr with
-    | Abstract       -> Error.not_supported "Abstract"
-    | Algebraic _    -> Error.not_supported "Algebraic"
-    | Struct mod_sig -> translate_module_signature info env mod_sig
-    | FullStruct     -> translate_module_signature info env mb.mod_type
+    | Abstract          -> Error.not_supported "Abstract"
+    | Algebraic mod_exp -> translate_module_expression info env mb.mod_mp mod_exp
+    | Struct mod_sig    -> translate_module_signature  info env mod_sig
+    | FullStruct        -> translate_module_signature  info env mb.mod_type
   else debug "Filtered out"
+
+and translate_module_expression info env modpath = function
+  | NoFunctor alg_exp ->
+    let modsig, _, resolver, ctxt =
+      Mod_typing.translate_mse env (Some modpath) (Some 1000) alg_exp in
+    translate_module_signature info env modsig
+  | MoreFunctor _ -> ()
+  (* Functors definitions are simply ignored.
+     Whenever functors are applied to define algebraic modules, their
+     definition is expanded.
+    Error.not_supported
+      (Format.sprintf "Functor (%s)" (Names.ModPath.to_string info.module_path))
+*)
 
 and translate_module_signature info env  = function
   | NoFunctor struct_body -> translate_structure_body info env struct_body
-  | MoreFunctor _ ->
+  | MoreFunctor _ -> ()
+  (* Functors definitions are simply ignored.
+     Whenever functors are applied to define algebraic modules, their
+     definition is expanded.
     Error.not_supported
       (Format.sprintf "Functor (%s)" (Names.ModPath.to_string info.module_path))
+*)
 
 and translate_structure_body info env sb =
   List.iter (translate_structure_field_body info env) sb
