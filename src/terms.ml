@@ -286,14 +286,14 @@ let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some ar.template_param_levels))
 
-let infer_template_polymorph_dest_applied info env uenv ind args =
-  debug "Inferring template polymorphic destructor: %a (%i)"
+let infer_dest_applied info env uenv (ind,u) args =
+  debug "Inferring destructor: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   match mip.mind_arity with
-  | RegularArity a -> a.mind_user_arity, []
+  | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
   | TemplateArity ar ->
-    debug "Inferring template destructor: %a (%i)"
+    debug "Inferring template polymorphic destructor: %a (%i)"
       pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
@@ -325,10 +325,10 @@ let rec translate_constr ?expected_type info env uenv t =
          -> This should be fixed:
               List (type 1) (lift prop (type 1) True)  -->  List Prop True
       *)
-      debug "Inferring type for %a" pp_coq_term t;
-      debug " - Expecting %a" pp_coq_term a;
+      debug "Inferring type for %a" (pp_coq_term_env env) t;
+      debug " - Expecting: %a" (pp_coq_term_env env) a;
       let b = infer_type env t in
-      debug " - Inferred %a" pp_coq_term b;
+      debug " - Inferred:  %a" (pp_coq_term_env env) b;
       if not (Encoding.is_argument_casted ()) && convertible info env uenv a b then t
       else Constr.mkCast(t, Term.VMcast, a) in
   match Constr.kind t with
@@ -394,7 +394,7 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | App(f, args) ->
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
-    debug "Application: %a : [%a]" pp_coq_term f (pp_array ", " pp_coq_term) args;
+    debug "Application: %a : [%a]" (pp_coq_term_env env) f (pp_array ", " (pp_coq_term_env env)) args;
     let type_f, univ_params' =
       match Constr.kind f with
       | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env ->
@@ -475,7 +475,6 @@ let rec translate_constr ?expected_type info env uenv t =
       end
 
   | Case(case_info, return_type, matched, branches) ->
-    debug "Test";
     let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
     let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
     let n_params = mind_body.Declarations.mind_nparams   in
@@ -489,9 +488,11 @@ let rec translate_constr ?expected_type info env uenv t =
     let params = List.map (Reduction.whd_all env) params in
     *)
     debug "Template universe params: %a" (pp_list ", " pp_coq_term) params;
+    (* FIXME: This is not correct !
+       We do not provide universe level allowing substitution
+       of universe polymorphic destructions. *)
     let arity, univ_params' =
-      infer_template_polymorph_dest_applied info env uenv
-        case_info.ci_ind (Array.of_list params)
+      infer_dest_applied info env uenv pind (Array.of_list params)
     in
     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in

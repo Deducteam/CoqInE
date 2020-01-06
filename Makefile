@@ -230,9 +230,12 @@ $(eval $(call generate,fullcodes_poly_cstr,run/main,fullcodes_poly_cstr,C,cpolym
 $(eval $(call generate,fullcodes_poly_cstr2,run/main,fullcodes_poly_cstr2,C,cpolymorph,MAINFILE=main_poly))
 $(eval $(call generate,fullcodes_poly_templ_linear,run/main,fullcodes_poly_templ_linear,C,cpolymorph,MAINFILE=main_poly))
 
+$(eval $(call generate,mathcomp,run/mathcomp,fullcodes_poly_templ,C,cpolymorph,))
+
 #$(eval $(call generate,mathcomp,run/mathcomp,fullcodes_eta_fix,C,template,))
 #$(eval $(call generate,mathcomp_lift,run/mathcomp,lift_predicates,C,cast,))
 #$(eval $(call generate,mathcomp_debug,run/mathcomp,predicates,C,polymorph,))
+
 #$(eval $(call generate,orig,run/main,original,C,,MAINFILE=main_test))
 #$(eval $(call generate,orig_cast,run/main,original_cast,C,cast,MAINFILE=main_test))
 #$(eval $(call generate,orig_named,run/main,original,C,named,MAINFILE=main_test))

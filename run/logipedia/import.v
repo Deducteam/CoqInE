@@ -16,4 +16,5 @@ Require Import
   Coq.Bool.IfProp
   Coq.Bool.Sumbool
   Coq.Numbers.BinNums
+  Coq.Logic.Decidable
 .

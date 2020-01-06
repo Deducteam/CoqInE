@@ -52,6 +52,7 @@ val pp_array  : string -> 'a printer -> 'a array  printer
 val pp_option : string -> 'a printer -> 'a option printer
 val pp_t : Pp.t printer
 
+val pp_coq_term_env: Environ.env -> Constr.t printer
 val pp_coq_term    : Constr.t           printer
 val pp_coq_type    : Constr.types       printer
 val pp_coq_id      : Names.Id.t         printer

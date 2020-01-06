@@ -62,6 +62,9 @@ let pp_t = pp_with
 
 let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
+let pp_coq_term_env env =
+  printer_of_std_ppcmds (Printer.safe_pr_constr_env env (Evd.from_env env))
+
 let pp_coq_term  =
   let (sigma, env) = Pfedit.get_current_context () in
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
