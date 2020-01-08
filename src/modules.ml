@@ -236,7 +236,9 @@ and translate_structure_field_body info env (label, sfb) =
   if not_filtered full_name
   then
     begin
+      (*
       try
+*)
         verbose "-> %s" full_name;
         match sfb with
         | SFBconst cb -> translate_constant_body info env label cb
@@ -248,10 +250,12 @@ and translate_structure_field_body info env (label, sfb) =
           ) info env label mib
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
+                           (*
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
         else verbose "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
+*)
     end
   else
     begin

@@ -82,8 +82,8 @@ val enforce_eq_types :
   Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t
 
 
-
-val translate_constraint : Info.env -> Univ.univ_constraint -> Dedukti.term
+val translate_constraint : Info.env -> Univ.univ_constraint ->
+  (Dedukti.term*Dedukti.term) list -> (Dedukti.term*Dedukti.term) list
 (** From local environment
     [
       c1  :  a1  =/<  b1,
@@ -97,7 +97,7 @@ val translate_constraint : Info.env -> Univ.univ_constraint -> Dedukti.term
   relying on transitivity construction (cumul_trans ...).
 *)
 
-val translate_constraint_set : Info.env -> Univ.Constraint.t -> Dedukti.term list
+val translate_constraint_set : Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list
 (** From local environment
     [
       c1  :  a1  =/<  b1,

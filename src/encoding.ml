@@ -129,7 +129,9 @@ let init_empty_symbs () =
       "Eq";    (* s1 == s2 predicate *)
 
       (* Predicate constructors *)
-      "I";            (* trivial predicate                  *)
+      "I";            (* Proof of trivial predicate         *)
+      "BoolNone";
+      "BoolSome";
       "pair";         (* C1   ->   C2   ->   C1 /\ C2       *)
       "cumul_trans";  (* A < B   ->   B < C   ->   A < C    *)
       "cumul_eq";     (* A = B   ->   A < B                 *)

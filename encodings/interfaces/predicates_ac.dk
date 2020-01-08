@@ -44,10 +44,16 @@ defac and [Bool].
 
 
 (;-------------------  CTS predicates constructors  ---------------;)
+def BoolO : Type.
+BoolNone : BoolO.
+BoolSome : Bool -> BoolO.
 
-def pair : A : Bool -> B : Bool -> eps A -> eps B -> eps (and A B).
-[b] pair _ _ I b --> b.
-[a] pair _ _ a I --> a.
+def Multi : Bool -> BoolO -> Type.
+[A  ] Multi A  BoolNone    -->  eps A
+[A,B] Multi A (BoolSome B) -->  eps B -> C : BoolO -> Multi (and A B) C.
+
+pair : A : BoolO -> Multi true A.
+
 
 cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
               eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
@@ -102,6 +108,8 @@ Coqine Eq    = Eq
 --- Predicate constructors:
 Coqine I     = I
 Coqine pair  = pair
+Coqine BoolNone  = BoolNone
+Coqine BoolSome  = BoolSome
 Coqine cumul_trans = cumul_trans
 Coqine cumul_eq    = cumul_eq
 Coqine eq_sym      = eq_sym

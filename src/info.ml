@@ -33,7 +33,7 @@ let is_template_polymorphic (e:env) a = LevelMap.mem a e.template_params
 let translate_template_arg (e:env) a = LevelMap.find a e.template_params
 
 let fetch_constraint uenv cstr =
-  try Some (fst (List.assoc cstr uenv.constraints))
+  try Some (List.assoc cstr uenv.constraints)
   with Not_found -> None
 
 let pp_constraints : env Debug.printer = fun fmt s ->

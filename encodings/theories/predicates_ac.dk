@@ -62,8 +62,8 @@ def Leq : Nat -> Nat -> Bool.
 [i,j  ] Leq (s i)     (s j)     --> Leq i j
 [i    ] Leq i         i         --> true
 [i    ] Leq i         (s i)     --> true
-[i,j  ] Leq i         (max i j) --> true.
-[i,j,k] Leq (max i j) (max i k) --> Leq j k.
+[i,j  ] Leq i         (max i j) --> true
+[i,j,k] Leq (max i j) k         --> and (Leq i k) (Leq j k).
 
 (;---------------------  CTS Axiom definition  --------------------;)
 

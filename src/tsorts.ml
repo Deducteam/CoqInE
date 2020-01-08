@@ -332,22 +332,22 @@ let trivial_cstr = function
   | _ -> true (* return false is both sides are non trivial  *)
 
 let translate_constraint :
-  Info.env -> Univ.univ_constraint -> Dedukti.term = fun uenv ((i,c,j) as cstr) ->
+  Info.env -> Univ.univ_constraint ->
+  (Dedukti.term*Dedukti.term) list -> (Dedukti.term*Dedukti.term) list
+  = fun uenv ((i,c,j) as cstr) res ->
   debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
   debug "In constraints: %a" Info.pp_constraints uenv;
   match Info.fetch_constraint uenv cstr with
-  | Some v -> Dedukti.var v
+  | Some (v,c) -> (Dedukti.var v, c) :: res
   | None ->
     if trivial_cstr cstr
-    then T.coq_I ()
-    (* TODO: build complicated constraint here *)
-    else failwith
+    then res
+    else  (* TODO: build complicated constraint here *)
+      failwith
         (Format.asprintf "Could not find constraint %a in context %a"
            pp_coq_constraint cstr
            Info.pp_constraints uenv)
 
 let translate_constraint_set :
-  Info.env -> Univ.Constraint.t -> Dedukti.term list = fun uenv cstr ->
-  Univ.Constraint.fold
-    (fun cstr res -> (translate_constraint uenv cstr) :: res)
-    cstr []
+  Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list = fun uenv cstr ->
+  Univ.Constraint.fold (translate_constraint uenv) cstr []

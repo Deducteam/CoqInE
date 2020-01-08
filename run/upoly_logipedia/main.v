@@ -1,15 +1,18 @@
-
 Declare ML Module "coqine_plugin".
+Dedukti Set Destination "out".
+Load config.
+Dedukti Set Param "simpl_letins" "false".
+
+(*
+Dedukti Enable Failproofmode.
+Dedukti Enable Verbose.
 
 Set Printing All.
 Set Printing Universes.
-
-Dedukti Set Destination "out".
-
-Dedukti Set Param "simpl_letins" "true".
+Dedukti Enable Debug.
+Dedukti Set Debug "debug.out".
+Dedukti Add Debug "Coq.Arith.PeanoNat".
+*)
 
 Require Import import.
-
-Load config.
-
 Dedukti Export All.

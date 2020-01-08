@@ -43,7 +43,7 @@ val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
 
 val replace_template_name : env -> Univ.Level.t -> Translator.universe_expr -> env
 
-val fetch_constraint : env -> Univ.univ_constraint -> Dedukti.var option
+val fetch_constraint : env -> Univ.univ_constraint -> (Dedukti.var * Dedukti.term) option
 
 val pp_constraints : env Debug.printer
 

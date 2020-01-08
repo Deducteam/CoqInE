@@ -88,8 +88,11 @@ sig
   val coq_sort : universe_expr -> term
   val coq_prod : universe_expr -> universe_expr -> term -> term -> term
 
-  val coq_cast : universe_expr -> universe_expr -> term -> term -> term list -> term -> term
-  (** [coq_cast s1 s2 A B [c1; ...; cn] t]
+  val coq_cast : universe_expr -> universe_expr -> term -> term -> (term*term) list -> term -> term
+  (** [coq_cast s1 s2 A B
+        [ (c1, proof_o_f_c1);
+          ...;
+          (cn, proof_of_cn) ] t]
       build the cast representation of t from type A : Us1 to B : Us2
       using the given list of constraints
   *)
@@ -112,6 +115,7 @@ sig
   val coq_proj : int -> term -> term
 
   val coq_cstr : Univ.constraint_type -> universe_expr -> universe_expr -> term
+  val coq_Cstr : Univ.constraint_type -> universe_expr -> universe_expr -> term
   val coq_I : unit -> term
 
   val coq_header : unit -> instruction list

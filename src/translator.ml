@@ -125,12 +125,17 @@ struct
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b cstr t =
-    let rec coq_cstr_inhabitant = function
+    let coq_cstr_inhabitant = function
       | [] -> t_I()
-      | [ c ] -> c
-      | c :: tl -> apps (vsymb "pair") [c; coq_cstr_inhabitant tl]
+      | [ (c,_) ] -> c
+      | l ->
+        let rec aux acc = function
+          | [] -> apps (vsymb "pair") (List.rev acc)
+          | (c,t) :: tl -> aux (c :: app (vsymb "BoolSome") t :: acc) tl
+        in
+        aux [vsymb "BoolNone"] l
     in
-    let cstr = coq_cstr_inhabitant (List.filter (fun c -> c <> t_I()) cstr) in
+    let cstr = coq_cstr_inhabitant cstr in
     apps (vsymb "cast")
       (if flag "pred_cast"
        then [cu s1; cu s2; a; b; cstr; t]
@@ -152,11 +157,9 @@ struct
        then [cu s1; cu s2; t_I(); t]
        else [cu s1; cu s2;        t])
 
-
-  let cstr_le cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [cu s1            ; cu s2])
-  let cstr_lt cu s1 s2 = app (vsymb "eps") (apps (vsymb "Cumul") [coq_axiom (cu s1); cu s2])
-  let cstr_eq cu s1 s2 = app (vsymb "eps") (apps (vsymb "Eq"   ) [cu s1            ; cu s2])
-
+  let cstr_le cu s1 s2 = apps (vsymb "Cumul") [cu s1            ; cu s2]
+  let cstr_lt cu s1 s2 = apps (vsymb "Cumul") [coq_axiom (cu s1); cu s2]
+  let cstr_eq cu s1 s2 = apps (vsymb "Eq"   ) [cu s1            ; cu s2]
 end
 
 
@@ -273,6 +276,7 @@ struct
     | Univ.Lt -> cstr_lt
     | Univ.Le -> cstr_le
     | Univ.Eq -> cstr_eq
+  let coq_Cstr c i j = app (vsymb "eps") (coq_cstr c i j)
   let coq_I = Std.t_I
 
 (*

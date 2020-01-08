@@ -385,7 +385,7 @@ let rec translate_constr ?expected_type info env uenv t =
       try
         let t' = translate_constr info new_env uenv t in
         Dedukti.letin (x',u',a') t'
-      with Type_errors.TypeError _ ->
+      with Type_errors.TypeError _ | Constr.DestKO ->
         let new_env = lift_let info env uenv x u a in
         translate_constr info new_env uenv t
     else
@@ -394,7 +394,6 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | App(f, args) ->
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
-    debug "Application: %a : [%a]" (pp_coq_term_env env) f (pp_array ", " (pp_coq_term_env env)) args;
     let type_f, univ_params' =
       match Constr.kind f with
       | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env ->
@@ -547,7 +546,9 @@ and translate_cast info uenv t' enva a envb b =
             (pp_list ", " (fun fmt (a,b) -> Format.fprintf fmt "%a = %a"
                               pp_coq_type a pp_coq_type b)) eq_types;
           Univ.enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
-            (* Careful, this enforces a bit too many constraints : max(a,b) < max(c,d) =>  a<c, a<d, b<c, b<d *)
+            (* Careful, this could enforce a bit too many constraints :
+                   max(a,b) < max(c,d) =>  a<c, a<d, b<c, b<d
+               However this never happens in practice. *)
             (* Maybe: have an encoding that accepts too many constraints *)
             (Tsorts.enforce_eq_types Univ.Constraint.empty eq_types)
         else
