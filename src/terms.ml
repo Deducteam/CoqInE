@@ -260,14 +260,16 @@ let infer_ind_applied info env uenv (ind,u) args =
 
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_construct_applied info env uenv ((ind,i),u) args =
-  debug "Inferring template polymorphic constructor: %a (%i)"
-    pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
+  let label = Names.MutInd.label (fst ind) in
+  debug "Inferring constructor: %a (%i)"
+    pp_coq_label label (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   assert (i <= Array.length mip.mind_consnames);
+  let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
   match mip.mind_arity with
-  | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
+  | RegularArity a -> type_c, []
   | TemplateArity ar ->
-    let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
+    debug "Template polymorphic constructor: %a" pp_coq_label label;
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
     let ctx, s, subst, safe_subst = instantiate_universes env ctx ar args_types in
@@ -399,23 +401,28 @@ let rec translate_constr ?expected_type info env uenv t =
       translate_constr info new_env uenv t
 
   | App(f, args) ->
+    debug "App: %a [%n]" (pp_coq_term_env env) f (Array.length args);
+    Array.iteri (fun i t -> debug "Arg %n : %a" i (pp_coq_term_env env) t) args;
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
     let type_f, template_univ_parameters =
       match Constr.kind f with
       (* Template Polymorphic Inductive Constructions require the given parameters
          to compute the proper universe instance (and univ parameters). *)
-      | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env || true ->
+      | Ind (ind, u) ->
         infer_ind_applied info env uenv (ind,u) tmpl_args
-      | Construct ((ind, c), u) when Environ.template_polymorphic_pind (ind,u) env  || true ->
+      | Construct ((ind, c), u) ->
         infer_construct_applied info env uenv ((ind, c), u) tmpl_args
       (* "True" Polymorphic Constants *)
+      (*
       | Const (cst,u) when Environ.polymorphic_pconstant (cst,u) env ->
         debug "Instance: %a" pp_coq_inst u;
         Environ.constant_type_in env (cst,u), []
+      *)
       | _ -> infer_type env f, []
     in
     let f' = Dedukti.apps (translate_constr info env uenv f) template_univ_parameters in
     let translate_app (f', type_f) u =
+      debug "Type f : %a" (pp_coq_term_env env) type_f;
       let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
       let u' = translate_constr ~expected_type:c info env uenv u in
       (Dedukti.app f' u', Vars.subst1 u d) in
