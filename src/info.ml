@@ -8,14 +8,14 @@ module LevelMap = Map.Make(
 type env =
   {
     template_params : Translator.universe_expr LevelMap.t;
-    constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
+    constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list
   }
 
 let make
     (template_levels : Univ.Level.t list)
     (template_names  : Translator.universe_expr list)
     (nb_polymorphic_args : int)
-    (constraints_args : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term)) list) =
+    (constraints_args : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)) list) =
 
   let aux map k v = LevelMap.add k v map in
   let template_params = List.fold_left2 aux LevelMap.empty template_levels template_names in
@@ -38,8 +38,7 @@ let fetch_constraint uenv cstr =
 
 let pp_constraints : env Debug.printer = fun fmt s ->
   let open Debug in
-  let p fmt (a,(b,c)) =
-  Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
+  let p fmt (a,(b,c,d)) = Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
   Format.fprintf fmt "{ %a }" (pp_list ", " p) s.constraints
 
 let dummy = make [] [] 0 []

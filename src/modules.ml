@@ -70,6 +70,7 @@ let translate_constant_body info env label const =
   | OpaqueDef lazy_constr ->
     let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
+    let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
 
 (** Translate the body of mutual inductive definitions [mind]. *)

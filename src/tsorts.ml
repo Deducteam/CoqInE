@@ -9,11 +9,16 @@ open Declarations
 let template_constructor_upoly () =
   Encoding.is_templ_polymorphism_on () && Encoding.is_templ_polymorphism_cons_poly ()
 
+
+type cstr = Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)
+
+let cstr_decl (_,(v,_,ct)) = (v, ct)
+
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.pie (u, (T.coq_Lvl (*Univ or Lvl ?*) ()))) params
       ( if Encoding.is_constraints_on ()
-        then List.fold_right (function (_,cstr) -> Dedukti.pie cstr) cstr t
+        then List.fold_right Dedukti.pie (List.map cstr_decl cstr) t
         else t )
   else t
 
@@ -21,7 +26,7 @@ let add_poly_params_def params cstr t =
   if Encoding.is_polymorphism_on ()
   then List.fold_right (function u -> Dedukti.lam (u, (T.coq_Lvl (*Univ or Lvl ?*) ()))) params
       ( if Encoding.is_constraints_on ()
-        then List.fold_right (function (_,cstr) -> Dedukti.lam cstr) cstr t
+        then List.fold_right Dedukti.lam (List.map cstr_decl cstr) t
         else t )
   else t
 
@@ -36,7 +41,7 @@ let get_inductive_params templ_params poly_params poly_cstr =
     else []
   ) @ (
     if Encoding.is_constraints_on ()
-    then List.map snd poly_cstr
+    then List.map cstr_decl poly_cstr
     else []
   )
 let add_inductive_params templ_params poly_params poly_cstr arity =
@@ -55,7 +60,7 @@ let get_constructor_params templ_params poly_params poly_cstr =
     else []
   ) @ (
     if Encoding.is_constraints_on ()
-    then List.map snd poly_cstr
+    then List.map cstr_decl poly_cstr
     else []
   )
 let add_constructor_params templ_params poly_params poly_cstr arity =
@@ -146,7 +151,7 @@ let level_as_universe uenv l =
           try Type (Hashtbl.find universe_table name)
           with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
-let instantiate_poly_univ_params uenv univ_ctxt univ_instance term =
+let instantiate_poly_univ_params uenv univ_ctxt univ_instance constant =
   let nb_params = Univ.AUContext.size univ_ctxt in
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
@@ -154,8 +159,13 @@ let instantiate_poly_univ_params uenv univ_ctxt univ_instance term =
   let levels = Array.init nb_params (fun i -> levels.(i)) in
   Array.fold_left
       (fun t l -> Dedukti.app t (T.coq_level (level_as_level uenv l)))
-      term
+      constant
       levels
+
+let instantiate_poly_univ_constant env uenv (kn,univ_instance) constant =
+  let cb = Environ.lookup_constant kn env in
+  let univ_ctxt = Declareops.constant_polymorphic_context cb in
+  instantiate_poly_univ_params uenv univ_ctxt univ_instance constant
 
 let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
   if Encoding.is_polymorphism_on () &&
@@ -204,31 +214,6 @@ let instantiate_template_ind_univ_params env uenv ind univ_instance term =
       term levels
   | _ -> term
 
-(*
-let instantiate_ind_univ_params env uenv name ind univ_instance =
-  let (mib,oib) = Inductive.lookup_mind_specif env ind in
-  let indtype, res =
-    if Encoding.is_polymorphism_on () &&
-       Environ.polymorphic_ind ind env
-    then
-      begin
-        let univ_ctxt = Declareops.inductive_polymorphic_context mib in
-        "polymorphic",
-        instantiate_poly_univ_params uenv name univ_ctxt univ_instance
-      end
-    else
-      match oib.mind_arity with
-      | TemplateArity ar when Encoding.is_templ_polymorphism_on () ->
-        "template",
-        instantiate_template_univ_params uenv name ar.template_param_levels univ_instance
-      | _ -> "", Dedukti.var name
-  in
-  debug "Printing %s inductive: %s@@{%a} : %a" indtype name
-    pp_coq_inst univ_instance
-    Dedukti.pp_term res;
-  res
-*)
-
 let translate_universe uenv u =
   (* debug "Translating universe : %a" pp_coq_univ u; *)
   let translate (univ, i) =
@@ -267,13 +252,13 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       let (i, c, j) = cstr in
       let i' = level_as_universe Info.dummy i in
       let j' = level_as_universe Info.dummy j in
-      let cstr_type = T.coq_cstr c i' j' in
+      let cstr_term = T.coq_cstr c i' j' in
+      let cstr_type = T.coq_cstr_eps cstr_term in
       let cstr_name = Cname.constraint_name n in
-      ( cstr, (cstr_name, cstr_type) )
+      ( cstr, (cstr_name, cstr_term, cstr_type) )
     in
     List.mapi aux (Univ.Constraint.elements uctxt)
   else []
-
 
 
 let translate_template_name l =
@@ -338,7 +323,7 @@ let translate_constraint :
   debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
   debug "In constraints: %a" Info.pp_constraints uenv;
   match Info.fetch_constraint uenv cstr with
-  | Some (v,c) -> (Dedukti.var v, c) :: res
+  | Some (v,c,ct) -> (Dedukti.var v, c) :: res
   | None ->
     if trivial_cstr cstr
     then res

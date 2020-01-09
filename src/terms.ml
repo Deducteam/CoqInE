@@ -69,6 +69,12 @@ let translate_rel_decl info env decl =
     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
     (new_env, None)
 
+let rec translate_sort_to_univ uenv t =
+  match Term.kind_of_type t with
+  | SortType s -> Tsorts.translate_sort uenv s
+  | CastType (a', _) -> translate_sort_to_univ uenv a'
+  | _ -> assert false
+
 (** Infer and translate the sort of [a].
     Coq fails if we try to type a sort that was already inferred.
     This function uses pattern matching to avoid it. *)
@@ -79,7 +85,7 @@ let rec infer_translate_sort info env uenv a =
   | SortType s -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
   (* FIXME: CastType are probably not correctly translated.
      They are never used in Coq's kernel but occur in SSReflect module *)
-  | CastType(a', _) -> infer_translate_sort info env uenv a'
+  | CastType(a', target) -> translate_sort_to_univ uenv target
     (* Error.not_supported "CastType" *)
   | ProdType(x, a, b) ->
     let x = Cname.fresh_name info env ~default:"_" x in
@@ -229,7 +235,7 @@ let instantiate_universes env ctx ar argsorts =
     else Sorts.Type level
   in (ctx,ty, subst, safe_subst_fn)
 
-let infer_template_polymorph_ind_applied info env uenv (ind,u) args =
+let infer_ind_applied info env uenv (ind,u) args =
   debug "Inferring template polymorphic inductive: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
@@ -253,7 +259,7 @@ let infer_template_polymorph_ind_applied info env uenv (ind,u) args =
     else []
 
 (* This is inspired from Inductive.type_of_constructor  *)
-let infer_template_polymorph_construct_applied info env uenv ((ind,i),u) args =
+let infer_construct_applied info env uenv ((ind,i),u) args =
   debug "Inferring template polymorphic constructor: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
@@ -394,25 +400,28 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | App(f, args) ->
     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
-    let type_f, univ_params' =
+    let type_f, template_univ_parameters =
       match Constr.kind f with
-      | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env ->
-        infer_template_polymorph_ind_applied info env uenv (ind,u) tmpl_args
-      | Construct ((ind, c), u) when Environ.template_polymorphic_pind (ind,u) env ->
-        infer_template_polymorph_construct_applied info env uenv ((ind, c), u) tmpl_args
+      (* Template Polymorphic Inductive Constructions require the given parameters
+         to compute the proper universe instance (and univ parameters). *)
+      | Ind (ind, u) when Environ.template_polymorphic_pind (ind,u) env || true ->
+        infer_ind_applied info env uenv (ind,u) tmpl_args
+      | Construct ((ind, c), u) when Environ.template_polymorphic_pind (ind,u) env  || true ->
+        infer_construct_applied info env uenv ((ind, c), u) tmpl_args
+      (* "True" Polymorphic Constants *)
       | Const (cst,u) when Environ.polymorphic_pconstant (cst,u) env ->
         debug "Instance: %a" pp_coq_inst u;
         Environ.constant_type_in env (cst,u), []
       | _ -> infer_type env f, []
     in
-    let f' = Dedukti.apps (translate_constr info env uenv f) univ_params' in
+    let f' = Dedukti.apps (translate_constr info env uenv f) template_univ_parameters in
     let translate_app (f', type_f) u =
       let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
       let u' = translate_constr ~expected_type:c info env uenv u in
       (Dedukti.app f' u', Vars.subst1 u d) in
     fst (Array.fold_left translate_app (f', type_f) args)
 
-  | Const (kn, univ_instance) ->
+  | Const ((kn, univ_instance) as knu) ->
     let name = Cname.translate_constant info env kn in
     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
     if Utils.str_starts_with "Little__fix" name
@@ -421,11 +430,9 @@ let rec translate_constr ?expected_type info env uenv t =
             not (Encoding.is_polymorphism_on ())
     then Dedukti.var name
     else if Encoding.is_polymorphism_on () &&
-            Environ.polymorphic_pconstant (kn,univ_instance) env
+            Environ.polymorphic_pconstant knu env
     then
-      let cb = Environ.lookup_constant kn env in
-      let univ_ctxt = Declareops.constant_polymorphic_context cb in
-      Tsorts.instantiate_poly_univ_params uenv univ_ctxt univ_instance (Dedukti.var name)
+      Tsorts.instantiate_poly_univ_constant env uenv knu (Dedukti.var name)
     else Dedukti.var name
 
   | Ind (ind, univ_instance) ->
@@ -640,12 +647,6 @@ and translate_types info env uenv a =
     let a' = translate_constr info env uenv a in
     T.coq_term s' a'
 
-and translate_sort uenv t =
-  match Term.kind_of_type t with
-  | SortType s -> T.coq_universe (Tsorts.translate_sort uenv s)
-  | CastType (a', _) -> translate_sort uenv a'
-  | _ -> assert false
-
 
 
 (** Translation of   Fix fi { f1 / k1 : A1 := t1, ..., fn / kn : An := tn }  *)
@@ -657,7 +658,7 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
   let arities' =
     Array.init n
       (fun i ->
-         translate_sort uenv sorts.(i),
+         T.coq_universe (translate_sort_to_univ uenv sorts.(i)),
          rec_indices.(i),
          translate_constr ~expected_type:sorts.(i) info env uenv types.(i)
       ) in

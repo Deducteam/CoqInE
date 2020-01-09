@@ -117,6 +117,7 @@ sig
   val coq_cstr : Univ.constraint_type -> universe_expr -> universe_expr -> term
   val coq_Cstr : Univ.constraint_type -> universe_expr -> universe_expr -> term
   val coq_I : unit -> term
+  val coq_cstr_eps : term -> term
 
   val coq_header : unit -> instruction list
   val coq_footer : unit -> instruction list

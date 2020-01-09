@@ -130,10 +130,10 @@ struct
       | [ (c,_) ] -> c
       | l ->
         let rec aux acc = function
-          | [] -> apps (vsymb "pair") (List.rev acc)
+          | [] -> apps (vsymb "pair") (List.rev_append acc [vsymb "BoolNone"])
           | (c,t) :: tl -> aux (c :: app (vsymb "BoolSome") t :: acc) tl
         in
-        aux [vsymb "BoolNone"] l
+        aux [] l
     in
     let cstr = coq_cstr_inhabitant cstr in
     apps (vsymb "cast")
@@ -272,11 +272,12 @@ struct
   let cstr_le      s = Std.cstr_le (if a() then Std.cu else Short.scu) s
   let cstr_lt      s = Std.cstr_lt (if a() then Std.cu else Short.scu) s
   let cstr_eq      s = Std.cstr_eq (if a() then Std.cu else Short.scu) s
+  let coq_cstr_eps c = app (vsymb "eps") c
   let coq_cstr = function
     | Univ.Lt -> cstr_lt
     | Univ.Le -> cstr_le
     | Univ.Eq -> cstr_eq
-  let coq_Cstr c i j = app (vsymb "eps") (coq_cstr c i j)
+  let coq_Cstr c i j = coq_cstr_eps (coq_cstr c i j)
   let coq_I = Std.t_I
 
 (*

@@ -1,5 +1,6 @@
 (** General information about the translation *)
 
+open Dedukti
 
 val set_destination : string -> unit
 (** Sets the folder in which generated files should be output *)
@@ -32,18 +33,18 @@ type env
 
 val make :
   Univ.Level.t list -> Translator.universe_expr list ->
-  int -> ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+  int -> ( Univ.univ_constraint * (var * term * term) ) list ->
   env
 
 val is_template_polymorphic    : env -> Univ.Level.t -> bool
 val translate_template_arg     : env -> Univ.Level.t -> Translator.universe_expr
 (*
-val try_translate_template_arg : env -> Univ.Level.t -> Dedukti.var option
+val try_translate_template_arg : env -> Univ.Level.t -> var option
 *)
 
 val replace_template_name : env -> Univ.Level.t -> Translator.universe_expr -> env
 
-val fetch_constraint : env -> Univ.univ_constraint -> (Dedukti.var * Dedukti.term) option
+val fetch_constraint : env -> Univ.univ_constraint -> (var * term * term) option
 
 val pp_constraints : env Debug.printer
 

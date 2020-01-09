@@ -4,37 +4,40 @@ val template_constructor_upoly : unit -> bool
     inductive types should have quantified universe parameters. *)
 
 
-val add_poly_params_type : Dedukti.var list ->
-                           ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
-                           Dedukti.term -> Dedukti.term
+type cstr = Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)
+(** A constraints together with
+    - a variable name
+    - a term representing the constraint
+    - a type representing the constraint proof space
+*)
+
+val add_poly_params_type : Dedukti.var list -> cstr list -> Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before universe poymorphic type definition *)
 
-val add_poly_params_def : Dedukti.var list ->
-                           ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
-                           Dedukti.term -> Dedukti.term
+val add_poly_params_def  : Dedukti.var list -> cstr list -> Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before universe poymorphic definition *)
 
 val get_inductive_params :
     Dedukti.var list ->
     Dedukti.var list ->
-    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    cstr list ->
     (Dedukti.var * Dedukti.term) list
 val add_inductive_params :
     Dedukti.var list ->
     Dedukti.var list ->
-    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    cstr list ->
     Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before inductive types *)
 
 val get_constructor_params :
     Dedukti.var list ->
     Dedukti.var list ->
-    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    cstr list ->
     (Dedukti.var * Dedukti.term) list
 val add_constructor_params :
     Dedukti.var list ->
     Dedukti.var list ->
-    ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list ->
+    cstr list ->
     Dedukti.term -> Dedukti.term
 (** Prepend universe parameters before inductive constructor *)
 
@@ -42,6 +45,9 @@ val add_constructor_params :
 
 val instantiate_poly_univ_params :
   Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+
+val instantiate_poly_univ_constant :
+  Environ.env -> Info.env -> Names.Constant.t * Univ.Instance.t -> Dedukti.term -> Dedukti.term
 
 val instantiate_poly_ind_univ_params :
   Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
@@ -73,8 +79,7 @@ val translate_template_params :
 
 val translate_univ_poly_params : Univ.Instance.t -> string list
 
-val translate_univ_poly_constraints : Univ.Constraint.t ->
-  ( Univ.univ_constraint * (Dedukti.var * Dedukti.term) ) list
+val translate_univ_poly_constraints : Univ.Constraint.t -> cstr list
 
 
 val gather_eq_types : Context.Rel.t -> Context.Rel.t -> (Constr.types * Constr.types) list
