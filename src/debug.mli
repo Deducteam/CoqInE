@@ -69,6 +69,7 @@ val pp_coq_lvl_arr : Univ.Level.t array printer
 val pp_coq_inst    : Univ.Instance.t    printer
 val pp_fixpoint    : (Constr.constr,Constr.types) Constr.pfixpoint printer
 val pp_coq_constraint : Univ.univ_constraint printer
+val pp_coq_Constraint : Univ.Constraint.t printer
 val pp_coq_constraint_type : Univ.constraint_type printer
 val pp_uenv_cstr : (Univ.univ_constraint * (string * 'a) ) list printer
 val pp_globname : Globnames.global_reference printer

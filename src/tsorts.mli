@@ -1,4 +1,38 @@
 
+val translate_constraint :
+  Info.env -> Univ.univ_constraint -> (Dedukti.term*Dedukti.term) option
+(** From local environment
+    [
+      c1  :  a1  =/<  b1,
+      ...,
+      cn  :  an  =/<  bn
+    ]
+  builds the constraint cstr inhabitant of the given constraint type
+    cstr : u =/< v
+
+  This constraint may be trivial (I), one of the ci of a more complex object
+  relying on transitivity construction (cumul_trans ...).
+*)
+
+val translate_constraints_as_conjunction :
+  Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list
+(** From local environment
+    [
+      c1  :  a1  =/<  b1,
+      ...,
+      cn  :  an  =/<  bn
+    ]
+  builds a list of constraint names
+    [ cstri ; cstrk ]
+  for the given constraint set
+    { ui =/< vi, ..., uk =/< vk }
+
+  This will later be translated into
+    pair cstri (pair ... (pair cstrj cstrk)...)
+  of type
+    and (Eq/Cumul ui vi) (and ... (and (Eq/Cumul uj vj) (Eq/Cumul uk vk))...)
+*)
+
 val template_constructor_upoly : unit -> bool
 (** Returns true if the constructors of template universe polymorphic
     inductive types should have quantified universe parameters. *)
@@ -42,9 +76,8 @@ val add_constructor_params :
 (** Prepend universe parameters before inductive constructor *)
 
 
-
-val instantiate_poly_univ_params :
-  Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+val get_poly_univ_params :
+  Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term list
 
 val instantiate_poly_univ_constant :
   Environ.env -> Info.env -> Names.Constant.t * Univ.Instance.t -> Dedukti.term -> Dedukti.term
@@ -85,37 +118,3 @@ val translate_univ_poly_constraints : Univ.Constraint.t -> cstr list
 val gather_eq_types : Context.Rel.t -> Context.Rel.t -> (Constr.types * Constr.types) list
 val enforce_eq_types :
   Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t
-
-
-val translate_constraint : Info.env -> Univ.univ_constraint ->
-  (Dedukti.term*Dedukti.term) list -> (Dedukti.term*Dedukti.term) list
-(** From local environment
-    [
-      c1  :  a1  =/<  b1,
-      ...,
-      cn  :  an  =/<  bn
-    ]
-  builds the constraint cstr inhabitant of the given constraint type
-    cstr : u =/< v
-
-  This constraint may be trivial (I), one of the ci of a more complex object
-  relying on transitivity construction (cumul_trans ...).
-*)
-
-val translate_constraint_set : Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list
-(** From local environment
-    [
-      c1  :  a1  =/<  b1,
-      ...,
-      cn  :  an  =/<  bn
-    ]
-  builds a list of constraint names
-    [ cstri ; cstrk ]
-  for the given constraint set
-    { ui =/< vi, ..., uk =/< vk }
-
-  This will later be translated into
-    pair cstri (pair ... (pair cstrj cstrk)...)
-  of type
-    and (Eq/Cumul ui vi) (and ... (and (Eq/Cumul uj vj) (Eq/Cumul uk vk))...)
-*)

@@ -26,7 +26,6 @@ let mk_type   i = Type (mk_level i)
 let set_level = Lvl 0
 let set_univ  = Type (set_level)
 
-
 let add_prefix prefix name = Printf.sprintf "%s.%s" prefix name
 let coq_var  x = Var (add_prefix (symb "encoding_file")   x)
 let univ_var x = Var (add_prefix (symb "universe_file") x)
@@ -64,6 +63,18 @@ let rec coq_max  = function
   | [] -> assert false
   | [u] -> u
   | (u :: u_list) -> apps (vsymb "lvlMax") [u; coq_max u_list]
+
+let t_I = vsymbu "I"
+
+let coq_conj_cstr = function
+  | [] -> t_I()
+  | [ (c,_) ] -> c
+  | l ->
+    let rec aux acc = function
+      | [] -> apps (vsymb "pair") (List.rev_append acc [vsymb "BoolNone"])
+      | (c,t) :: tl -> aux (c :: app (vsymb "BoolSome") t :: acc) tl
+    in
+    aux [] l
 
 module Std =
 struct
@@ -115,31 +126,19 @@ struct
   let coq_U    s   = app  (vsymb "Univ") (cu s)
   let coq_term s a = apps (vsymb "Term") [cu s; a]
 
-  let t_I = vsymbu "I"
   let coq_sort cu s = apps (vsymb "univ")
       (if (flag "pred_univ")
        then [cu s; cu (Succ (s,1)); t_I()]
        else [cu s])
-  let coq_prod cu s1 s2 a b   = apps (vsymb "prod")
+  let coq_prod cu s1 s2 a b = apps (vsymb "prod")
       (if (flag "pred_prod")
        then [cu s1; cu s2; cu (Rule (s1,s2)); t_I(); a; b]
        else [cu s1; cu s2; a; b])
   let coq_cast cu s1 s2 a b cstr t =
-    let coq_cstr_inhabitant = function
-      | [] -> t_I()
-      | [ (c,_) ] -> c
-      | l ->
-        let rec aux acc = function
-          | [] -> apps (vsymb "pair") (List.rev_append acc [vsymb "BoolNone"])
-          | (c,t) :: tl -> aux (c :: app (vsymb "BoolSome") t :: acc) tl
-        in
-        aux [] l
-    in
-    let cstr = coq_cstr_inhabitant cstr in
     apps (vsymb "cast")
       (if flag "pred_cast"
-       then [cu s1; cu s2; a; b; cstr; t]
-       else [cu s1; cu s2; a; b;       t])
+       then [cu s1; cu s2; a; b; coq_conj_cstr cstr; t]
+       else [cu s1; cu s2; a; b;                     t])
   let coq_coded u t =
     apps (vsymb "_code") [ app (vsymb "_code_univ") u; t]
   let coq_pcast cu s1 s2 a b t =
@@ -252,8 +251,9 @@ struct
   let coq_var_univ_name = coq_var_univ_name
   let coq_univ_name     = coq_univ_name
   let coq_global_univ   = univ_var
+  let coq_conj_cstr     = coq_conj_cstr
   let coq_pattern_universe = Std.coq_pattern_universe
-  let coq_nat_universe = Std.coq_nat_universe
+  let coq_nat_universe     = Std.coq_nat_universe
 
   let a () = not (is_readable_on ())
 
@@ -278,7 +278,7 @@ struct
     | Univ.Le -> cstr_le
     | Univ.Eq -> cstr_eq
   let coq_Cstr c i j = coq_cstr_eps (coq_cstr c i j)
-  let coq_I = Std.t_I
+  let coq_I = t_I
 
 (*
   let coq_pattern_lifted a b t =

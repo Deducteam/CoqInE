@@ -46,6 +46,9 @@ val replace_template_name : env -> Univ.Level.t -> Translator.universe_expr -> e
 
 val fetch_constraint : env -> Univ.univ_constraint -> (var * term * term) option
 
+val find_constraint : env -> Univ.univ_constraint ->
+  (Univ.constraint_type * (var * term * term)) list option
+
 val pp_constraints : env Debug.printer
 
 val dummy : env

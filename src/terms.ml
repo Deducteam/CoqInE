@@ -439,12 +439,14 @@ let rec translate_constr ?expected_type info env uenv t =
     else if Encoding.is_polymorphism_on () &&
             Environ.polymorphic_pconstant knu env
     then
+      (* FIXME: add constraints here ! *)
       Tsorts.instantiate_poly_univ_constant env uenv knu (Dedukti.var name)
     else Dedukti.var name
 
   | Ind (ind, univ_instance) ->
     let name = Cname.translate_inductive info env ind in
     debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
+    (* FIXME: add constraints here ! *)
     Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
       (Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
          (Dedukti.var name))
@@ -455,7 +457,9 @@ let rec translate_constr ?expected_type info env uenv t =
     let ind = Names.inductive_of_constructor kn in
     Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
       ( if Tsorts.template_constructor_upoly ()
-        then Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
+        then
+          (* FIXME: add constraints here ! *)
+          Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
             (Dedukti.var name)
         else Dedukti.var name )
 
@@ -507,6 +511,12 @@ let rec translate_constr ?expected_type info env uenv t =
     let arity, univ_params' =
       infer_dest_applied info env uenv pind (Array.of_list params)
     in
+    let univ_poly_levels =
+      if Encoding.is_polymorphism_on ()
+      then
+        Tsorts.get_poly_univ_params uenv
+          (Declareops.inductive_polymorphic_context mind_body) (snd pind)
+      else [] in
     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
     (* Translate params using expected types to make sure we use proper casts. *)
@@ -524,7 +534,7 @@ let rec translate_constr ?expected_type info env uenv t =
     let reals' = List.map (translate_constr info env uenv) reals in
     let matched' = translate_constr info env uenv matched in
     Dedukti.apps match_function'
-      (univ_params' @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+      (univ_params' @ univ_poly_levels @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
 
   (* Not yet supported cases: *)
   | Proj (p,t) ->
@@ -549,7 +559,19 @@ and translate_cast info uenv t' enva a envb b =
     let b' = translate_constr info envb uenv b in
     if Encoding.is_polymorphism_on () && Encoding.is_constraints_on ()
     then
+      let _ = debug "Translating cast: %a < %a" pp_coq_term a pp_coq_term b in
       let constraints =
+        (* FIXME. This is not enough.  A -> s  <   B -> s'   => A = B & s < s'
+        for s and s' sorts (so A->s arity).
+        But also!
+           A -> I(s1)   <   B -> I(s2)
+           =>
+           A = B  &
+           |  s1 < s2     (if arg1 of I is Cumulative)
+           |  s1 = s2     (if arg1 of I is Invariant)
+           |  nothing     (if arg1 of I is Irrelevant)
+           See Subtyping.check_inductive as a starting point...
+        *)
         if Term.isArity a && Term.isArity b
         then
           let decla, sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
@@ -568,7 +590,10 @@ and translate_cast info uenv t' enva a envb b =
         else
           Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]
       in
-      let var_cstr = Tsorts.translate_constraint_set uenv constraints in
+      debug "Constraints: %a" pp_coq_Constraint constraints;
+      let var_cstr = Tsorts.translate_constraints_as_conjunction uenv constraints in
+      debug "Found constraints %a" (pp_list ", " Dedukti.pp_term) (List.map fst var_cstr);
+      debug "Found constraints %a" (pp_list ", " Dedukti.pp_term) (List.map snd var_cstr);
       T.coq_cast s1' s2' a' b' var_cstr t'
     else
       if Term.isArity a && Term.isArity b

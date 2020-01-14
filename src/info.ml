@@ -36,6 +36,32 @@ let fetch_constraint uenv cstr =
   try Some (List.assoc cstr uenv.constraints)
   with Not_found -> None
 
+let fetch_higher_sorts uenv u =
+  let rec assoc acc ((i,c,j),b) = if compare i u = 0 then (c,j,b)::acc else acc
+  in List.fold_left assoc [] uenv.constraints
+
+let find_constraint uenv (cfirst,ccstr,clast) =
+  let rec aux = function
+    | [] -> None
+    | (i,flag,l)::search ->
+      if i = clast then if flag then Some l else aux search
+      else
+        let rec filter acc = function
+          | [] -> acc
+          | (c,j,t)::tl ->
+            let new_acc =
+              match ccstr, c with
+              | Univ.Eq, Univ.Eq -> acc
+              | Univ.Eq, _       -> (j,flag,(c,t)::l) :: acc
+              | _      , Univ.Lt -> (j,true,(c,t)::l) :: acc
+              | _                -> (j,flag,(c,t)::l) :: acc
+            in filter new_acc tl
+        in
+        let newsearch = filter search (fetch_higher_sorts uenv i) in
+        aux newsearch
+  in aux [(cfirst,ccstr<>Univ.Lt,[])]
+
+
 let pp_constraints : env Debug.printer = fun fmt s ->
   let open Debug in
   let p fmt (a,(b,c,d)) = Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in

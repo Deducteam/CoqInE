@@ -87,7 +87,6 @@ sig
   val coq_term : universe_expr -> term -> term
   val coq_sort : universe_expr -> term
   val coq_prod : universe_expr -> universe_expr -> term -> term -> term
-
   val coq_cast : universe_expr -> universe_expr -> term -> term -> (term*term) list -> term -> term
   (** [coq_cast s1 s2 A B
         [ (c1, proof_o_f_c1);

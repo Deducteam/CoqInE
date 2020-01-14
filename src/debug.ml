@@ -130,6 +130,11 @@ let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
 let pp_coq_constraint fmt (i,rel,j) =
   Format.fprintf fmt "%a %a %a" pp_coq_level i pp_coq_constraint_type rel pp_coq_level j
 
+let pp_coq_Constraint fmt c =
+  Format.fprintf fmt "[";
+  Univ.Constraint.fold (fun c () -> (Format.fprintf fmt "%a ; " pp_coq_constraint c)) c ();
+  Format.fprintf fmt "]"
+
 let pp_uenv_cstr fmt constraints =
   let pp_cstr fmt (cstr,(name,_)) = Format.fprintf fmt "%s : %a" name pp_coq_constraint cstr in
   fprintf fmt "[%a]" (pp_list ", " pp_cstr) constraints

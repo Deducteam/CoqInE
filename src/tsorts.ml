@@ -6,6 +6,75 @@ open Translator
 open Declarations
 
 
+(* ------------------------   Constraints handling    ------------------------ *)
+
+
+let gather_eq_types decla declb =
+  let rec aux acc lista listb =
+    match lista, listb with
+    | [], [] -> acc
+    | ( Context.Rel.Declaration.LocalAssum (_,ta) ) :: tla ,
+      ( Context.Rel.Declaration.LocalAssum (_,tb) ) :: tlb ->
+      aux ((ta,tb)::acc) tla tlb
+    | ( Context.Rel.Declaration.LocalDef (_,ta,va) ) :: tla ,
+      ( Context.Rel.Declaration.LocalDef (_,tb,vb) ) :: tlb ->
+      aux ((ta,tb)::(va,vb)::acc) tla tlb
+    | _ -> assert false
+  in
+  aux [] decla declb
+
+let rec enforce_eq_types acc  = function
+  | [] -> acc
+  | (ta,tb) :: tl ->
+      match Term.kind_of_type ta, Term.kind_of_type tb with
+      | Term.SortType sa,  Term.SortType sb ->
+        enforce_eq_types
+          (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
+          tl
+      | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
+      | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
+
+      | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
+        enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
+
+      | _ -> enforce_eq_types acc tl
+
+let trivial_cstr (i,c,j) =
+  if Encoding.is_float_univ_on ()
+  then
+    if c = Univ.Le
+    then Univ.Level.is_small i
+    else true
+  else (Univ.Level.var_index i = None && Univ.Level.var_index j = None)
+
+let translate_constraint :
+  Info.env -> Univ.univ_constraint -> (Dedukti.term*Dedukti.term) option
+  = fun uenv ((i,c,j) as cstr) ->
+  debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
+  debug "In constraints: %a" Info.pp_constraints uenv;
+  if trivial_cstr cstr then None
+  else
+    match Info.fetch_constraint uenv cstr with
+    | Some (v,c,ct) -> Some (Dedukti.var v, c)
+    | None ->
+      match Info.find_constraint uenv cstr with
+      | None ->
+        failwith
+          (Format.asprintf "Could not find constraint %a in context %a"
+             pp_coq_constraint cstr
+             Info.pp_constraints uenv)
+      | Some ex_cstr ->
+        (* TODO: Build complicated constraint here *)
+        None
+
+let translate_constraints_as_conjunction uenv cstr =
+  let aux cstr res =
+    match translate_constraint uenv cstr with
+    | Some c -> c :: res
+    | None -> res in
+  Univ.Constraint.fold aux cstr []
+
+
 let template_constructor_upoly () =
   Encoding.is_templ_polymorphism_on () && Encoding.is_templ_polymorphism_cons_poly ()
 
@@ -151,21 +220,35 @@ let level_as_universe uenv l =
           try Type (Hashtbl.find universe_table name)
           with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
-let instantiate_poly_univ_params uenv univ_ctxt univ_instance constant =
-  let nb_params = Univ.AUContext.size univ_ctxt in
+let get_poly_univ_params uenv ctx univ_instance =
+  let nb_params = Univ.AUContext.size ctx in
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
-  let levels = Univ.Instance.to_array univ_instance in
-  let levels = Array.init nb_params (fun i -> levels.(i)) in
-  Array.fold_left
-      (fun t l -> Dedukti.app t (T.coq_level (level_as_level uenv l)))
-      constant
-      levels
+  if not (Encoding.is_polymorphism_on ()) then []
+  else
+    let levels = Univ.Instance.to_array univ_instance in
+    Array.to_list
+      (Array.map (fun l -> T.coq_level (level_as_level uenv l)) levels)
+    @
+    if not (Encoding.is_constraints_on ()) then []
+    else
+      let subst = Univ.make_inverse_instance_subst univ_instance in
+      let aux (u,d,v as c) res =
+        let u' = Univ.subst_univs_level_level subst u in
+        let v' = Univ.subst_univs_level_level subst v in
+        let c' = if u' == u && v' == v then c else (u',d,v') in
+        ( match translate_constraint uenv c' with
+          | Some (v,c) -> v
+          | None       -> T.coq_I() ) :: res in
+      let cstr = Univ.UContext.constraints (Univ.AUContext.repr ctx) in
+      debug "Translating Constraints: %a in instance %a"
+        pp_coq_Constraint cstr pp_coq_inst univ_instance;
+      Univ.Constraint.fold aux cstr []
 
-let instantiate_poly_univ_constant env uenv (kn,univ_instance) constant =
+let instantiate_poly_univ_constant env uenv (kn,u) constant =
   let cb = Environ.lookup_constant kn env in
-  let univ_ctxt = Declareops.constant_polymorphic_context cb in
-  instantiate_poly_univ_params uenv univ_ctxt univ_instance constant
+  let ctx = Declareops.constant_polymorphic_context cb in
+  Dedukti.apps constant (get_poly_univ_params uenv ctx u)
 
 let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
   if Encoding.is_polymorphism_on () &&
@@ -176,13 +259,10 @@ let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
       debug "Instantiating polymorphic inductive instance %a : {%a}"
         Dedukti.pp_term term
         pp_coq_inst univ_instance;
-      let res = instantiate_poly_univ_params uenv
-          (Declareops.inductive_polymorphic_context mib)
-          univ_instance term in
-      if Encoding.is_constraints_on ()
-      then res
-      (* TODO: compute the required constraints argument *)
-      else res
+      Dedukti.apps term
+        (get_poly_univ_params uenv
+           (Declareops.inductive_polymorphic_context mib)
+           univ_instance)
     end
   else term
 
@@ -275,64 +355,3 @@ let translate_template_params (ctxt:Univ.Level.t option list) =
     let params = Utils.filter_some ctxt in
     params, List.map translate_template_name params
   else [],[]
-
-
-
-(* ------------------------   Constraints handling    ------------------------ *)
-
-
-let gather_eq_types decla declb =
-  let rec aux acc lista listb =
-    match lista, listb with
-    | [], [] -> acc
-    | ( Context.Rel.Declaration.LocalAssum (_,ta) ) :: tla ,
-      ( Context.Rel.Declaration.LocalAssum (_,tb) ) :: tlb ->
-      aux ((ta,tb)::acc) tla tlb
-    | ( Context.Rel.Declaration.LocalDef (_,ta,va) ) :: tla ,
-      ( Context.Rel.Declaration.LocalDef (_,tb,vb) ) :: tlb ->
-      aux ((ta,tb)::(va,vb)::acc) tla tlb
-    | _ -> assert false
-  in
-  aux [] decla declb
-
-let rec enforce_eq_types acc  = function
-  | [] -> acc
-  | (ta,tb) :: tl ->
-      match Term.kind_of_type ta, Term.kind_of_type tb with
-      | Term.SortType sa,  Term.SortType sb ->
-        enforce_eq_types
-          (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
-          tl
-      | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
-      | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
-
-      | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
-        enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
-
-      | _ -> enforce_eq_types acc tl
-
-let trivial_cstr = function
-  | i,Univ.Le,j ->
-    Univ.Level.is_small i || true
-  | _ -> true (* return false is both sides are non trivial  *)
-
-let translate_constraint :
-  Info.env -> Univ.univ_constraint ->
-  (Dedukti.term*Dedukti.term) list -> (Dedukti.term*Dedukti.term) list
-  = fun uenv ((i,c,j) as cstr) res ->
-  debug "Fetching %a %a %a" pp_coq_level i pp_coq_constraint_type c pp_coq_level j;
-  debug "In constraints: %a" Info.pp_constraints uenv;
-  match Info.fetch_constraint uenv cstr with
-  | Some (v,c,ct) -> (Dedukti.var v, c) :: res
-  | None ->
-    if trivial_cstr cstr
-    then res
-    else  (* TODO: build complicated constraint here *)
-      failwith
-        (Format.asprintf "Could not find constraint %a in context %a"
-           pp_coq_constraint cstr
-           Info.pp_constraints uenv)
-
-let translate_constraint_set :
-  Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list = fun uenv cstr ->
-  Univ.Constraint.fold (translate_constraint uenv) cstr []
