@@ -15,7 +15,9 @@ Require Import
   Coq.Bool.DecBool
   Coq.Bool.IfProp
   Coq.Bool.Sumbool
+  Coq.Bool.Zerob
+  Coq.Bool.Bvector
+  Coq.Arith.PeanoNat
   Coq.Numbers.BinNums
   Coq.Logic.Decidable
-  Coq.Classes.CRelationClasses
 .

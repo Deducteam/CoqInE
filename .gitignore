@@ -18,6 +18,8 @@
 *.dko
 *.tar.bz2
 
+summary.csv
+
 run/main/**/*.dk
 run/main/config.v
 run/main/out

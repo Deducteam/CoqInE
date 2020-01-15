@@ -287,6 +287,7 @@ upoly_logipedia: plugin .coqrc
 	echo "Dedukti Set Param \"encoding_file\" \"cupicef\"."      >> run/upoly_logipedia/config.v
 	make -C run/upoly_logipedia clean
 	make -C run/upoly_logipedia
+	bash stats.sh
 	rm -rf std cupicef.dk
 	mkdir std
 	cp run/upoly_logipedia/out/Coq*.dk std/
