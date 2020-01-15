@@ -14,10 +14,32 @@ Require Import
   Coq.Bool.BoolEq
   Coq.Bool.DecBool
   Coq.Bool.IfProp
+  Coq.Arith.PeanoNat
+  Coq.Logic.Decidable
+  Coq.Classes.CMorphisms
+
+  Coq.Arith.Le
+  Coq.Arith.Lt
+  Coq.Arith.Plus
+  Coq.Arith.Minus
+  Coq.Arith.Mult
+  Coq.Arith.Gt
+  Coq.Arith.Between
+  Coq.Arith.Peano_dec
+  Coq.Arith.Compare_dec
+  Coq.Arith.Min
+  Coq.Arith.Max
+  Coq.Arith.Compare
+  Coq.Arith.Div2
+  Coq.Arith.EqNat
+  Coq.Arith.Euclid
+  Coq.Arith.Even
+  Coq.Arith.Bool_nat
+  Coq.Arith.Factorial
+  Coq.Arith.Wf_nat
+(*
   Coq.Bool.Sumbool
   Coq.Bool.Zerob
   Coq.Bool.Bvector
-  Coq.Arith.PeanoNat
-  Coq.Numbers.BinNums
-  Coq.Logic.Decidable
+*)
 .

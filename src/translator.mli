@@ -82,6 +82,7 @@ sig
 
   val coq_nat_universe : universe_expr -> term
   (** Nat level of universe *)
+  val coq_trans_cstr : term -> (term * term) list -> term
 
   val coq_U    : universe_expr -> term
   val coq_term : universe_expr -> term -> term

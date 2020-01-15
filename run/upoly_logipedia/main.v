@@ -7,7 +7,7 @@ Set Printing All.
 Set Printing Universes.
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
-Dedukti Add Debug "Coq.Classes.CRelationClasses".
+Dedukti Add Debug "Coq.Classes.CMorphisms".
 
 (*
 Dedukti Enable Failproofmode.

@@ -47,6 +47,7 @@ val verbose : ('a, Format.formatter, unit, unit) format4 -> 'a
 
 type 'a printer = Format.formatter -> 'a -> unit
 
+val pp_string : string printer
 val pp_list   : string -> 'a printer -> 'a list   printer
 val pp_array  : string -> 'a printer -> 'a array  printer
 val pp_option : string -> 'a printer -> 'a option printer

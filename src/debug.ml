@@ -50,6 +50,8 @@ let format_of_sep str fmt () : unit =
 
 type 'a printer = formatter -> 'a -> unit
 
+let pp_string fmt s = Format.fprintf fmt "%s" s
+
 let pp_list sep pp fmt l = Format.pp_print_list ~pp_sep:(format_of_sep sep) pp fmt l
 
 let pp_option none pp fmt = function

@@ -53,10 +53,33 @@ def Multi : Bool -> BoolO -> Type.
 [A,B] Multi A (BoolSome B) -->  eps B -> C : BoolO -> Multi (and A B) C.
 
 pair : A : BoolO -> Multi true A.
+(; An inhabitant of the conjunction of three satisfied constraints
+     c1 : A
+     c2 : B
+     c3 : C
+   is encoded as:
+     pair (Some A) c1 (Some B) c2 (Some C) c3 None : eps (and {A,B,C})
+;)
 
 
-cumul_trans : s1 : Sort -> s2 : Sort -> s3 : Sort ->
-              eps (Cumul s1 s2) -> eps (Cumul s2 s3) -> eps (Cumul s1 s3).
+def SortO : Type.
+SortNone : SortO.
+SortSome : Sort -> SortO.
+
+def Trans : Sort -> Sort -> SortO -> Type.
+[s1,s2   ] Trans s1 s2 SortNone      -->  eps (Cumul s1 s2)
+[s1,s2,s3] Trans s1 s2 (SortSome s3) -->  eps (Cumul s2 s3) -> so : SortO -> Trans s1 s3 so.
+
+trans : s : Sort -> so : SortO -> Trans s s so.
+(; Assume three satisfied and transitively compatible constraints
+     c1 : s0 < s1
+     c2 : s1 < s2
+     c3 : s2 < s3
+   then s0 < s3 can be inhabited with:
+     trans s1 (Some s1) c1 (Some s2) c2 (Some s3) c3 None : eps (Cumul s0 s3)
+;)
+
+
 
 cumul_eq : s1 : Sort -> s2 : Sort -> eps (Eq s1 s2) -> eps (Cumul s1 s2).
 
@@ -107,10 +130,15 @@ Coqine Eq    = Eq
 
 --- Predicate constructors:
 Coqine I     = I
+
 Coqine pair  = pair
 Coqine BoolNone  = BoolNone
 Coqine BoolSome  = BoolSome
-Coqine cumul_trans = cumul_trans
+
+Coqine SortNone  = SortNone
+Coqine SortSome  = SortSome
+Coqine trans = trans
+
 Coqine cumul_eq    = cumul_eq
 Coqine eq_sym      = eq_sym
 ;)

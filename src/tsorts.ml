@@ -8,6 +8,57 @@ open Declarations
 
 (* ------------------------   Constraints handling    ------------------------ *)
 
+(** Maping from the string representation of global named universes to
+    concrete levels. *)
+let universe_table : (string, level_expr) Hashtbl.t = Hashtbl.create 10007
+
+(** Translates a universe level in a given local universe environment
+    using universe_table global environment for named universes.  *)
+let level_as_level uenv l =
+  if Univ.Level.is_prop l then assert false
+  else if Univ.Level.is_set l then set_level
+  else
+    match Univ.Level.var_index l with
+    | Some n ->
+      if Encoding.is_polymorphism_on ()
+      then Local n (* Locally bounded universe variable *)
+      else failwith "Universe polymorphism no supported by this encoding "
+    | None ->
+      if Info.is_template_polymorphic uenv l
+      then
+        match Info.translate_template_arg uenv l
+        with Type l -> l | _ -> assert false
+      else
+        let name = Univ.Level.to_string l in
+        if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
+        then GlobalLevel name
+        else
+          try Hashtbl.find universe_table name
+          with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
+
+(** Translates a universe level in a given local universe environment
+    using universe_table global environment for named universes.  *)
+let level_as_universe uenv l =
+  if Univ.Level.is_prop l then Translator.Prop
+  else if Univ.Level.is_set l then Translator.Set
+  else
+    match Univ.Level.var_index l with
+    | Some n ->
+      if Encoding.is_polymorphism_on ()
+      then Type (Local n) (* Locally bounded universe variable *)
+      else failwith "Universe polymorphism no supported by this encoding "
+    | None ->
+      if Info.is_template_polymorphic uenv l
+      then Info.translate_template_arg uenv l
+      else
+        let name = Univ.Level.to_string l in
+        if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
+        then Type (GlobalLevel name)
+        else
+          try Type (Hashtbl.find universe_table name)
+          with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
+
+
 
 let gather_eq_types decla declb =
   let rec aux acc lista listb =
@@ -64,8 +115,31 @@ let translate_constraint :
              pp_coq_constraint cstr
              Info.pp_constraints uenv)
       | Some ex_cstr ->
+        debug "Found transitive: %a" (pp_list "," pp_string)
+          (List.map (fun (_,_,s) -> s) ex_cstr);
         (* TODO: Build complicated constraint here *)
-        None
+
+        let i' = level_as_universe Info.dummy i in
+        let j' = level_as_universe Info.dummy j in
+        let cstr_term = T.coq_cstr c i' j' in
+
+        let to_univ add i =
+          T.coq_universe (Succ (level_as_universe Info.dummy i, add)) in
+        let addc = function Univ.Lt -> 1 | _ -> 0 in
+        let add0 = addc c in
+        let rec rev_count acc counter = function
+          | [] ->
+            if counter <= add0 then acc
+            else rev_count ((T.coq_I(),(to_univ counter i))::acc) (counter-1) []
+          | (c,l,v) :: tl ->
+            rev_count ((Dedukti.var v, to_univ counter l)::acc) ((addc c)+counter) tl
+        in
+        Some
+          ( T.coq_trans_cstr (to_univ add0 i)
+              (rev_count [] 0 ex_cstr)
+          , cstr_term)
+
+
 
 let translate_constraints_as_conjunction uenv cstr =
   let aux cstr res =
@@ -149,10 +223,6 @@ let add_constructor_params templ_params poly_params poly_cstr arity =
   List.fold_right Dedukti.pie
     (get_constructor_params templ_params poly_params poly_cstr) arity
 
-(** Maping from the string representation of global named universes to
-    concrete levels. *)
-let universe_table : (string, level_expr) Hashtbl.t = Hashtbl.create 10007
-
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
   message "Saving universes";
@@ -186,52 +256,6 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
     in
     List.map aux params
   else []
-
-(** Translates a universe level in a given local universe environment
-    using universe_table global environment for named universes.  *)
-let level_as_level uenv l =
-  if Univ.Level.is_prop l then assert false
-  else if Univ.Level.is_set l then set_level
-  else
-    match Univ.Level.var_index l with
-    | Some n ->
-      if Encoding.is_polymorphism_on ()
-      then Local n (* Locally bounded universe variable *)
-      else failwith "Universe polymorphism no supported by this encoding "
-    | None ->
-      if Info.is_template_polymorphic uenv l
-      then
-        match Info.translate_template_arg uenv l
-        with Type l -> l | _ -> assert false
-      else
-        let name = Univ.Level.to_string l in
-        if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
-        then GlobalLevel name
-        else
-          try Hashtbl.find universe_table name
-          with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
-
-(** Translates a universe level in a given local universe environment
-    using universe_table global environment for named universes.  *)
-let level_as_universe uenv l =
-  if Univ.Level.is_prop l then Translator.Prop
-  else if Univ.Level.is_set l then Translator.Set
-  else
-    match Univ.Level.var_index l with
-    | Some n ->
-      if Encoding.is_polymorphism_on ()
-      then Type (Local n) (* Locally bounded universe variable *)
-      else failwith "Universe polymorphism no supported by this encoding "
-    | None ->
-      if Info.is_template_polymorphic uenv l
-      then Info.translate_template_arg uenv l
-      else
-        let name = Univ.Level.to_string l in
-        if Encoding.is_float_univ_on () || Encoding.is_named_univ_on ()
-        then Type (GlobalLevel name)
-        else
-          try Type (Hashtbl.find universe_table name)
-          with Not_found -> failwith (Format.sprintf "Unable to parse atom: %s" name)
 
 let get_poly_univ_params uenv ctx univ_instance =
   let nb_params = Univ.AUContext.size ctx in

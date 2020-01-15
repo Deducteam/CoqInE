@@ -76,6 +76,16 @@ let coq_conj_cstr = function
     in
     aux [] l
 
+let coq_trans_cstr s = function
+  | [] -> t_I()
+  | [ (c,_) ] -> c
+  | l ->
+    let rec aux acc = function
+      | [] -> apps (vsymb "trans") (s :: (List.rev_append acc [vsymb "SortNone"]))
+      | (c,t) :: tl -> aux (c :: app (vsymb "SortSome") t :: acc) tl
+    in
+    aux [] l
+
 module Std =
 struct
   let rec cl = function
@@ -252,6 +262,7 @@ struct
   let coq_univ_name     = coq_univ_name
   let coq_global_univ   = univ_var
   let coq_conj_cstr     = coq_conj_cstr
+  let coq_trans_cstr    = coq_trans_cstr
   let coq_pattern_universe = Std.coq_pattern_universe
   let coq_nat_universe     = Std.coq_nat_universe
 

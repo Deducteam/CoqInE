@@ -8,7 +8,7 @@
 (;-------------------------  Nat definition  ----------------------;)
 
 Nat : Type.     (; Type of predicative Type levels ;)
-s : Nat -> Nat.
+def s : Nat -> Nat.
 z : Nat.
 (; Set is the smallest (predicative) Type. ;)
 (; Careful:  Coq's   Type@{0} = Type@{Set+1}   is    type (s z)  ;)
@@ -40,8 +40,9 @@ Coqine lvlMax = max (; Nat representation of Type@{max(i,j)} ;)
 (;-----------------------  LUB wrt Cumulativity  ------------------;)
 
 defac max [Nat].
-[i  ] max i     z  --> i
-[i,j] max (s i) (s j) --> s (max i j)
+[i  ] max i z --> i.
+
+[i,j] s (max i j) --> max (s i) (s j).
 
 [i  ] max i i --> i
 [i,j] max i (max i j) --> max i j
@@ -60,10 +61,11 @@ defac max [Nat].
 def Leq : Nat -> Nat -> Bool.
 [  j  ] Leq z      j         --> true
 [i,j  ] Leq (s i)     (s j)     --> Leq i j
+[i,j,k] Leq (max i j) k         --> and (Leq i k) (Leq j k)
 [i    ] Leq i         i         --> true
 [i    ] Leq i         (s i)     --> true
 [i,j  ] Leq i         (max i j) --> true
-[i,j,k] Leq (max i j) k         --> and (Leq i k) (Leq j k).
+[i,j  ] Leq i         (max (s i) j) --> true.
 
 (;---------------------  CTS Axiom definition  --------------------;)
 

@@ -130,10 +130,15 @@ let init_empty_symbs () =
 
       (* Predicate constructors *)
       "I";            (* Proof of trivial predicate         *)
+
       "BoolNone";
       "BoolSome";
       "pair";         (* C1   ->   C2   ->   C1 /\ C2       *)
-      "cumul_trans";  (* A < B   ->   B < C   ->   A < C    *)
+
+      "SortNone";
+      "SortSome";
+      "trans";  (* A < B   ->   B < C   ->   A < C    *)
+
       "cumul_eq";     (* A = B   ->   A < B                 *)
       "eq_sym";       (* A = B   ->   B = A                 *)
       "cumul_rule_1"; (* A < B   ->   rule(A,C) < rule(B,C)  for functionnal CTS *)

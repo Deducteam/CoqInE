@@ -44,7 +44,10 @@ let fetch_constraint uenv cstr =
   with Not_found -> None
 
 let fetch_higher_sorts uenv u =
-  let rec assoc acc ((i,c,j),b) = if compare i u = 0 then (c,j,b)::acc else acc
+  let rec assoc acc ((i,c,j),(b,_,_)) = if compare i u = 0 then (c,j,b)::acc else acc
+  (* FIXME: Equality constraints are not handled correctly here.
+     - They should be considered both way
+     - We should also prevent loops somehow *)
   in List.fold_left assoc [] uenv.constraints
 
 let find_constraint uenv (cfirst,ccstr,clast) =
@@ -55,13 +58,13 @@ let find_constraint uenv (cfirst,ccstr,clast) =
       else
         let rec filter acc = function
           | [] -> acc
-          | (c,j,t)::tl ->
+          | ((c,j,t) as hd)::tl ->
             let new_acc =
               match ccstr, c with
               | Univ.Eq, Univ.Eq -> acc
-              | Univ.Eq, _       -> (j,flag,(c,t)::l) :: acc
-              | _      , Univ.Lt -> (j,true,(c,t)::l) :: acc
-              | _                -> (j,flag,(c,t)::l) :: acc
+              | Univ.Eq, _       -> (j,flag,hd::l) :: acc
+              | _      , Univ.Lt -> (j,true,hd::l) :: acc
+              | _                -> (j,flag,hd::l) :: acc
             in filter new_acc tl
         in
         let newsearch = filter search (fetch_higher_sorts uenv i) in
