@@ -21,11 +21,6 @@ val convertible :
 
 val make_const : Names.ModPath.t -> Names.Id.t -> Names.Constant.t
 
-val push_const_decl :
-  Environ.env ->
-  Names.Constant.t * Constr.t option * Constr.types ->
-  Environ.env
-
 val translate_constr :
   ?expected_type:Constr.t ->
   Info.info -> Environ.env -> Info.env -> Constr.t -> Dedukti.term

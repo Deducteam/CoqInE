@@ -17,7 +17,5 @@ Require Import
   Coq.Bool.Sumbool
   Coq.Numbers.BinNums
   Coq.Logic.Decidable
-  (*
-  Coq.Arith.PeanoNat
-*)
+  Coq.Classes.CRelationClasses
 .

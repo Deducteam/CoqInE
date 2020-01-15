@@ -53,6 +53,7 @@ type ind_infos =
     arity_sort : Sorts.t;
 
     (* Universe polymorphic context : instance (array of universe levels) and constraints *)
+    apoly_ctxt : Univ.AUContext.t;
     poly_ctxt : Univ.UContext.t;
     poly_inst : Univ.Instance.t;
     poly_cstr : Univ.Constraint.t;
@@ -96,17 +97,19 @@ let get_infos mind_body index =
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
-  let poly_ctxt, poly_inst, poly_cstr =
+  let apoly_ctxt, poly_ctxt, poly_inst, poly_cstr =
     match mind_univs with
     | Monomorphic_ind univ_ctxt ->
+      Univ.AUContext.empty,
       Univ.UContext.empty,
       Univ.Instance.empty,
       Univ.Constraint.empty
       (*
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
       *)
-    | Polymorphic_ind univ_ctxt ->
-      let poly_ctxt = Univ.AUContext.repr univ_ctxt in
+    | Polymorphic_ind apoly_ctxt ->
+      let poly_ctxt = Univ.AUContext.repr apoly_ctxt in
+      apoly_ctxt,
       poly_ctxt,
       Univ.UContext.instance    poly_ctxt,
       Univ.UContext.constraints poly_ctxt
@@ -120,6 +123,7 @@ let get_infos mind_body index =
     Info.make
       template_levels
       (List.map f template_names)
+      apoly_ctxt
       univ_poly_nb_params
       univ_poly_cstr  in
   let inductive_uenv =
@@ -147,6 +151,7 @@ let get_infos mind_body index =
     n_params;
     n_cons;
     cons_names;
+    apoly_ctxt;
     poly_ctxt;
     poly_inst;
     poly_cstr;
@@ -363,7 +368,7 @@ begin
   let priv_inductive' = name' ^ "'" in
   let priv_levels = List.map (fun _ -> Translator.SInf) ind.template_levels in
   let priv_uenv =
-    Info.make ind.template_levels priv_levels 0 [] in
+    Info.make ind.template_levels priv_levels ind.apoly_ctxt 0 [] in
   let arity = Term.it_mkProd_or_LetIn (Constr.mkSort ind.arity_sort) ind.arity_context in
   let arity' = Terms.translate_types info env priv_uenv arity in
   let rec replace_return_sort = function

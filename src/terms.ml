@@ -162,7 +162,7 @@ let make_const mp x =
 (** Use constant declarations instead of named variable declarations for lifted
     terms because fixpoint declarations should be global and could be referred
     to from other files (think Coq.Arith.Even with Coq.Init.Peano.plus). *)
-let push_const_decl env (c, m, const_type) =
+let push_const_decl uenv env (c, m, const_type) =
   let const_body =
     match m with
     | None -> Undef None
@@ -182,7 +182,7 @@ let push_const_decl env (c, m, const_type) =
     const_body = const_body;
     const_type = const_type;
     const_body_code = Some (Cemitcodes.from_val const_body_code);
-    const_universes = Monomorphic_const Univ.ContextSet.empty;
+    const_universes = Polymorphic_const uenv.poly_ctxt;
     const_proj = None;
     const_inline_code = false;
     const_typing_flags =
@@ -561,21 +561,22 @@ and translate_cast info uenv t' enva a envb b =
     then
       let _ = debug "Translating cast: %a < %a" pp_coq_term a pp_coq_term b in
       let constraints =
-        (* FIXME. This is not enough.  A -> s  <   B -> s'   => A = B & s < s'
-        for s and s' sorts (so A->s arity).
-        But also!
-           A -> I(s1)   <   B -> I(s2)
-           =>
-           A = B  &
-           |  s1 < s2     (if arg1 of I is Cumulative)
-           |  s1 = s2     (if arg1 of I is Invariant)
-           |  nothing     (if arg1 of I is Irrelevant)
+        (* FIXME. a and b should probably be reduced...
+           Besides this is not enough.  A -> s  <   B -> s'   => A = B & s < s'
+           for s and s' sorts (so A->s arity).
+           But also!
+             A -> I(s1)   <   B -> I(s2)
+             =>
+             A = B  &
+             |  s1 < s2     (if arg1 of I is Cumulative)
+             |  s1 = s2     (if arg1 of I is Invariant)
+             |  nothing     (if arg1 of I is Irrelevant)
            See Subtyping.check_inductive as a starting point...
         *)
-        if Term.isArity a && Term.isArity b
-        then
-          let decla, sa = Term.destArity a in (* Extracts s from A1 -> ... -> An -> Us *)
-          let declb, sb = Term.destArity b in
+        try
+          (* Extracts s from A1 -> ... -> An -> Us *)
+          let decla, sa = Reduction.dest_arity enva a in
+          let declb, sb = Reduction.dest_arity envb b in
           let eq_types = Tsorts.gather_eq_types decla declb in
           debug "Gathering eq types %a = %a |-> { %a }"
             pp_coq_type a pp_coq_type b
@@ -587,7 +588,7 @@ and translate_cast info uenv t' enva a envb b =
                However this never happens in practice. *)
             (* Maybe: have an encoding that accepts too many constraints *)
             (Tsorts.enforce_eq_types Univ.Constraint.empty eq_types)
-        else
+        with Reduction.NotArity ->
           Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]
       in
       debug "Constraints: %a" pp_coq_Constraint constraints;
@@ -723,9 +724,12 @@ and lift_let info env uenv x u a =
   let global_env = Environ.reset_with_named_context (Environ.named_context_val env) env in
   let a_closed' = translate_types  info global_env uenv a_closed in
   let u_closed' = translate_constr info global_env uenv u_closed in
+  let a_closed' = Tsorts.add_poly_env_type uenv a_closed' in
+  let u_closed' = Tsorts.add_poly_env_def  uenv u_closed' in
   Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
-  let yconstr = apply_rel_context (Constr.mkConst yconstant) rel_context in
-  let env = push_const_decl env (yconstant, Some(u_closed), a_closed) in
+  let inst = Univ.UContext.instance (Univ.AUContext.repr uenv.poly_ctxt) in
+  let yconstr = apply_rel_context (Constr.mkConstU (yconstant,inst)) rel_context in
+  let env = push_const_decl uenv env (yconstant, Some(u_closed), a_closed) in
   let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, yconstr, a)) env in
   new_env
 
@@ -870,7 +874,7 @@ and lift_fix info env uenv names types bodies rec_indices =
       (names.(i), Vars.lift i fix_applieds1.(i), Vars.lift i types.(i))) in
   let fix_rules3 = Array.init n (fun i ->
     let env, rel_context' = translate_rel_context info (global_env) uenv rel_context in
-    let env = Array.fold_left push_const_decl env name1_declarations in
+    let env = Array.fold_left (push_const_decl uenv) env name1_declarations in
     let fix_term3' = translate_constr info env uenv fix_terms3.(i) in
     let env = Array.fold_left
         (fun env declaration -> Environ.push_rel declaration env)
@@ -886,9 +890,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules2.(i));
     List.iter (Dedukti.print info.fmt) (List.map Dedukti.typed_rewrite fix_rules3.(i));
   done;
-  let env = Array.fold_left push_const_decl env name1_declarations in
-  let env = Array.fold_left push_const_decl env name2_declarations in
-  let env = Array.fold_left push_const_decl env name3_declarations in
+  let env = Array.fold_left (push_const_decl uenv) env name1_declarations in
+  let env = Array.fold_left (push_const_decl uenv) env name2_declarations in
+  let env = Array.fold_left (push_const_decl uenv) env name3_declarations in
   env, fix_declarations1
 
 (** Translate the context [x1 : a1, ..., xn : an] into the list

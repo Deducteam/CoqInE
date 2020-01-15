@@ -40,12 +40,10 @@ let rec enforce_eq_types acc  = function
       | _ -> enforce_eq_types acc tl
 
 let trivial_cstr (i,c,j) =
-  if Encoding.is_float_univ_on ()
-  then
-    if c = Univ.Le
-    then Univ.Level.is_small i
-    else true
-  else (Univ.Level.var_index i = None && Univ.Level.var_index j = None)
+  (Univ.Level.is_small i && c = Univ.Le)
+  ||
+  (not (Encoding.is_float_univ_on ())
+   &&  (Univ.Level.var_index i = None && Univ.Level.var_index j = None))
 
 let translate_constraint :
   Info.env -> Univ.univ_constraint -> (Dedukti.term*Dedukti.term) option
@@ -55,7 +53,9 @@ let translate_constraint :
   if trivial_cstr cstr then None
   else
     match Info.fetch_constraint uenv cstr with
-    | Some (v,c,ct) -> Some (Dedukti.var v, c)
+    | Some (v,c,ct) ->
+      debug "Found: %s" v;
+      Some (Dedukti.var v, c)
     | None ->
       match Info.find_constraint uenv cstr with
       | None ->
@@ -75,13 +75,16 @@ let translate_constraints_as_conjunction uenv cstr =
   Univ.Constraint.fold aux cstr []
 
 
-let template_constructor_upoly () =
-  Encoding.is_templ_polymorphism_on () && Encoding.is_templ_polymorphism_cons_poly ()
-
+(**************************************************************************)
 
 type cstr = Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)
 
 let cstr_decl (_,(v,_,ct)) = (v, ct)
+
+(**************************************************************************)
+
+let template_constructor_upoly () =
+  Encoding.is_templ_polymorphism_on () && Encoding.is_templ_polymorphism_cons_poly ()
 
 let add_poly_params_type params cstr t =
   if Encoding.is_polymorphism_on ()
@@ -98,6 +101,16 @@ let add_poly_params_def params cstr t =
         then List.fold_right Dedukti.lam (List.map cstr_decl cstr) t
         else t )
   else t
+
+let add_poly_env_def uenv =
+  let rec params i acc = if i = 0 then acc else params (i-1) (T.coq_var_univ_name (i-1)::acc) in
+  let params = params uenv.Info.nb_polymorphic_univs [] in
+  add_poly_params_def params uenv.Info.constraints
+
+let add_poly_env_type uenv =
+  let rec params i acc = if i = 0 then acc else params (i-1) (T.coq_var_univ_name (i-1)::acc) in
+  let params = params uenv.Info.nb_polymorphic_univs [] in
+  add_poly_params_type params uenv.Info.constraints
 
 let get_inductive_params templ_params poly_params poly_cstr =
   (
@@ -243,7 +256,7 @@ let get_poly_univ_params uenv ctx univ_instance =
       let cstr = Univ.UContext.constraints (Univ.AUContext.repr ctx) in
       debug "Translating Constraints: %a in instance %a"
         pp_coq_Constraint cstr pp_coq_inst univ_instance;
-      Univ.Constraint.fold aux cstr []
+      List.rev (Univ.Constraint.fold aux cstr [])
 
 let instantiate_poly_univ_constant env uenv (kn,u) constant =
   let cb = Environ.lookup_constant kn env in

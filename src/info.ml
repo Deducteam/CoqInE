@@ -5,24 +5,31 @@ module LevelMap = Map.Make(
     let compare = Univ.Level.compare
   end)
 
+type map = Translator.universe_expr LevelMap.t
+
 type env =
   {
     template_params : Translator.universe_expr LevelMap.t;
+    poly_ctxt : Univ.AUContext.t;
+    nb_polymorphic_univs : int;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list
   }
 
 let make
     (template_levels : Univ.Level.t list)
     (template_names  : Translator.universe_expr list)
-    (nb_polymorphic_args : int)
-    (constraints_args : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)) list) =
+    (poly_ctxt : Univ.AUContext.t)
+    (nb_polymorphic_univs : int)
+    (constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)) list) =
 
   let aux map k v = LevelMap.add k v map in
   let template_params = List.fold_left2 aux LevelMap.empty template_levels template_names in
   (* TODO: implement here a mechanism that processes polymorphic constraints *)
   {
-    template_params = template_params;
-    constraints = constraints_args
+    template_params;
+    poly_ctxt;
+    nb_polymorphic_univs;
+    constraints
   }
 
 let replace_template_name uenv lvl new_name =
@@ -67,7 +74,7 @@ let pp_constraints : env Debug.printer = fun fmt s ->
   let p fmt (a,(b,c,d)) = Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
   Format.fprintf fmt "{ %a }" (pp_list ", " p) s.constraints
 
-let dummy = make [] [] 0 []
+let dummy = make [] [] Univ.AUContext.empty 0 []
 
 
 let destination = ref "."

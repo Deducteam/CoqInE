@@ -46,10 +46,15 @@ type cstr = Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)
 *)
 
 val add_poly_params_type : Dedukti.var list -> cstr list -> Dedukti.term -> Dedukti.term
-(** Prepend universe parameters before universe poymorphic type definition *)
+(** Prepend universe parameters (levels and constraints)
+    before universe poymorphic type definition *)
 
 val add_poly_params_def  : Dedukti.var list -> cstr list -> Dedukti.term -> Dedukti.term
-(** Prepend universe parameters before universe poymorphic definition *)
+(** Prepend universe parameters (levels and constraints)
+    before universe polymorphic definition *)
+
+val add_poly_env_def  : Info.env -> Dedukti.term -> Dedukti.term
+val add_poly_env_type : Info.env -> Dedukti.term -> Dedukti.term
 
 val get_inductive_params :
     Dedukti.var list ->
