@@ -130,7 +130,8 @@ clean: CoqMakefile
 	rm -f $(RUNDIR)/logipedia/config.v
 	rm -f $(RUNDIR)/upoly_logipedia/config.v
 	rm -f CoqMakefile
-	rm -f .coqrc
+	rm -f *.tar.bz2
+	rm -f summary.csv
 
 fullclean: clean
 	rm src/*.cmt
