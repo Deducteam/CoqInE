@@ -3,7 +3,7 @@ COQPATH=~/git/coq/v8.8/theories/
 SUMMARY=summary.csv
 
 rm -f $SUMMARY
-echo "File,.v size,.vo size,.dk size,.dko size" > $SUMMARY
+echo "File,.v size,.vo size,.dk size,.dko size,.dk.tar.gz size" > $SUMMARY
 
 for dkfile in $(find $DKPATH -maxdepth 1 -regex '.*Coq__[A-Z].*\.dk')
 do
@@ -30,5 +30,11 @@ do
     if test -f "$vofile"; then
         vosize=$(stat -c "%s" $vofile)
     fi
-    echo "$coqfile,$vsize,$vosize,$dksize,$dkosize" >> $SUMMARY
+
+    rm -f deleteme.tar.gz
+    tar zcf deleteme.tar.gz $dkfile
+    tarsize=$(stat -c "%s" deleteme.tar.gz)
+    rm -f deleteme.tar.gz
+
+    echo "$coqfile,$vsize,$vosize,$dksize,$dkosize,$tarsize" >> $SUMMARY
 done
