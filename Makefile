@@ -264,11 +264,11 @@ logipedia: plugin .coqrc
 	make -C run/logipedia clean
 	make -C run/logipedia
 	rm -rf std ctpicef.dk
-	mkdir std
-	cp run/logipedia/out/Coq*.dk std/
-	cp run/logipedia/ctpicef.dk ./
-	tar cj ctpicef.dk std > ctpicef.tar.bz2
-	rm -rf std ctpicef.dk
+	mkdir -p ctpicef/std
+	cp run/logipedia/out/Coq*.dk ctpicef/std/
+	cp run/logipedia/ctpicef.dk ctpicef/
+	tar cj ctpicef > ctpicef.tar.bz2
+	rm -rf ctpicef
 
 .PHONY: upoly_logipedia
 upoly_logipedia: plugin .coqrc
@@ -290,11 +290,11 @@ upoly_logipedia: plugin .coqrc
 	make -C run/upoly_logipedia
 	bash stats.sh
 	rm -rf std cupicef.dk
-	mkdir std
-	cp run/upoly_logipedia/out/Coq*.dk std/
-	cp run/upoly_logipedia/cupicef.dk ./
-	tar cj cupicef.dk std > cupicef.tar.bz2
-	rm -rf std cupicef.dk
+	mkdir -p cupicef/std
+	cp run/upoly_logipedia/out/Coq*.dk cupicef/std/
+	cp run/upoly_logipedia/cupicef.dk cupicef/
+	tar cj cupicef > cupicef.tar.bz2
+	rm -rf cupicef
 
 .PHONY: debug
 debug: plugin .coqrc
