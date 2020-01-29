@@ -239,7 +239,6 @@ let translate_inductive info env label ind  =
   in
   Dedukti.print info.fmt (Dedukti.declaration definable name' arity')
 
-
 (* Template polymorphic inductives types are "sort-irrelevant" in some of their arguments
    This means that instances where the arguments are lifted should be
    convertible with instances of lower sorts with non-lifted arguments.
@@ -936,29 +935,24 @@ end
 
 
 let translate_guarded info env label ind =
-  (*
-  let mind = Names.MutInd.make3 info.module_path Names.DirPath.empty label in
-  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in
-  let cons_types = Array.map (Vars.substl ind_subst) ind.body.mind_nf_lc in
-  let cons_context_types = Array.map Term.decompose_prod_assum cons_types in
-  *)
-  let nb_params =
-    ind.n_params
-    + (List.length ind.univ_poly_names)
-    + (if Tsorts.template_constructor_upoly ()
-       then List.length ind.template_names
-       else 0)
-  in
-  let nb_args = ind.body.mind_consnrealargs in
- (* Number of expected proper arguments of the constructors (w/o params) *)
-
-  for consid = 0 to ind.n_cons - 1 do
-    let cons_name = ind.body.mind_consnames.(consid) in
-    let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
-    let args = nb_args.(consid) + nb_params in
-    Dedukti.printc info.fmt (T.coq_guarded cons_name' args);
-    Format.pp_force_newline info.fmt ()
-  done
+  if Encoding.is_fixpoint_inlined ()
+  then
+    let nb_params =
+      ind.n_params
+      + (List.length ind.univ_poly_names)
+      + (if Tsorts.template_constructor_upoly ()
+         then List.length ind.template_names
+         else 0)
+    in
+    let nb_args = ind.body.mind_consnrealargs in
+    (* Number of expected proper arguments of the constructors (w/o params) *)
+    for consid = 0 to ind.n_cons - 1 do
+      let cons_name = ind.body.mind_consnames.(consid) in
+      let cons_name' = Cname.translate_element_name info env (Names.Label.of_id cons_name) in
+      let args = nb_args.(consid) + nb_params in
+      Dedukti.printc info.fmt (T.coq_guarded cons_name' args);
+      Format.pp_force_newline info.fmt ()
+    done
 
 
 
@@ -981,3 +975,11 @@ let translate_guarded info env label ind =
 *)
 let translate_match_subtyping info env label ind = ()
 (* TODO This is currently implemented above. Maybe move it here... *)
+
+
+let print_all_alias_symbols info env label alias =
+  let label' = Cname.translate_element_name info env label in
+  let alias' = Cname.translate_kernel_name info env alias in
+  let print (label', alias') =
+    Dedukti.print info.fmt (Dedukti.alias label' alias') in
+  ()

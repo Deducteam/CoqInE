@@ -1,3 +1,7 @@
+(*
+Require Import Coq.PArith.BinPos.
+**)
+
 Require Import
   Coq.Init.Notations
   Coq.Init.Logic

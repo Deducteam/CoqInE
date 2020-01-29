@@ -26,7 +26,7 @@ type instruction =
   | UDefinition of bool * var * term
   | Rewrite of untyped_context * term * term
 
-let var x = Var(x)
+let var x = Var x
 
 let arr a b = Pie(("", a), b)
 
@@ -67,6 +67,8 @@ let declaration definable x a = Declaration(definable ,x, a)
 let definition opaque x a b = Definition(opaque, x, a, b)
 
 let udefinition opaque x a = UDefinition(opaque, x, a)
+
+let alias a b = udefinition false a (var b)
 
 let rewrite (context, left, right) = Rewrite(context, left, right)
 

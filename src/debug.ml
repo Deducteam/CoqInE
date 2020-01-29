@@ -89,6 +89,8 @@ let pp_coq_name fmt = function
   | Names.Name.Anonymous -> fprintf fmt "_"
   | Names.Name.Name n    -> fprintf fmt "%a" pp_coq_id n
 
+let pp_coq_kername = printer_of_std_ppcmds Names.KerName.print
+
 let pp_coq_sort fmt = function
   | Term.Prop Term.Null -> fprintf fmt "Set"
   | Term.Prop Term.Pos  -> fprintf fmt "Prop"

@@ -49,6 +49,7 @@ val command : string -> string list -> instruction
 val declaration : bool -> var -> term -> instruction
 val definition : bool -> var -> term -> term -> instruction
 val udefinition : bool -> var -> term -> instruction
+val alias : var -> var -> instruction
 val rewrite : untyped_context * term * term -> instruction
 val typed_rewrite : context * term * term -> instruction
 

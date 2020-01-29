@@ -149,3 +149,6 @@ val translate_match_subtyping :
 *)
 val translate_guarded :
   Info.info -> Environ.env -> Names.Label.t -> ind_infos -> unit
+
+val print_all_alias_symbols :
+  Info.info -> Environ.env -> Names.Label.t -> Names.KerName.t -> unit

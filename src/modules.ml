@@ -13,14 +13,31 @@ let symb_filter = ref []
 let filter_out symb = symb_filter := symb :: !symb_filter
 let not_filtered symb = not (List.mem symb !symb_filter)
 
+let isalias resolver kername =
+  let mind = Mod_subst.mind_of_delta_kn resolver kername in
+  let can = Names.MutInd.canonical mind in
+  if Names.KerName.compare (Names.MutInd.user mind) can = 0
+  then None
+  else Some can
 
-(** Constant definitions have a type and a body.
-    - The type can be non-polymorphic (normal type) or
-      a polymorphic arity (universe polymorphism).
-    - The body can be empty (an axiom), a normal definition, or
-      an opaque definition (a theorem). **)
 
-let translate_constant_body info env label const =
+let translate_alias_constant_body info env alias label const =
+  let label' = Cname.translate_element_name info env label in
+  debug "Translating constant alias %a -> %a"
+    pp_coq_label label pp_coq_kername alias;
+  let alias' = Cname.translate_kernel_name info env alias in
+  Dedukti.print info.fmt (Dedukti.alias label' alias')
+
+(* Constant definitions have a type and a body.
+   - The type can be non-polymorphic (normal type) or
+     a polymorphic arity (universe polymorphism).
+   - The body can be empty (an axiom), a normal definition, or
+     an opaque definition (a theorem). *)
+let translate_constant_body info env isalias label const =
+  match isalias with
+  | Some alias -> translate_alias_constant_body info env alias label const
+  | None -> begin
+  let label' = Cname.translate_element_name info env label in
   let name = Names.Label.to_string label in
 
   (* There should be no section hypotheses at this stage. *)
@@ -36,7 +53,8 @@ let translate_constant_body info env label const =
       let env' = Environ.push_context ~strict:false uctxt env in
       let instance = Univ.UContext.instance uctxt in
       let constraints = Univ.UContext.constraints uctxt in
-      debug "Translating polymorphic [%a] constant body: %s" pp_coq_inst instance name;
+      debug "Translating polymorphic [%a] constant body: %s"
+        pp_coq_inst instance name;
       univ_ctxt, instance, constraints, env'
   in
 
@@ -47,8 +65,6 @@ let translate_constant_body info env label const =
   let const_type = Vars.subst_instance_constr poly_inst const.const_type in
   let const_type' = Terms.translate_types info env uenv const_type in
   let const_type' = Tsorts.add_poly_params_type univ_poly_params univ_poly_cstr const_type' in
-
-  let label' = Cname.translate_element_name info env label in
 
   match const.const_body with
   | Undef inline ->
@@ -72,91 +88,67 @@ let translate_constant_body info env label const =
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
+end
 
 (** Translate the body of mutual inductive definitions [mind]. *)
-let translate_mutual_inductive_body info env label mind_body =
-  debug "Translating inductive: %s" (Names.Label.to_string label);
+let translate_mutual_inductive_body info env isalias label mind_body =
+  match isalias with
+  | Some alias ->
+    debug "Translating inductive alias %a -> %a"
+      pp_coq_label label pp_coq_kername alias;
+    Inductives.print_all_alias_symbols info env label alias
+  | None ->
+    debug "Translating inductive: %s" (Names.Label.to_string label);
+    let ntypes = mind_body.mind_ntypes in
+    let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+    let iter f = Array.iter (f info env label) inds in
+    (* First declare all the inductive types. Constructors of one inductive type
+       can refer to other inductive types in the same block. *)
+    iter Inductives.translate_inductive;
+    (* Then encode sort irrelevance for template polymorphism (if needed) *)
+    iter Inductives.translate_template_inductive_subtyping;
+    (* Then encode global universes for template polymorphism (if needed) *)
+    iter Inductives.translate_template_inductive_levels;
+    (* Then declare all the constructors.
+       Template constructors are usually universe monomorphic. *)
+    iter Inductives.translate_constructors;
+    (* Then declare all the guard definitions for fixpoint compatibility. *)
+    iter Inductives.translate_guarded;
+    (* Then extend subtyping to template inductive constructors *)
+    iter Inductives.translate_template_constructors_subtyping;
+    (* Then extend subtyping to cumulative inductive constructors *)
+    iter Inductives.translate_cumulative_constructors_subtyping;
+    (* Then declare all the match functions and their rewrite rules *)
+    iter Inductives.translate_match;
+    (* Then extend subtyping to inductive destructors *)
+    iter Inductives.translate_match_subtyping
 
-  let ntypes = mind_body.mind_ntypes in
-  let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
-  (* First declare all the inductive types. Constructors of one inductive type
-     can refer to other inductive types in the same block. *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_inductive info env label inds.(i)
-  done;
-  (* Then encode sort irrelevance for template polymorphism (if needed) *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_template_inductive_subtyping info env label inds.(i)
-  done;
-  (* Then encode global universes for template polymorphism (if needed) *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_template_inductive_levels info env label inds.(i)
-  done;
-  (* Then declare all the constructors.
-     Template constructors are usually universe monomorphic. *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_constructors info env label inds.(i)
-  done;
-  (* Then declare all the guard definitions for fixpoint compatibility. *)
-  if Encoding.is_fixpoint_inlined ()
-  then
-    for i = 0 to pred ntypes do
-      Inductives.translate_guarded info env label inds.(i)
-    done;
-  (* Then extend subtyping to template inductive constructors *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_template_constructors_subtyping info env label inds.(i)
-  done;
-  (* Then extend subtyping to cumulative inductive constructors *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_cumulative_constructors_subtyping info env label inds.(i)
-  done;
-  (* Then declare all the match functions and their rewrite rules *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_match info env label inds.(i)
-  done;
-  (* Then extend subtyping to inductive destructors *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_match_subtyping info env label inds.(i)
-  done
-
-(** Pseudo-translate the body of mutual coinductive definitions [mind]. *)
-let translate_mutual_coinductive_body info env label mind_body =
-  let ntypes = mind_body.mind_ntypes in
+(** Pseudo-translate the body of mutual coinductive definitions [mind_body]. *)
+let translate_mutual_coinductive_body info env isalias label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
-  let inds = Array.init mind_body.mind_ntypes (Inductives.get_infos mind_body) in
+  let ntypes = mind_body.mind_ntypes in
+  let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+  let iter f =
+    for i = 0 to pred ntypes do f info env label inds.(i) done in
   debug "Translating co-inductive body: %s" (Names.Label.to_string label);
   (* First declare all the inductive types. Constructors of one inductive type
      may refer to other inductive types in the same block. *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_inductive info env label inds.(i)
-  done;
+  iter Inductives.translate_inductive;
   (* Then encode sort irrelevance for template polymorphism (if needed) *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_template_inductive_subtyping info env label inds.(i)
-  done;
+  iter Inductives.translate_template_inductive_subtyping;
   (* Then encode global universes for template polymorphism (if needed) *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_template_inductive_levels info env label inds.(i)
-  done;
+  iter Inductives.translate_template_inductive_levels;
   (* Then declare all the constructors *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_constructors info env label inds.(i)
-  done;
+  iter Inductives.translate_constructors
   (* No match function defined so we are done *)
-  (* Then declare all the match functions *)
-  for i = 0 to pred ntypes do
-    Inductives.translate_match info env label inds.(i)
-  done
-
 
 (** Translate the body of non-recursive definitions when it's a record. *)
-let translate_record_body info env label mind_body =
+let translate_record_body info env isalias label mind_body =
   match mind_body.mind_record with
   | None   -> Error.not_supported "Non-recursive translation"
   | Some _ ->
     debug "Translating record: %a" pp_coq_label label;
-    translate_mutual_inductive_body info env label mind_body
+    translate_mutual_inductive_body info env isalias label mind_body
 
 
 (*----------------------  Dead code  ----------------------
@@ -196,16 +188,19 @@ let rec translate_module_body info env mb =
   then
     match mb.mod_expr with
     | Abstract          -> Error.not_supported "Abstract"
-    | Algebraic mod_exp -> translate_module_expression info env mb.mod_mp mod_exp
-    | Struct mod_sig    -> translate_module_signature  info env mod_sig
-    | FullStruct        -> translate_module_signature  info env mb.mod_type
+    | Algebraic mod_exp ->
+      translate_module_expression info env mb.mod_delta mb.mod_mp mod_exp
+    | Struct mod_sig    ->
+      translate_module_signature info env mb.mod_delta mod_sig
+    | FullStruct        ->
+      translate_module_signature info env mb.mod_delta mb.mod_type
   else debug "Filtered out"
 
-and translate_module_expression info env modpath = function
+and translate_module_expression info env resolver modpath = function
   | NoFunctor alg_exp ->
     let modsig, _, resolver, ctxt =
       Mod_typing.translate_mse env (Some modpath) (Some 1000) alg_exp in
-    translate_module_signature info env modsig
+    translate_module_signature info env resolver modsig
   | MoreFunctor _ -> ()
   (* Functors definitions are simply ignored.
      Whenever functors are applied to define algebraic modules, their
@@ -214,8 +209,9 @@ and translate_module_expression info env modpath = function
       (Format.sprintf "Functor (%s)" (Names.ModPath.to_string info.module_path))
 *)
 
-and translate_module_signature info env  = function
-  | NoFunctor struct_body -> translate_structure_body info env struct_body
+and translate_module_signature info env resolver = function
+  | NoFunctor struct_body ->
+    List.iter (translate_structure_field_body info env resolver) struct_body
   | MoreFunctor _ -> ()
   (* Functors definitions are simply ignored.
      Whenever functors are applied to define algebraic modules, their
@@ -224,10 +220,7 @@ and translate_module_signature info env  = function
       (Format.sprintf "Functor (%s)" (Names.ModPath.to_string info.module_path))
 *)
 
-and translate_structure_body info env sb =
-  List.iter (translate_structure_field_body info env) sb
-
-and translate_structure_field_body info env (label, sfb) =
+and translate_structure_field_body info env resolver (label, sfb) =
   let full_name = (Names.ModPath.to_string info.module_path) ^ "." ^
                   (Names.Label.to_string label) in
   debug "";
@@ -241,14 +234,16 @@ and translate_structure_field_body info env (label, sfb) =
       try
 *)
         verbose "-> %s" full_name;
+        let kername = Names.KerName.make2 info.module_path label in
         match sfb with
-        | SFBconst cb -> translate_constant_body info env label cb
+        | SFBconst cb ->
+          translate_constant_body info env (isalias resolver kername) label cb
         | SFBmind mib ->
           (match mib.mind_finite with
            | Declarations.Finite   -> translate_mutual_inductive_body
            | Declarations.CoFinite -> translate_mutual_coinductive_body
            | Declarations.BiFinite -> translate_record_body
-          ) info env label mib
+          ) info env (isalias resolver kername) label mib;
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
                            (*

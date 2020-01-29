@@ -106,7 +106,7 @@ let init module_path filename =
   }
 
 let update info label =
-  {info with module_path = Names.MPdot(info.module_path, label)}
+  { info with module_path = Names.MPdot(info.module_path, label) }
 
 let close info =
   Format.pp_print_flush info.fmt ();
