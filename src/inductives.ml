@@ -74,6 +74,7 @@ let get_infos mind_body index =
   let n_params   = mind_body.mind_nparams in
   let mind_univs = mind_body.mind_universes in
   let mind_params_ctxt = mind_body.mind_params_ctxt in
+  debug "mind_params: %a" pp_coq_ctxt mind_params_ctxt;
   let typename      = body.mind_typename in
   let arity_context = body.mind_arity_ctxt in
   let arity         = body.mind_arity in
@@ -245,6 +246,7 @@ let translate_inductive info env label ind  =
   let arity' = Tsorts.add_inductive_params ind.template_names
       ind.univ_poly_names ind.univ_poly_cstr arity' in
   (* Printing out the type declaration. *)
+  debug "ok";
   let definable =
     Encoding.is_templ_polymorphism_ind_code() ||
     List.exists (fun p -> Option.has_some (is_template_parameter ind p)) ind.mind_params_ctxt
@@ -638,11 +640,9 @@ let translate_match info env label ind =
 
   let cons_ind_real_args = Array.init ind.n_cons (fun j ->
     snd (Utils.list_chop ind.n_params cons_ind_args.(j))) in
-  let cons_applieds =
-    Array.init ind.n_cons (fun j ->
-        Terms.apply_rel_context cons_terms.(j)
-          (cons_real_contexts.(j) @ params_context)) in
-  debug "Ok: %a " (pp_array ", " pp_coq_term) cons_applieds;
+  let cons_applieds = Array.init ind.n_cons (fun j ->
+      Terms.apply_rel_context cons_terms.(j) (cons_real_contexts.(j) @ params_context)) in
+  debug "Cons applieds: %a " (pp_array ", " pp_coq_term) cons_applieds;
 
   let params_env, params_context' =
     let global_env_with_poly = Environ.push_context ind.poly_ctxt (Global.env ()) in
@@ -705,7 +705,8 @@ let translate_match info env label ind =
     Array.mapi
       (fun j -> Terms.translate_args info cons_real_envs.(j) uenv)
       cons_ind_real_args in
-  debug "ok";
+
+  debug "Real envs : %a" (pp_array "\n" pp_coq_env) cons_real_envs;
 
   let cons_applieds' =
     Array.mapi

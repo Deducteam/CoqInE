@@ -145,7 +145,8 @@ let translate_mutual_coinductive_body info env isalias label mind_body =
 (** Translate the body of non-recursive definitions when it's a record. *)
 let translate_record_body info env isalias label mind_body =
   match mind_body.mind_record with
-  | NotRecord | FakeRecord -> Error.not_supported "Non-recursive translation"
+  | NotRecord
+  | FakeRecord
   | PrimRecord _ ->
     debug "Translating record: %a" pp_coq_label label;
     translate_mutual_inductive_body info env isalias label mind_body

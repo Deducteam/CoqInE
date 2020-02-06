@@ -51,10 +51,9 @@ val is_alpha_numerical : char -> bool
 
 val escape : string -> string
 
-
 val translate_identifier : Names.Id.t -> string
 
-val translate_name : Names.Name.t -> string
+val translate_name : ?ensure_name:bool -> Names.Name.t -> string
 
 val translate_binder : Names.Name.t Context.binder_annot -> string
 

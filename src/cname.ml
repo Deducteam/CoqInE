@@ -116,9 +116,9 @@ let escape name =
 let translate_identifier identifier =
   escape (Names.Id.to_string identifier)
 
-let translate_name = function
+let translate_name ?(ensure_name=false) = function
   | Names.Name(identifier) -> translate_identifier identifier
-  | Names.Anonymous -> failwith "Anonymous name"
+  | Names.Anonymous -> if ensure_name then failwith "Anonymous name" else ""
 
 let translate_binder b = translate_name (Context.binder_name b)
 

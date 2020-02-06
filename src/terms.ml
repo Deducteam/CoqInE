@@ -57,16 +57,12 @@ let fixpoint_signature env rec_decl =
 let fixpoint_signature env rec_decl = (env, rec_decl)
 
 
-let translate_rel_decl info env decl =
-  match Context.Rel.Declaration.to_tuple decl with
-  | (binda, None, a) ->
-    let x = Cname.fresh_name ~default:"_" info env (Context.binder_name binda) in
-    let x' = Cname.translate_name x in
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(binda, a)) env in
-    (new_env, Some (x',a))
-  | (binda, Some u, a) ->
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(binda, u, a)) env in
-    (new_env, None)
+let translate_rel_decl info env = function
+  | Context.Rel.Declaration.LocalAssum (binda, a) ->
+     let fresh_name, fresh_binder = Cname.fresh ~default:"_" info env binda in
+     ( Environ.push_rel (Context.Rel.Declaration.LocalAssum(fresh_binder, a)) env,
+       Some (Cname.translate_name fresh_name, a))
+  | decl -> (Environ.push_rel decl env, None)
 
 let rec translate_sort_to_univ uenv t =
   match Term.kind_of_type t with
@@ -84,17 +80,15 @@ let rec infer_translate_sort info env uenv a =
   | CastType(a', target) -> translate_sort_to_univ uenv target
     (* Error.not_supported "CastType" *)
   | ProdType(binda, a, b) ->
-    let name = Context.binder_name binda in
-    let name' = Cname.fresh_name info env ~default:"_" name in
-    let binda' = Context.make_annot name' Sorts.Relevant in
-    let s1' = infer_translate_sort info env uenv a in
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(binda', a)) env in
-    let s2' = infer_translate_sort info new_env uenv b in
-    Translator.Rule (s1',s2')
+     let name', binda' = Cname.fresh info env ~default:"_" binda in
+     let s1' = infer_translate_sort info env uenv a in
+     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(binda', a)) env in
+     let s2' = infer_translate_sort info new_env uenv b in
+     Translator.Rule (s1',s2')
   | LetInType(x, u, a, b) ->
-    (* No need to lift the let here. *)
-    let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
-    infer_translate_sort info new_env uenv b
+     (* No need to lift the let here. *)
+     let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
+     infer_translate_sort info new_env uenv b
   | AtomicType _ -> Tsorts.translate_sort uenv (infer_sort env a)
 
 let abstract_rel_context context t =
@@ -363,20 +357,19 @@ let rec translate_constr ?expected_type info env uenv t =
     let t' = translate_constr info new_env uenv t in
     Dedukti.lam (x', a'') t'
 
-  | LetIn(x, u, a, t) ->
+  | LetIn(binda, u, a, t) ->
     if Encoding.is_letins_simpl ()
     then
-      let id_x = match Context.binder_name x with
-        | Names.Name id -> id (* Assume letin var is named (otherwise what's the point ?) *)
+      let fresh_name, fresh_binder = Cname.fresh info env binda in
+      let fresh_id = match fresh_name with
+        | Names.Name id -> id
+        (* Assume letin var is named (otherwise what's the point ?) *)
         | Names.Anonymous -> assert false in
-      let fresh_idx = Cname.fresh_identifier info env id_x in
-      let x' = Cname.translate_identifier fresh_idx in
+      let x' = Cname.translate_identifier fresh_id in
       let a' = translate_types  info env uenv a in
       let u' = translate_constr info env uenv u in
-      let fresh_name = Names.Name.mk_name fresh_idx in
-      let fresh_binder = Context.make_annot fresh_name Sorts.Relevant in
       let def = Context.Rel.Declaration.LocalDef
-          (fresh_binder, Constr.mkVar fresh_idx, a) in
+                  (fresh_binder, Constr.mkVar fresh_id, a) in
       (* TODO: This is unsafe, the constant should also be pushed to the environment
          with its correct type *)
       let new_env = Environ.push_rel def env in
@@ -384,149 +377,151 @@ let rec translate_constr ?expected_type info env uenv t =
         let t' = translate_constr info new_env uenv t in
         Dedukti.letin (x',u',a') t'
       with Type_errors.TypeError _ | Constr.DestKO ->
-        let new_env = lift_let info env uenv x u a in
+        let new_env = lift_let info env uenv binda u a in
         translate_constr info new_env uenv t
     else
-      let new_env = lift_let info env uenv x u a in
+      let new_env = lift_let info env uenv binda u a in
       translate_constr info new_env uenv t
 
   | App(f, args) ->
-    debug "App: %a [%n]" (pp_coq_term_env env) f (Array.length args);
-    Array.iteri (fun i t -> debug "Arg %n : %a" i (pp_coq_term_env env) t) args;
-    let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
-    let type_f, template_univ_parameters =
-      match Constr.kind f with
-      (* Template Polymorphic Inductive Constructions require the given parameters
-         to compute the proper universe instance (and univ parameters). *)
-      | Ind (ind, u) ->
-        infer_ind_applied info env uenv (ind,u) tmpl_args
-      | Construct ((ind, c), u) ->
-        infer_construct_applied info env uenv ((ind, c), u) tmpl_args
-      (* "True" Polymorphic Constants *)
-      (*
-      | Const (cst,u) when Environ.polymorphic_pconstant (cst,u) env ->
-        debug "Instance: %a" pp_coq_inst u;
-        Environ.constant_type_in env (cst,u), []
-      *)
-      | _ -> infer_type env f, []
-    in
-    let f' = Dedukti.apps (translate_constr info env uenv f) template_univ_parameters in
-    let translate_app (f', type_f) u =
-      debug "Type f : %a" (pp_coq_term_env env) type_f;
-      let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
-      let u' = translate_constr ~expected_type:c info env uenv u in
-      (Dedukti.app f' u', Vars.subst1 u d) in
-    fst (Array.fold_left translate_app (f', type_f) args)
+     debug "Env: %a" pp_coq_env env;
+     debug "App: %a [%n]" (pp_coq_term_env env) f (Array.length args);
+     Array.iteri (fun i t -> debug "Arg %n : %a" i (pp_coq_term_env env) t) args;
+     let tmpl_args = if Encoding.is_templ_polymorphism_on () then args else [||] in
+     let type_f, template_univ_parameters =
+       match Constr.kind f with
+       (* Template Polymorphic Inductive Constructions require the given parameters
+         to compute the proper u         niverse instance (and univ parameters). *)
+       | Ind (ind, u) ->
+          infer_ind_applied info env uenv (ind,u) tmpl_args
+       | Construct ((ind, c), u) ->
+          infer_construct_applied info env uenv ((ind, c), u) tmpl_args
+       (* "True" Polymorphic Constants *)
+       (*
+       | Const (cst,u) when Environ.polymorphic_pconstant (cst,u) env ->
+         debug "Instance: %a" pp_coq_inst u;
+         Environ.constant_type_in env (cst,u), []
+       *)
+       | _ -> infer_type env f, []
+     in
+     let f' = Dedukti.apps (translate_constr info env uenv f) template_univ_parameters in
+     let translate_app (f', type_f) u =
+       debug "Type f : %a" (pp_coq_term_env env) type_f;
+       let _, c, d = Constr.destProd (Reduction.whd_all env type_f) in
+       let u' = translate_constr ~expected_type:c info env uenv u in
+       (Dedukti.app f' u', Vars.subst1 u d) in
+     fst (Array.fold_left translate_app (f', type_f) args)
 
   | Const ((kn, univ_instance) as knu) ->
-    let name = Cname.translate_constant info env kn in
-    debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
-    if Utils.str_starts_with "Little__fix" name
-    then Dedukti.var (Utils.truncate name 8)
-    else if Utils.str_starts_with "fix_" name ||
-            not (Encoding.is_polymorphism_on ())
-    then Dedukti.var name
-    else if Encoding.is_polymorphism_on () &&
-            Environ.polymorphic_pconstant knu env
-    then
-      (* FIXME: add constraints here ! *)
-      Tsorts.instantiate_poly_univ_constant env uenv knu (Dedukti.var name)
-    else Dedukti.var name
+     let name = Cname.translate_constant info env kn in
+     debug "Printing constant: %s@@{%a}" name pp_coq_inst univ_instance;
+     if Utils.str_starts_with "Little__fix" name
+     then Dedukti.var (Utils.truncate name 8)
+     else if Utils.str_starts_with "fix_" name ||
+               not (Encoding.is_polymorphism_on ())
+     then Dedukti.var name
+     else if Encoding.is_polymorphism_on () &&
+               Environ.polymorphic_pconstant knu env
+     then (* FIXME: add constraints here ! *)
+       Tsorts.instantiate_poly_univ_constant env uenv knu (Dedukti.var name)
+     else Dedukti.var name
 
   | Ind (ind, univ_instance) ->
-    let name = Cname.translate_inductive info env ind in
-    debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
-    (* FIXME: add constraints here ! *)
-    Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
-      (Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
-         (Dedukti.var name))
+     let name = Cname.translate_inductive info env ind in
+     debug "Printing inductive: %s@@{%a}" name pp_coq_inst univ_instance;
+     (* FIXME: add constraints here ! *)
+     Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
+       (Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
+          (Dedukti.var name))
 
   | Construct (kn, univ_instance) ->
-    let name = Cname.translate_constructor info env kn in
-    debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
-    let ind = Names.inductive_of_constructor kn in
-    Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
-      ( if Tsorts.template_constructor_upoly ()
-        then
-          (* FIXME: add constraints here ! *)
-          Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
-            (Dedukti.var name)
-        else Dedukti.var name )
+     let name = Cname.translate_constructor info env kn in
+     debug "Printing constructor: %s@@{%a}" name pp_coq_inst univ_instance;
+     let ind = Names.inductive_of_constructor kn in
+     Tsorts.instantiate_poly_ind_univ_params env uenv ind univ_instance
+       ( if Tsorts.template_constructor_upoly ()
+         then
+           (* FIXME: add constraints here ! *)
+           Tsorts.instantiate_template_ind_univ_params env uenv ind univ_instance
+             (Dedukti.var name)
+         else Dedukti.var name )
 
   | Fix (((rec_indices, i), ((names, types, bodies) as rec_declaration)) as fp) ->
-    if Encoding.is_fixpoint_inlined ()
-    then translate_fixpoint info env uenv fp (Array.map (infer_type env) types)
-    else
-      begin
-        let n = Array.length names in
-        debug "Translating %i fixpoints:" n;
-        for i = 0 to n - 1 do
-          debug "%i -> %a : %a" i
-            (pp_coq_binder pp_coq_name) names.(i)
-            pp_coq_term types.(i);
-          debug "body:  %a" pp_coq_term bodies.(i);
-        done;
-        (* TODO: not the whole environment should be added here, only the relevant part
-           i.e. variables that occur in the body of the fixpoint *)
-        let env, fix_declarations =
-          let fsig = fixpoint_signature env rec_declaration in
-          try Hashtbl.find fixpoint_table fsig
-          with Not_found ->
-            let res = lift_fix info env uenv names types bodies rec_indices in
-            Hashtbl.add fixpoint_table fsig res;
-            res
-        in
-        let new_env =
-          Array.fold_left
-            (fun env declaration -> Environ.push_rel declaration env)
-            env fix_declarations in
-        translate_constr info new_env uenv (Constr.mkRel (n - i))
-      end
+     if Encoding.is_fixpoint_inlined ()
+     then translate_fixpoint info env uenv fp (Array.map (infer_type env) types)
+     else
+       begin
+         let n = Array.length names in
+         debug "Translating %i fixpoints:" n;
+         for i = 0 to n - 1 do
+           debug "%i -> %a : %a" i
+             (pp_coq_binder pp_coq_name) names.(i)
+             pp_coq_term types.(i);
+           debug "body:  %a" pp_coq_term bodies.(i);
+         done;
+         (* TODO: not the whole environment should be added here,
+            only the relevant part
+            i.e. variables that occur in the body of the fixpoint *)
+         let env, fix_declarations =
+           let fsig = fixpoint_signature env rec_declaration in
+           try Hashtbl.find fixpoint_table fsig
+           with Not_found ->
+             let res = lift_fix info env uenv names types bodies rec_indices in
+             Hashtbl.add fixpoint_table fsig res;
+             res
+         in
+         let new_env =
+           Array.fold_left
+             (fun env declaration -> Environ.push_rel declaration env)
+             env fix_declarations in
+         translate_constr info new_env uenv (Constr.mkRel (n - i))
+       end
 
   | Case(case_info, return_type, matched, branches) ->
-    let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
-    let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
-    let n_params = mind_body.Declarations.mind_nparams   in
-    let n_reals  =  ind_body.Declarations.mind_nrealargs in
-    let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
-    (*
-    let arity = Inductive.type_of_inductive env ( (mind_body, ind_body), snd pind) in
-    *)
-    let params, reals = Utils.list_chop n_params ind_args in
-    (* Probably put that back
-    let params = List.map (Reduction.whd_all env) params in
-    *)
-    debug "Template universe params: %a" (pp_list ", " pp_coq_term) params;
-    (* FIXME: This is not correct !
-       We do not provide universe level allowing substitution
-       of universe polymorphic destructions. *)
-    let arity, univ_params' =
-      infer_dest_applied info env uenv pind (Array.of_list params)
-    in
-    let univ_poly_levels =
-      if Encoding.is_polymorphism_on ()
-      then
-        Tsorts.get_poly_univ_params uenv
-          (Declareops.inductive_polymorphic_context mind_body) (snd pind)
-      else [] in
-    let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
-    let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
-    (* Translate params using expected types to make sure we use proper casts. *)
-    let translate_param (params', a) param =
-      let _, c, d = Constr.destProd (Reduction.whd_all env a) in
-      let param' = translate_constr ~expected_type:c info env uenv param in
-      (param' :: params', Vars.subst1 param d) in
-    let match_function' = Dedukti.var match_function_name in
-    let return_sort' = Tsorts.translate_sort uenv return_sort in
-    let return_sort' = T.coq_universe return_sort' in
-    let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
-    debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
-    let return_type' = translate_constr info env uenv return_type in
-    let branches' = Array.to_list (Array.map (translate_constr info env uenv) branches) in
-    let reals' = List.map (translate_constr info env uenv) reals in
-    let matched' = translate_constr info env uenv matched in
-    Dedukti.apps match_function'
-      (univ_params' @ univ_poly_levels @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+     let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
+     let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
+     let n_params = mind_body.Declarations.mind_nparams   in
+     let n_reals  =  ind_body.Declarations.mind_nrealargs in
+     let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
+     (*
+     let  arity = Inductive.type_of_inductive env
+       ( (mind_body, ind_body), snd pind) in
+      *)
+     let params, reals = Utils.list_chop n_params ind_args in
+     (* Probably put that back
+     let params = List.map (Reduction.whd_all env) params in
+     *)
+     debug "Template universe params: %a" (pp_list ", " pp_coq_term) params;
+     (* FIXME: This is not correct !
+        We do not provide universe level allowing substitution
+        of universe polymorphic destructions. *)
+     let arity, univ_params' =
+       infer_dest_applied info env uenv pind (Array.of_list params)
+     in
+     let univ_poly_levels =
+       if Encoding.is_polymorphism_on ()
+       then
+         Tsorts.get_poly_univ_params uenv
+           (Declareops.inductive_polymorphic_context mind_body) (snd pind)
+       else [] in
+     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
+     let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
+     (* Translate params using expected types to make sure we use proper casts. *)
+     let translate_param (params', a) param =
+       let _, c, d = Constr.destProd (Reduction.whd_all env a) in
+       let param' = translate_constr ~expected_type:c info env uenv param in
+       (param' :: params', Vars.subst1 param d) in
+     let match_function' = Dedukti.var match_function_name in
+     let return_sort' = Tsorts.translate_sort uenv return_sort in
+     let return_sort' = T.coq_universe return_sort' in
+     let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
+     debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
+     let return_type' = translate_constr info env uenv return_type in
+     let branches' = Array.to_list (Array.map (translate_constr info env uenv) branches) in
+     let reals' = List.map (translate_constr info env uenv) reals in
+     let matched' = translate_constr info env uenv matched in
+     Dedukti.apps match_function'
+       (univ_params' @ univ_poly_levels @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
 
   (* Not yet supported cases: *)
   | Proj (p,t) ->
@@ -703,8 +698,8 @@ and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfi
 
 
 
-and lift_let info env uenv x u a =
-  let name = Context.binder_name x in
+and lift_let info env uenv binda u a =
+  let name = Context.binder_name binda in
   let y = Cname.fresh_of_name ~global:true ~prefix:"let" ~default:"_" info env name in
   let yconstant = make_const info.module_path y in
   let y' = Cname.translate_constant info env yconstant in
@@ -722,7 +717,8 @@ and lift_let info env uenv x u a =
   let inst = Univ.UContext.instance (Univ.AUContext.repr uenv.poly_ctxt) in
   let yconstr = apply_rel_context (Constr.mkConstU (yconstant,inst)) rel_context in
   let env = push_const_decl uenv env (yconstant, Some(u_closed), a_closed) in
-  let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, yconstr, a)) env in
+  let def = Context.Rel.Declaration.LocalDef(binda, yconstr, a) in
+  let new_env = Environ.push_rel def env in
   new_env
 
 and lift_fix info env uenv names types bodies rec_indices =

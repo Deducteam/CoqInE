@@ -66,11 +66,7 @@ let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
 let pp_coq_term_env env =
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env (Evd.from_env env))
-
-let pp_coq_term  =
-  let env = Global.env () in
-  let sigma = Evd.from_env env in
-  printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
+let pp_coq_term  = pp_coq_term_env (Global.env())
 let pp_coq_type  =
   let env = Global.env () in
   let sigma = Evd.from_env env in
