@@ -8,8 +8,6 @@ DKCHECK      ?= dkcheck
 DKDEP        ?= dkdep
 VERBOSE      ?=
 
-CAMLFLAGS="-bin-annot -annot"
-
 RUNDIR=run
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
@@ -139,10 +137,6 @@ fullclean: clean
 	rm src/*.cmt
 	rm src/*.cmti
 	rm src/*.annot
-
-# CoqMakefile: Make
-# 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
-# 	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf
 
 .coqrc: plugin
 	echo "Add ML Path \"$(shell pwd)/src\"." > .coqrc
