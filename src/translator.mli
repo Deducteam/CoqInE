@@ -13,8 +13,12 @@ type level_expr =
 
 (** Representation of universe expression *)
 type universe_expr =
+  | SProp
+  (** Impredicative sort-irrelevant SProp *)
   | Prop
-  | Set  (** Predicative   Set *)
+  (** Impredicative Prop *)
+  | Set
+  (** Predicative Set *)
   | Type of level_expr (** Type of a level *)
   | GlobalSort of string
   (** Global universe "Coq.Module.index" *)
@@ -82,7 +86,9 @@ sig
 
   val coq_nat_universe : universe_expr -> term
   (** Nat level of universe *)
+
   val coq_trans_cstr : term -> (term * term) list -> term
+  val coq_conj_cstr : (term * term) list -> term
 
   val coq_U    : universe_expr -> term
   val coq_term : universe_expr -> term -> term
@@ -108,6 +114,7 @@ sig
   val coq_pattern_lifted_from_sort : term -> term -> term
   (** [coq_pattern_lifted_from_sort s t] Returns a pattern matching a term lifted from
       sort pattern [s] (for instance a variable). *)
+
   val coq_pattern_lifted_from_level : var -> term -> term
   (** [coq_pattern_lifted_from_level lvl t] Returns a pattern matching a term lifted from
       sort [type lvl] . *)

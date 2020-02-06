@@ -1,3 +1,6 @@
+# Compile with "make Q=" to display the commands that are run.
+Q = @
+
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
@@ -10,7 +13,7 @@ CAMLFLAGS="-bin-annot -annot"
 RUNDIR=run
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
-CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.8\.*")
+CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.10\.*")
 
 define MANUAL
 
@@ -95,25 +98,25 @@ check-version:
 ifeq ("$(CHECK_VERSION)","")
 	$(warning "Incorrect Coq version !")
 	$(warning "Found: $(COQ_VERSION).")
-	$(warning "Expected: 8.8.x")
+	$(warning "Expected: 8.1°.x")
 	$(error "To ignore this, use:  make CHECK_VERSION=ignore")
 endif
 
-plugin: CoqMakefile
-	make -f CoqMakefile VERBOSE=$(VERBOSE) - all
+plugin:
+	$(Q)dune build
 
-install: CoqMakefile plugin
-	make -f CoqMakefile - install
+doc:
+	$(Q)dune build @doc
 
-uninstall: CoqMakefile
-	make -f CoqMakefile - uninstall
+install: all
+	$(Q)dune install
 
-.merlin: CoqMakefile
-	make -f CoqMakefile .merlin
+uninstall: all
+	$(Q)dune uninstall
 
-clean: CoqMakefile
+clean:
+	$(Q)dune clean
 	make -C encodings - clean
-	make -f CoqMakefile - clean
 
 	make -C $(RUNDIR)/main            clean
 	make -C $(RUNDIR)/mathcomp        clean
@@ -129,7 +132,6 @@ clean: CoqMakefile
 	rm -f $(RUNDIR)/mathcomp/config.v
 	rm -f $(RUNDIR)/logipedia/config.v
 	rm -f $(RUNDIR)/upoly_logipedia/config.v
-	rm -f CoqMakefile
 	rm -f *.tar.bz2
 	rm -f summary.csv
 
@@ -138,9 +140,9 @@ fullclean: clean
 	rm src/*.cmti
 	rm src/*.annot
 
-CoqMakefile: Make
-	$(COQ_MAKEFILE) -f Make -o CoqMakefile
-	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf
+# CoqMakefile: Make
+# 	$(COQ_MAKEFILE) -f Make -o CoqMakefile
+# 	echo "COQMF_CAMLFLAGS+=-annot -bin-annot -g" >> CoqMakefile.conf
 
 .coqrc: plugin
 	echo "Add ML Path \"$(shell pwd)/src\"." > .coqrc

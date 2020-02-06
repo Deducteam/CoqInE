@@ -20,7 +20,6 @@ let isalias resolver kername =
   then None
   else Some can
 
-
 let translate_alias_constant_body info env alias label const =
   let label' = Cname.translate_element_name info env label in
   debug "Translating constant alias %a -> %a"
@@ -44,11 +43,11 @@ let translate_constant_body info env isalias label const =
   assert (List.length const.const_hyps = 0);
   let poly_ctxt, poly_inst, poly_cstr, env =
     match const.const_universes with
-    | Monomorphic_const uctxt ->
+    | Monomorphic uctxt ->
       debug "Translating monomorphic constant body: %s" name;
       let env' = Environ.push_context_set ~strict:true uctxt env in
       Univ.AUContext.empty, Univ.Instance.empty, Univ.Constraint.empty, env'
-    | Polymorphic_const univ_ctxt ->
+    | Polymorphic univ_ctxt ->
       let uctxt = Univ.AUContext.repr univ_ctxt in
       let env' = Environ.push_context ~strict:false uctxt env in
       let instance = Univ.UContext.instance uctxt in
@@ -88,6 +87,7 @@ let translate_constant_body info env isalias label const =
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
+  | Primitive _ -> assert false
 end
 
 (** Translate the body of mutual inductive definitions [mind]. *)
@@ -145,8 +145,8 @@ let translate_mutual_coinductive_body info env isalias label mind_body =
 (** Translate the body of non-recursive definitions when it's a record. *)
 let translate_record_body info env isalias label mind_body =
   match mind_body.mind_record with
-  | None   -> Error.not_supported "Non-recursive translation"
-  | Some _ ->
+  | NotRecord | FakeRecord -> Error.not_supported "Non-recursive translation"
+  | PrimRecord _ ->
     debug "Translating record: %a" pp_coq_label label;
     translate_mutual_inductive_body info env isalias label mind_body
 
@@ -230,9 +230,11 @@ and translate_structure_field_body info env resolver (label, sfb) =
   if not_filtered full_name
   then
     begin
+      (*
       try
+       *)
         verbose "-> %s" full_name;
-        let kername = Names.KerName.make2 info.module_path label in
+        let kername = Names.KerName.make info.module_path label in
         match sfb with
         | SFBconst cb ->
           translate_constant_body info env (isalias resolver kername) label cb
@@ -244,10 +246,12 @@ and translate_structure_field_body info env resolver (label, sfb) =
           ) info env (isalias resolver kername) label mib;
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
+                         (*
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
         else verbose "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
+                          *)
     end
   else
     begin

@@ -1,5 +1,7 @@
 (** Translation of Coq names *)
 
+val mk_binder : 'a -> 'a Context.binder_annot
+
 val full_path : Info.info -> Names.Id.t -> Libnames.full_path
 
 val push_global : Info.info -> Names.variable -> unit
@@ -19,9 +21,24 @@ val fresh_of_name :
   Info.info -> Environ.env ->
   ?global:bool -> ?prefix:string -> default:string -> Names.Name.t -> Names.Id.t
 
+val fresh_of_name_binder :
+  Info.info -> Environ.env ->
+  ?global:bool -> ?prefix:string -> default:string ->
+  Names.Name.t Context.binder_annot -> Names.Id.t
+
 val fresh_name :
   Info.info -> Environ.env ->
   ?prefix:string -> ?default:string -> Names.Name.t -> Names.Name.t
+
+val fresh_binder :
+  Info.info -> Environ.env ->
+  ?prefix:string -> ?default:string -> Names.Name.t Context.binder_annot ->
+  Names.Name.t Context.binder_annot
+
+val fresh :
+  Info.info -> Environ.env ->
+  ?prefix:string -> ?default:string -> Names.Name.t Context.binder_annot ->
+  Names.Name.t * Names.Name.t Context.binder_annot
 
 
 val constraint_name : int -> string
@@ -37,7 +54,9 @@ val escape : string -> string
 
 val translate_identifier : Names.Id.t -> string
 
-val translate_name : ?ensure_name:bool -> Names.Name.t -> string
+val translate_name : Names.Name.t -> string
+
+val translate_binder : Names.Name.t Context.binder_annot -> string
 
 val translate_dir_path : Names.DirPath.t -> string
 

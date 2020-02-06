@@ -68,10 +68,12 @@ let pp_coq_term_env env =
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env (Evd.from_env env))
 
 let pp_coq_term  =
-  let (sigma, env) = Pfedit.get_current_context () in
+  let env = Global.env () in
+  let sigma = Evd.from_env env in
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
 let pp_coq_type  =
-  let (sigma, env) = Pfedit.get_current_context () in
+  let env = Global.env () in
+  let sigma = Evd.from_env env in
   printer_of_std_ppcmds (Printer.pr_type_env env sigma)
 let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
 let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
@@ -89,26 +91,39 @@ let pp_coq_name fmt = function
   | Names.Name.Anonymous -> fprintf fmt "_"
   | Names.Name.Name n    -> fprintf fmt "%a" pp_coq_id n
 
+let pp_coq_binder pp fmt binder = pp fmt (Context.binder_name binder)
+
 let pp_coq_kername = printer_of_std_ppcmds Names.KerName.print
 
 let pp_coq_sort fmt = function
-  | Term.Prop Term.Null -> fprintf fmt "Set"
-  | Term.Prop Term.Pos  -> fprintf fmt "Prop"
-  | Term.Type i         -> fprintf fmt "Univ(%a)" pp_coq_univ i
+  | Term.SProp  -> fprintf fmt "SProp"
+  | Term.Set    -> fprintf fmt "Set"
+  | Term.Prop   -> fprintf fmt "Prop"
+  | Term.Type i -> fprintf fmt "Univ(%a)" pp_coq_univ i
 
 let pp_coq_decl fmt = function
-  | Context.Rel.Declaration.LocalAssum (name, t) ->
-    fprintf fmt "%a : %a" pp_coq_name name pp_coq_term t
-  | Context.Rel.Declaration.LocalDef (name, v, t) ->
-    fprintf fmt "%a : %a = %a" pp_coq_name name pp_coq_term t pp_coq_term t
+  | Context.Rel.Declaration.LocalAssum (binder, t) ->
+    fprintf fmt "%a : %a"
+      (pp_coq_binder pp_coq_name) binder
+      pp_coq_term t
+  | Context.Rel.Declaration.LocalDef (binder, v, t) ->
+    fprintf fmt "%a : %a = %a"
+      (pp_coq_binder pp_coq_name) binder
+      pp_coq_term v
+      pp_coq_term t
 
 let pp_coq_arity_ctxt fmt = pp_list " -> " pp_coq_decl fmt
 
 let pp_coq_named_decl fmt = function
-  | Context.Named.Declaration.LocalAssum (id, t) ->
-    fprintf fmt "%a = %a" pp_coq_id id pp_coq_term t
-  | Context.Named.Declaration.LocalDef (id, v, t) ->
-    fprintf fmt "%a : %a = %a" pp_coq_id id pp_coq_term t pp_coq_term t
+  | Context.Named.Declaration.LocalAssum (binder, t) ->
+    fprintf fmt "%a = %a"
+      (pp_coq_binder pp_coq_id) binder
+      pp_coq_term t
+  | Context.Named.Declaration.LocalDef (binder, v, t) ->
+    fprintf fmt "%a : %a = %a"
+      (pp_coq_binder pp_coq_id) binder
+      pp_coq_term v
+      pp_coq_term t
 
 let pp_coq_ctxt fmt ctxt =
   fprintf fmt "[\n  %a\n]" (pp_list "\n  " pp_coq_decl) ctxt
@@ -125,10 +140,10 @@ let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
   let (rec_indices, i), (names, types, bodies) = fp in
   let n = Array.length names in
   let bodies = Array.init n (fun i -> (names.(i), types.(i), bodies.(i))) in
-  let pp_bodies fmt (n,t,b) =
+  let pp_bodies fmt (bind,t,b) =
     fprintf fmt "%a : %a :=@.  %a,"
-      pp_coq_name n pp_coq_term t pp_coq_term b in
-  fprintf fmt "Fix %a@.  { %a }" pp_coq_name names.(i) (pp_array "@." pp_bodies) bodies
+      (pp_coq_binder pp_coq_name) bind pp_coq_term t pp_coq_term b in
+  fprintf fmt "Fix %a@.  { %a }" (pp_coq_binder pp_coq_name) names.(i) (pp_array "@." pp_bodies) bodies
 
 
 let pp_coq_constraint fmt (i,rel,j) =

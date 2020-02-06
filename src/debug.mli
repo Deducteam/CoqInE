@@ -59,11 +59,14 @@ val pp_coq_type    : Constr.types       printer
 val pp_coq_id      : Names.Id.t         printer
 val pp_coq_label   : Names.Label.t      printer
 val pp_coq_name    : Names.Name.t       printer
+val pp_coq_binder  : 'a printer -> 'a Context.binder_annot printer
 val pp_coq_kername : Names.KerName.t    printer
 val pp_coq_sort    : Sorts.t            printer
-val pp_coq_decl       : Context.Rel.Declaration.t printer
-val pp_coq_arity_ctxt : Context.Rel.Declaration.t list printer
-val pp_coq_ctxt    : Context.Rel.t      printer
+val pp_coq_decl       : Constr.rel_declaration printer
+val pp_coq_arity_ctxt : Constr.rel_declaration list printer
+val pp_coq_ctxt       : Constr.rel_context printer
+val pp_coq_named_decl : Constr.named_declaration printer
+val pp_coq_named_ctxt : Constr.named_context printer
 val pp_coq_env     : Environ.env        printer
 val pp_coq_level   : Univ.Level.t       printer
 val pp_coq_univ    : Univ.Universe.t    printer
@@ -74,4 +77,4 @@ val pp_coq_constraint : Univ.univ_constraint printer
 val pp_coq_Constraint : Univ.Constraint.t printer
 val pp_coq_constraint_type : Univ.constraint_type printer
 val pp_uenv_cstr : (Univ.univ_constraint * (string * 'a) ) list printer
-val pp_globname : Globnames.global_reference printer
+val pp_globname : Names.GlobRef.t printer

@@ -231,8 +231,8 @@ let set_universes universes =
     let universes = UGraph.sort_universes universes in
     let register constraint_type j k =
       match constraint_type with
-      | Univ.Eq -> Scanf.sscanf k "Type.%d"
-                     (fun k -> Hashtbl.add universe_table j (mk_level k))
+      | Univ.Eq -> Scanf.sscanf (Univ.Level.to_string k) "Type.%d"
+                     (fun k -> Hashtbl.add universe_table (Univ.Level.to_string j) (mk_level k))
       | Univ.Lt | Univ.Le -> () in
     UGraph.dump_universes register universes
   end
@@ -243,7 +243,7 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
     let params = Utils.filter_some ctxt in
     let aux l =
       match Univ.Level.name l with
-      | Some (d,n) ->
+      | Some _ ->
         let name = Univ.Level.to_string l in
         let name' = T.coq_univ_name name in
         if Encoding.is_float_univ_on ()
@@ -342,9 +342,10 @@ let translate_universe uenv u =
   | levels -> Translator.Sup levels
 
 let translate_sort uenv = function
-  | Term.Prop Sorts.Null -> Translator.Prop
-  | Term.Prop Sorts.Pos  -> Translator.Set
-  | Term.Type i    -> translate_universe uenv i
+  | Term.SProp  -> Translator.SProp
+  | Term.Prop   -> Translator.Prop
+  | Term.Set    -> Translator.Set
+  | Term.Type i -> translate_universe uenv i
 
 let convertible_sort uenv s1 s2 =
   translate_sort uenv s1 = translate_sort uenv s2
@@ -380,7 +381,7 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
 
 let translate_template_name l =
   match Univ.Level.name l with
-  | Some (d,n) -> T.coq_univ_name (Univ.Level.to_string l)
+  | Some _ -> T.coq_univ_name (Univ.Level.to_string l)
   | _ -> assert false
 
 (** Extracts template parameters levels and returns them with their dedukti names

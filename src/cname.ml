@@ -14,6 +14,8 @@ open Info
     - inductive: refers to an inductive type
     - constructor: refers to a constructor of an inductive type *)
 
+let mk_binder name = Context.make_annot name Sorts.Relevant
+
 (** Fresh names *)
 
 let full_path info identifier =
@@ -25,8 +27,8 @@ let push_global info identifier =
 
 (** Push a dummy declaration to declare an identifier locally. *)
 let push_identifier identifier env =
-  Environ.push_named
-    (Context.Named.Declaration.of_tuple (identifier, None, Constr.mkSort (Term.Prop(Term.Null)))) env
+  let dummy = Context.Named.Declaration.of_tuple (mk_binder identifier,None,Constr.mkProp) in
+  Environ.push_named dummy env
 
 (** Generate a fresh identifier that is different from any constant, inductive
     type, or constructor in the current module, and from any identifier in
@@ -52,12 +54,26 @@ let fresh_of_name info env ?(global=false) ?prefix ~default name =
   | Names.Anonymous -> fresh_identifier info env ~global ?prefix (Names.Id.of_string default)
   | Names.Name(identifier) -> fresh_identifier info env ~global ?prefix identifier
 
+let fresh_of_name_binder info env ?global:(global=false) ?prefix ~default name =
+  fresh_of_name info env ~global ?prefix ~default (Context.binder_name name)
+
 let fresh_name info env ?prefix ?default name =
   match name, default with
   | Names.Name(identifier), _ -> Names.Name (fresh_identifier info env ?prefix identifier)
   | Names.Anonymous, None     -> name
   | Names.Anonymous, Some(d)  ->
     Names.Name (fresh_of_string info env ?prefix d)
+
+let fresh info env ?prefix ?default binder =
+  let name = Context.binder_name binder in
+  let fresh_name = fresh_name ?prefix ?default info env name in
+  let fresh_binder = Context.make_annot fresh_name Sorts.Relevant in
+  fresh_name, fresh_binder
+
+let fresh_binder info env ?prefix ?default binder =
+  let name = Context.binder_name binder in
+  let fresh_name = fresh_name info env name in
+  Context.make_annot fresh_name Sorts.Relevant
 
 (** Name of the match function for the inductive type *)
 let constraint_name index = "cstr_" ^ (string_of_int index)
@@ -100,10 +116,11 @@ let escape name =
 let translate_identifier identifier =
   escape (Names.Id.to_string identifier)
 
-let translate_name ?(ensure_name = false) name =
-  match name with
+let translate_name = function
   | Names.Name(identifier) -> translate_identifier identifier
-  | Names.Anonymous -> if ensure_name then failwith "Anonymous name" else ""
+  | Names.Anonymous -> failwith "Anonymous name"
+
+let translate_binder b = translate_name (Context.binder_name b)
 
 let translate_dir_path dir_path =
   escape (Names.DirPath.to_string dir_path)

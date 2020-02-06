@@ -44,7 +44,8 @@ let fetch_constraint uenv cstr =
   with Not_found -> None
 
 let fetch_higher_sorts uenv u =
-  let rec assoc acc ((i,c,j),(b,_,_)) = if compare i u = 0 then (c,j,b)::acc else acc
+  let assoc acc ((i,c,j),(b,_,_)) =
+    if compare i u = 0 then (c,j,b)::acc else acc
   (* FIXME: Equality constraints are not handled correctly here.
      - They should be considered both way
      - We should also prevent loops somehow *)
