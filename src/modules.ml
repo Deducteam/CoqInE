@@ -6,8 +6,14 @@ open Info
 
 
 let fail_on_issue = ref true
-let  enable_failproofmode () = message "Failproof mode enabled." ; fail_on_issue := false
-let disable_failproofmode () = message "Failproof mode disabled."; fail_on_issue := true
+
+let enable_failproofmode () =
+  message "Failproof mode enabled.";
+  fail_on_issue := false
+
+let disable_failproofmode () =
+  message "Failproof mode disabled.";
+  fail_on_issue := true
 
 let symb_filter = ref []
 let filter_out symb = symb_filter := symb :: !symb_filter
@@ -231,9 +237,7 @@ and translate_structure_field_body info env resolver (label, sfb) =
   if not_filtered full_name
   then
     begin
-      (*
       try
-       *)
         verbose "-> %s" full_name;
         let kername = Names.KerName.make info.module_path label in
         match sfb with
@@ -247,12 +251,10 @@ and translate_structure_field_body info env resolver (label, sfb) =
           ) info env (isalias resolver kername) label mib;
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
-                         (*
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
         else verbose "[Error] On symbol %s: %s" full_name (Printexc.to_string e)
-                          *)
     end
   else
     begin
