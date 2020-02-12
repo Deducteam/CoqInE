@@ -1,6 +1,7 @@
 (*
 Require Import Coq.PArith.BinPos.
-**)
+Require Import Coq.Classes.CMorphisms.
+*)
 
 Require Import
   Coq.Init.Notations
