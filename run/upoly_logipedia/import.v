@@ -4,6 +4,7 @@ Require Import Coq.Classes.CMorphisms.
 *)
 
 Require Import
+(*
   Coq.Init.Notations
   Coq.Init.Logic
   Coq.Init.Logic_Type
@@ -20,16 +21,17 @@ Require Import
   Coq.Bool.DecBool
   Coq.Bool.IfProp
   Coq.Bool.Sumbool
+*)
+
 (*
   Coq.Bool.Zerob
   Coq.Bool.Bvector (* Requires Coq.PArith.BinPos which is bugged *)
 *)
 
-  Coq.Logic.ProofIrrelevanceFacts
-  Coq.Logic.Decidable
 (*
+  Coq.Logic.ProofIrrelevanceFacts
+  Coq.Logic.Decidable *)
   Coq.Logic.Hurkens   (* Bug to fix... *)
-*)
 
 (*
   Coq.Arith.Arith_base

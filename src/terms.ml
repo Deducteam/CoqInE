@@ -302,6 +302,7 @@ let infer_dest_applied info env uenv (ind,u) args =
     else arity, []
 
 let rec translate_constr ?expected_type info env uenv t =
+  debug "Translating term %a" (pp_coq_term_env env) t;
   (* Check if the expected type coincides, otherwise make an explicit cast. *)
   let t =
     match expected_type with
@@ -576,10 +577,7 @@ and translate_cast info uenv t' enva a envb b =
         with Reduction.NotArity ->
           Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]
       in
-      debug "Constraints: %a" pp_coq_Constraint constraints;
       let var_cstr = Tsorts.translate_constraints_as_conjunction uenv constraints in
-      debug "Found constraints %a" (pp_list ", " Dedukti.pp_term) (List.map fst var_cstr);
-      debug "Found constraints %a" (pp_list ", " Dedukti.pp_term) (List.map snd var_cstr);
       T.coq_cast s1' s2' a' b' var_cstr t'
     else
       if Term.isArity a && Term.isArity b

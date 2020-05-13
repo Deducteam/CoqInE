@@ -5,6 +5,10 @@ let debug_libraries = ref []
 let add_debug_lib s = debug_libraries := s :: !debug_libraries
 let is_debug_lib s = List.exists (fun x -> s = str x) !debug_libraries
 
+let debug_symbols = ref []
+let add_debug_smb s = debug_symbols := s :: !debug_symbols
+let is_debug_smb s = List.mem s !debug_symbols
+
 let debug_allowed = ref false
 let  enable_debug () = debug_allowed := true
 let disable_debug () = debug_allowed := false

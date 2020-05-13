@@ -61,8 +61,13 @@ VERNAC COMMAND EXTEND DeduktiSetDebug CLASSIFIED AS QUERY
 END
 
 VERNAC COMMAND EXTEND DeduktiAddDebug CLASSIFIED AS QUERY
-| [ "Dedukti" "Add" "Debug" string(lib) ] ->
+| [ "Dedukti" "Debug" "Lib" string(lib) ] ->
   { Debug.add_debug_lib lib }
+END
+
+VERNAC COMMAND EXTEND DeduktiAddDebug CLASSIFIED AS QUERY
+| [ "Dedukti" "Debug" "Symbol" string(lib) ] ->
+  { Debug.add_debug_smb lib }
 END
 
 VERNAC COMMAND EXTEND DeduktiFilterSymb CLASSIFIED AS QUERY

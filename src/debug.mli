@@ -23,6 +23,13 @@ val is_debug_lib  : Pp.t -> bool
 (** Should debug be enabled for given library ? *)
 
 
+val add_debug_smb : string -> unit
+(** Add symbol name to debug list *)
+
+val is_debug_smb  : string -> bool
+(** Should debug be enabled for given symbol ? *)
+
+
 val debug_start : unit -> unit
 (** Starts debugging *)
 

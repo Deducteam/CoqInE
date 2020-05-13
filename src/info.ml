@@ -45,7 +45,16 @@ let fetch_constraint uenv cstr =
 
 let fetch_higher_sorts uenv u =
   let assoc acc ((i,c,j),(b,_,_)) =
-    if compare i u = 0 then (c,j,b)::acc else acc
+    match c with
+    | AcyclicGraph.Eq ->
+       if compare i u = 0
+       then (c,j,b)::acc
+       else if compare j u = 0
+       then (c,i,b)::acc
+       else acc
+    | _ ->
+       if compare i u = 0
+       then (c,j,b)::acc else acc
   (* FIXME: Equality constraints are not handled correctly here.
      - They should be considered both way
      - We should also prevent loops somehow *)

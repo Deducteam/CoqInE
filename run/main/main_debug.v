@@ -10,7 +10,7 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Dedukti Add Debug "Coq.Init.Logic".
+Dedukti Debug Lib "Coq.Init.Logic".
 
 Require Import import_debug.
 

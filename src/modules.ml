@@ -230,6 +230,7 @@ and translate_module_signature info env resolver = function
 and translate_structure_field_body info env resolver (label, sfb) =
   let full_name = (Names.ModPath.to_string info.module_path) ^ "." ^
                   (Names.Label.to_string label) in
+  if Debug.is_debug_smb full_name then debug_start ();
   debug "";
   debug "---------------------------------------------";
   debug "    Structure field body: %s" full_name;
@@ -260,4 +261,5 @@ and translate_structure_field_body info env resolver (label, sfb) =
     begin
       debug "Filtered out";
       verbose "-> %s (ignored)" full_name
-    end
+    end;
+  if Debug.is_debug_smb full_name then debug_stop ();

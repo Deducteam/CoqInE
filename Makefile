@@ -134,9 +134,17 @@ clean:
 	rm -f summary.csv
 
 fullclean: clean
-	rm src/*.cmt
-	rm src/*.cmti
-	rm src/*.annot
+	rm -f src/*.annot
+	rm -f src/*.cmo
+	rm -f src/*.cma
+	rm -f src/*.cmi
+	rm -f src/*.cmt
+	rm -f src/*.cmti
+	rm -f src/*.a
+	rm -f src/*.o
+	rm -f src/*.cmx
+	rm -f src/*.cmxs
+	rm -f src/*.cmxa
 
 .coqrc: plugin
 	echo "Add ML Path \"$(shell pwd)/src\"." > .coqrc
