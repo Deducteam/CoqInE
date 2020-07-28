@@ -23,6 +23,7 @@ set  : Sort.
 type : Nat -> Sort.
 
 (;
+Coqine sprop = prop
 Coqine prop = prop
 Coqine set = set
 Coqine type = type

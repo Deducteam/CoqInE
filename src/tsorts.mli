@@ -120,6 +120,7 @@ val translate_univ_poly_params : Univ.Instance.t -> string list
 val translate_univ_poly_constraints : Univ.Constraint.t -> cstr list
 
 
-val gather_eq_types : Context.Rel.t -> Context.Rel.t -> (Constr.types * Constr.types) list
+val gather_eq_types :
+  Constr.rel_context -> Constr.rel_context -> (Constr.types * Constr.types) list
 val enforce_eq_types :
   Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t

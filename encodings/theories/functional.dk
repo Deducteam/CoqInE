@@ -23,6 +23,7 @@ def set   : Sort := type z.
 def type0 : Sort := type (s z).
 
 (;
+Coqine sprop = prop
 Coqine prop  = prop
 Coqine type  = type
 Coqine set   = set

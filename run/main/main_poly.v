@@ -10,7 +10,7 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Dedukti Add Debug "Top.Test.Debug".
+Dedukti Debug Lib "Top.Test.Debug".
 
 Dedukti Enable Verbose.
 

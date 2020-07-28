@@ -10,6 +10,7 @@ type level_expr =
   | Max of level_expr list
 
 type universe_expr =
+  | SProp
   | Prop
   | Set
   | Type of level_expr
@@ -40,6 +41,7 @@ let coq_z     = vsymbu "lvl0"
 let coq_succ s = app (coq_s()) s
 let coq_succs s i = Utils.iterate i coq_succ s
 let coq_nat n = coq_succs (coq_z()) n
+let coq_sprop  = vsymbu "sprop"
 let coq_prop  = vsymbu "prop"
 let coq_set   = vsymbu "set"
 let coq_type u = app (vsymb "type") u
@@ -107,6 +109,7 @@ struct
     | [u] -> u
     | (u :: u_list) -> apps (vsymb "sup") [u; coq_sup u_list]
   let rec cu = function
+    | SProp         -> coq_sprop ()
     | Prop          -> coq_prop ()
     | Set           -> coq_set ()
     | Type lvl      -> coq_type (cl lvl)

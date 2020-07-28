@@ -29,10 +29,11 @@ Fixpoint A m := fix A_m n :=
 
 Definition t'' := A 2 2.
 
+Set Allow StrictProp.
+
 Require Import
   Test.Test
   Test.Identity
-  Coq.Classes.RelationClasses
   Test.Polymorph
   Test.ImportA
   Test.ImportB
@@ -46,11 +47,17 @@ Require Import
   Test.Functors
   Test.NestedLibraries
   Test.Reflexivity
+(*
+  Test.Debuglib
+*)
+.
 
+
+Require Import
+  Coq.Classes.RelationClasses
 (*
 
   Coq.Arith.PeanoNat
-  Test.Debuglib
 
   Coq.Logic.Berardi
   Coq.Logic.ChoiceFacts

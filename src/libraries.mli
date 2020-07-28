@@ -1,9 +1,13 @@
 (** Translation of Coq libraries *)
 
-val translate_qualified_library : Libnames.qualid -> unit
+val translate_term : Constr.t CAst.t -> unit
+(** Translate a single Coq term to a string
+    (in an empty context, global environment).
+*)
 
-(** Translates the given library *)
-val translate_library : Libnames.reference -> unit
+val translate_library : Libnames.qualid -> unit
+
+val translate_qualified_library : Libnames.qualid -> unit
 
 (** Translate the universe table into the "U.dk" file
   Depending on the parameters, it could be:
@@ -17,8 +21,4 @@ val translate_universes : unit -> unit
 val translate_all : unit -> unit
 
 (** Translate all loaded libraries. **)
-val translate_all_but : Libnames.reference list -> unit
-
-val show_universes_constraints : unit -> unit
-
-val show_sorted_universes_constraints : unit -> unit
+val translate_all_but : Libnames.qualid list -> unit
