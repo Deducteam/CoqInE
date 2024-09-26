@@ -57,3 +57,9 @@ The translation itself is explained in the following paper:
 Mathieu Boespflug and Guillaume Burel.
 *CoqInE: Translating the Calculus of Inductive Constructions into the lambda Pi-calculus Modulo*
 , presented at the [PxTP'12](http://pxtp2012.inria.fr/) workshop.  [.pdf](http://www.ensiie.fr/~guillaume.burel/download/boespflug12coqine.pdf)
+
+### Using CoqInE with Nix
+
+CoqInE can be tested using [nix](https://nixos.org/). Run `nix build` to build
+CoqInE, `nix develop ".#extraction"` to get a shell with CoqInE installed, and
+`nix flake check` to run the tests.
