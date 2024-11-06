@@ -4,14 +4,14 @@ Q = @
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
-DKCHECK      ?= dkcheck
-DKDEP        ?= dkdep
+DKCHECK      ?= dk check
+DKDEP        ?= dk dep
 VERBOSE      ?=
 
 RUNDIR=run
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
-CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.12\.*")
+CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.10\.*")
 
 define MANUAL
 
@@ -75,12 +75,12 @@ export MANUAL
 
 .PHONY: all plugin install uninstall clean fullclean help tests test
 
-all: check-version .merlin plugin .coqrc help
+all: check-version plugin .coqrc help
 
 help:
 	@echo "$$MANUAL"
 
-tests: check-version .merlin plugin
+tests: check-version plugin
 	make -C encodings
 	make test_pred_fix
 	make test_codes_fix
