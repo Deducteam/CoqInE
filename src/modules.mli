@@ -10,7 +10,7 @@ val filter_out : string -> unit
 (** Disables translation of given symbol. *)
 
 val translate_constant_body :
-  Info.info -> Environ.env -> Names.KerName.t option -> Names.Label.t -> Declarations.constant_body -> unit
+  Info.info -> Environ.env -> Names.KerName.t option -> Names.Label.t -> Opaqueproof.opaque Declarations.constant_body -> unit
 
 val translate_mutual_inductive_body :
   Info.info -> Environ.env -> Names.KerName.t option -> Names.Label.t -> Declarations.mutual_inductive_body -> unit

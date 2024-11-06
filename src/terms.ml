@@ -5,7 +5,6 @@ open Translator
 open Info
 
 open Declarations
-open Term
 
 let infer_type env t = (Typeops.infer      env t).Environ.uj_type
 let infer_sort env a = (Typeops.infer_type env a).Environ.utj_type
@@ -65,31 +64,31 @@ let translate_rel_decl info env = function
   | decl -> (Environ.push_rel decl env, None)
 
 let rec translate_sort_to_univ uenv t =
-  match Term.kind_of_type t with
-  | SortType s -> Tsorts.translate_sort uenv s
-  | CastType (a', _) -> translate_sort_to_univ uenv a'
+  match Constr.kind t with
+  | Constr.Sort s -> Tsorts.translate_sort uenv s
+  | Constr.Cast (a', _,_) -> translate_sort_to_univ uenv a'
   | _ -> assert false
 
 let rec infer_translate_sort info env uenv a =
 (*  This is wrong; there is no subject reduction in Coq! *)
 (*  let a = Reduction.whd_all env a in*)
-  match Term.kind_of_type a with
-  | SortType s -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
+  match Constr.kind a with
+  | Constr.Sort s -> Translator.Succ ((Tsorts.translate_sort uenv s),1)
   (* FIXME: CastType are probably not correctly translated.
      They are never used in Coq's kernel but occur in SSReflect module *)
-  | CastType(a', target) -> translate_sort_to_univ uenv target
+  | Constr.Cast(a', _,target) -> translate_sort_to_univ uenv target
     (* Error.not_supported "CastType" *)
-  | ProdType(binda, a, b) ->
+  | Constr.Prod(binda, a, b) ->
      let name', binda' = Cname.fresh info env ~default:"_" binda in
      let s1' = infer_translate_sort info env uenv a in
      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalAssum(binda', a)) env in
      let s2' = infer_translate_sort info new_env uenv b in
      Translator.Rule (s1',s2')
-  | LetInType(x, u, a, b) ->
+  | Constr.LetIn(x, u, a, b) ->
      (* No need to lift the let here. *)
      let new_env = Environ.push_rel (Context.Rel.Declaration.LocalDef(x, u, a)) env in
      infer_translate_sort info new_env uenv b
-  | AtomicType _ -> Tsorts.translate_sort uenv (infer_sort env a)
+  | _ -> Tsorts.translate_sort uenv (infer_sort env a)
 
 let abstract_rel_context context t =
   let abstract_rel_declaration t c =
@@ -118,26 +117,26 @@ let apply_rel_context t context =
 let rec convertible info env uenv a b =
   let a = Reduction.whd_all env a in
   let b = Reduction.whd_all env b in
-  match Term.kind_of_type a, Term.kind_of_type b with
-  | SortType(s1), SortType(s2) -> Tsorts.convertible_sort uenv s1 s2
+  match Constr.kind a, Constr.kind b with
+  | Constr.Sort(s1), Constr.Sort(s2) -> Tsorts.convertible_sort uenv s1 s2
   (* FIXME: CastType are probably not correctly translated.
      They are never used in Coq's kernel but occur in SSReflect module *)
-  | CastType(a',_), _ -> convertible info env uenv a' b
-  | _, CastType(b',_) -> convertible info env uenv a b'
+  | Constr.Cast(a',_,_), _ -> convertible info env uenv a' b
+  | _, Constr.Cast(b',_,_) -> convertible info env uenv a b'
   (* Error.not_supported "CastType" *)
-  | ProdType(x1, a1, b1), ProdType(x2, a2, b2) ->
+  | Constr.Prod(x1, a1, b1), Constr.Prod(x2, a2, b2) ->
     convertible info env uenv a1 a2 &&
     let nenv = Environ.push_rel (Context.Rel.Declaration.LocalAssum (x1, a1)) env in
     convertible info nenv uenv b1 b2
-  | LetInType(_), _
-  | _, LetInType(_) ->
+  | Constr.LetIn(_), _
+  | _, Constr.LetIn(_) ->
       assert false
-  | AtomicType(_), AtomicType(_) ->
+  | _, _ ->
     begin
       try let _ = Reduction.default_conv Reduction.CONV env a b in true
       with Reduction.NotConvertible -> false
     end
-  | _ -> false
+
 
 (* This table holds the translations of fixpoints, so that we avoid
    translating the same definition multiple times (e.g. mutual fixpoints).
@@ -171,7 +170,6 @@ let push_const_decl uenv env (c, m, const_type) =
     const_relevance = Relevant;
     const_body_code = Some (Cemitcodes.from_val const_body_code);
     const_universes = Polymorphic uenv.poly_ctxt;
-    const_private_poly_univs = None;
     const_inline_code = false;
     const_typing_flags = Declareops.safe_flags Conv_oracle.empty
     (* FIXME: It's probably not best to use "safe" flags
@@ -208,9 +206,9 @@ let make_subst env =
   in make Univ.LMap.empty
 
 (* This is almost exactly Inductive.instantiate_universes *)
-let instantiate_universes env ctx ar argsorts =
+let instantiate_universes env ctx (templ, ar) argsorts =
   let args = Array.to_list argsorts in
-  let subst = make_subst env (ctx,ar.template_param_levels,args) in
+  let subst = make_subst env (ctx,templ.template_param_levels,args) in
   let subst_fn = Univ.make_subst subst in
   let safe_subst_fn x =
     try subst_fn x with | Not_found -> Univ.Universe.make x in
@@ -221,12 +219,12 @@ let infer_ind_applied info env uenv (ind,u) args =
   debug "Inferring template polymorphic inductive: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
-  match mip.mind_arity with
-  | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
-  | TemplateArity ar ->
+  match mip.mind_arity, mib.mind_template with
+  | RegularArity a, _cstr -> Vars.subst_instance_constr u a.mind_user_arity, []
+  | TemplateArity ar, Some templ ->
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx,s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
     (* Do we really need to apply safe_subst to arity ?
     *)
@@ -237,8 +235,9 @@ let infer_ind_applied info env uenv (ind,u) args =
     then
       List.map
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
     else []
+  | _ -> assert false
 
 (* This is inspired from Inductive.type_of_constructor  *)
 let infer_construct_applied info env uenv ((ind,i),u) args =
@@ -248,13 +247,13 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
   assert (i <= Array.length mip.mind_consnames);
   let type_c = Inductive.type_of_constructor ((ind,i),u) spec in
-  match mip.mind_arity with
-  | RegularArity a -> type_c, []
-  | TemplateArity ar ->
+  match mip.mind_arity, mib.mind_template with
+  | RegularArity a, _ -> type_c, []
+  | TemplateArity ar, Some templ ->
     debug "Template polymorphic constructor: %a" pp_coq_label label;
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx, s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx, s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
     if not (Encoding.is_templ_polymorphism_on ())
     then UnivSubst.subst_univs_constr subst type_c, []
@@ -274,20 +273,21 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
       UnivSubst.subst_univs_constr subst type_c,
       List.map
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
+  | _ -> assert false
 
 let infer_dest_applied info env uenv (ind,u) args =
   debug "Inferring destructor: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
   let (mib, mip) as spec = Inductive.lookup_mind_specif env ind in
-  match mip.mind_arity with
-  | RegularArity a -> Vars.subst_instance_constr u a.mind_user_arity, []
-  | TemplateArity ar ->
+  match mip.mind_arity, mib.mind_template with
+  | RegularArity a, _ -> Vars.subst_instance_constr u a.mind_user_arity, []
+  | TemplateArity ar, Some templ ->
     debug "Inferring template polymorphic destructor: %a (%i)"
       pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx,s, subst, safe_subst = instantiate_universes env ctx ar args_types in
+    let ctx,s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
     if Encoding.is_templ_polymorphism_on () &&
        Encoding.is_templ_polymorphism_cons_poly ()
@@ -298,8 +298,9 @@ let infer_dest_applied info env uenv (ind,u) args =
       arity,
       List.map
         (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some ar.template_param_levels))
+        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
     else arity, []
+  | _ -> assert false
 
 let rec translate_constr ?expected_type info env uenv t =
   debug "Translating term %a" (pp_coq_term_env env) t;
@@ -535,6 +536,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | Evar pexistential  -> Error.not_supported "Evar"
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Int _              -> Error.not_supported "Int"
+  | Float _            -> Error.not_supported "Float"
 
 and translate_cast info uenv t' enva a envb b =
   debug "Casting %a@.from %a@.to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
@@ -587,20 +589,20 @@ and translate_cast info uenv t' enva a envb b =
         if Sorts.equal sa sb then t' else T.coq_cast s1' s2' a' b' [] t'
       else T.coq_cast s1' s2' a' b' [] t'
   else
-    match Term.kind_of_type a, Term.kind_of_type b with
-    | SortType sa, SortType sb ->
+    match Constr.kind a, Constr.kind b with
+    | Constr.Sort sa, Constr.Sort sb ->
       if Sorts.equal sa sb then t'
       else T.coq_lift
           (Tsorts.translate_sort uenv sa)
           (Tsorts.translate_sort uenv sb) t'
 
-    (* FIXME: CastType are probably not correctly translated.
+    (* FIXME: Constr.Cast are probably not correctly translated.
        They are never used in Coq's kernel but occur in SSReflect module *)
-    | CastType(a',_), _ -> translate_cast info uenv t' enva a' envb b
-    | _, CastType(b',_) -> translate_cast info uenv t' enva a envb b'
+    | Constr.Cast(a',_,_), _ -> translate_cast info uenv t' enva a' envb b
+    | _, Constr.Cast(b',_,_) -> translate_cast info uenv t' enva a envb b'
     (* Error.not_supported "CastType" *)
 
-    | ProdType(bind1, a1, b1), ProdType(x2, a2, b2) ->
+    | Constr.Prod(bind1, a1, b1), Constr.Prod(x2, a2, b2) ->
       (* TODO: should we check for useless casts (b1~b2) ? *)
       let x1, bind1 = Cname.fresh info enva bind1 in
       let (x,tA),t =
@@ -622,13 +624,13 @@ and translate_cast info uenv t' enva a envb b =
 
 and translate_types info env uenv a =
   (* Specialize on the type to get a nicer and more compact translation. *)
-  match Term.kind_of_type a with
-  | SortType(s) -> T.coq_U (Tsorts.translate_sort uenv s)
+  match Constr.kind a with
+  | Constr.Sort(s) -> T.coq_U (Tsorts.translate_sort uenv s)
   (* FIXME: CastType are probably not correctly translated.
      They are never used in Coq's kernel but occur in SSReflect module *)
-  | CastType(a', _) -> translate_types info env uenv a'
+  | Constr.Cast(a', _,_) -> translate_types info env uenv a'
   (* Error.not_supported "CastType" *)
-  | ProdType(bind, a, b) ->
+  | Constr.Prod(bind, a, b) ->
     let x, bind = Cname.fresh info ~default:"_" env bind in
     let x' = Cname.translate_name x in
     let a' = translate_types info env uenv a in
@@ -636,7 +638,7 @@ and translate_types info env uenv a =
     let b' = translate_types info new_env uenv b in
     Dedukti.pie (x', a') b'
 
-  | LetInType(x, u, a, b) ->
+  | Constr.LetIn(x, u, a, b) ->
     if Encoding.is_letins_simpl ()
     then
       let id_x = match Context.binder_name x with
@@ -659,7 +661,7 @@ and translate_types info env uenv a =
       let new_env = lift_let info env uenv x u a in
       translate_types info new_env uenv b
 
-  | AtomicType(_) ->
+  | _ ->
     (* Fall back on the usual translation of types. *)
     let s' = infer_translate_sort info env uenv a in
     let a' = translate_constr info env uenv a in
@@ -766,6 +768,7 @@ and lift_fix info env uenv names types bodies rec_indices =
   let ind_args = Array.map snd inds_args in
   let ind_specifs = Array.map (Inductive.lookup_mind_specif env) inds in
   let one_ind_body = Array.map snd ind_specifs in
+  let mut_ind_body = Array.map fst ind_specifs in
   let arity_contexts = Array.map (fun body -> fst (Inductive.mind_arity body)) one_ind_body in
   let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Constr.mkInd inds.(i)) arity_contexts.(i)) in
   let types1 = types in
@@ -821,9 +824,9 @@ and lift_fix info env uenv names types bodies rec_indices =
         if Encoding.is_polymorphism_on () then Univ.Instance.length (snd pinds.(i)) else 0 in
       debug "Nb poly univs: %i" nb_poly_univs;
       let nb_templ_poly = if Encoding.is_templ_polymorphism_on ()
-        then (match one_ind_body.(i).mind_arity with
-            | RegularArity a -> 0
-            | TemplateArity ar -> Utils.count_some ar.template_param_levels)
+        then (match mut_ind_body.(i).mind_template  with
+            | Some templ -> Utils.count_some templ.template_param_levels
+            | None -> 0)
         else 0 in
       let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in
       let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in

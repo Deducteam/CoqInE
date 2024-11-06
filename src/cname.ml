@@ -23,7 +23,7 @@ let full_path info identifier =
 
 (** Push a dummy declaration to declare an identifier globally. *)
 let push_global info identifier =
-  Nametab.push (Nametab.Until 0) (full_path info identifier) (Globnames.VarRef identifier)
+  Nametab.push (Nametab.Until 0) (full_path info identifier) (Names.GlobRef.VarRef identifier)
 
 (** Push a dummy declaration to declare an identifier locally. *)
 let push_identifier identifier env =

@@ -1,5 +1,4 @@
 (** Translation of Coq terms *)
-
 val infer_type : Environ.env -> Constr.t -> Constr.types
 
 val infer_sort : Environ.env -> Constr.types -> Sorts.t

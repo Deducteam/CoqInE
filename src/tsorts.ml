@@ -77,18 +77,18 @@ let gather_eq_types decla declb =
 let rec enforce_eq_types acc  = function
   | [] -> acc
   | (ta,tb) :: tl ->
-      match Term.kind_of_type ta, Term.kind_of_type tb with
-      | Term.SortType sa,  Term.SortType sb ->
+      match Constr.kind ta, Constr.kind tb with
+      | Constr.Sort sa,  Constr.Sort sb ->
         enforce_eq_types
           (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
           tl
-      | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
-      | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
+      | Constr.Cast(ta',_,_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
+      | _, Constr.Cast(tb',_,_) -> enforce_eq_types acc ( (ta ,tb')::tl )
 
-      | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
+      | Constr.Prod(x1, a1, b1), Constr.Prod(x2, a2, b2) ->
         enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
 
-      | _ -> enforce_eq_types acc tl
+      | _ -> enforce_eq_types acc tl 
 
 let trivial_cstr (i,c,j) =
   (Univ.Level.is_small i && c = Univ.Le)
@@ -305,12 +305,12 @@ let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
 
 let instantiate_template_ind_univ_params env uenv ind univ_instance term =
   let (mib,oib) = Inductive.lookup_mind_specif env ind in
-  match oib.mind_arity with
-  | TemplateArity ar when Encoding.is_templ_polymorphism_on () ->
+  match mib.mind_template with
+  | Some tar when Encoding.is_templ_polymorphism_on () ->
     debug "Instantiating template inductive instance %a : {%a}"
       Dedukti.pp_term term
       pp_coq_inst univ_instance;
-    let univ_ctxt = ar.template_param_levels in
+    let univ_ctxt = tar.template_param_levels in
     let nb_instance = Univ.Instance.length univ_instance in
     let nb_params = List.length univ_ctxt in
     if nb_instance < nb_params
@@ -336,7 +336,7 @@ let translate_universe uenv u =
   let translate (univ, i) =
     let u = level_as_universe uenv univ in
     if i = 0 then u else Succ (u,i) in
-  match Univ.Universe.map translate u with
+  match List.map translate (Univ.Universe.repr u) with
   | []     -> Translator.Prop
   | [l]    -> l
   | levels -> Translator.Sup levels

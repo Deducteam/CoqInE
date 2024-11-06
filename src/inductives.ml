@@ -95,10 +95,11 @@ let get_infos mind_body index =
     | TemplateArity ta ->
       begin
         debug "Template params levels:";
-        List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels;
+        (* List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels; *)
         debug "Template level: %a" pp_coq_univ ta.template_level;
         debug "Arity context: %a"  pp_coq_ctxt arity_context;
-        Tsorts.translate_template_params ta.template_param_levels,
+        (* Tsorts.translate_template_params ta.template_param_levels, *)
+        ([],[]),
         Sorts.sort_of_univ ta.template_level
       end
   in
@@ -433,9 +434,9 @@ end
 *)
 let translate_template_inductive_levels info env label ind =
   match ind.arity with
-  | TemplateArity ta when not (Tsorts.template_constructor_upoly ()) ->
+  (* | TemplateArity ta when not (Tsorts.template_constructor_upoly ()) ->
     List.iter (Dedukti.print info.fmt)
-      (Tsorts.translate_template_global_level_decl ta.template_param_levels)
+      (Tsorts.translate_template_global_level_decl ta.template_param_levels) *)
   | _ -> ()
 
 
