@@ -76,8 +76,7 @@ let translate_constant_body info env isalias label const =
     (* For now assume inline is None. *)
     assert (inline = None);
     Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
-  | Def constr_substituted ->
-    let constr = Mod_subst.force_constr constr_substituted in
+  | Def constr ->
     let constr =
       if Encoding.flag "unfold_letin"
       then

@@ -153,22 +153,17 @@ let push_const_decl uenv env (c, m, const_type) =
   let const_body =
     match m with
     | None -> Undef None
-    | Some m -> Def (Mod_subst.from_val m) in
-  let const_body_code =
-    (* TODO : None does not handle polymorphic types ! *)
-    match Cbytegen.compile_constant_body
+    | Some m -> Def m in
+  let tps = Vmbytegen.compile_constant_body
             ~fail_on_error:true env
-            (Monomorphic Univ.ContextSet.empty) const_body with
-    | Some code -> code
-    | None -> Error.error (Pp.str "compile_constant_body failed")
-  in
+            (Monomorphic Univ.ContextSet.empty) const_body in
   (* TODO : Double check the following *)
   let body = {
     const_hyps = [];
     const_body = const_body;
     const_type = const_type;
     const_relevance = Relevant;
-    const_body_code = Some (Cemitcodes.from_val const_body_code);
+    const_body_code = tps;
     const_universes = Polymorphic uenv.poly_ctxt;
     const_inline_code = false;
     const_typing_flags = Declareops.safe_flags Conv_oracle.empty
@@ -228,7 +223,7 @@ let infer_ind_applied info env uenv (ind,u) args =
     let arity = Term.mkArity (List.rev ctx,s) in
     (* Do we really need to apply safe_subst to arity ?
     *)
-    let arity = UnivSubst.subst_univs_constr subst arity in
+    (* let arity = UnivSubst.subst_univs_constr subst arity in *)
     debug "Substituted type: %a" pp_coq_term arity;
     arity,
     if Encoding.is_templ_polymorphism_on ()
@@ -256,7 +251,7 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
     let ctx, s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
     if not (Encoding.is_templ_polymorphism_on ())
-    then UnivSubst.subst_univs_constr subst type_c, []
+    then (*UnivSubst.subst_univs_constr subst*) type_c, []
     else if not (Encoding.is_templ_polymorphism_cons_poly ())
     then type_c, []
     else
@@ -270,7 +265,7 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
          -> Univ.Instance.subst_fn
          -> Univ.Instance.of_array   which assumes all substituted level are not Prop
       *)
-      UnivSubst.subst_univs_constr subst type_c,
+      (* UnivSubst.subst_univs_constr subst *) type_c,
       List.map
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some templ.template_param_levels))
@@ -291,14 +286,15 @@ let infer_dest_applied info env uenv (ind,u) args =
     let arity = Term.mkArity (List.rev ctx,s) in
     if Encoding.is_templ_polymorphism_on () &&
        Encoding.is_templ_polymorphism_cons_poly ()
-    then
+    then begin
       (* Do we really need to apply safe_subst to arity ? *)
-      let arity = UnivSubst.subst_univs_constr subst arity in
+      (* let arity = UnivSubst.subst_univs_constr subst arity in *)
       debug "Substituted type: %a" pp_coq_term arity;
       arity,
       List.map
         (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some templ.template_param_levels))
+    end
     else arity, []
   | _ -> assert false
 
@@ -479,7 +475,7 @@ let rec translate_constr ?expected_type info env uenv t =
          translate_constr info new_env uenv (Constr.mkRel (n - i))
        end
 
-  | Case(case_info, return_type, matched, branches) ->
+  | Case(case_info, _, _, (_, return_type), NoInvert, matched, branches) ->
      let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
      let n_params = mind_body.Declarations.mind_nparams   in
@@ -519,11 +515,13 @@ let rec translate_constr ?expected_type info env uenv t =
      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
      debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
      let return_type' = translate_constr info env uenv return_type in
-     let branches' = Array.to_list (Array.map (translate_constr info env uenv) branches) in
+     let branches' = Array.to_list (Array.map (fun (_,b) -> translate_constr info env uenv b) branches) in
      let reals' = List.map (translate_constr info env uenv) reals in
      let matched' = translate_constr info env uenv matched in
      Dedukti.apps match_function'
        (univ_params' @ univ_poly_levels @ return_sort' :: params' @ return_type' :: branches' @ reals' @  [matched'])
+  | Case(case_info, _, _, return_type, CaseInvert _, matched, branches) ->
+    Error.not_supported "CaseInvert"
 
   (* Not yet supported cases: *)
   | Proj (p,t) ->
@@ -537,6 +535,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | CoFix(pcofixpoint) -> Error.not_supported "CoFix"
   | Int _              -> Error.not_supported "Int"
   | Float _            -> Error.not_supported "Float"
+  | Array _            -> Error.not_supported "Array"
 
 and translate_cast info uenv t' enva a envb b =
   debug "Casting %a@.from %a@.to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
