@@ -3,9 +3,22 @@
 open Debug
 open Translator
 
+(* Copied From Coqv8.14 *)
+let dump_universes output g =
+  let open Univ in
+  let dump_arc u = function
+    | UGraph.Node ltle ->
+      Univ.LMap.iter (fun v strict ->
+          let typ = if strict then Lt else Le in
+          output typ u v) ltle;
+    | UGraph.Alias v ->
+      output Eq u v
+  in
+  Univ.LMap.iter dump_arc (UGraph.repr g)
+
 (** Get all global universes names together with their concrete levels *)
 let get_universes_levels (universes:UGraph.t) =
-  let universes = UGraph.sort_universes universes in
+  (* let universes = UGraph.sort_universes universes in *)
   let res = ref [] in
   let register constraint_type j k =
     match constraint_type with
@@ -15,7 +28,7 @@ let get_universes_levels (universes:UGraph.t) =
          of RawLavel's Levels named level so print-and-parse it for now *)
       res := (T.coq_univ_name (Univ.Level.to_string j), Translator.mk_level closed_univ):: !res
     | Univ.Lt | Univ.Le -> () in
-  UGraph.dump_universes register universes;
+  dump_universes register universes;
   !res
 
 
@@ -44,7 +57,7 @@ let get_universes_constraints (universes:UGraph.t) =
     match ct, reg j, reg k with
     | Univ.Lt, Translator.Lvl 0, Translator.Lvl 0 -> () (* ignore the Prop < Set constraint *)
     | _ , jd, kd -> res := (j, jd, ct, k, kd) :: !res in
-  UGraph.dump_universes register universes;
+  dump_universes register universes;
   (StringSet.elements !defined_univs, List.rev !res)
 
 

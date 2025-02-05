@@ -228,13 +228,13 @@ let set_universes universes =
   message "Saving universes";
   if (not (Encoding.is_float_univ_on ()))
   then begin
-    let universes = UGraph.sort_universes universes in
+    (* let universes = UGraph.sort_universes universes in *)
     let register constraint_type j k =
       match constraint_type with
       | Univ.Eq -> Scanf.sscanf (Univ.Level.to_string k) "Type.%d"
                      (fun k -> Hashtbl.add universe_table (Univ.Level.to_string j) (mk_level k))
       | Univ.Lt | Univ.Le -> () in
-    UGraph.dump_universes register universes
+    Tunivs.dump_universes register universes
   end
 
 let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =

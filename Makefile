@@ -11,7 +11,7 @@ VERBOSE      ?=
 RUNDIR=run
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
-CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.12\.*")
+CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.14\.*")
 
 define MANUAL
 
