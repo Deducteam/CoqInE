@@ -3,6 +3,7 @@
 open Debug
 open Translator
 open Info
+open Univ
 
 open Declarations
 
@@ -156,7 +157,7 @@ let push_const_decl uenv env (c, m, const_type) =
     | Some m -> Def m in
   let tps = Vmbytegen.compile_constant_body
             ~fail_on_error:true env
-            (Monomorphic Univ.ContextSet.empty) const_body in
+            Monomorphic const_body in
   (* TODO : Double check the following *)
   let body = {
     const_hyps = [];
@@ -166,70 +167,156 @@ let push_const_decl uenv env (c, m, const_type) =
     const_body_code = tps;
     const_universes = Polymorphic uenv.poly_ctxt;
     const_inline_code = false;
-    const_typing_flags = Declareops.safe_flags Conv_oracle.empty
+    const_typing_flags = Declareops.safe_flags Conv_oracle.empty;
+    const_univ_hyps = Univ.Instance.empty
     (* FIXME: It's probably not best to use "safe" flags
        for newly introduced constants... *)
   } in
   Environ.add_constant c body env
 
+(* This is exactly Inductive.max_template_universe *)
+let max_template_universe u v = u @ v
+
 (* This is exactly Inductive.cons_subst *)
 let cons_subst u su subst =
-  try Univ.LMap.add u (Univ.sup (Univ.LMap.find u subst) su) subst
-  with Not_found -> Univ.LMap.add u su subst
+  let su = match su with
+  | Sorts.SProp -> assert false (* No template on SProp *)
+  | Sorts.Prop -> []
+  | Sorts.Set -> [Universe.type0]
+  | Sorts.Type u -> [u]
+  in
+  try
+    Univ.Level.Map.add u (max_template_universe su (Univ.Level.Map.find u subst)) subst
+  with Not_found -> Univ.Level.Map.add u su subst
 
 (* This is exactly Inductive.remember_subst *)
 let remember_subst u subst =
-  try let su = Univ.Universe.make u in
-    Univ.LMap.add u (Univ.sup (Univ.LMap.find u subst) su) subst
+  try
+    let su = [Universe.make u] in
+    Univ.Level.Map.add u (max_template_universe su (Univ.Level.Map.find u subst)) subst
   with Not_found -> subst
+
 
 (* This is exactly Inductive.make_subst *)
 let make_subst env =
-  let rec make subst = function
-    | Context.Rel.Declaration.LocalDef _ :: sign, exp, args ->
-      make subst (sign, exp, args)
-    | _::sign, None::exp, args ->
-      let args = match args with _::args -> args | [] -> [] in
-      make subst (sign, exp, args)
-    | _::sign, Some u::exp, a::args ->
-      let s = Sorts.univ_of_sort (snd (Reduction.dest_arity env (Lazy.force a))) in
-      make (cons_subst u s subst) (sign, exp, args)
-    | Context.Rel.Declaration.LocalAssum (na,t) :: sign, Some u::exp, [] ->
-      make (remember_subst u subst) (sign, exp, [])
-    | sign, [], _ -> subst
-    | [], _, _ -> assert false
-  in make Univ.LMap.empty
+  let open Context.Rel.Declaration in
+  let rec make rctx subst = function
+    | LocalDef _ :: sign, exp, args ->
+        make rctx subst (sign, exp, args)
+    | d::sign, None::exp, args ->
+        let args = match args with _::args -> args | [] -> [] in
+        make (d::rctx) subst (sign, exp, args)
+    | LocalAssum(na,t)::sign, Some u::exp, a::args ->
+        (* We recover the level of the argument, but we don't change the *)
+        (* level in the corresponding type in the arity; this level in the *)
+        (* arity is a global level which, at typing time, will be enforce *)
+        (* to be greater than the level of the argument; this is probably *)
+        (* a useless extra constraint *)
+       let pa,_ = Reduction.dest_arity env t in
+       let s = snd (Reduction.dest_arity env (Lazy.force a)) in
+       let t' = Term.mkArity (pa, s) in 
+        make (LocalAssum(na,t')::rctx) (cons_subst u s subst) (sign, exp, args)
+    | d :: sign, Some u::exp, [] ->
+        (* No more argument here: we add the remaining universes to the *)
+        (* substitution (when [u] is distinct from all other universes in the *)
+        (* template, it is identity substitution  otherwise (ie. when u is *)
+        (* already in the domain of the substitution) [remember_subst] will *)
+        (* update its image [x] by [sup x u] in order not to forget the *)
+        (* dependency in [u] that remains to be fulfilled. *)
+        make (d::rctx) (remember_subst u subst) (sign, exp, [])
+    | sign, [], _ ->
+        (* Uniform parameters are exhausted *)
+        (List.rev rctx@sign),subst
+    | [], _, _ ->
+        assert false
+  in
+  make [] Univ.Level.Map.empty
 
+(* This is exactly Inductive.subst_univs_sort *)
+
+let subst_univs_univ_list (subs:Universe.t list UnivSubst.universe_map) u =
+  (* We implement by hand a max on universes that handles Prop *)
+  let u = Universe.repr u in
+  let map (u, n) =
+    if Level.is_set u then [Universe.type0, n]
+    else match Level.Map.find u subs with
+    | [] ->
+      if Int.equal n 0 then
+        (* This is an instantiation of a template universe by Prop, ignore it *)
+        []
+      else
+        (* Prop + S n actually means Set + S n *)
+        [Universe.type0, n]
+    | _ :: _ as vs ->
+      List.map (fun v -> (v, n)) vs
+    | exception Not_found ->
+      (* Either an unbound template universe due to missing arguments, or a
+          global one appearing in the inductive arity. *)
+      [Universe.make u, n]
+  in
+  CList.map_append map u
+
+let sort_of_universe_list ul =
+  match ul with
+  | [] ->
+    (* No constraints, fall in Prop *)
+    Sorts.prop
+  | (u,n) :: rest ->
+     let supern u n = Util.iterate Universe.super n u in
+     let fold accu (u, n) = Universe.sup accu (supern u n) in
+     Sorts.sort_of_univ (List.fold_left fold (supern u n) rest)
+
+(* Adapted from subst_univs_sort in engine/uState.ml *)
+let subst_univs_sort (subs:Universe.t list UnivSubst.universe_map) = function
+| Sorts.Prop | Sorts.Set | Sorts.SProp as s -> s
+| Sorts.Type u ->
+   let ul = subst_univs_univ_list subs u in
+   sort_of_universe_list ul
+  
 (* This is almost exactly Inductive.instantiate_universes *)
 let instantiate_universes env ctx (templ, ar) argsorts =
   let args = Array.to_list argsorts in
-  let subst = make_subst env (ctx,templ.template_param_levels,args) in
-  let subst_fn = Univ.make_subst subst in
-  let safe_subst_fn x =
-    try subst_fn x with | Not_found -> Univ.Universe.make x in
-  let level = Univ.subst_univs_universe safe_subst_fn ar.template_level in
-  (ctx, Sorts.sort_of_univ level, subst, safe_subst_fn)
+  (*  debug "Env before : %a" pp_coq_ctxt ctx;*)
+  let ctx,subst = make_subst env (ctx,templ.template_param_levels,args) in
+  (*  debug "Env after : %a" pp_coq_ctxt ctx;*)
+  debug "Instance subst: %a" pp_t
+    (Level.Map.pr (fun l->Pp.(str"["++prlist_with_sep spc Universe.pr l++str"]")) subst);
+  let ty = subst_univs_sort subst ar.template_level in
+  let safe_subst_fn lvl =
+    try let ul = Univ.Level.Map.find lvl subst in
+        sort_of_universe_list (List.map (fun u -> (u,0)) ul)
+    with | Not_found -> Sorts.sort_of_univ(Univ.Universe.make lvl) in
+  let temp_inst =
+    List.map safe_subst_fn (Utils.filter_some templ.template_param_levels) in
+  debug "Template instance: [%a]" (pp_list " " pp_coq_sort) temp_inst;
+  (ctx, ty, subst, temp_inst)
 
-(* Copied from engine/univSubst.ml *)
-let level_subst_of f =
+(* Adapted from UnivSubst.level_subst_of *)
+let level_subst_of subs =
   fun l ->
-    try let u = f l in
-          match Univ.Universe.level u with
-          | None -> l
-          | Some l -> l
-    with Not_found -> l
+  match Level.Map.find l subs with
+  | [] -> Univ.Level.set
+  | [u] -> (match Universe.level u with
+           | None -> l
+           | Some lvl -> lvl)
+  | _ -> l
+  | exception Not_found -> l
 
 (* Copied from engine/univSubst.ml *)
-let subst_univs_fn_constr f c =
+let subst_univs_constr (subs:Universe.t list UnivSubst.universe_map)(*(f:Level.t->Universe.t) *)c =
   let changed = ref false in
-  let fu = Univ.subst_univs_universe f in
-  let fi = Univ.Instance.subst_fn (level_subst_of f) in
+  let fu u =
+    let ul = subst_univs_univ_list subs u in
+    sort_of_universe_list ul in
+  (*     UnivSubst.subst_univs_universe f in*)
+  let fi = UnivSubst.subst_instance (level_subst_of subs) in
   let rec aux t =
     match Constr.kind t with
     | Sort (Sorts.Type u) ->
-      let u' = fu u in
-        if u' == u then t else
-          (changed := true; Constr.mkSort (Sorts.sort_of_univ u'))
+       let s' = fu u in
+       (match s' with
+       | Sorts.Type u' when u==u' -> t
+       | _ -> changed := true; Constr.mkSort s')
     | Const (c, u) ->
       let u' = fi u in
         if u' == u then t
@@ -246,14 +333,7 @@ let subst_univs_fn_constr f c =
   in
   let c' = aux c in
     if !changed then c' else c
-
-(* Copied from engine/univSubst.ml *)
-let subst_univs_constr subst c =
-(*  if Univ.is_empty_subst subst then c
-  else*)
-    let f = Univ.make_subst subst in
-      subst_univs_fn_constr f c
-
+ 
 let infer_ind_applied info env uenv (ind,u) args =
   debug "Inferring template polymorphic inductive: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
@@ -263,18 +343,15 @@ let infer_ind_applied info env uenv (ind,u) args =
   | TemplateArity ar, Some templ ->
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx,s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
+    let ctx,s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
-    (* Do we really need to apply safe_subst to arity ?
-    *)
-    let arity = subst_univs_constr subst arity in
     debug "Substituted type: %a" pp_coq_term arity;
     arity,
     if Encoding.is_templ_polymorphism_on ()
     then 
       List.map
-        (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
+        (fun s ->  T.coq_universe (Tsorts.translate_sort uenv s))
+        temp_inst
     else []
   | _ -> assert false
 
@@ -292,8 +369,8 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
     debug "Template polymorphic constructor: %a" pp_coq_label label;
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx, s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
-    debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
+    let ctx, s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
+    debug "Subst: %a" pp_t (Univ.Level.Map.pr (Pp.prlist_with_sep Pp.pr_comma Univ.Universe.pr) subst);
     if not (Encoding.is_templ_polymorphism_on ())
     then subst_univs_constr subst type_c, []
     else if not (Encoding.is_templ_polymorphism_cons_poly ())
@@ -311,8 +388,8 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
       *)
       subst_univs_constr subst type_c,
       List.map
-        (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
+        (fun s ->  T.coq_universe (Tsorts.translate_sort uenv s))
+        temp_inst
   | _ -> assert false
 
 let infer_dest_applied info env uenv (ind,u) args =
@@ -326,7 +403,7 @@ let infer_dest_applied info env uenv (ind,u) args =
       pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx,s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
+    let ctx,s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
     let arity = Term.mkArity (List.rev ctx,s) in
     if Encoding.is_templ_polymorphism_on () &&
        Encoding.is_templ_polymorphism_cons_poly ()
@@ -336,8 +413,8 @@ let infer_dest_applied info env uenv (ind,u) args =
       debug "Substituted type: %a" pp_coq_term arity;
       arity,
       List.map
-        (fun lvl -> T.coq_universe (Tsorts.translate_universe uenv lvl))
-        (List.map safe_subst (Utils.filter_some templ.template_param_levels))
+        (fun s -> T.coq_universe (Tsorts.translate_sort uenv s))
+        temp_inst
     end
     else arity, []
   | _ -> assert false
@@ -617,14 +694,14 @@ and translate_cast info uenv t' enva a envb b =
             pp_coq_type a pp_coq_type b
             (pp_list ", " (fun fmt (a,b) -> Format.fprintf fmt "%a = %a"
                               pp_coq_type a pp_coq_type b)) eq_types;
-          Univ.enforce_leq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb)
+          UnivSubst.enforce_leq_sort sa sb
             (* Careful, this could enforce a bit too many constraints :
                    max(a,b) < max(c,d) =>  a<c, a<d, b<c, b<d
                However this never happens in practice. *)
             (* Maybe: have an encoding that accepts too many constraints *)
-            (Tsorts.enforce_eq_types Univ.Constraint.empty eq_types)
+            (Tsorts.enforce_eq_types Univ.Constraints.empty eq_types)
         with Reduction.NotArity ->
-          Tsorts.enforce_eq_types Univ.Constraint.empty [(a,b)]
+          Tsorts.enforce_eq_types Univ.Constraints.empty [(a,b)]
       in
       let var_cstr = Tsorts.translate_constraints_as_conjunction uenv constraints in
       T.coq_cast s1' s2' a' b' var_cstr t'
@@ -761,7 +838,7 @@ and lift_let info env uenv binda u a =
   let a_closed' = Tsorts.add_poly_env_type uenv a_closed' in
   let u_closed' = Tsorts.add_poly_env_def  uenv u_closed' in
   Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
-  let inst = Univ.UContext.instance (Univ.AUContext.repr uenv.poly_ctxt) in
+  let inst = Univ.UContext.instance (Univ.AbstractContext.repr uenv.poly_ctxt) in
   let yconstr = apply_rel_context (Constr.mkConstU (yconstant,inst)) rel_context in
   let env = push_const_decl uenv env (yconstant, Some(u_closed), a_closed) in
   let def = Context.Rel.Declaration.LocalDef(binda, yconstr, a) in

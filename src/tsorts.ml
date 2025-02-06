@@ -15,7 +15,7 @@ let universe_table : (string, level_expr) Hashtbl.t = Hashtbl.create 10007
 (** Translates a universe level in a given local universe environment
     using universe_table global environment for named universes.  *)
 let level_as_level uenv l =
-  if Univ.Level.is_prop l then assert false
+  if Univ.Level.is_set l then assert false
   else if Univ.Level.is_set l then set_level
   else
     match Univ.Level.var_index l with
@@ -39,7 +39,7 @@ let level_as_level uenv l =
 (** Translates a universe level in a given local universe environment
     using universe_table global environment for named universes.  *)
 let level_as_universe uenv l =
-  if Univ.Level.is_prop l then Translator.Prop
+  if Univ.Level.is_set l then Translator.Prop
   else if Univ.Level.is_set l then Translator.Set
   else
     match Univ.Level.var_index l with
@@ -80,7 +80,7 @@ let rec enforce_eq_types acc  = function
       match Constr.kind ta, Constr.kind tb with
       | Constr.Sort sa,  Constr.Sort sb ->
         enforce_eq_types
-          (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
+          (UnivSubst.enforce_eq_sort sa sb acc)
           tl
       | Constr.Cast(ta',_,_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
       | _, Constr.Cast(tb',_,_) -> enforce_eq_types acc ( (ta ,tb')::tl )
@@ -91,7 +91,7 @@ let rec enforce_eq_types acc  = function
       | _ -> enforce_eq_types acc tl 
 
 let trivial_cstr (i,c,j) =
-  (Univ.Level.is_small i && c = Univ.Le)
+  (Univ.Level.is_set i && c = Univ.Le)
   ||
   (not (Encoding.is_float_univ_on ())
    &&  (Univ.Level.var_index i = None && Univ.Level.var_index j = None))
@@ -146,7 +146,7 @@ let translate_constraints_as_conjunction uenv cstr =
     match translate_constraint uenv cstr with
     | Some c -> c :: res
     | None -> res in
-  Univ.Constraint.fold aux cstr []
+  Univ.Constraints.fold aux cstr []
 
 
 (**************************************************************************)
@@ -257,7 +257,7 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
   else []
 
 let get_poly_univ_params uenv ctx univ_instance =
-  let nb_params = Univ.AUContext.size ctx in
+  let nb_params = Univ.AbstractContext.size ctx in
   if Univ.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   if not (Encoding.is_polymorphism_on ()) then []
@@ -268,7 +268,7 @@ let get_poly_univ_params uenv ctx univ_instance =
     @
     if not (Encoding.is_constraints_on ()) then []
     else
-      let subst = Univ.make_inverse_instance_subst univ_instance in
+      let subst = Univ.make_instance_subst univ_instance in
       let aux (u,d,v as c) res =
         let u' = Univ.subst_univs_level_level subst u in
         let v' = Univ.subst_univs_level_level subst v in
@@ -276,10 +276,10 @@ let get_poly_univ_params uenv ctx univ_instance =
         ( match translate_constraint uenv c' with
           | Some (v,c) -> v
           | None       -> T.coq_I() ) :: res in
-      let cstr = Univ.UContext.constraints (Univ.AUContext.repr ctx) in
+      let cstr = Univ.UContext.constraints (Univ.AbstractContext.repr ctx) in
       debug "Translating Constraints: %a in instance %a"
         pp_coq_Constraint cstr pp_coq_inst univ_instance;
-      List.rev (Univ.Constraint.fold aux cstr [])
+      List.rev (Univ.Constraints.fold aux cstr [])
 
 let instantiate_poly_univ_constant env uenv (kn,u) constant =
   let cb = Environ.lookup_constant kn env in
@@ -355,7 +355,7 @@ let translate_univ_poly_params (uctxt:Univ.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
     let translate_local_level l =
-      assert (not (Univ.Level.is_small l));
+      assert (not (Univ.Level.is_set l));
       match Univ.Level.var_index l with
       | None -> assert false
       | Some n -> T.coq_var_univ_name n in
@@ -363,7 +363,7 @@ let translate_univ_poly_params (uctxt:Univ.Instance.t) =
     List.map translate_local_level params_lst
   else []
 
-let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
+let translate_univ_poly_constraints (uctxt:Univ.Constraints.t) =
   if Encoding.is_constraints_on ()
   then
     let aux n cstr =
@@ -375,7 +375,7 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       let cstr_name = Cname.constraint_name n in
       ( cstr, (cstr_name, cstr_term, cstr_type) )
     in
-    List.mapi aux (Univ.Constraint.elements uctxt)
+    List.mapi aux (Univ.Constraints.elements uctxt)
   else []
 
 

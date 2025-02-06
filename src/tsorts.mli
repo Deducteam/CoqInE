@@ -15,7 +15,7 @@ val translate_constraint :
 *)
 
 val translate_constraints_as_conjunction :
-  Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list
+  Info.env -> Univ.Constraints.t -> (Dedukti.term*Dedukti.term) list
 (** From local environment
     [
       c1  :  a1  =/<  b1,
@@ -82,7 +82,7 @@ val add_constructor_params :
 
 
 val get_poly_univ_params :
-  Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term list
+  Info.env -> Univ.AbstractContext.t -> Univ.Instance.t -> Dedukti.term list
 
 val instantiate_poly_univ_constant :
   Environ.env -> Info.env -> Names.Constant.t * Univ.Instance.t -> Dedukti.term -> Dedukti.term
@@ -117,10 +117,10 @@ val translate_template_params :
 
 val translate_univ_poly_params : Univ.Instance.t -> string list
 
-val translate_univ_poly_constraints : Univ.Constraint.t -> cstr list
+val translate_univ_poly_constraints : Univ.Constraints.t -> cstr list
 
 
 val gather_eq_types :
   Constr.rel_context -> Constr.rel_context -> (Constr.types * Constr.types) list
 val enforce_eq_types :
-  Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t
+  Univ.Constraints.t -> (Constr.t * Constr.t) list -> Univ.Constraints.t

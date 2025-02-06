@@ -8,13 +8,13 @@ let dump_universes output g =
   let open Univ in
   let dump_arc u = function
     | UGraph.Node ltle ->
-      Univ.LMap.iter (fun v strict ->
+      Univ.Level.Map.iter (fun v strict ->
           let typ = if strict then Lt else Le in
           output typ u v) ltle;
     | UGraph.Alias v ->
       output Eq u v
   in
-  Univ.LMap.iter dump_arc (UGraph.repr g)
+  Univ.Level.Map.iter dump_arc (UGraph.repr g)
 
 (** Get all global universes names together with their concrete levels *)
 let get_universe_levels g =
@@ -22,37 +22,37 @@ let get_universe_levels g =
   let cano = Hashtbl.create 10007 in
   let open Univ in
   let g = UGraph.repr g in
-  let wl = ref LSet.empty in
+  let wl = ref Level.Set.empty in
   let rec cano_arc u nd =
     if Hashtbl.mem cano u then Hashtbl.find cano u
     else
       match nd with
       | UGraph.Node _ ->
          Hashtbl.add gene u 0;
-         wl := LSet.add u !wl;
+         wl := Level.Set.add u !wl;
          Hashtbl.add cano u u; u
       | UGraph.Alias v ->
-         let v' = cano_arc v (LMap.find v g) in
+         let v' = cano_arc v (Level.Map.find v g) in
          Hashtbl.add cano u v'; v' in
-  LMap.iter (fun u v -> ignore (cano_arc u v)) g;
+  Level.Map.iter (fun u v -> ignore (cano_arc u v)) g;
   let rec proc () =
-    if LSet.is_empty !wl then ()
+    if Level.Set.is_empty !wl then ()
     else
-      (let u = LSet.choose !wl in
-       wl := LSet.remove u !wl;
-       (if not (Level.is_small u)
+      (let u = Level.Set.choose !wl in
+       wl := Level.Set.remove u !wl;
+       (if not (Level.is_set u)
        then
          let n = Hashtbl.find gene u in
-         (match LMap.find u g with
+         (match Level.Map.find u g with
          | UGraph.Alias _ -> assert false
          | UGraph.Node ltle ->
-            LMap.iter (fun v is_lt ->
+            Level.Map.iter (fun v is_lt ->
                 let v = Hashtbl.find cano v in
                 let m = Hashtbl.find gene v in
                 let m' = if is_lt then n+1 else n in
-                if m < m' && not (Level.is_small v) then (
+                if m < m' && not (Level.is_set v) then (
                   (*message "Propagate: %s(%d) <= %s(%d) := %d" (Level.to_string u) m  (Level.to_string v) m m';*)
-                  wl := LSet.add v !wl; Hashtbl.replace gene v m'))
+                  wl := Level.Set.add v !wl; Hashtbl.replace gene v m'))
               ltle));
        proc()) in
   proc();
@@ -71,7 +71,7 @@ let get_universes_constraints (universes:UGraph.t) =
   let reg u =
 
     if      Univ.Level.is_set u then set_level
-    else if Univ.Level.is_prop u then set_level
+    else if Univ.Level.is_set u then set_level
     (* Hack to represent Prop as a level even though it shouldn't *)
     else
       let u' = Univ.Level.to_string u in
