@@ -151,7 +151,7 @@ let pp_coq_constraint fmt (i,rel,j) =
 
 let pp_coq_Constraint fmt c =
   Format.fprintf fmt "[";
-  Univ.Constraint.fold (fun c () -> (Format.fprintf fmt "%a ; " pp_coq_constraint c)) c ();
+  Univ.Constraints.fold (fun c () -> (Format.fprintf fmt "%a ; " pp_coq_constraint c)) c ();
   Format.fprintf fmt "]"
 
 let pp_uenv_cstr fmt constraints =

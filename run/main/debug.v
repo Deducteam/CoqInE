@@ -1,4 +1,4 @@
-Declare ML Module "coqine_plugin".
+Declare ML Module "coqine:coqine.plugin".
 
 Set Printing Universes.
 

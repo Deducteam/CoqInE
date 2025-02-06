@@ -10,7 +10,7 @@ type map = Translator.universe_expr LevelMap.t
 type env =
   {
     template_params : Translator.universe_expr LevelMap.t;
-    poly_ctxt : Univ.AUContext.t;
+    poly_ctxt : Univ.AbstractContext.t;
     nb_polymorphic_univs : int;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list
   }
@@ -18,7 +18,7 @@ type env =
 let make
     (template_levels : Univ.Level.t list)
     (template_names  : Translator.universe_expr list)
-    (poly_ctxt : Univ.AUContext.t)
+    (poly_ctxt : Univ.AbstractContext.t)
     (nb_polymorphic_univs : int)
     (constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)) list) =
 
@@ -87,7 +87,7 @@ let pp_constraints : env Debug.printer = fun fmt s ->
   let p fmt (a,(b,c,d)) = Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
   Format.fprintf fmt "{ %a }" (pp_list ", " p) s.constraints
 
-let dummy = make [] [] Univ.AUContext.empty 0 []
+let dummy = make [] [] Univ.AbstractContext.empty 0 []
 
 
 let destination = ref "."

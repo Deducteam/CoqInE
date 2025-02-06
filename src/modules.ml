@@ -49,12 +49,12 @@ let translate_constant_body info env isalias label const =
   assert (List.length const.const_hyps = 0);
   let poly_ctxt, poly_inst, poly_cstr, env =
     match const.const_universes with
-    | Monomorphic uctxt ->
+    | Monomorphic ->
       debug "Translating monomorphic constant body: %s" name;
-      let env' = Environ.push_context_set ~strict:true uctxt env in
-      Univ.AUContext.empty, Univ.Instance.empty, Univ.Constraint.empty, env'
+      (* let env' = Environ.push_context_set ~strict:true env in *)
+      Univ.AbstractContext.empty, Univ.Instance.empty, Univ.Constraints.empty, env
     | Polymorphic univ_ctxt ->
-      let uctxt = Univ.AUContext.repr univ_ctxt in
+      let uctxt = Univ.AbstractContext.repr univ_ctxt in
       let env' = Environ.push_context ~strict:false uctxt env in
       let instance = Univ.UContext.instance uctxt in
       let constraints = Univ.UContext.constraints uctxt in
@@ -88,7 +88,7 @@ let translate_constant_body info env isalias label const =
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
-    let constr, _ = Opaqueproof.force_proof Library.indirect_accessor Opaqueproof.empty_opaquetab lazy_constr in
+    let constr, _ = Global.force_proof Library.indirect_accessor lazy_constr in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
@@ -205,7 +205,8 @@ let rec translate_module_body info env mb =
 and translate_module_expression info env resolver modpath = function
   | NoFunctor alg_exp ->
     let modsig, _, resolver, ctxt =
-      Mod_typing.translate_mse env (Some modpath) (Some 1000) alg_exp in
+      let state = ((Environ.universes env, Univ.Constraints.empty), Reductionops.inferred_universes) in
+      Mod_typing.translate_mse state env (Some modpath) (Some 1000) alg_exp in
     translate_module_signature info env resolver modsig
   | MoreFunctor _ -> ()
   (* Functors definitions are simply ignored.

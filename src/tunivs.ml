@@ -8,13 +8,13 @@ let dump_universes output g =
   let open Univ in
   let dump_arc u = function
     | UGraph.Node ltle ->
-      Univ.LMap.iter (fun v strict ->
+      Univ.Level.Map.iter (fun v strict ->
           let typ = if strict then Lt else Le in
           output typ u v) ltle;
     | UGraph.Alias v ->
       output Eq u v
   in
-  Univ.LMap.iter dump_arc (UGraph.repr g)
+  Univ.Level.Map.iter dump_arc (UGraph.repr g)
 
 (** Get all global universes names together with their concrete levels *)
 let get_universes_levels (universes:UGraph.t) =
@@ -40,7 +40,7 @@ let get_universes_constraints (universes:UGraph.t) =
   let reg u =
 
     if      Univ.Level.is_set u then set_level
-    else if Univ.Level.is_prop u then set_level
+    else if Univ.Level.is_set u then set_level
     (* Hack to represent Prop as a level even though it shouldn't *)
     else
       let u' = Univ.Level.to_string u in

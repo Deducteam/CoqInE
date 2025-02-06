@@ -56,10 +56,10 @@ type ind_infos =
     arity_sort : Sorts.t;
 
     (* Universe polymorphic context : instance (array of universe levels) and constraints *)
-    apoly_ctxt : Univ.AUContext.t;
+    apoly_ctxt : Univ.AbstractContext.t;
     poly_ctxt : Univ.UContext.t;
     poly_inst : Univ.Instance.t;
-    poly_cstr : Univ.Constraint.t;
+    poly_cstr : Univ.Constraints.t;
 
     univ_poly_names : Dedukti.var list;
     univ_poly_cstr : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list;
@@ -96,27 +96,27 @@ let get_infos mind_body index =
       begin
         debug "Template params levels:";
         (* List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels; *)
-        debug "Template level: %a" pp_coq_univ ta.template_level;
+        debug "Template level: %a" pp_coq_sort ta.template_level;
         debug "Arity context: %a"  pp_coq_ctxt arity_context;
         (* Tsorts.translate_template_params ta.template_param_levels, *)
         ([],[]),
-        Sorts.sort_of_univ ta.template_level
+        ta.template_level
       end
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
   let apoly_ctxt, poly_ctxt, poly_inst, poly_cstr =
     match mind_univs with
-    | Monomorphic univ_ctxt ->
-      Univ.AUContext.empty,
+    | Monomorphic ->
+      Univ.AbstractContext.empty,
       Univ.UContext.empty,
       Univ.Instance.empty,
-      Univ.Constraint.empty
+      Univ.Constraints.empty
       (*
       Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
       *)
     | Polymorphic apoly_ctxt ->
-      let poly_ctxt = Univ.AUContext.repr apoly_ctxt in
+      let poly_ctxt = Univ.AbstractContext.repr apoly_ctxt in
       apoly_ctxt,
       poly_ctxt,
       Univ.UContext.instance    poly_ctxt,
@@ -449,12 +449,12 @@ let translate_template_inductive_levels info env label ind =
         I s1 ... sk  p1 ... pr  aj1(y1...ykj)  ... ajn(y1...ykj)
 *)
 let translate_constructors info env label ind =
-  let mind = Names.MutInd.make2 info.module_path label in
+  (* let mind = Names.MutInd.make2 info.module_path label in *)
   (* Substitute the inductive types as specified in the Coq code. *)
-  let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in
+  (* let ind_subst = Inductive.ind_subst mind ind.mind_body ind.poly_inst in *)
   for j = 0 to ind.n_cons - 1 do
     let cons_name = ind.body.mind_consnames.(j) in
-    let nf_full_types = Vars.substl ind_subst ind.nf_full_types.(j) in
+    let nf_full_types = ind.nf_full_types.(j) in
     debug "Translating inductive constructor: %a" pp_coq_id cons_name;
     debug "Cons_full_type: %a" pp_coq_type nf_full_types;
 
@@ -546,7 +546,7 @@ end
 *)
 let translate_cumulative_constructors_subtyping info env label ind =
   match ind.mind_univs with
-  | Monomorphic _
+  | Monomorphic
   | Polymorphic _ -> ()
   (* Constructor subtyping is only required for Cumulative Inductive types. *)
 
@@ -578,12 +578,12 @@ let translate_match info env label ind =
   let uenv = ind.constructor_uenv in
   let univ_poly_names = ind.univ_poly_names in
   let univ_poly_params = List.map Dedukti.var univ_poly_names in
-  let mind_body = ind.mind_body in
+  (* let mind_body = ind.mind_body in *)
   let univ_instance = ind.poly_inst in
 
   let mind = Names.MutInd.make2 info.module_path label in
   let ind_term = Constr.mkIndU((mind, ind.index), ind.poly_inst) in
-  let ind_subst = Inductive.ind_subst mind mind_body univ_instance in
+  (* let ind_subst = Inductive.ind_subst mind mind_body univ_instance in *)
 
   (* Constructor names start from 1. *)
   let cons_terms = Array.init ind.n_cons
@@ -625,7 +625,7 @@ let translate_match info env label ind =
     Array.init ind.n_cons (fun i ->
         let (ctx, cty) = ind.body.mind_nf_lc.(i) in
         let cty = Term.it_mkProd_or_LetIn cty ctx in
-        Term.decompose_prod_assum (Vars.substl ind_subst cty))
+        Term.decompose_prod_assum cty)
   in
 
   let cons_real_contexts =
@@ -976,7 +976,7 @@ end
     Only for a Cumulative Inductive Type with invariant sorts  (WIP)
   *)
    match ind.mind_univs with
-  | Monomorphic _
+  | Monomorphic
   | Polymorphic _ -> ()
 
 
