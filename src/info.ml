@@ -110,7 +110,7 @@ let init module_path filename =
     out = out;
     fmt = Format.formatter_of_out_channel out;
     library =
-      if module_path = Names.ModPath.initial then Names.DirPath.initial
+      if module_path = Names.ModPath.dummy then Names.DirPath.dummy
       else Nametab.dirpath_of_module module_path;
     module_path = module_path;
   }

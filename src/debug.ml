@@ -75,8 +75,8 @@ let pp_coq_type  =
   let env = Global.env () in
   let sigma = Evd.from_env env in
   printer_of_std_ppcmds (Printer.pr_type_env env sigma)
-let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
-let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
+let pp_coq_level = printer_of_std_ppcmds UnivNames.pr_with_global_universes
+let pp_coq_univ  = printer_of_std_ppcmds (Univ.Universe.pr Univ.Level.raw_pr)
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
 let pp_coq_label = printer_of_std_ppcmds Names.Label.print
 let pp_coq_constraint_type = printer_of_std_ppcmds Univ.pr_constraint_type
@@ -100,6 +100,7 @@ let pp_coq_sort fmt = function
   | Term.Set    -> fprintf fmt "Set"
   | Term.Prop   -> fprintf fmt "Prop"
   | Term.Type i -> fprintf fmt "Univ(%a)" pp_coq_univ i
+  | Term.QSort (_,_) -> failwith "translate_sort : Unhadled case Term_QSort!"
 
 let pp_coq_decl fmt = function
   | Context.Rel.Declaration.LocalAssum (binder, t) ->
@@ -160,4 +161,6 @@ let pp_uenv_cstr fmt constraints =
 
 
 let pp_globname fmt n =
-  fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)
+  let env = Global.env () in
+  let cstr, _ = UnivGen.fresh_global_instance env n in
+  fprintf fmt "%a" pp_coq_term cstr
