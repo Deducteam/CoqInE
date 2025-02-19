@@ -626,7 +626,7 @@ let translate_match info env label ind =
     Array.init ind.n_cons (fun i ->
         let (ctx, cty) = ind.body.mind_nf_lc.(i) in
         let cty = Term.it_mkProd_or_LetIn cty ctx in
-        Term.decompose_prod_assum cty)
+        Term.decompose_prod_decls cty)
   in
 
   let cons_real_contexts =
@@ -637,7 +637,7 @@ let translate_match info env label ind =
   debug "Params ctxt: %a" pp_coq_ctxt params_context;
   debug "Real ctxt: %a" (pp_array ", " pp_coq_ctxt) cons_real_contexts;
 
-  let dec a = snd (Constr.decompose_app (Reduction.whd_all env (snd a))) in
+  let dec a = snd (Constr.decompose_app_list (Reduction.whd_all env (snd a))) in
   let cons_ind_args = Array.map dec subst_nf_lc in
 
   let cons_ind_real_args = Array.init ind.n_cons (fun j ->

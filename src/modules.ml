@@ -197,18 +197,18 @@ let rec translate_module_body info env mb =
     | Algebraic mod_exp ->
       translate_module_expression info env mb.mod_delta mb.mod_mp mod_exp
     | Struct mod_sig    ->
-      translate_module_signature info env mb.mod_delta mod_sig
+      translate_module_signature info env mb.mod_delta (NoFunctor mod_sig)
     | FullStruct        ->
       translate_module_signature info env mb.mod_delta mb.mod_type
   else debug "Filtered out"
 
 and translate_module_expression info env resolver modpath = function
-  | NoFunctor alg_exp ->
-    let modsig, _, resolver, ctxt =
+  | MENoFunctor alg_exp ->
+    let mb, _ =
       let state = ((Environ.universes env, Univ.Constraints.empty), Reductionops.inferred_universes) in
-      Mod_typing.translate_mse state env (Some modpath) (Some 1000) alg_exp in
-    translate_module_signature info env resolver modsig
-  | MoreFunctor _ -> ()
+      Mod_typing.translate_module state env (modpath) (Some 1000) (MExpr ([], alg_exp, None)) in
+    translate_module_signature info env mb.mod_delta mb.mod_type
+  | MEMoreFunctor _ -> ()
   (* Functors definitions are simply ignored.
      Whenever functors are applied to define algebraic modules, their
      definition is expanded.

@@ -346,7 +346,8 @@ let translate_sort uenv = function
   | Term.Prop   -> Translator.Prop
   | Term.Set    -> Translator.Set
   | Term.Type i -> translate_universe uenv i
-
+  | Term.QSort (_,_) -> failwith "translate_sort : Unhadled case Term_QSort!"
+  
 let convertible_sort uenv s1 s2 =
   translate_sort uenv s1 = translate_sort uenv s2
 

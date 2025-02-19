@@ -39,9 +39,9 @@ let translate_qualified_library qualid =
 (* Translates the given library *)
 let translate_library qualid =
   match Loadpath.locate_qualified_library qualid with
-  | Ok(lib_loc, lib_path, lib_phys_path) ->
+  | Ok(lib_path, lib_phys_path) ->
     let lib_resolver = Loadpath.try_locate_absolute_library in
-    Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] ~lib_resolver;
+    Library.require_library_from_dirpath (Library.require_library_syntax_from_dirpath [ lib_path ] ~lib_resolver);
     Tsorts.set_universes (Global.universes ());
     translate_qualified_library qualid
   | Error _ -> assert false
@@ -50,7 +50,7 @@ let translate_universes () =
   if Encoding.need_universe_file ()
   then
     (* "universe_file" is the file for global universe definitions  *)
-    let info = Info.init Names.ModPath.initial (Encoding.symb "universe_file") in
+    let info = Info.init Names.ModPath.dummy (Encoding.symb "universe_file") in
     begin
       try
         (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());

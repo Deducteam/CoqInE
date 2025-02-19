@@ -134,8 +134,8 @@ let rec convertible info env uenv a b =
       assert false
   | _, _ ->
     begin
-      try let _ = Reduction.default_conv Reduction.CONV env a b in true
-      with Reduction.NotConvertible -> false
+      try let _ = Conversion.default_conv Conversion.CONV env a b in true
+      with Conversion.NotConvertible -> false
     end
 
 
@@ -183,7 +183,7 @@ let cons_subst u su subst =
   | Sorts.SProp -> assert false (* No template on SProp *)
   | Sorts.Prop -> []
   | Sorts.Set -> [Universe.type0]
-  | Sorts.Type u -> [u]
+  | Sorts.Type u | Sorts.QSort (_, u) -> [u]
   in
   try
     Univ.Level.Map.add u (max_template_universe su (Univ.Level.Map.find u subst)) subst
@@ -232,8 +232,6 @@ let make_subst env =
   in
   make [] Univ.Level.Map.empty
 
-(* This is exactly Inductive.subst_univs_sort *)
-
 let subst_univs_univ_list (subs:Universe.t list UnivSubst.universe_map) u =
   (* We implement by hand a max on universes that handles Prop *)
   let u = Universe.repr u in
@@ -272,6 +270,9 @@ let subst_univs_sort (subs:Universe.t list UnivSubst.universe_map) = function
 | Sorts.Type u ->
    let ul = subst_univs_univ_list subs u in
    sort_of_universe_list ul
+| Sorts.QSort(_q,_u) -> failwith "QSort not implemented"
+(*   let ul = subst_univs_univ_list subs u in
+   sort_of_universe_list ul*)
   
 (* This is almost exactly Inductive.instantiate_universes *)
 let instantiate_universes env ctx (templ, ar) argsorts =
@@ -279,8 +280,9 @@ let instantiate_universes env ctx (templ, ar) argsorts =
   (*  debug "Env before : %a" pp_coq_ctxt ctx;*)
   let ctx,subst = make_subst env (ctx,templ.template_param_levels,args) in
   (*  debug "Env after : %a" pp_coq_ctxt ctx;*)
+  let prl = Univ.Level.raw_pr in
   debug "Instance subst: %a" pp_t
-    (Level.Map.pr (fun l->Pp.(str"["++prlist_with_sep spc Universe.pr l++str"]")) subst);
+    (Level.Map.pr prl (fun ul->Pp.(str"["++prlist_with_sep spc (Universe.pr prl) ul++str"]")) subst);
   let ty = subst_univs_sort subst ar.template_level in
   let safe_subst_fn lvl =
     try let ul = Univ.Level.Map.find lvl subst in
@@ -370,7 +372,9 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
     let ctx, s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
-    debug "Subst: %a" pp_t (Univ.Level.Map.pr (Pp.prlist_with_sep Pp.pr_comma Univ.Universe.pr) subst);
+    (* Avoid Level.raw_pr : Prefer  UnivNames.pr_with_global_universes *)
+    let prl = Univ.Level.raw_pr in
+    debug "Subst: %a" pp_t (Univ.Level.Map.pr prl (Pp.prlist_with_sep Pp.pr_comma (Univ.Universe.pr prl) ) subst);
     if not (Encoding.is_templ_polymorphism_on ())
     then subst_univs_constr subst type_c, []
     else if not (Encoding.is_templ_polymorphism_cons_poly ())
@@ -628,7 +632,7 @@ let rec translate_constr ?expected_type info env uenv t =
          Tsorts.get_poly_univ_params uenv
            (Declareops.inductive_polymorphic_context mind_body) (snd pind)
        else [] in
-     let context, end_type = Term.decompose_lam_n_assum (n_reals + 1) return_type in
+     let context, end_type = Term.decompose_lambda_n_assum (n_reals + 1) return_type in
      let return_sort = infer_sort (Environ.push_rel_context context env) end_type in
      (* Translate params using expected types to make sure we use proper casts. *)
      let translate_param (params', a) param =
@@ -883,7 +887,7 @@ and lift_fix info env uenv names types bodies rec_indices =
   let fix_names1 = Array.map (Cname.fresh_of_name_binder info env ~global:true ~prefix:"fix1" ~default:"_") names in
   let fix_names2 = Array.map (Cname.fresh_of_name_binder info env ~global:true ~prefix:"fix2" ~default:"_") names in
   let fix_names3 = Array.map (Cname.fresh_of_name_binder info env ~global:true ~prefix:"fix3" ~default:"_") names in
-  let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_assum (rec_indices.(i) + 1)) types in
+  let contexts_return_types = Array.mapi (fun i -> Term.decompose_prod_n_decls (rec_indices.(i) + 1)) types in
   let contexts = Array.map fst contexts_return_types in
   let return_types = Array.map snd contexts_return_types in
   let ind_applieds = Array.map (fun context -> Context.Rel.Declaration.get_type (List.hd context)) contexts in
@@ -895,7 +899,7 @@ and lift_fix info env uenv names types bodies rec_indices =
   let one_ind_body = Array.map snd ind_specifs in
   let mut_ind_body = Array.map fst ind_specifs in
   let arity_contexts = Array.map (fun body -> fst (Inductive.mind_arity body)) one_ind_body in
-  let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Constr.mkInd inds.(i)) arity_contexts.(i)) in
+  let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Constr.mkIndU pinds.(i)) arity_contexts.(i)) in
   let types1 = types in
   let types2 =
     Array.init n
@@ -931,9 +935,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     Dedukti.print info.fmt (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
     Dedukti.print info.fmt (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms1 = Array.map Constr.mkConst const1 in
-  let fix_terms2 = Array.map Constr.mkConst const2 in
-  let fix_terms3 = Array.map Constr.mkConst const3 in
+  let fix_terms1 = Array.map (fun c -> Constr.mkConstU (c, Instance.empty)) const1 in
+  let fix_terms2 = Array.map  (fun c -> Constr.mkConstU (c, Instance.empty)) const2 in
+  let fix_terms3 = Array.map  (fun c -> Constr.mkConstU (c, Instance.empty)) const3 in
   let fix_rules1 = Array.init n (fun i ->
     let env, context' = translate_rel_context info global_env uenv (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in
@@ -954,7 +958,7 @@ and lift_fix info env uenv names types bodies rec_indices =
             | None -> 0)
         else 0 in
       let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in
-      let cons_contexts_types = Array.map Term.decompose_prod_assum cons_arities in
+      let cons_contexts_types = Array.map Term.decompose_prod_decls cons_arities in
       let cons_contexts = Array.map fst cons_contexts_types in
       let cons_types = Array.map snd cons_contexts_types in
       let cons_ind_args = Array.map (fun cons_type -> snd (Inductive.find_inductive env cons_type)) cons_types in
