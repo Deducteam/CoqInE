@@ -70,11 +70,11 @@ let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
 let pp_coq_term_env env =
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env (Evd.from_env env))
-let pp_coq_term  = pp_coq_term_env (Global.env())
-let pp_coq_type  =
-  let env = Global.env () in
+let pp_coq_term  t = pp_coq_term_env (Global.env()) t
+let pp_coq_type t =
+  let env = Global.env ()  in
   let sigma = Evd.from_env env in
-  printer_of_std_ppcmds (Printer.pr_type_env env sigma)
+  printer_of_std_ppcmds (Printer.pr_type_env env sigma) t
 let pp_coq_level = printer_of_std_ppcmds UnivNames.pr_level_with_global_universes
 let pp_coq_univ  = printer_of_std_ppcmds (Univ.Universe.pr Univ.Level.raw_pr)
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
