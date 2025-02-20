@@ -3,17 +3,32 @@
 open Debug
 open Translator
 
+(* Copied From Coqv8.14 *)
+let dump_universes output g =
+  let open Univ in
+  let dump_arc u = function
+    | UGraph.Node ltle ->
+      Univ.Level.Map.iter (fun v strict ->
+          let typ = if strict then Lt else Le in
+          output typ u v) ltle;
+    | UGraph.Alias v ->
+      output Eq u v
+  in
+  Univ.Level.Map.iter dump_arc (UGraph.repr g)
+
 (** Get all global universes names together with their concrete levels *)
 let get_universes_levels (universes:UGraph.t) =
-  let universes = UGraph.sort_universes universes in
+  (* let universes = UGraph.sort_universes universes in *)
   let res = ref [] in
   let register constraint_type j k =
     match constraint_type with
     | Univ.Eq ->
-      let closed_univ = Scanf.sscanf k "Type.%d" (fun x -> x) in
-      res := (T.coq_univ_name j, Translator.mk_level closed_univ):: !res
+      let closed_univ = Scanf.sscanf (Univ.Level.to_string k) "Type.%d" (fun x -> x) in
+      (* Coq does not expose the (string*int) representation
+         of RawLavel's Levels named level so print-and-parse it for now *)
+      res := (T.coq_univ_name (Univ.Level.to_string j), Translator.mk_level closed_univ):: !res
     | Univ.Lt | Univ.Le -> () in
-  UGraph.dump_universes register universes;
+  dump_universes register universes;
   !res
 
 
@@ -23,14 +38,18 @@ module StringSet = Set.Make(struct type t = string let compare = String.compare 
 let get_universes_constraints (universes:UGraph.t) =
   let defined_univs = ref StringSet.empty in
   let reg u =
-    if      u = "Set"  then set_level
-    else if u = "Prop" then set_level (* Hack to represent Prop as a level *)
-    else if Utils.str_starts_with "Type." u
-    then mk_level (Scanf.sscanf u "Type.%d" (fun x -> x))
-    else begin
-      if not (StringSet.mem u !defined_univs)
-      then defined_univs := StringSet.add u !defined_univs;
-      Translator.GlobalLevel u
+
+    if      Univ.Level.is_set u then set_level
+    else if Univ.Level.is_set u then set_level
+    (* Hack to represent Prop as a level even though it shouldn't *)
+    else
+      let u' = Univ.Level.to_string u in
+      if Utils.str_starts_with "Type." u'
+      then mk_level (Scanf.sscanf u' "Type.%d" (fun x -> x))
+      else begin
+        if not (StringSet.mem u' !defined_univs)
+        then defined_univs := StringSet.add u' !defined_univs;
+        Translator.GlobalLevel u'
     end
   in
   let res = ref [] in
@@ -38,7 +57,7 @@ let get_universes_constraints (universes:UGraph.t) =
     match ct, reg j, reg k with
     | Univ.Lt, Translator.Lvl 0, Translator.Lvl 0 -> () (* ignore the Prop < Set constraint *)
     | _ , jd, kd -> res := (j, jd, ct, k, kd) :: !res in
-  UGraph.dump_universes register universes;
+  dump_universes register universes;
   (StringSet.elements !defined_univs, List.rev !res)
 
 

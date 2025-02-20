@@ -1,0 +1,16 @@
+synopsis:     "Coqine Plugin"
+description:  "Coqine Plugin"
+name:         "coqine"
+opam-version: "2.0"
+maintainer:   "gaspard.ferey@mines.org"
+authors:      "Gaspard FEREY"
+homepage:     "https://github.com/Deducteam/CoqInE/"
+bug-reports:  "https://github.com/Deducteam/CoqInE/"
+dev-repo:     "git+https://github.com/Deducteam/CoqInE"
+license:      "GPL 3"
+depends: [
+  "ocaml"         { >= "4.09.0"           }
+  "coq"           { = "8.10.0" }
+  "dune"          { build & >= "1.9.0"    }
+]
+build: [ "dune" "build" "-p" name "-j" jobs ]

@@ -15,7 +15,7 @@ let universe_table : (string, level_expr) Hashtbl.t = Hashtbl.create 10007
 (** Translates a universe level in a given local universe environment
     using universe_table global environment for named universes.  *)
 let level_as_level uenv l =
-  if Univ.Level.is_prop l then assert false
+  if Univ.Level.is_set l then assert false
   else if Univ.Level.is_set l then set_level
   else
     match Univ.Level.var_index l with
@@ -39,7 +39,7 @@ let level_as_level uenv l =
 (** Translates a universe level in a given local universe environment
     using universe_table global environment for named universes.  *)
 let level_as_universe uenv l =
-  if Univ.Level.is_prop l then Translator.Prop
+  if Univ.Level.is_set l then Translator.Prop
   else if Univ.Level.is_set l then Translator.Set
   else
     match Univ.Level.var_index l with
@@ -77,21 +77,21 @@ let gather_eq_types decla declb =
 let rec enforce_eq_types acc  = function
   | [] -> acc
   | (ta,tb) :: tl ->
-      match Term.kind_of_type ta, Term.kind_of_type tb with
-      | Term.SortType sa,  Term.SortType sb ->
+      match Constr.kind ta, Constr.kind tb with
+      | Constr.Sort sa,  Constr.Sort sb ->
         enforce_eq_types
-          (Univ.enforce_eq (Sorts.univ_of_sort sa) (Sorts.univ_of_sort sb) acc)
+          (UnivSubst.enforce_eq_sort sa sb acc)
           tl
-      | Term.CastType(ta',_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
-      | _, Term.CastType(tb',_) -> enforce_eq_types acc ( (ta ,tb')::tl )
+      | Constr.Cast(ta',_,_), _ -> enforce_eq_types acc ( (ta',tb )::tl )
+      | _, Constr.Cast(tb',_,_) -> enforce_eq_types acc ( (ta ,tb')::tl )
 
-      | Term.ProdType(x1, a1, b1), Term.ProdType(x2, a2, b2) ->
+      | Constr.Prod(x1, a1, b1), Constr.Prod(x2, a2, b2) ->
         enforce_eq_types acc ( (a1,a2) :: (b1,b2) :: tl)
 
-      | _ -> enforce_eq_types acc tl
+      | _ -> enforce_eq_types acc tl 
 
 let trivial_cstr (i,c,j) =
-  (Univ.Level.is_small i && c = Univ.Le)
+  (Univ.Level.is_set i && c = Univ.Le)
   ||
   (not (Encoding.is_float_univ_on ())
    &&  (Univ.Level.var_index i = None && Univ.Level.var_index j = None))
@@ -146,7 +146,7 @@ let translate_constraints_as_conjunction uenv cstr =
     match translate_constraint uenv cstr with
     | Some c -> c :: res
     | None -> res in
-  Univ.Constraint.fold aux cstr []
+  Univ.Constraints.fold aux cstr []
 
 
 (**************************************************************************)
@@ -228,13 +228,13 @@ let set_universes universes =
   message "Saving universes";
   if (not (Encoding.is_float_univ_on ()))
   then begin
-    let universes = UGraph.sort_universes universes in
+    (* let universes = UGraph.sort_universes universes in *)
     let register constraint_type j k =
       match constraint_type with
-      | Univ.Eq -> Scanf.sscanf k "Type.%d"
-                     (fun k -> Hashtbl.add universe_table j (mk_level k))
+      | Univ.Eq -> Scanf.sscanf (Univ.Level.to_string k) "Type.%d"
+                     (fun k -> Hashtbl.add universe_table (Univ.Level.to_string j) (mk_level k))
       | Univ.Lt | Univ.Le -> () in
-    UGraph.dump_universes register universes
+    Tunivs.dump_universes register universes
   end
 
 let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
@@ -243,7 +243,7 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
     let params = Utils.filter_some ctxt in
     let aux l =
       match Univ.Level.name l with
-      | Some (d,n) ->
+      | Some _ ->
         let name = Univ.Level.to_string l in
         let name' = T.coq_univ_name name in
         if Encoding.is_float_univ_on ()
@@ -258,18 +258,20 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
   else []
 
 let get_poly_univ_params uenv ctx univ_instance =
-  let nb_params = Univ.AUContext.size ctx in
-  if Univ.Instance.length univ_instance < nb_params
+  let nb_params = UVars.AbstractContext.size ctx in
+  if UVars.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   if not (Encoding.is_polymorphism_on ()) then []
   else
-    let levels = Univ.Instance.to_array univ_instance in
+    (* FIX ME *)
+    let _,levels = UVars.Instance.to_array univ_instance in
     Array.to_list
       (Array.map (fun l -> T.coq_level (level_as_level uenv l)) levels)
     @
     if not (Encoding.is_constraints_on ()) then []
     else
-      let subst = Univ.make_inverse_instance_subst univ_instance in
+      (* FIX ME *)
+      let _,subst = UVars.make_instance_subst univ_instance in
       let aux (u,d,v as c) res =
         let u' = Univ.subst_univs_level_level subst u in
         let v' = Univ.subst_univs_level_level subst v in
@@ -277,10 +279,10 @@ let get_poly_univ_params uenv ctx univ_instance =
         ( match translate_constraint uenv c' with
           | Some (v,c) -> v
           | None       -> T.coq_I() ) :: res in
-      let cstr = Univ.UContext.constraints (Univ.AUContext.repr ctx) in
+      let cstr = UVars.UContext.constraints (UVars.AbstractContext.repr ctx) in
       debug "Translating Constraints: %a in instance %a"
         pp_coq_Constraint cstr pp_coq_inst univ_instance;
-      List.rev (Univ.Constraint.fold aux cstr [])
+      List.rev (Univ.Constraints.fold aux cstr [])
 
 let instantiate_poly_univ_constant env uenv (kn,u) constant =
   let cb = Environ.lookup_constant kn env in
@@ -305,18 +307,20 @@ let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
 
 let instantiate_template_ind_univ_params env uenv ind univ_instance term =
   let (mib,oib) = Inductive.lookup_mind_specif env ind in
-  match oib.mind_arity with
-  | TemplateArity ar when Encoding.is_templ_polymorphism_on () ->
+  match mib.mind_template with
+  | Some tar when Encoding.is_templ_polymorphism_on () ->
     debug "Instantiating template inductive instance %a : {%a}"
       Dedukti.pp_term term
       pp_coq_inst univ_instance;
-    let univ_ctxt = ar.template_param_levels in
-    let nb_instance = Univ.Instance.length univ_instance in
+    let univ_ctxt = tar.template_param_levels in
+    (* FIX ME *)
+    let _,nb_instance = UVars.Instance.length univ_instance in
     let nb_params = List.length univ_ctxt in
     if nb_instance < nb_params
     then debug "Something suspicious is going on with thoses universes...";
     debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
-    let levels = Univ.Instance.to_array univ_instance in
+    let _,levels = UVars.Instance.to_array univ_instance in
+    (* FIX ME *)
     let rec aux acc i = function
       | None     :: tl -> aux acc (i+1) tl
       | (Some a) :: tl when i < nb_instance ->
@@ -336,33 +340,36 @@ let translate_universe uenv u =
   let translate (univ, i) =
     let u = level_as_universe uenv univ in
     if i = 0 then u else Succ (u,i) in
-  match Univ.Universe.map translate u with
+  match List.map translate (Univ.Universe.repr u) with
   | []     -> Translator.Prop
   | [l]    -> l
   | levels -> Translator.Sup levels
 
 let translate_sort uenv = function
-  | Term.Prop Sorts.Null -> Translator.Prop
-  | Term.Prop Sorts.Pos  -> Translator.Set
-  | Term.Type i    -> translate_universe uenv i
-
+  | Term.SProp  -> Translator.SProp
+  | Term.Prop   -> Translator.Prop
+  | Term.Set    -> Translator.Set
+  | Term.Type i -> translate_universe uenv i
+  | Term.QSort (_,_) -> failwith "translate_sort : Unhadled case Term_QSort!"
+  
 let convertible_sort uenv s1 s2 =
   translate_sort uenv s1 = translate_sort uenv s2
 
 
-let translate_univ_poly_params (uctxt:Univ.Instance.t) =
+let translate_univ_poly_params (uctxt:UVars.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
     let translate_local_level l =
-      assert (not (Univ.Level.is_small l));
+      assert (not (Univ.Level.is_set l));
       match Univ.Level.var_index l with
       | None -> assert false
       | Some n -> T.coq_var_univ_name n in
-    let params_lst = Array.to_list (Univ.Instance.to_array uctxt) in
+      (* FIX ME *)
+    let params_lst = Array.to_list (snd (UVars.Instance.to_array uctxt)) in
     List.map translate_local_level params_lst
   else []
 
-let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
+let translate_univ_poly_constraints (uctxt:Univ.Constraints.t) =
   if Encoding.is_constraints_on ()
   then
     let aux n cstr =
@@ -374,13 +381,13 @@ let translate_univ_poly_constraints (uctxt:Univ.Constraint.t) =
       let cstr_name = Cname.constraint_name n in
       ( cstr, (cstr_name, cstr_term, cstr_type) )
     in
-    List.mapi aux (Univ.Constraint.elements uctxt)
+    List.mapi aux (Univ.Constraints.elements uctxt)
   else []
 
 
 let translate_template_name l =
   match Univ.Level.name l with
-  | Some (d,n) -> T.coq_univ_name (Univ.Level.to_string l)
+  | Some _ -> T.coq_univ_name (Univ.Level.to_string l)
   | _ -> assert false
 
 (** Extracts template parameters levels and returns them with their dedukti names

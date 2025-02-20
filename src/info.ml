@@ -10,7 +10,7 @@ type map = Translator.universe_expr LevelMap.t
 type env =
   {
     template_params : Translator.universe_expr LevelMap.t;
-    poly_ctxt : Univ.AUContext.t;
+    poly_ctxt : UVars.AbstractContext.t;
     nb_polymorphic_univs : int;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list
   }
@@ -18,7 +18,7 @@ type env =
 let make
     (template_levels : Univ.Level.t list)
     (template_names  : Translator.universe_expr list)
-    (poly_ctxt : Univ.AUContext.t)
+    (poly_ctxt : UVars.AbstractContext.t)
     (nb_polymorphic_univs : int)
     (constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term)) list) =
 
@@ -44,7 +44,17 @@ let fetch_constraint uenv cstr =
   with Not_found -> None
 
 let fetch_higher_sorts uenv u =
-  let rec assoc acc ((i,c,j),(b,_,_)) = if compare i u = 0 then (c,j,b)::acc else acc
+  let assoc acc ((i,c,j),(b,_,_)) =
+    match c with
+    | AcyclicGraph.Eq ->
+       if compare i u = 0
+       then (c,j,b)::acc
+       else if compare j u = 0
+       then (c,i,b)::acc
+       else acc
+    | _ ->
+       if compare i u = 0
+       then (c,j,b)::acc else acc
   (* FIXME: Equality constraints are not handled correctly here.
      - They should be considered both way
      - We should also prevent loops somehow *)
@@ -77,7 +87,7 @@ let pp_constraints : env Debug.printer = fun fmt s ->
   let p fmt (a,(b,c,d)) = Format.fprintf fmt "%a |-> %s" pp_coq_constraint a b in
   Format.fprintf fmt "{ %a }" (pp_list ", " p) s.constraints
 
-let dummy = make [] [] Univ.AUContext.empty 0 []
+let dummy = make [] [] UVars.AbstractContext.empty 0 []
 
 
 let destination = ref "."
@@ -100,7 +110,7 @@ let init module_path filename =
     out = out;
     fmt = Format.formatter_of_out_channel out;
     library =
-      if module_path = Names.ModPath.initial then Names.DirPath.initial
+      if module_path = Names.ModPath.dummy then Names.DirPath.dummy
       else Nametab.dirpath_of_module module_path;
     module_path = module_path;
   }

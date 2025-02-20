@@ -92,15 +92,19 @@ Section Defs.
   (** A [PreOrder] is both Reflexive and Transitive. *)
 
   Class PreOrder (R : crelation A)  := {
-    PreOrder_Reflexive :> Reflexive R | 2 ;
-    PreOrder_Transitive :> Transitive R | 2 }.
+    PreOrder_Reflexive : Reflexive R | 2 ;
+    PreOrder_Transitive : Transitive R | 2 }.
+  #[global] Existing Instance PreOrder_Reflexive.
+  #[global] Existing Instance PreOrder_Transitive.
 
   (** A [StrictOrder] is both Irreflexive and Transitive. *)
 
   Class StrictOrder (R : crelation A)  := {
-    StrictOrder_Irreflexive :> Irreflexive R ;
-    StrictOrder_Transitive :> Transitive R }.
-
+    StrictOrder_Irreflexive : Irreflexive R ;
+    StrictOrder_Transitive : Transitive R }.
+  #[global] Existing Instance StrictOrder_Irreflexive.
+  #[global] Existing Instance StrictOrder_Transitive.
+  
   (** By definition, a strict order is also asymmetric *)
   Global Instance StrictOrder_Asymmetric `(StrictOrder R) : Asymmetric R.
   Proof. firstorder. Qed.
@@ -108,15 +112,20 @@ Section Defs.
   (** A partial equivalence crelation is Symmetric and Transitive. *)
 
   Class PER (R : crelation A)  := {
-    PER_Symmetric :> Symmetric R | 3 ;
-    PER_Transitive :> Transitive R | 3 }.
+    PER_Symmetric : Symmetric R | 3 ;
+    PER_Transitive : Transitive R | 3 }.
+  #[global] Existing Instance PER_Symmetric.
+  #[global] Existing Instance PER_Transitive.
 
   (** Equivalence crelations. *)
 
   Class Equivalence (R : crelation A)  := {
-    Equivalence_Reflexive :> Reflexive R ;
-    Equivalence_Symmetric :> Symmetric R ;
-    Equivalence_Transitive :> Transitive R }.
+    Equivalence_Reflexive : Reflexive R ;
+    Equivalence_Symmetric : Symmetric R ;
+    Equivalence_Transitive : Transitive R }.
+  #[global] Existing Instance Equivalence_Reflexive.
+  #[global] Existing Instance Equivalence_Symmetric.
+  #[global] Existing Instance Equivalence_Transitive.
 
   (** An Equivalence is a PER plus reflexivity. *)
 
@@ -198,7 +207,8 @@ Section Defs.
   (** Any [Equivalence] declared in the context is automatically considered
    a rewrite crelation. *)
 
-  Global Instance equivalence_rewrite_crelation `(Equivalence eqA) : RewriteRelation eqA.
+    Global Instance equivalence_rewrite_crelation `(Equivalence eqA) : RewriteRelation eqA.
+    Defined.
 
   (** Leibniz equality. *)
   Section Leibniz.
@@ -216,8 +226,8 @@ Section Defs.
 End Defs.
 
 (** Default rewrite crelations handled by [setoid_rewrite]. *)
-Instance: RewriteRelation impl.
-Instance: RewriteRelation iff.
+Instance: RewriteRelation impl. Defined.
+Instance: RewriteRelation iff.  Defined.
 
 (** Hints to drive the typeclass resolution avoiding loops
  due to the use of full unification. *)
@@ -320,7 +330,7 @@ Section Binary.
   Definition relation_equivalence : crelation (crelation A) :=
     fun R R' => forall x y, iffT (R x y) (R' x y).
 
-  Global Instance: RewriteRelation relation_equivalence.
+  Global Instance: RewriteRelation relation_equivalence. Defined.
 
   Definition relation_conjunction (R : crelation A) (R' : crelation A) : crelation A :=
     fun x y => prod (R x y) (R' x y).
@@ -350,7 +360,7 @@ Section Binary.
    morphism for equivalence (see Morphisms).  It is also sufficient to
    show that [R] is antisymmetric w.r.t. [eqA] *)
 
-  Global Instance partial_order_antisym `(PartialOrder eqA R) : ! Antisymmetric A eqA R.
+  Global Instance partial_order_antisym `(PartialOrder eqA R) : Antisymmetric eqA R.
   Proof with auto.
     reduce_goal.
     apply H. firstorder.

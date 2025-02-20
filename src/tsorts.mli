@@ -15,7 +15,7 @@ val translate_constraint :
 *)
 
 val translate_constraints_as_conjunction :
-  Info.env -> Univ.Constraint.t -> (Dedukti.term*Dedukti.term) list
+  Info.env -> Univ.Constraints.t -> (Dedukti.term*Dedukti.term) list
 (** From local environment
     [
       c1  :  a1  =/<  b1,
@@ -82,20 +82,20 @@ val add_constructor_params :
 
 
 val get_poly_univ_params :
-  Info.env -> Univ.AUContext.t -> Univ.Instance.t -> Dedukti.term list
+  Info.env -> UVars.AbstractContext.t -> UVars.Instance.t -> Dedukti.term list
 
 val instantiate_poly_univ_constant :
-  Environ.env -> Info.env -> Names.Constant.t * Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.Constant.t * UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 val instantiate_poly_ind_univ_params :
-  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.inductive -> UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 val instantiate_template_ind_univ_params :
-  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.inductive -> UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 (*
 val instantiate_ind_univ_params :
-  Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> Univ.Instance.t -> Dedukti.term
+  Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> UVars.Instance.t -> Dedukti.term
 *)
 
 val set_universes : UGraph.t -> unit
@@ -115,11 +115,12 @@ val translate_template_name : Univ.Level.t -> Dedukti.var
 val translate_template_params :
   Univ.Level.t option list -> Univ.Level.t list * Dedukti.var list
 
-val translate_univ_poly_params : Univ.Instance.t -> string list
+val translate_univ_poly_params : UVars.Instance.t -> string list
 
-val translate_univ_poly_constraints : Univ.Constraint.t -> cstr list
+val translate_univ_poly_constraints : Univ.Constraints.t -> cstr list
 
 
-val gather_eq_types : Context.Rel.t -> Context.Rel.t -> (Constr.types * Constr.types) list
+val gather_eq_types :
+  Constr.rel_context -> Constr.rel_context -> (Constr.types * Constr.types) list
 val enforce_eq_types :
-  Univ.Constraint.t -> (Constr.t * Constr.t) list -> Univ.Constraint.t
+  Univ.Constraints.t -> (Constr.t * Constr.t) list -> Univ.Constraints.t
