@@ -66,7 +66,7 @@ val pp_coq_type    : Constr.types       printer
 val pp_coq_id      : Names.Id.t         printer
 val pp_coq_label   : Names.Label.t      printer
 val pp_coq_name    : Names.Name.t       printer
-val pp_coq_binder  : 'a printer -> 'a Context.binder_annot printer
+val pp_coq_binder  : 'a printer -> ('a, Sorts.relevance) Context.pbinder_annot printer
 val pp_coq_kername : Names.KerName.t    printer
 val pp_coq_sort    : Sorts.t            printer
 val pp_coq_decl       : Constr.rel_declaration printer
@@ -78,8 +78,8 @@ val pp_coq_env     : Environ.env        printer
 val pp_coq_level   : Univ.Level.t       printer
 val pp_coq_univ    : Univ.Universe.t    printer
 val pp_coq_lvl_arr : Univ.Level.t array printer
-val pp_coq_inst    : Univ.Instance.t    printer
-val pp_fixpoint    : (Constr.constr,Constr.types) Constr.pfixpoint printer
+val pp_coq_inst    : UVars.Instance.t    printer
+val pp_fixpoint    : (Constr.constr,Constr.types, Sorts.relevance) Constr.pfixpoint printer
 val pp_coq_constraint : Univ.univ_constraint printer
 val pp_coq_Constraint : Univ.Constraints.t printer
 val pp_coq_constraint_type : Univ.constraint_type printer

@@ -133,10 +133,7 @@ let rec convertible info env uenv a b =
   | _, Constr.LetIn(_) ->
       assert false
   | _, _ ->
-    begin
-      try let _ = Conversion.default_conv Conversion.CONV env a b in true
-      with Conversion.NotConvertible -> false
-    end
+    Result.is_ok (Conversion.default_conv Conversion.CONV env a b)
 
 
 (* This table holds the translations of fixpoints, so that we avoid
@@ -155,9 +152,7 @@ let push_const_decl uenv env (c, m, const_type) =
     match m with
     | None -> Undef None
     | Some m -> Def m in
-  let tps = Vmbytegen.compile_constant_body
-            ~fail_on_error:true env
-            Monomorphic const_body in
+  let tps = None in
   (* TODO : Double check the following *)
   let body = {
     const_hyps = [];
@@ -168,7 +163,7 @@ let push_const_decl uenv env (c, m, const_type) =
     const_universes = Polymorphic uenv.poly_ctxt;
     const_inline_code = false;
     const_typing_flags = Declareops.safe_flags Conv_oracle.empty;
-    const_univ_hyps = Univ.Instance.empty
+    const_univ_hyps = UVars.Instance.empty
     (* FIXME: It's probably not best to use "safe" flags
        for newly introduced constants... *)
   } in
@@ -387,8 +382,8 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
          2) Then
             Universes.subst_univs_constr
          -> Universes.subst_univs_fn_constr
-         -> Univ.Instance.subst_fn
-         -> Univ.Instance.of_array   which assumes all substituted level are not Prop
+         -> UVars.Instance.subst_fn
+         -> UVars.Instance.of_array   which assumes all substituted level are not Prop
       *)
       subst_univs_constr subst type_c,
       List.map
@@ -603,12 +598,15 @@ let rec translate_constr ?expected_type info env uenv t =
 
   | Case(case_info, u, ps, rt, (NoInvert as inv), matched, branches) ->
      debug "Translating Case";
+=======
+  | Case(case_info, _, _, ((_, return_type),_), NoInvert, matched, branches) ->
+>>>>>>> 30fe642a91fe1262dfd477a03399798782c93849
      let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
      let n_params = mind_body.Declarations.mind_nparams   in
      let n_reals  =  ind_body.Declarations.mind_nrealargs in
      let case = (case_info,u,ps,rt,inv,matched,branches) in 
-     let (case_info,return_type,_,matched,branches) =
+     let (case_info,(_,return_type),_,matched,branches) =
        Inductive.expand_case_specif mind_body case in
      let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
      (*
@@ -654,7 +652,7 @@ let rec translate_constr ?expected_type info env uenv t =
     Error.not_supported "CaseInvert"
 
   (* Not yet supported cases: *)
-  | Proj (p,t) ->
+  | Proj (p,_,t) ->
     begin
       let n = Names.Projection.arg p in (* Index of the projection *)
       T.coq_proj n (translate_constr info env uenv t)
@@ -666,6 +664,7 @@ let rec translate_constr ?expected_type info env uenv t =
   | Int _              -> Error.not_supported "Int"
   | Float _            -> Error.not_supported "Float"
   | Array _            -> Error.not_supported "Array"
+  | String _           -> Error.not_supported "String"
 
 and translate_cast info uenv t' enva a envb b =
   debug "Casting %a@.from %a@.to %a" Dedukti.pp_term t' pp_coq_term a pp_coq_term b;
@@ -798,7 +797,7 @@ and translate_types info env uenv a =
 
 
 (* Translation of   Fix fi { f1 / k1 : A1 := t1, ..., fn / kn : An := tn }  *)
-and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types) Constr.pfixpoint) sorts =
+and translate_fixpoint info env uenv (fp:(Constr.constr,Constr.types, Sorts.relevance) Constr.pfixpoint) sorts =
   let (rec_indices, i), (binders, types, bodies) = fp in
   debug "Translating fixpoint:@.%a" pp_fixpoint fp;
   let n = Array.length binders in
@@ -843,7 +842,7 @@ and lift_let info env uenv binda u a =
   let a_closed' = Tsorts.add_poly_env_type uenv a_closed' in
   let u_closed' = Tsorts.add_poly_env_def  uenv u_closed' in
   Dedukti.print info.fmt (Dedukti.definition false y' a_closed' u_closed');
-  let inst = Univ.UContext.instance (Univ.AbstractContext.repr uenv.poly_ctxt) in
+  let inst = UVars.UContext.instance (UVars.AbstractContext.repr uenv.poly_ctxt) in
   let yconstr = apply_rel_context (Constr.mkConstU (yconstant,inst)) rel_context in
   let env = push_const_decl uenv env (yconstant, Some(u_closed), a_closed) in
   let def = Context.Rel.Declaration.LocalDef(binda, yconstr, a) in
@@ -898,7 +897,7 @@ and lift_fix info env uenv names types bodies rec_indices =
   let ind_specifs = Array.map (Inductive.lookup_mind_specif env) inds in
   let one_ind_body = Array.map snd ind_specifs in
   let mut_ind_body = Array.map fst ind_specifs in
-  let arity_contexts = Array.map (fun body -> fst (Inductive.mind_arity body)) one_ind_body in
+  let arity_contexts = Array.map (fun body -> body.mind_arity_ctxt) one_ind_body in
   let ind_applied_arities = Array.init n (fun i -> apply_rel_context (Constr.mkIndU pinds.(i)) arity_contexts.(i)) in
   let types1 = types in
   let types2 =
@@ -935,9 +934,9 @@ and lift_fix info env uenv names types bodies rec_indices =
     Dedukti.print info.fmt (Dedukti.declaration true fix_names2'.(i) types2_closed'.(i));
     Dedukti.print info.fmt (Dedukti.declaration true fix_names3'.(i) types3_closed'.(i));
   done;
-  let fix_terms1 = Array.map (fun c -> Constr.mkConstU (c, Instance.empty)) const1 in
-  let fix_terms2 = Array.map  (fun c -> Constr.mkConstU (c, Instance.empty)) const2 in
-  let fix_terms3 = Array.map  (fun c -> Constr.mkConstU (c, Instance.empty)) const3 in
+  let fix_terms1 = Array.map (fun c -> Constr.mkConstU (c, UVars.Instance.empty)) const1 in
+  let fix_terms2 = Array.map  (fun c -> Constr.mkConstU (c, UVars.Instance.empty)) const2 in
+  let fix_terms3 = Array.map  (fun c -> Constr.mkConstU (c, UVars.Instance.empty)) const3 in
   let fix_rules1 = Array.init n (fun i ->
     let env, context' = translate_rel_context info global_env uenv (contexts.(i) @ rel_context) in
     let fix_term1' = translate_constr info env uenv fix_terms1.(i) in
@@ -950,7 +949,8 @@ and lift_fix info env uenv names types bodies rec_indices =
     ]) in
   let fix_rules2 = Array.init n (fun i ->
       let nb_poly_univs =
-        if Encoding.is_polymorphism_on () then Univ.Instance.length (snd pinds.(i)) else 0 in
+        (* FIX ME *)
+        if Encoding.is_polymorphism_on () then snd (UVars.Instance.length (snd pinds.(i))) else 0 in
       debug "Nb poly univs: %i" nb_poly_univs;
       let nb_templ_poly = if Encoding.is_templ_polymorphism_on ()
         then (match mut_ind_body.(i).mind_template  with

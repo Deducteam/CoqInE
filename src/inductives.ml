@@ -56,9 +56,9 @@ type ind_infos =
     arity_sort : Sorts.t;
 
     (* Universe polymorphic context : instance (array of universe levels) and constraints *)
-    apoly_ctxt : Univ.AbstractContext.t;
-    poly_ctxt : Univ.UContext.t;
-    poly_inst : Univ.Instance.t;
+    apoly_ctxt : UVars.AbstractContext.t;
+    poly_ctxt : UVars.UContext.t;
+    poly_inst : UVars.Instance.t;
     poly_cstr : Univ.Constraints.t;
 
     univ_poly_names : Dedukti.var list;
@@ -109,19 +109,19 @@ let get_infos mind_body index =
   let apoly_ctxt, poly_ctxt, poly_inst, poly_cstr =
     match mind_univs with
     | Monomorphic ->
-      Univ.AbstractContext.empty,
-      Univ.UContext.empty,
-      Univ.Instance.empty,
+      UVars.AbstractContext.empty,
+      UVars.UContext.empty,
+      UVars.Instance.empty,
       Univ.Constraints.empty
       (*
-      Univ.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
+      UVars.UContext.instance (Univ.ContextSet.to_context univ_ctxt), snd univ_ctxt
       *)
     | Polymorphic apoly_ctxt ->
-      let poly_ctxt = Univ.AbstractContext.repr apoly_ctxt in
+      let poly_ctxt = UVars.AbstractContext.repr apoly_ctxt in
       apoly_ctxt,
       poly_ctxt,
-      Univ.UContext.instance    poly_ctxt,
-      Univ.UContext.constraints poly_ctxt
+      UVars.UContext.instance    poly_ctxt,
+      UVars.UContext.constraints poly_ctxt
   in
 
   let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
