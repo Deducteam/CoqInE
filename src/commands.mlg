@@ -60,7 +60,7 @@ VERNAC COMMAND EXTEND DeduktiSetDebug CLASSIFIED AS QUERY
   { Debug.debug_to_file dest }
 END
 
-VERNAC COMMAND EXTEND DeduktiAddDebug CLASSIFIED AS QUERY
+VERNAC COMMAND EXTEND DeduktiAddDebugLib CLASSIFIED AS QUERY
 | [ "Dedukti" "Debug" "Lib" string(lib) ] ->
   { Debug.add_debug_lib lib }
 END
