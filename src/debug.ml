@@ -75,7 +75,7 @@ let pp_coq_type  =
   let env = Global.env () in
   let sigma = Evd.from_env env in
   printer_of_std_ppcmds (Printer.pr_type_env env sigma)
-let pp_coq_level = printer_of_std_ppcmds UnivNames.pr_with_global_universes
+let pp_coq_level = printer_of_std_ppcmds UnivNames.pr_level_with_global_universes
 let pp_coq_univ  = printer_of_std_ppcmds (Univ.Universe.pr Univ.Level.raw_pr)
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
 let pp_coq_label = printer_of_std_ppcmds Names.Label.print
@@ -83,9 +83,8 @@ let pp_coq_constraint_type = printer_of_std_ppcmds Univ.pr_constraint_type
 
 let pp_coq_lvl_arr = pp_array " " pp_coq_level
 
-let pp_coq_inst fmt univ_instance =
-  let levels = Univ.Instance.to_array univ_instance in
-  fprintf fmt "%a" pp_coq_lvl_arr levels
+let pp_coq_inst =
+  printer_of_std_ppcmds (UVars.Instance.pr Sorts.QVar.raw_pr Univ.Level.raw_pr)
 
 let pp_coq_name fmt = function
   | Names.Name.Anonymous -> fprintf fmt "_"
@@ -137,7 +136,7 @@ let pp_coq_env fmt e =
     pp_coq_ctxt       (Environ.rel_context e)
     pp_coq_named_ctxt (Environ.named_context e)
 
-let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
+let pp_fixpoint fmt (fp:(Constr.constr,Constr.types, Sorts.relevance) Constr.pfixpoint) =
   let (rec_indices, i), (names, types, bodies) = fp in
   let n = Array.length names in
   let bodies = Array.init n (fun i -> (names.(i), types.(i), bodies.(i))) in

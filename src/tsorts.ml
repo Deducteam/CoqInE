@@ -258,18 +258,20 @@ let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
   else []
 
 let get_poly_univ_params uenv ctx univ_instance =
-  let nb_params = Univ.AbstractContext.size ctx in
-  if Univ.Instance.length univ_instance < nb_params
+  let nb_params = UVars.AbstractContext.size ctx in
+  if UVars.Instance.length univ_instance < nb_params
   then debug "Something suspicious is going on with thoses universes...";
   if not (Encoding.is_polymorphism_on ()) then []
   else
-    let levels = Univ.Instance.to_array univ_instance in
+    (* FIX ME *)
+    let _,levels = UVars.Instance.to_array univ_instance in
     Array.to_list
       (Array.map (fun l -> T.coq_level (level_as_level uenv l)) levels)
     @
     if not (Encoding.is_constraints_on ()) then []
     else
-      let subst = Univ.make_instance_subst univ_instance in
+      (* FIX ME *)
+      let _,subst = UVars.make_instance_subst univ_instance in
       let aux (u,d,v as c) res =
         let u' = Univ.subst_univs_level_level subst u in
         let v' = Univ.subst_univs_level_level subst v in
@@ -277,7 +279,7 @@ let get_poly_univ_params uenv ctx univ_instance =
         ( match translate_constraint uenv c' with
           | Some (v,c) -> v
           | None       -> T.coq_I() ) :: res in
-      let cstr = Univ.UContext.constraints (Univ.AbstractContext.repr ctx) in
+      let cstr = UVars.UContext.constraints (UVars.AbstractContext.repr ctx) in
       debug "Translating Constraints: %a in instance %a"
         pp_coq_Constraint cstr pp_coq_inst univ_instance;
       List.rev (Univ.Constraints.fold aux cstr [])
@@ -311,12 +313,14 @@ let instantiate_template_ind_univ_params env uenv ind univ_instance term =
       Dedukti.pp_term term
       pp_coq_inst univ_instance;
     let univ_ctxt = tar.template_param_levels in
-    let nb_instance = Univ.Instance.length univ_instance in
+    (* FIX ME *)
+    let _,nb_instance = UVars.Instance.length univ_instance in
     let nb_params = List.length univ_ctxt in
     if nb_instance < nb_params
     then debug "Something suspicious is going on with thoses universes...";
     debug "Univ context: %a" (pp_list " " (pp_option "None" pp_coq_level)) univ_ctxt;
-    let levels = Univ.Instance.to_array univ_instance in
+    let _,levels = UVars.Instance.to_array univ_instance in
+    (* FIX ME *)
     let rec aux acc i = function
       | None     :: tl -> aux acc (i+1) tl
       | (Some a) :: tl when i < nb_instance ->
@@ -352,7 +356,7 @@ let convertible_sort uenv s1 s2 =
   translate_sort uenv s1 = translate_sort uenv s2
 
 
-let translate_univ_poly_params (uctxt:Univ.Instance.t) =
+let translate_univ_poly_params (uctxt:UVars.Instance.t) =
   if Encoding.is_polymorphism_on ()
   then
     let translate_local_level l =
@@ -360,7 +364,8 @@ let translate_univ_poly_params (uctxt:Univ.Instance.t) =
       match Univ.Level.var_index l with
       | None -> assert false
       | Some n -> T.coq_var_univ_name n in
-    let params_lst = Array.to_list (Univ.Instance.to_array uctxt) in
+      (* FIX ME *)
+    let params_lst = Array.to_list (snd (UVars.Instance.to_array uctxt)) in
     List.map translate_local_level params_lst
   else []
 

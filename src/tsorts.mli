@@ -82,20 +82,20 @@ val add_constructor_params :
 
 
 val get_poly_univ_params :
-  Info.env -> Univ.AbstractContext.t -> Univ.Instance.t -> Dedukti.term list
+  Info.env -> UVars.AbstractContext.t -> UVars.Instance.t -> Dedukti.term list
 
 val instantiate_poly_univ_constant :
-  Environ.env -> Info.env -> Names.Constant.t * Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.Constant.t * UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 val instantiate_poly_ind_univ_params :
-  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.inductive -> UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 val instantiate_template_ind_univ_params :
-  Environ.env -> Info.env -> Names.inductive -> Univ.Instance.t -> Dedukti.term -> Dedukti.term
+  Environ.env -> Info.env -> Names.inductive -> UVars.Instance.t -> Dedukti.term -> Dedukti.term
 
 (*
 val instantiate_ind_univ_params :
-  Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> Univ.Instance.t -> Dedukti.term
+  Environ.env -> Info.env -> Dedukti.var -> Names.inductive -> UVars.Instance.t -> Dedukti.term
 *)
 
 val set_universes : UGraph.t -> unit
@@ -115,7 +115,7 @@ val translate_template_name : Univ.Level.t -> Dedukti.var
 val translate_template_params :
   Univ.Level.t option list -> Univ.Level.t list * Dedukti.var list
 
-val translate_univ_poly_params : Univ.Instance.t -> string list
+val translate_univ_poly_params : UVars.Instance.t -> string list
 
 val translate_univ_poly_constraints : Univ.Constraints.t -> cstr list
 

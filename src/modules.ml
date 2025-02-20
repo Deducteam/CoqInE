@@ -52,12 +52,12 @@ let translate_constant_body info env isalias label const =
     | Monomorphic ->
       debug "Translating monomorphic constant body: %s" name;
       (* let env' = Environ.push_context_set ~strict:true env in *)
-      Univ.AbstractContext.empty, Univ.Instance.empty, Univ.Constraints.empty, env
+      UVars.AbstractContext.empty, UVars.Instance.empty, Univ.Constraints.empty, env
     | Polymorphic univ_ctxt ->
-      let uctxt = Univ.AbstractContext.repr univ_ctxt in
+      let uctxt = UVars.AbstractContext.repr univ_ctxt in
       let env' = Environ.push_context ~strict:false uctxt env in
-      let instance = Univ.UContext.instance uctxt in
-      let constraints = Univ.UContext.constraints uctxt in
+      let instance = UVars.UContext.instance uctxt in
+      let constraints = UVars.UContext.constraints uctxt in
       debug "Translating polymorphic [%a] constant body: %s"
         pp_coq_inst instance name;
       univ_ctxt, instance, constraints, env'
@@ -88,11 +88,13 @@ let translate_constant_body info env isalias label const =
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
-    let constr, _ = Global.force_proof Library.indirect_accessor lazy_constr in
+    let access = Library.indirect_accessor[@@warning "-3"] in
+    let constr, _ = Global.force_proof (access) lazy_constr in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
   | Primitive _ -> assert false
+  | Symbol _rules -> failwith("Translate_constant_body : Symbol not supported")
 end
 
 (** Translate the body of mutual inductive definitions [mind]. *)
@@ -204,9 +206,12 @@ let rec translate_module_body info env mb =
 
 and translate_module_expression info env resolver modpath = function
   | MENoFunctor alg_exp ->
-    let mb, _ =
+    let mb, _, _ =
       let state = ((Environ.universes env, Univ.Constraints.empty), Reductionops.inferred_universes) in
-      Mod_typing.translate_module state env (modpath) (Some 1000) (MExpr ([], alg_exp, None)) in
+      let vm_handler env univs c vmtab = vmtab, None in
+      let vmstate = 
+        Environ.vm_library env, { Mod_typing.vm_handler } in
+      Mod_typing.translate_module state vmstate env (modpath) (Some 1000) (MExpr ([], alg_exp, None)) in
     translate_module_signature info env mb.mod_delta mb.mod_type
   | MEMoreFunctor _ -> ()
   (* Functors definitions are simply ignored.
@@ -252,6 +257,7 @@ and translate_structure_field_body info env resolver (label, sfb) =
           ) info env (isalias resolver kername) label mib;
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
+        | SFBrules _    -> failwith("translate_structure_field_body : Not supported : SBFrules")
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
