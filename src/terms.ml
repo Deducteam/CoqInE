@@ -475,11 +475,15 @@ let rec translate_constr ?expected_type info env uenv t =
          translate_constr info new_env uenv (Constr.mkRel (n - i))
        end
 
-  | Case(case_info, _, _, (_, return_type), NoInvert, matched, branches) ->
+  | Case(case_info, u, ps, rt, (NoInvert as inv), matched, branches) ->
+     debug "Translating Case";
      let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
      let n_params = mind_body.Declarations.mind_nparams   in
      let n_reals  =  ind_body.Declarations.mind_nrealargs in
+     let case = (case_info,u,ps,rt,inv,matched,branches) in 
+     let (case_info,return_type,_,matched,branches) =
+       Inductive.expand_case_specif mind_body case in
      let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
      (*
      let  arity = Inductive.type_of_inductive env
@@ -515,7 +519,7 @@ let rec translate_constr ?expected_type info env uenv t =
      let params' = List.rev (fst (List.fold_left translate_param ([], arity) params)) in
      debug "params': %a" (pp_list ", " Dedukti.pp_term) params';
      let return_type' = translate_constr info env uenv return_type in
-     let branches' = Array.to_list (Array.map (fun (_,b) -> translate_constr info env uenv b) branches) in
+     let branches' = Array.to_list (Array.map (translate_constr info env uenv) branches) in
      let reals' = List.map (translate_constr info env uenv) reals in
      let matched' = translate_constr info env uenv matched in
      Dedukti.apps match_function'
