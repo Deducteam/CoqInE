@@ -19,7 +19,7 @@ val disable_verbose : unit -> unit
 val add_debug_lib : string -> unit
 (** Add library name to debug list *)
 
-val is_debug_lib  : Pp.t -> bool
+val is_debug_lib  : string -> bool
 (** Should debug be enabled for given library ? *)
 
 

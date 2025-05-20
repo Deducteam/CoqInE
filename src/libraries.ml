@@ -19,10 +19,10 @@ let translate_term term =
 (* Translate the library referred to by [qualid].
    A libray is a module that corresponds to a file on disk. *)
 let translate_qualified_library qualid =
-  let libname = Libnames.pr_qualid qualid in
-  message "Exporting %a" pp_t libname;
+  let libname = Pp.string_of_ppcmds (Libnames.pr_qualid qualid) in
+  message "Exporting %s" libname;
   if is_debug_lib libname then debug_start ();
-  debug "Exporting %a" pp_t (Libnames.pr_qualid qualid);
+  debug "Exporting %s" libname;
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in

@@ -1,9 +1,12 @@
 open Pp
 open Format
 
+let message fmt =
+  kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
+
 let debug_libraries = ref []
 let add_debug_lib s = debug_libraries := s :: !debug_libraries
-let is_debug_lib s = List.exists (fun x -> s = str x) !debug_libraries
+let is_debug_lib s = List.mem s !debug_libraries
 
 let debug_symbols = ref []
 let add_debug_smb s = debug_symbols := s :: !debug_symbols
@@ -14,13 +17,9 @@ let  enable_debug () = debug_allowed := true
 let disable_debug () = debug_allowed := false
 
 let debug_flag = ref false
-let debug_start () = debug_flag := true
+let debug_start () = message "Debug on"; debug_flag := true
 let debug_stop  () = debug_flag := false
 let is_debug_on () = !debug_flag && !debug_allowed
-
-
-let message fmt =
-  kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
 
 
 let verbose_allowed = ref false
