@@ -246,10 +246,10 @@ let sort_universes g =
   let rec proc () =
     if LSet.is_empty !wl then ()
     else
-      let u = LSet.choose !wl in
-      if Level.is_small u then ()
-      else
-        (wl := LSet.remove u !wl;
+      (let u = LSet.choose !wl in
+       wl := LSet.remove u !wl;
+       (if not (Level.is_small u)
+       then
          let n = Hashtbl.find gene u in
          (match LMap.find u g with
          | UGraph.Alias _ -> assert false
@@ -259,10 +259,10 @@ let sort_universes g =
                 let m = Hashtbl.find gene v in
                 let m' = if is_lt then n+1 else n in
                 if m < m' && not (Level.is_small v) then (
-                  message "Propagate: %s(%d) <= %s(%d) := %d" (Level.to_string u) m  (Level.to_string v) m m';
+                  (*message "Propagate: %s(%d) <= %s(%d) := %d" (Level.to_string u) m  (Level.to_string v) m m';*)
                   wl := LSet.add v !wl; Hashtbl.replace gene v m'))
-              ltle);
-         proc()) in
+              ltle));
+       proc()) in
   proc();
   Hashtbl.iter (fun u v ->
       let v' = mk_level (Hashtbl.find gene v) in
