@@ -210,6 +210,50 @@ let instantiate_universes env ctx (templ, ar) argsorts =
   let level = Univ.subst_univs_universe safe_subst_fn ar.template_level in
   (ctx, Sorts.sort_of_univ level, subst, safe_subst_fn)
 
+(* Copied from engine/univSubst.ml *)
+let level_subst_of f =
+  fun l ->
+    try let u = f l in
+          match Univ.Universe.level u with
+          | None -> l
+          | Some l -> l
+    with Not_found -> l
+
+(* Copied from engine/univSubst.ml *)
+let subst_univs_fn_constr f c =
+  let changed = ref false in
+  let fu = Univ.subst_univs_universe f in
+  let fi = Univ.Instance.subst_fn (level_subst_of f) in
+  let rec aux t =
+    match Constr.kind t with
+    | Sort (Sorts.Type u) ->
+      let u' = fu u in
+        if u' == u then t else
+          (changed := true; Constr.mkSort (Sorts.sort_of_univ u'))
+    | Const (c, u) ->
+      let u' = fi u in
+        if u' == u then t
+        else (changed := true; Constr.mkConstU (c, u'))
+    | Ind (i, u) ->
+      let u' = fi u in
+        if u' == u then t
+        else (changed := true; Constr.mkIndU (i, u'))
+    | Construct (c, u) ->
+      let u' = fi u in
+        if u' == u then t
+        else (changed := true; Constr.mkConstructU (c, u'))
+    | _ -> Constr.map aux t
+  in
+  let c' = aux c in
+    if !changed then c' else c
+
+(* Copied from engine/univSubst.ml *)
+let subst_univs_constr subst c =
+(*  if Univ.is_empty_subst subst then c
+  else*)
+    let f = Univ.make_subst subst in
+      subst_univs_fn_constr f c
+
 let infer_ind_applied info env uenv (ind,u) args =
   debug "Inferring template polymorphic inductive: %a (%i)"
     pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
@@ -223,11 +267,11 @@ let infer_ind_applied info env uenv (ind,u) args =
     let arity = Term.mkArity (List.rev ctx,s) in
     (* Do we really need to apply safe_subst to arity ?
     *)
-    (* let arity = UnivSubst.subst_univs_constr subst arity in *)
+    let arity = subst_univs_constr subst arity in
     debug "Substituted type: %a" pp_coq_term arity;
     arity,
     if Encoding.is_templ_polymorphism_on ()
-    then
+    then 
       List.map
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some templ.template_param_levels))
@@ -251,7 +295,7 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
     let ctx, s, subst, safe_subst = instantiate_universes env ctx (templ, ar) args_types in
     debug "Subst: %a" pp_t (Univ.LMap.pr Univ.Universe.pr subst);
     if not (Encoding.is_templ_polymorphism_on ())
-    then (*UnivSubst.subst_univs_constr subst*) type_c, []
+    then subst_univs_constr subst type_c, []
     else if not (Encoding.is_templ_polymorphism_cons_poly ())
     then type_c, []
     else
@@ -265,7 +309,7 @@ let infer_construct_applied info env uenv ((ind,i),u) args =
          -> Univ.Instance.subst_fn
          -> Univ.Instance.of_array   which assumes all substituted level are not Prop
       *)
-      (* UnivSubst.subst_univs_constr subst *) type_c,
+      subst_univs_constr subst type_c,
       List.map
         (fun lvl ->  T.coq_universe (Tsorts.translate_universe uenv lvl))
         (List.map safe_subst (Utils.filter_some templ.template_param_levels))
@@ -288,7 +332,7 @@ let infer_dest_applied info env uenv (ind,u) args =
        Encoding.is_templ_polymorphism_cons_poly ()
     then begin
       (* Do we really need to apply safe_subst to arity ? *)
-      (* let arity = UnivSubst.subst_univs_constr subst arity in *)
+      let arity = subst_univs_constr subst arity in
       debug "Substituted type: %a" pp_coq_term arity;
       arity,
       List.map
