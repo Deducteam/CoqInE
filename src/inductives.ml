@@ -73,6 +73,7 @@ let get_infos mind_body index =
   let body       = mind_body.mind_packets.(index) in
   let n_params   = mind_body.mind_nparams in
   let mind_univs = mind_body.mind_universes in
+  let mind_templ = mind_body.mind_template in
   let mind_params_ctxt = mind_body.mind_params_ctxt in
   debug "mind_params: %a" pp_coq_ctxt mind_params_ctxt;
   let typename      = body.mind_typename in
@@ -90,18 +91,18 @@ let get_infos mind_body index =
 
   (* Compute a map of template parameters and a sort for given declaration. *)
   let (template_levels, template_names), arity_sort =
-    match arity with
-    | RegularArity ria -> ([],[]), ria.mind_sort
-    | TemplateArity ta ->
+    match arity, mind_templ with
+    | RegularArity ria, None -> ([],[]), ria.mind_sort
+    | TemplateArity ta, Some targs ->
       begin
         debug "Template params levels:";
-        (* List.iter (debug "%a" (pp_option "None" pp_coq_level)) ta.template_param_levels; *)
+        List.iter (debug "%a" (pp_option "None" pp_coq_level)) targs.template_param_levels;
         debug "Template level: %a" pp_coq_univ ta.template_level;
         debug "Arity context: %a"  pp_coq_ctxt arity_context;
-        (* Tsorts.translate_template_params ta.template_param_levels, *)
-        ([],[]),
+        Tsorts.translate_template_params targs.template_param_levels,
         Sorts.sort_of_univ ta.template_level
       end
+    | _ -> assert false (* mixed template/non-template *)
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
@@ -433,10 +434,10 @@ end
    These levels are needed for the monomorphic template constructors.
 *)
 let translate_template_inductive_levels info env label ind =
-  match ind.arity with
-  (* | TemplateArity ta when not (Tsorts.template_constructor_upoly ()) ->
+  match ind.mind_body.mind_template with
+  | Some targs when not (Tsorts.template_constructor_upoly ()) ->
     List.iter (Dedukti.print info.fmt)
-      (Tsorts.translate_template_global_level_decl ta.template_param_levels) *)
+      (Tsorts.translate_template_global_level_decl targs.template_param_levels)
   | _ -> ()
 
 
