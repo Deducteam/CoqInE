@@ -17,18 +17,49 @@ let dump_universes output g =
   Univ.LMap.iter dump_arc (UGraph.repr g)
 
 (** Get all global universes names together with their concrete levels *)
-let get_universes_levels (universes:UGraph.t) =
-  (* let universes = UGraph.sort_universes universes in *)
+let get_universe_levels g =
+  let gene = Hashtbl.create 10007 in
+  let cano = Hashtbl.create 10007 in
+  let open Univ in
+  let g = UGraph.repr g in
+  let wl = ref LSet.empty in
+  let rec cano_arc u nd =
+    if Hashtbl.mem cano u then Hashtbl.find cano u
+    else
+      match nd with
+      | UGraph.Node _ ->
+         Hashtbl.add gene u 0;
+         wl := LSet.add u !wl;
+         Hashtbl.add cano u u; u
+      | UGraph.Alias v ->
+         let v' = cano_arc v (LMap.find v g) in
+         Hashtbl.add cano u v'; v' in
+  LMap.iter (fun u v -> ignore (cano_arc u v)) g;
+  let rec proc () =
+    if LSet.is_empty !wl then ()
+    else
+      (let u = LSet.choose !wl in
+       wl := LSet.remove u !wl;
+       (if not (Level.is_small u)
+       then
+         let n = Hashtbl.find gene u in
+         (match LMap.find u g with
+         | UGraph.Alias _ -> assert false
+         | UGraph.Node ltle ->
+            LMap.iter (fun v is_lt ->
+                let v = Hashtbl.find cano v in
+                let m = Hashtbl.find gene v in
+                let m' = if is_lt then n+1 else n in
+                if m < m' && not (Level.is_small v) then (
+                  (*message "Propagate: %s(%d) <= %s(%d) := %d" (Level.to_string u) m  (Level.to_string v) m m';*)
+                  wl := LSet.add v !wl; Hashtbl.replace gene v m'))
+              ltle));
+       proc()) in
+  proc();
   let res = ref [] in
-  let register constraint_type j k =
-    match constraint_type with
-    | Univ.Eq ->
-      let closed_univ = Scanf.sscanf (Univ.Level.to_string k) "Type.%d" (fun x -> x) in
-      (* Coq does not expose the (string*int) representation
-         of RawLavel's Levels named level so print-and-parse it for now *)
-      res := (T.coq_univ_name (Univ.Level.to_string j), Translator.mk_level closed_univ):: !res
-    | Univ.Lt | Univ.Le -> () in
-  dump_universes register universes;
+  Hashtbl.iter (fun u v ->
+      let v' = Hashtbl.find gene v in
+      res := (u, v') :: !res) cano;
   !res
 
 
@@ -95,8 +126,10 @@ let universe_encoding_float_constr (universes:UGraph.t) =
   reducing to their concrete levels. *)
 let universe_encoding_named (universes:UGraph.t) =
   let get_definition (name, lvl) =
-    Dedukti.definition false name (T.coq_Lvl ()) (T.coq_level lvl) in
-  List.map get_definition (get_universes_levels universes)
+    Dedukti.definition
+      false (T.coq_univ_name (Univ.Level.to_string name))
+      (T.coq_Lvl ()) (T.coq_level (mk_level lvl)) in
+  List.map get_definition (get_universe_levels universes)
 
 let translate_all_universes (info:Info.info) (universes:UGraph.t) =
   message "Translating global universes";

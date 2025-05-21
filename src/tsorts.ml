@@ -224,56 +224,17 @@ let add_constructor_params templ_params poly_params poly_cstr arity =
     (get_constructor_params templ_params poly_params poly_cstr) arity
 
 
-
-let sort_universes g =
-  let gene = Hashtbl.create 10007 in
-  let cano = Hashtbl.create 10007 in
-  let open Univ in
-  let g = UGraph.repr g in
-  let wl = ref LSet.empty in
-  let rec cano_arc u nd =
-    if Hashtbl.mem cano u then Hashtbl.find cano u
-    else
-      match nd with
-      | UGraph.Node _ ->
-         Hashtbl.add gene u 0;
-         wl := LSet.add u !wl;
-         Hashtbl.add cano u u; u
-      | UGraph.Alias v ->
-         let v' = cano_arc v (LMap.find v g) in
-         Hashtbl.add cano u v'; v' in
-  LMap.iter (fun u v -> ignore (cano_arc u v)) g;
-  let rec proc () =
-    if LSet.is_empty !wl then ()
-    else
-      (let u = LSet.choose !wl in
-       wl := LSet.remove u !wl;
-       (if not (Level.is_small u)
-       then
-         let n = Hashtbl.find gene u in
-         (match LMap.find u g with
-         | UGraph.Alias _ -> assert false
-         | UGraph.Node ltle ->
-            LMap.iter (fun v is_lt ->
-                let v = Hashtbl.find cano v in
-                let m = Hashtbl.find gene v in
-                let m' = if is_lt then n+1 else n in
-                if m < m' && not (Level.is_small v) then (
-                  (*message "Propagate: %s(%d) <= %s(%d) := %d" (Level.to_string u) m  (Level.to_string v) m m';*)
-                  wl := LSet.add v !wl; Hashtbl.replace gene v m'))
-              ltle));
-       proc()) in
-  proc();
-  Hashtbl.iter (fun u v ->
-      let v' = mk_level (Hashtbl.find gene v) in
-      Hashtbl.add universe_table (Level.to_string u) v') cano
-
-
 (** Dump universe graph [universes] in the universe table. *)
 let set_universes universes =
   message "Saving universes";
   if (not (Encoding.is_float_univ_on ()))
-  then sort_universes universes
+  then
+    (let levels = Tunivs.get_universe_levels universes in
+     List.iter
+       (fun (lvl,k) ->
+         Hashtbl.add universe_table (Univ.Level.to_string lvl) (mk_level k))
+       levels)
+
 
 let translate_template_global_level_decl (ctxt:Univ.Level.t option list) =
   if Encoding.is_templ_polymorphism_on ()
