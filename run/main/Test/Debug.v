@@ -217,28 +217,28 @@ Section Defs.
 End Defs.
 
 (** Default rewrite crelations handled by [setoid_rewrite]. *)
-Instance: RewriteRelation impl. Defined.
-Instance: RewriteRelation iff.  Defined.
+#[local] Instance: RewriteRelation impl. Defined.
+#[local] Instance: RewriteRelation iff.  Defined.
 
 (** Hints to drive the typeclass resolution avoiding loops
  due to the use of full unification. *)
-Hint Extern 1 (Reflexive (complement _)) => class_apply @irreflexivity : typeclass_instances.
-Hint Extern 3 (Symmetric (complement _)) => class_apply complement_Symmetric : typeclass_instances.
-Hint Extern 3 (Irreflexive (complement _)) => class_apply complement_Irreflexive : typeclass_instances.
+#[local] Hint Extern 1 (Reflexive (complement _)) => class_apply @irreflexivity : typeclass_instances.
+#[local] Hint Extern 3 (Symmetric (complement _)) => class_apply complement_Symmetric : typeclass_instances.
+#[local] Hint Extern 3 (Irreflexive (complement _)) => class_apply complement_Irreflexive : typeclass_instances.
 
-Hint Extern 3 (Reflexive (flip _)) => apply flip_Reflexive : typeclass_instances.
-Hint Extern 3 (Irreflexive (flip _)) => class_apply flip_Irreflexive : typeclass_instances.
-Hint Extern 3 (Symmetric (flip _)) => class_apply flip_Symmetric : typeclass_instances.
-Hint Extern 3 (Asymmetric (flip _)) => class_apply flip_Asymmetric : typeclass_instances.
-Hint Extern 3 (Antisymmetric (flip _)) => class_apply flip_Antisymmetric : typeclass_instances.
-Hint Extern 3 (Transitive (flip _)) => class_apply flip_Transitive : typeclass_instances.
-Hint Extern 3 (StrictOrder (flip _)) => class_apply flip_StrictOrder : typeclass_instances.
-Hint Extern 3 (PreOrder (flip _)) => class_apply flip_PreOrder : typeclass_instances.
+#[local] Hint Extern 3 (Reflexive (flip _)) => apply flip_Reflexive : typeclass_instances.
+#[local] Hint Extern 3 (Irreflexive (flip _)) => class_apply flip_Irreflexive : typeclass_instances.
+#[local] Hint Extern 3 (Symmetric (flip _)) => class_apply flip_Symmetric : typeclass_instances.
+#[local] Hint Extern 3 (Asymmetric (flip _)) => class_apply flip_Asymmetric : typeclass_instances.
+#[local] Hint Extern 3 (Antisymmetric (flip _)) => class_apply flip_Antisymmetric : typeclass_instances.
+#[local] Hint Extern 3 (Transitive (flip _)) => class_apply flip_Transitive : typeclass_instances.
+#[local] Hint Extern 3 (StrictOrder (flip _)) => class_apply flip_StrictOrder : typeclass_instances.
+#[local] Hint Extern 3 (PreOrder (flip _)) => class_apply flip_PreOrder : typeclass_instances.
 
-Hint Extern 4 (subrelation (flip _) _) =>
+#[local] Hint Extern 4 (subrelation (flip _) _) =>
   class_apply @subrelation_symmetric : typeclass_instances.
 
-Hint Resolve irreflexivity : ord.
+#[local] Hint Resolve irreflexivity : ord.
 
 Unset Implicit Arguments.
 
@@ -250,7 +250,7 @@ Ltac solve_crelation :=
   | [ H : ?R ?x ?y |- ?R ?y ?x ] => symmetry ; exact H
   end.
 
-Hint Extern 4 => solve_crelation : crelations.
+#[local] Hint Extern 4 => solve_crelation : crelations.
 
 (** We can already dualize all these properties. *)
 
@@ -284,26 +284,26 @@ Local Obligation Tactic := simpl_crelation.
 
 (** Logical implication. *)
 
-Program Instance impl_Reflexive : Reflexive impl.
-Program Instance impl_Transitive : Transitive impl.
+#[local] Program Instance impl_Reflexive : Reflexive impl.
+#[local] Program Instance impl_Transitive : Transitive impl.
 
 (** Logical equivalence. *)
 
-Instance iff_Reflexive : Reflexive iff := iff_refl.
-Instance iff_Symmetric : Symmetric iff := iff_sym.
-Instance iff_Transitive : Transitive iff := iff_trans.
+#[local] Instance iff_Reflexive : Reflexive iff := iff_refl.
+#[local] Instance iff_Symmetric : Symmetric iff := iff_sym.
+#[local] Instance iff_Transitive : Transitive iff := iff_trans.
 
 (** Logical equivalence [iff] is an equivalence crelation. *)
 
-Program Instance iff_equivalence : Equivalence iff.
-Program Instance arrow_Reflexive : Reflexive arrow.
-Program Instance arrow_Transitive : Transitive arrow.
+#[local] Program Instance iff_equivalence : Equivalence iff.
+#[local] Program Instance arrow_Reflexive : Reflexive arrow.
+#[local] Program Instance arrow_Transitive : Transitive arrow.
 
-Instance iffT_Reflexive : Reflexive iffT.
+#[local] Instance iffT_Reflexive : Reflexive iffT.
 Proof. firstorder. Defined.
-Instance iffT_Symmetric : Symmetric iffT.
+#[local] Instance iffT_Symmetric : Symmetric iffT.
 Proof. firstorder. Defined.
-Instance iffT_Transitive : Transitive iffT.
+#[local] Instance iffT_Transitive : Transitive iffT.
 Proof. firstorder. Defined.
 
 (** We now develop a generalization of results on crelations for arbitrary predicates.
