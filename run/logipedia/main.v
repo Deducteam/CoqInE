@@ -9,4 +9,5 @@ Require Import import.
 
 Load config.
 
-Dedukti Export All.
+Dedukti Export All
+  But Coq.Init.Prelude. (* This library uses universe polymorphism *)

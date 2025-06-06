@@ -17,4 +17,5 @@ Require Import import_debug.
 Load config.
 
 Dedukti Export All
-  But Coq.Classes.Init. (* This library uses universe polymorphism *)
+  But Coq.Classes.Init
+      Coq.Init.Prelude. (* This library uses universe polymorphism *)

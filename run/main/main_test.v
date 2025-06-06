@@ -21,4 +21,5 @@ Require Import Test.Fixpoints.
 Load config.
 
 (* Exporting all imported modules *)
-Dedukti Export All.
+Dedukti Export All
+  But Coq.Init.Prelude. (* contains universe polymorphic definitions *)
