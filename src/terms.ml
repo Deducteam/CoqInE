@@ -288,25 +288,12 @@ let instantiate_universes env ctx (templ, ar) argsorts =
   debug "Template instance: [%a]" (pp_list " " pp_coq_sort) temp_inst;
   (ctx, ty, subst, temp_inst)
 
-(* Adapted from UnivSubst.level_subst_of *)
-let level_subst_of subs =
-  fun l ->
-  match Level.Map.find l subs with
-  | [] -> Univ.Level.set
-  | [u] -> (match Universe.level u with
-           | None -> l
-           | Some lvl -> lvl)
-  | _ -> l
-  | exception Not_found -> l
-
-(* Copied from engine/univSubst.ml *)
-let subst_univs_constr (subs:Universe.t list UnivSubst.universe_map)(*(f:Level.t->Universe.t) *)c =
+(* Adapted from engine/univSubst.ml *)
+let subst_univs_constr (subs:Universe.t list UnivSubst.universe_map) c =
   let changed = ref false in
   let fu u =
     let ul = subst_univs_univ_list subs u in
     sort_of_universe_list ul in
-  (*     UnivSubst.subst_univs_universe f in*)
-  let fi = UnivSubst.subst_instance (level_subst_of subs) in
   let rec aux t =
     match Constr.kind t with
     | Sort (Sorts.Type u) ->
@@ -314,18 +301,6 @@ let subst_univs_constr (subs:Universe.t list UnivSubst.universe_map)(*(f:Level.t
        (match s' with
        | Sorts.Type u' when u==u' -> t
        | _ -> changed := true; Constr.mkSort s')
-    | Const (c, u) ->
-      let u' = fi u in
-        if u' == u then t
-        else (changed := true; Constr.mkConstU (c, u'))
-    | Ind (i, u) ->
-      let u' = fi u in
-        if u' == u then t
-        else (changed := true; Constr.mkIndU (i, u'))
-    | Construct (c, u) ->
-      let u' = fi u in
-        if u' == u then t
-        else (changed := true; Constr.mkConstructU (c, u'))
     | _ -> Constr.map aux t
   in
   let c' = aux c in
@@ -597,16 +572,12 @@ let rec translate_constr ?expected_type info env uenv t =
        end
 
   | Case(case_info, u, ps, rt, (NoInvert as inv), matched, branches) ->
-     debug "Translating Case";
-=======
-  | Case(case_info, _, _, ((_, return_type),_), NoInvert, matched, branches) ->
->>>>>>> 30fe642a91fe1262dfd477a03399798782c93849
      let match_function_name = Cname.translate_match_function info env case_info.ci_ind in
      let mind_body, ind_body = Inductive.lookup_mind_specif env case_info.ci_ind in
      let n_params = mind_body.Declarations.mind_nparams   in
      let n_reals  =  ind_body.Declarations.mind_nrealargs in
      let case = (case_info,u,ps,rt,inv,matched,branches) in 
-     let (case_info,(_,return_type),_,matched,branches) =
+     let (case_info,(return_type,_),_,matched,branches) =
        Inductive.expand_case_specif mind_body case in
      let pind, ind_args = Inductive.find_rectype env (infer_type env matched) in
      (*
