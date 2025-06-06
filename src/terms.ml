@@ -403,7 +403,8 @@ let infer_dest_applied info env uenv (ind,u) args =
       pp_coq_label (Names.MutInd.label (fst ind)) (Array.length args);
     let args_types = Array.map (fun t -> lazy (infer_type env t)) args in
     let ctx = List.rev mip.mind_arity_ctxt in
-    let ctx,s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
+    let ctx', s, subst, temp_inst = instantiate_universes env ctx (templ, ar) args_types in
+    (* We build the arity with the floating universes (not the instance) *)
     let arity = Term.mkArity (List.rev ctx,s) in
     if Encoding.is_templ_polymorphism_on () &&
        Encoding.is_templ_polymorphism_cons_poly ()
@@ -437,7 +438,7 @@ let rec translate_constr ?expected_type info env uenv t =
       let b = infer_type env t in
       debug " - Inferred:  %a" (pp_coq_term_env env) b;
       if not (Encoding.is_argument_casted ()) && convertible info env uenv a b then t
-      else Constr.mkCast(t, Constr.VMcast, a) in
+      else (debug "Requires a Cast."; Constr.mkCast(t, Constr.VMcast, a)) in
   match Constr.kind t with
   | Rel i ->
     let (x, u, _) = Context.Rel.Declaration.to_tuple (Environ.lookup_rel i env) in

@@ -11,7 +11,7 @@ VERBOSE      ?=
 RUNDIR=run
 
 COQ_VERSION   := $(shell $(COQTOP) -print-version)
-CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.14\.*")
+CHECK_VERSION := $(shell $(COQTOP) -print-version | grep "8\.16\.*")
 
 define MANUAL
 
@@ -96,7 +96,7 @@ check-version:
 ifeq ("$(CHECK_VERSION)","")
 	$(warning "Incorrect Coq version !")
 	$(warning "Found: $(COQ_VERSION).")
-	$(warning "Expected: 8.1°.x")
+	$(warning "Expected: 8.16.x")
 	$(error "To ignore this, use:  make CHECK_VERSION=ignore")
 endif
 

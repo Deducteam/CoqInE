@@ -1,7 +1,6 @@
 Require Import
   Coq.Init.Notations
   Coq.Init.Logic
-  Coq.Init.Logic_Type
   Coq.Init.Datatypes
   Coq.Init.Specif
   Coq.Init.Decimal
