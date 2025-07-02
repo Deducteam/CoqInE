@@ -107,7 +107,7 @@ let translate_mutual_inductive_body info env isalias label mind_body =
   | None ->
     debug "Translating inductive: %s" (Names.Label.to_string label);
     let ntypes = mind_body.mind_ntypes in
-    let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+    let inds = Array.init ntypes (Inductives.get_infos env mind_body) in
     let iter f = Array.iter (f info env label) inds in
     (* First declare all the inductive types. Constructors of one inductive type
        can refer to other inductive types in the same block. *)
@@ -134,7 +134,7 @@ let translate_mutual_inductive_body info env isalias label mind_body =
 let translate_mutual_coinductive_body info env isalias label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
   let ntypes = mind_body.mind_ntypes in
-  let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+  let inds = Array.init ntypes (Inductives.get_infos env mind_body) in
   let iter f =
     for i = 0 to pred ntypes do f info env label inds.(i) done in
   debug "Translating co-inductive body: %s" (Names.Label.to_string label);
@@ -194,7 +194,8 @@ let rec translate_module_body info env mb =
   debug "=============================================";
   if not_filtered mod_name
   then
-    match mb.mod_expr with
+    let {mod_expr=ModBodyVal me; _} = mb in
+    match me with
     | Abstract          -> Error.not_supported "Abstract"
     | Algebraic mod_exp ->
       translate_module_expression info env mb.mod_delta mb.mod_mp mod_exp

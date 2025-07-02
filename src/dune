@@ -1,10 +1,10 @@
 (library
- (name coqine)              ; This is the name you will use in
+ (name coqine)               ; This is the name you will use in
                                     ; Coq's `Declare ML Module`, and
                                     ; the name of the main OCaml
                                     ; module of your plugin.
 
- (public_name coqine.plugin)     ; This makes the plugin
+ (public_name coqine)               ; This makes the plugin
                                     ; installable; recommended, must
                                     ; match opam package name
 

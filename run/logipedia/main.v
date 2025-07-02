@@ -1,5 +1,5 @@
 
-Declare ML Module "coqine:coqine.plugin".
+Declare ML Module "coqine".
 
 Dedukti Set Destination "out".
 
@@ -10,4 +10,4 @@ Require Import import.
 Load config.
 
 Dedukti Export All
-  But Coq.Init.Prelude. (* This library uses universe polymorphism *)
+  But Corelib.Init.Prelude. (* This library uses universe polymorphism *)

@@ -192,40 +192,60 @@ let remember_subst u subst =
   with Not_found -> subst
 
 
+let sort_of_universe_list ul =
+  match ul with
+  | [] ->
+    (* No constraints, fall in Prop *)
+    Sorts.prop
+  | (u,n) :: rest ->
+     let supern u n = Util.iterate Universe.super n u in
+     let fold accu (u, n) = Universe.sup accu (supern u n) in
+     Sorts.sort_of_univ (List.fold_left fold (supern u n) rest)
+
+let dest_template_arity env t =
+  let args,s = Reduction.dest_arity env t in
+  match s with
+  | Sorts.Type u ->
+     (match Universe.level u with
+     | Some l -> (args,l)
+     | _ -> assert false)
+  | _ -> assert false
+
 (* This is exactly Inductive.make_subst *)
 let make_subst env =
   let open Context.Rel.Declaration in
-  let rec make rctx subst = function
+  let rec make rctx subst inst = function
     | LocalDef _ :: sign, exp, args ->
-        make rctx subst (sign, exp, args)
-    | d::sign, None::exp, args ->
+        make rctx subst inst (sign, exp, args)
+    | d::sign, false::exp, args ->
         let args = match args with _::args -> args | [] -> [] in
-        make (d::rctx) subst (sign, exp, args)
-    | LocalAssum(na,t)::sign, Some u::exp, a::args ->
+        make (d::rctx) subst inst (sign, exp, args)
+    | LocalAssum(na,t)::sign, true::exp, a::args ->
         (* We recover the level of the argument, but we don't change the *)
         (* level in the corresponding type in the arity; this level in the *)
         (* arity is a global level which, at typing time, will be enforce *)
         (* to be greater than the level of the argument; this is probably *)
         (* a useless extra constraint *)
-       let pa,_ = Reduction.dest_arity env t in
+       let pa,u = dest_template_arity env t in
        let s = snd (Reduction.dest_arity env (Lazy.force a)) in
        let t' = Term.mkArity (pa, s) in 
-        make (LocalAssum(na,t')::rctx) (cons_subst u s subst) (sign, exp, args)
-    | d :: sign, Some u::exp, [] ->
+        make (LocalAssum(na,t')::rctx) (cons_subst u s subst) (u::inst) (sign, exp, args)
+    | (LocalAssum(_,t) as d) :: sign, true::exp, [] ->
         (* No more argument here: we add the remaining universes to the *)
         (* substitution (when [u] is distinct from all other universes in the *)
         (* template, it is identity substitution  otherwise (ie. when u is *)
         (* already in the domain of the substitution) [remember_subst] will *)
         (* update its image [x] by [sup x u] in order not to forget the *)
         (* dependency in [u] that remains to be fulfilled. *)
-        make (d::rctx) (remember_subst u subst) (sign, exp, [])
+        let _,u = dest_template_arity env t in
+        make (d::rctx) (remember_subst u subst) (u::inst) (sign, exp, [])
     | sign, [], _ ->
         (* Uniform parameters are exhausted *)
-        (List.rev rctx@sign),subst
+        (List.rev rctx@sign),subst, List.rev inst
     | [], _, _ ->
         assert false
   in
-  make [] Univ.Level.Map.empty
+  make [] Univ.Level.Map.empty []
 
 let subst_univs_univ_list (subs:Universe.t list UnivSubst.universe_map) u =
   (* We implement by hand a max on universes that handles Prop *)
@@ -249,16 +269,6 @@ let subst_univs_univ_list (subs:Universe.t list UnivSubst.universe_map) u =
   in
   CList.map_append map u
 
-let sort_of_universe_list ul =
-  match ul with
-  | [] ->
-    (* No constraints, fall in Prop *)
-    Sorts.prop
-  | (u,n) :: rest ->
-     let supern u n = Util.iterate Universe.super n u in
-     let fold accu (u, n) = Universe.sup accu (supern u n) in
-     Sorts.sort_of_univ (List.fold_left fold (supern u n) rest)
-
 (* Adapted from subst_univs_sort in engine/uState.ml *)
 let subst_univs_sort (subs:Universe.t list UnivSubst.universe_map) = function
 | Sorts.Prop | Sorts.Set | Sorts.SProp as s -> s
@@ -273,7 +283,7 @@ let subst_univs_sort (subs:Universe.t list UnivSubst.universe_map) = function
 let instantiate_universes env ctx (templ, ar) argsorts =
   let args = Array.to_list argsorts in
   (*  debug "Env before : %a" pp_coq_ctxt ctx;*)
-  let ctx,subst = make_subst env (ctx,templ.template_param_levels,args) in
+  let ctx,subst,inst = make_subst env (ctx,templ.template_param_arguments,args) in
   (*  debug "Env after : %a" pp_coq_ctxt ctx;*)
   let prl = Univ.Level.raw_pr in
   debug "Instance subst: %a" pp_t
@@ -283,8 +293,7 @@ let instantiate_universes env ctx (templ, ar) argsorts =
     try let ul = Univ.Level.Map.find lvl subst in
         sort_of_universe_list (List.map (fun u -> (u,0)) ul)
     with | Not_found -> Sorts.sort_of_univ(Univ.Universe.make lvl) in
-  let temp_inst =
-    List.map safe_subst_fn (Utils.filter_some templ.template_param_levels) in
+  let temp_inst = List.map safe_subst_fn inst in
   debug "Template instance: [%a]" (pp_list " " pp_coq_sort) temp_inst;
   (ctx, ty, subst, temp_inst)
 
@@ -925,7 +934,7 @@ and lift_fix info env uenv names types bodies rec_indices =
       debug "Nb poly univs: %i" nb_poly_univs;
       let nb_templ_poly = if Encoding.is_templ_polymorphism_on ()
         then (match mut_ind_body.(i).mind_template  with
-            | Some templ -> Utils.count_some templ.template_param_levels
+            | Some templ -> List.length (List.filter (fun b->b) templ.template_param_arguments)
             | None -> 0)
         else 0 in
       let cons_arities = Inductive.arities_of_constructors pinds.(i) ind_specifs.(i) in

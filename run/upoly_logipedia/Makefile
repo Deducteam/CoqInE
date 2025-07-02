@@ -1,8 +1,8 @@
 # Generic Makefile to run Coqine
 
 # Variables
-COQ_MAKEFILE ?= coq_makefile
-COQC         ?= coqc -allow-sprop
+COQ_MAKEFILE ?= rocq makefile
+COQC         ?= rocq compile -allow-sprop
 DKCHECK      ?= dk check
 DKDEP        ?= dk dep
 VERBOSE      ?=
@@ -10,7 +10,7 @@ MAINFILE     ?= main
 
 OUTFOLDER = out
 COQINE_SRC=../../src/
-COQINE_LIB=../../_build/install/default/lib/coqine/plugin/
+COQINE_LIB=../../_build/install/default/lib/
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)

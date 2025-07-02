@@ -1,7 +1,7 @@
 (* This script tests the Dedukti plugin by exporting test files and parts
    of the Coq standard library. *)
 
-Declare ML Module "coqine:coqine.plugin".
+Declare ML Module "coqine".
 
 Set Printing Universes.
 
@@ -10,12 +10,12 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Dedukti Debug Lib "Coq.Init.Logic".
+Dedukti Debug Lib "Corelib.Init.Logic".
 
 Require Import import_debug.
 
 Load config.
 
 Dedukti Export All
-  But Coq.Classes.Init
-      Coq.Init.Prelude. (* This library uses universe polymorphism *)
+  But Corelib.Classes.Init
+      Corelib.Init.Prelude. (* This library uses universe polymorphism *)

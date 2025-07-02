@@ -68,7 +68,7 @@ type ind_infos =
     constructor_uenv : Info.env;
   }
 
-let get_infos mind_body index =
+let get_infos env mind_body index =
   let nb_mutind  = mind_body.mind_ntypes in
   let body       = mind_body.mind_packets.(index) in
   let n_params   = mind_body.mind_nparams in
@@ -95,11 +95,14 @@ let get_infos mind_body index =
     | RegularArity ria, _ -> ([],[]), ria.mind_sort
     | TemplateArity ta, Some targs ->
       begin
+        let univ_ctxt =
+          Tsorts.get_generic_template env (mind_body,body)
+            targs.template_param_arguments in
         debug "Template params levels:";
-        List.iter (debug "%a" (pp_option "None" pp_coq_level)) targs.template_param_levels;
+        List.iter (debug "%a" (pp_option "None" pp_coq_level)) univ_ctxt;
         debug "Template level: %a" pp_coq_sort ta.template_level;
         debug "Arity context: %a"  pp_coq_ctxt arity_context;
-        Tsorts.translate_template_params targs.template_param_levels,
+        Tsorts.translate_template_params univ_ctxt,
         ta.template_level
       end
     | _ -> assert false (* mixed template/non-template *)
@@ -436,8 +439,11 @@ end
 let translate_template_inductive_levels info env label ind =
   match ind.mind_body.mind_template with
   | Some targs when not (Tsorts.template_constructor_upoly ()) ->
-    List.iter (Dedukti.print info.fmt)
-      (Tsorts.translate_template_global_level_decl targs.template_param_levels)
+     let univ_ctxt =
+       Tsorts.get_generic_template env
+         (ind.mind_body,ind.body) targs.template_param_arguments in
+     List.iter (Dedukti.print info.fmt)
+      (Tsorts.translate_template_global_level_decl univ_ctxt)
   | _ -> ()
 
 

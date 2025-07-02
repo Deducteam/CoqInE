@@ -1,6 +1,6 @@
 (*i camlp4deps: "grammar/grammar.cma" i*)
 
-DECLARE PLUGIN "coqine.plugin"
+DECLARE PLUGIN "coqine"
 
 {
 open Libraries

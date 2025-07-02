@@ -304,6 +304,24 @@ let instantiate_poly_ind_univ_params env uenv ind univ_instance term =
     end
   else term
 
+let get_generic_template env (mib,oib) tar =
+  let rec aux ctxt templ = match templ, ctxt with
+    | true::templ, Context.Rel.Declaration.LocalAssum (na,ar)::ctxt ->
+       let (_,s) = Reduction.dest_arity env ar in
+       let u = match s with
+         | Type u ->
+            (match Univ.Universe.level u with
+            | Some l -> l
+            | None -> failwith "Template parameter sort should be a level")
+         | _ -> failwith "Template parameter sort should be Type" in
+       Some u::aux ctxt templ
+    | false::templ, _::ctxt ->
+       None :: aux ctxt templ
+    | _, LocalDef _::ctxt ->
+       aux ctxt templ
+    | [],_ | _,[] -> [] in
+  aux (List.rev oib.mind_arity_ctxt) tar
+
 let instantiate_template_ind_univ_params env uenv ind univ_instance term =
   let (mib,oib) = Inductive.lookup_mind_specif env ind in
   match mib.mind_template with
@@ -311,7 +329,8 @@ let instantiate_template_ind_univ_params env uenv ind univ_instance term =
     debug "Instantiating template inductive instance %a : {%a}"
       Dedukti.pp_term term
       pp_coq_inst univ_instance;
-    let univ_ctxt = tar.template_param_levels in
+    let univ_ctxt =
+      get_generic_template env (mib,oib) tar.template_param_arguments in
     (* FIX ME *)
     let _,nb_instance = UVars.Instance.length univ_instance in
     let nb_params = List.length univ_ctxt in
