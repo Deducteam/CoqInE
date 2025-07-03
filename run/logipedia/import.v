@@ -11,4 +11,8 @@ Require Import
   Corelib.Init.Tauto
   Corelib.Init.Sumbool
   Corelib.Numbers.BinNums
-.
+  Stdlib.Bool.Bool
+  Stdlib.Bool.BoolEq
+  Stdlib.Bool.DecBool
+  Stdlib.Bool.IfProp
+  Stdlib.Logic.Decidable.

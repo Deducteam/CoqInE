@@ -20,7 +20,7 @@
 
 # dune files.
 _build/
-
+coqine.opam
 
 summary.csv
 

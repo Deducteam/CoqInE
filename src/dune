@@ -17,9 +17,12 @@
 
  (libraries                         ; ML Libraries we want to link
                                     ; with, your choice here.
-   coq-core.vernac                       ; needed for vernac extend
-   coq-core.plugins.ltac                 ; needed for tactic extend
+   rocq-runtime.vernac                       ; needed for vernac extend
+   rocq-runtime.plugins.ltac                 ; needed for tactic extend
 ))
 
 ; This will let Dune know about Coq's .mlg grammar files.
-(coq.pp (modules commands))
+(rule
+ (targets commands.ml)
+ (deps (:mlg commands.mlg))
+ (action (chdir %{project_root} (run rocq pp-mlg %{deps}))))

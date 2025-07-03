@@ -10,7 +10,10 @@ Require Import
   Corelib.Init.Tactics
   Corelib.Init.Tauto
   Corelib.Init.Sumbool
-
+  Stdlib.Bool.Bool
+  Stdlib.Bool.BoolEq
+  Stdlib.Bool.DecBool
+  Stdlib.Bool.IfProp
 (*
   Corelib.PArith.BinPos.
   Corelib.Classes.CMorphisms.
