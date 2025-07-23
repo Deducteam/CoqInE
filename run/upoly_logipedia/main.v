@@ -1,4 +1,4 @@
-Declare ML Module "coqine".
+Require Coqine.
 Dedukti Set Destination "out".
 Load config.
 Dedukti Set Param "simpl_letins" "false".

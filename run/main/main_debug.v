@@ -1,7 +1,7 @@
 (* This script tests the Dedukti plugin by exporting test files and parts
    of the Coq standard library. *)
 
-Declare ML Module "coqine".
+Require Import Coqine.
 
 Set Printing Universes.
 

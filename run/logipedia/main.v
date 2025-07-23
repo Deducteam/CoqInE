@@ -1,5 +1,5 @@
 
-Declare ML Module "coqine".
+Require Coqine.
 
 Dedukti Set Destination "out".
 

@@ -9,6 +9,8 @@ VERBOSE      ?=
 
 OUTFOLDER = out
 COQINEPATH=../../src
+COQINE_SRC=../../_build/install/default/lib
+COQINE_LIB=../../_build/install/default/lib/coq/user-contrib/Coqine Coqine
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
@@ -32,7 +34,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
-	$(COQTOP) -init-file ../../.coqrc -nois -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	$(COQTOP) -nois -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 #	rm $(OUTFOLDER)/Coq__Init__Specif.dk
 #	rm $(OUTFOLDER)/Coq__Init__Tactics.dk
 #	rm $(OUTFOLDER)/Coq__Init__Peano.dk

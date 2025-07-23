@@ -16,7 +16,7 @@ type ind_infos =
     mind_univs : Declarations.universes;
 
     (* Total number of mutually inductive types *)
-    nb_mutind : int;
+    _nb_mutind : int;
 
     (* Index of the current inductive type in the block *)
     index : int;
@@ -59,17 +59,17 @@ type ind_infos =
     apoly_ctxt : UVars.AbstractContext.t;
     poly_ctxt : UVars.UContext.t;
     poly_inst : UVars.Instance.t;
-    poly_cstr : Univ.Constraints.t;
+    _poly_cstr : Univ.Constraints.t;
 
     univ_poly_names : Dedukti.var list;
     univ_poly_cstr : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list;
-    univ_poly_nb_params : int;
+    _univ_poly_nb_params : int;
     inductive_uenv : Info.env;
     constructor_uenv : Info.env;
   }
 
 let get_infos env mind_body index =
-  let nb_mutind  = mind_body.mind_ntypes in
+  let _nb_mutind  = mind_body.mind_ntypes in
   let body       = mind_body.mind_packets.(index) in
   let n_params   = mind_body.mind_nparams in
   let mind_univs = mind_body.mind_universes in
@@ -109,7 +109,7 @@ let get_infos env mind_body index =
   in
 
   (* Compute universe polymorphic instance and associated constraints *)
-  let apoly_ctxt, poly_ctxt, poly_inst, poly_cstr =
+  let apoly_ctxt, poly_ctxt, poly_inst, _poly_cstr =
     match mind_univs with
     | Monomorphic ->
       UVars.AbstractContext.empty,
@@ -128,14 +128,14 @@ let get_infos env mind_body index =
   in
 
   let univ_poly_names = Tsorts.translate_univ_poly_params poly_inst in
-  let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints poly_cstr in
-  let univ_poly_nb_params = List.length univ_poly_names in
+  let univ_poly_cstr   = Tsorts.translate_univ_poly_constraints _poly_cstr in
+  let _univ_poly_nb_params = List.length univ_poly_names in
   let univ_poly_env f =
     Info.make
       template_levels
       (List.map f template_names)
       apoly_ctxt
-      univ_poly_nb_params
+      _univ_poly_nb_params
       univ_poly_cstr  in
   let inductive_uenv =
     univ_poly_env (fun x -> Translator.NamedSort x) in
@@ -149,7 +149,7 @@ let get_infos env mind_body index =
     mind_body;
     mind_univs;
     mind_params_ctxt;
-    nb_mutind;
+    _nb_mutind;
     index;
     body;
     nf_full_types;
@@ -166,10 +166,10 @@ let get_infos env mind_body index =
     apoly_ctxt;
     poly_ctxt;
     poly_inst;
-    poly_cstr;
+    _poly_cstr;
     univ_poly_names;
     univ_poly_cstr;
-    univ_poly_nb_params;
+    _univ_poly_nb_params;
     inductive_uenv;
     constructor_uenv;
   }

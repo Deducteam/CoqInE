@@ -9,8 +9,8 @@ VERBOSE      ?=
 MAINFILE     ?= main_debug
 
 OUTFOLDER = out
-COQINE_SRC=../../src/
-COQINE_LIB=../../_build/install/default/lib
+COQINE_SRC=../../_build/install/default/lib
+COQINE_LIB=../../_build/install/default/lib/coq/user-contrib/Coqine
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
@@ -34,7 +34,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main_???.v]
 generate: compile $(OUTFOLDER)
-	$(COQC) -nois -verbose -R . Top -Q $(COQINE_SRC) Coqine -I $(COQINE_LIB) $(MAINFILE).v
+	$(COQC) -nois -verbose -R . Top -R $(COQINE_LIB) Coqine -I $(COQINE_SRC) $(MAINFILE).v
 
 # Generate the dependencies of [.dk] files
 depend:

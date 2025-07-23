@@ -1,5 +1,5 @@
-(lang dune 1.10)
-(using coq 0.1)
+(lang dune 3.8)
+(using coq 0.8)
 (name coqine)
 (version dev)
 

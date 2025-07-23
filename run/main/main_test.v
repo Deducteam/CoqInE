@@ -1,6 +1,6 @@
 (*   Entry point script for the Dedukti plugin.   *)
 
-Declare ML Module "coqine".
+Require Coqine.
 
 (* Useful for more informative debug messages *)
 Set Printing Universes.
