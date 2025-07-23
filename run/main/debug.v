@@ -1,4 +1,4 @@
-Declare ML Module "coqine:coqine.plugin".
+Require Coqine.
 
 Set Printing Universes.
 
@@ -7,7 +7,7 @@ Dedukti Enable Verbose.
 
 Dedukti Set Destination "out".
 Dedukti Set Debug "debug.out".
-Dedukti Add Debug "Top.import".
+Dedukti Debug Lib "Top.import".
 
 Require Import import.
 
