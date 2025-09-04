@@ -1,5 +1,0 @@
-(coq.theory
-  (name Coqine)
-  (package coqine)
-  (plugins coqine)
-)

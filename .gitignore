@@ -18,10 +18,6 @@
 *.dko
 *.tar.bz2
 
-# dune files.
-_build/
-coqine.opam
-
 summary.csv
 
 run/main/**/*.dk

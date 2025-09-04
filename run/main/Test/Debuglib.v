@@ -2,10 +2,10 @@ Set Printing All.
 
 Set Printing Universes.
 
-Require Import Corelib.Init.Notations.
-Require Import Corelib.Init.Logic.
-Require Import Corelib.Init.Datatypes.
-Require Import Corelib.Init.Peano.
+Require Import Coq.Init.Notations.
+Require Import Coq.Init.Logic.
+Require Import Coq.Init.Datatypes.
+Require Import Coq.Init.Peano.
 
 
 Inductive iter (A : Type) (f : A -> Type) : Type -> Type :=

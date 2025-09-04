@@ -1,7 +1,7 @@
 Require Import
   Test.Test
   Test.Identity
-  Corelib.Classes.RelationClasses
+  Coq.Classes.RelationClasses
   Test.Polymorph
   Test.ImportA
   Test.ImportB
@@ -19,32 +19,32 @@ Require Import
   Test.Debuglib
 (*
   Test.Debug
-  Corelib.Arith.PeanoNat
-  Corelib.Logic.Berardi
-  Corelib.Logic.ChoiceFacts
-  Corelib.Logic.ClassicalChoice
-  Corelib.Logic.ClassicalDescription
-  Corelib.Logic.ClassicalEpsilon
-  Corelib.Logic.ClassicalFacts
-  Corelib.Logic.Classical_Pred_Type
-  Corelib.Logic.Classical_Prop
-  Corelib.Logic.ClassicalUniqueChoice
-  Corelib.Logic.Classical
-  Corelib.Logic.ConstructiveEpsilon
-  Corelib.Logic.Decidable
-  Corelib.Logic.Description
-  Corelib.Logic.Diaconescu
-  Corelib.Logic.Epsilon
-  Corelib.Logic.Eqdep_dec
-  Corelib.Logic.EqdepFacts
-  Corelib.Logic.Eqdep
-  Corelib.Logic.FunctionalExtensionality
-  Corelib.Logic.Hurkens
-  Corelib.Logic.IndefiniteDescription
-  Corelib.Logic.JMeq
-  Corelib.Logic.ProofIrrelevanceFacts
-  Corelib.Logic.ProofIrrelevance
-  Corelib.Logic.RelationalChoice
-  Corelib.Logic.SetIsType
+  Coq.Arith.PeanoNat
+  Coq.Logic.Berardi
+  Coq.Logic.ChoiceFacts
+  Coq.Logic.ClassicalChoice
+  Coq.Logic.ClassicalDescription
+  Coq.Logic.ClassicalEpsilon
+  Coq.Logic.ClassicalFacts
+  Coq.Logic.Classical_Pred_Type
+  Coq.Logic.Classical_Prop
+  Coq.Logic.ClassicalUniqueChoice
+  Coq.Logic.Classical
+  Coq.Logic.ConstructiveEpsilon
+  Coq.Logic.Decidable
+  Coq.Logic.Description
+  Coq.Logic.Diaconescu
+  Coq.Logic.Epsilon
+  Coq.Logic.Eqdep_dec
+  Coq.Logic.EqdepFacts
+  Coq.Logic.Eqdep
+  Coq.Logic.FunctionalExtensionality
+  Coq.Logic.Hurkens
+  Coq.Logic.IndefiniteDescription
+  Coq.Logic.JMeq
+  Coq.Logic.ProofIrrelevanceFacts
+  Coq.Logic.ProofIrrelevance
+  Coq.Logic.RelationalChoice
+  Coq.Logic.SetIsType
 *)
 .

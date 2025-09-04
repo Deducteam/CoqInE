@@ -33,14 +33,14 @@ type map
 type env =
   {
     template_params : map;
-    poly_ctxt : UVars.AbstractContext.t;
+    poly_ctxt : Univ.AUContext.t;
     nb_polymorphic_univs : int;
     constraints : ( Univ.univ_constraint * (Dedukti.var * Dedukti.term * Dedukti.term) ) list
   }
 
 val make :
   Univ.Level.t list -> Translator.universe_expr list ->
-  UVars.AbstractContext.t -> int -> ( Univ.univ_constraint * (var * term * term) ) list ->
+  Univ.AUContext.t -> int -> ( Univ.univ_constraint * (var * term * term) ) list ->
   env
 
 val is_template_polymorphic    : env -> Univ.Level.t -> bool

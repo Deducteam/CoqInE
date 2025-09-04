@@ -25,7 +25,6 @@ def max : Nat -> Nat -> Nat.
 [i,j] max (s i) (s j) --> s (max i j).
 
 (;
-Coqine sprop = prop
 Coqine prop  = prop
 Coqine type  = type
 Coqine set   = set

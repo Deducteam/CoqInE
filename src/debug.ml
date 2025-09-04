@@ -1,25 +1,22 @@
 open Pp
 open Format
 
-let message fmt =
-  kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
-
 let debug_libraries = ref []
 let add_debug_lib s = debug_libraries := s :: !debug_libraries
-let is_debug_lib s = List.mem s !debug_libraries
-
-let debug_symbols = ref []
-let add_debug_smb s = debug_symbols := s :: !debug_symbols
-let is_debug_smb s = List.mem s !debug_symbols
+let is_debug_lib s = List.exists (fun x -> s = str x) !debug_libraries
 
 let debug_allowed = ref false
 let  enable_debug () = debug_allowed := true
 let disable_debug () = debug_allowed := false
 
 let debug_flag = ref false
-let debug_start () = message "Debug on"; debug_flag := true
+let debug_start () = debug_flag := true
 let debug_stop  () = debug_flag := false
 let is_debug_on () = !debug_flag && !debug_allowed
+
+
+let message fmt =
+  kfprintf (fun _ -> pp_print_newline Format.std_formatter ()) Format.std_formatter fmt
 
 
 let verbose_allowed = ref false
@@ -69,60 +66,49 @@ let printer_of_std_ppcmds f fmt x = fprintf fmt "%a" pp_t (f x)
 
 let pp_coq_term_env env =
   printer_of_std_ppcmds (Printer.safe_pr_constr_env env (Evd.from_env env))
-let pp_coq_term  t = pp_coq_term_env (Global.env()) t
-let pp_coq_type t =
-  let env = Global.env ()  in
-  let sigma = Evd.from_env env in
-  printer_of_std_ppcmds (Printer.pr_type_env env sigma) t
-let pp_coq_level = printer_of_std_ppcmds UnivNames.pr_level_with_global_universes
-let pp_coq_univ  = printer_of_std_ppcmds (Univ.Universe.pr Univ.Level.raw_pr)
+
+let pp_coq_term  =
+  let (sigma, env) = Pfedit.get_current_context () in
+  printer_of_std_ppcmds (Printer.safe_pr_constr_env env sigma)
+let pp_coq_type  =
+  let (sigma, env) = Pfedit.get_current_context () in
+  printer_of_std_ppcmds (Printer.pr_type_env env sigma)
+let pp_coq_level = printer_of_std_ppcmds Univ.Level.pr
+let pp_coq_univ  = printer_of_std_ppcmds Univ.Universe.pr
 let pp_coq_id    = printer_of_std_ppcmds Names.Id.print
 let pp_coq_label = printer_of_std_ppcmds Names.Label.print
 let pp_coq_constraint_type = printer_of_std_ppcmds Univ.pr_constraint_type
 
 let pp_coq_lvl_arr = pp_array " " pp_coq_level
 
-let pp_coq_inst =
-  printer_of_std_ppcmds (UVars.Instance.pr Sorts.QVar.raw_pr Univ.Level.raw_pr)
+let pp_coq_inst fmt univ_instance =
+  let levels = Univ.Instance.to_array univ_instance in
+  fprintf fmt "%a" pp_coq_lvl_arr levels
 
 let pp_coq_name fmt = function
   | Names.Name.Anonymous -> fprintf fmt "_"
   | Names.Name.Name n    -> fprintf fmt "%a" pp_coq_id n
 
-let pp_coq_binder pp fmt binder = pp fmt (Context.binder_name binder)
-
 let pp_coq_kername = printer_of_std_ppcmds Names.KerName.print
 
 let pp_coq_sort fmt = function
-  | Term.SProp  -> fprintf fmt "SProp"
-  | Term.Set    -> fprintf fmt "Set"
-  | Term.Prop   -> fprintf fmt "Prop"
-  | Term.Type i -> fprintf fmt "Univ(%a)" pp_coq_univ i
-  | Term.QSort (_,_) -> failwith "translate_sort : Unhadled case Term_QSort!"
+  | Term.Prop Term.Null -> fprintf fmt "Set"
+  | Term.Prop Term.Pos  -> fprintf fmt "Prop"
+  | Term.Type i         -> fprintf fmt "Univ(%a)" pp_coq_univ i
 
 let pp_coq_decl fmt = function
-  | Context.Rel.Declaration.LocalAssum (binder, t) ->
-    fprintf fmt "%a : %a"
-      (pp_coq_binder pp_coq_name) binder
-      pp_coq_term t
-  | Context.Rel.Declaration.LocalDef (binder, v, t) ->
-    fprintf fmt "%a : %a = %a"
-      (pp_coq_binder pp_coq_name) binder
-      pp_coq_term v
-      pp_coq_term t
+  | Context.Rel.Declaration.LocalAssum (name, t) ->
+    fprintf fmt "%a : %a" pp_coq_name name pp_coq_term t
+  | Context.Rel.Declaration.LocalDef (name, v, t) ->
+    fprintf fmt "%a : %a = %a" pp_coq_name name pp_coq_term t pp_coq_term t
 
 let pp_coq_arity_ctxt fmt = pp_list " -> " pp_coq_decl fmt
 
 let pp_coq_named_decl fmt = function
-  | Context.Named.Declaration.LocalAssum (binder, t) ->
-    fprintf fmt "%a = %a"
-      (pp_coq_binder pp_coq_id) binder
-      pp_coq_term t
-  | Context.Named.Declaration.LocalDef (binder, v, t) ->
-    fprintf fmt "%a : %a = %a"
-      (pp_coq_binder pp_coq_id) binder
-      pp_coq_term v
-      pp_coq_term t
+  | Context.Named.Declaration.LocalAssum (id, t) ->
+    fprintf fmt "%a = %a" pp_coq_id id pp_coq_term t
+  | Context.Named.Declaration.LocalDef (id, v, t) ->
+    fprintf fmt "%a : %a = %a" pp_coq_id id pp_coq_term t pp_coq_term t
 
 let pp_coq_ctxt fmt ctxt =
   fprintf fmt "[\n  %a\n]" (pp_list "\n  " pp_coq_decl) ctxt
@@ -135,14 +121,14 @@ let pp_coq_env fmt e =
     pp_coq_ctxt       (Environ.rel_context e)
     pp_coq_named_ctxt (Environ.named_context e)
 
-let pp_fixpoint fmt (fp:(Constr.constr,Constr.types, Sorts.relevance) Constr.pfixpoint) =
+let pp_fixpoint fmt (fp:(Constr.constr,Constr.types) Constr.pfixpoint) =
   let (rec_indices, i), (names, types, bodies) = fp in
   let n = Array.length names in
   let bodies = Array.init n (fun i -> (names.(i), types.(i), bodies.(i))) in
-  let pp_bodies fmt (bind,t,b) =
+  let pp_bodies fmt (n,t,b) =
     fprintf fmt "%a : %a :=@.  %a,"
-      (pp_coq_binder pp_coq_name) bind pp_coq_term t pp_coq_term b in
-  fprintf fmt "Fix %a@.  { %a }" (pp_coq_binder pp_coq_name) names.(i) (pp_array "@." pp_bodies) bodies
+      pp_coq_name n pp_coq_term t pp_coq_term b in
+  fprintf fmt "Fix %a@.  { %a }" pp_coq_name names.(i) (pp_array "@." pp_bodies) bodies
 
 
 let pp_coq_constraint fmt (i,rel,j) =
@@ -150,7 +136,7 @@ let pp_coq_constraint fmt (i,rel,j) =
 
 let pp_coq_Constraint fmt c =
   Format.fprintf fmt "[";
-  Univ.Constraints.fold (fun c () -> (Format.fprintf fmt "%a ; " pp_coq_constraint c)) c ();
+  Univ.Constraint.fold (fun c () -> (Format.fprintf fmt "%a ; " pp_coq_constraint c)) c ();
   Format.fprintf fmt "]"
 
 let pp_uenv_cstr fmt constraints =
@@ -159,6 +145,4 @@ let pp_uenv_cstr fmt constraints =
 
 
 let pp_globname fmt n =
-  let env = Global.env () in
-  let cstr, _ = UnivGen.fresh_global_instance env n in
-  fprintf fmt "%a" pp_coq_term cstr
+  fprintf fmt "%a" pp_coq_term (Globnames.printable_constr_of_global n)

@@ -1,35 +1,36 @@
+(*
+Require Import Coq.PArith.BinPos.
+**)
+
 Require Import
-  Corelib.Init.Notations
-  Corelib.Init.Logic
-  Corelib.Init.Datatypes
-  Corelib.Init.Specif
-  Corelib.Init.Decimal
-  Corelib.Init.Nat
-  Corelib.Init.Peano
-  Corelib.Init.Wf
-  Corelib.Init.Tactics
-  Corelib.Init.Tauto
-  Corelib.Init.Sumbool
-  Stdlib.Bool.Bool
-  Stdlib.Bool.BoolEq
-  Stdlib.Bool.DecBool
-  Stdlib.Bool.IfProp
-(*
-  Corelib.PArith.BinPos.
-  Corelib.Classes.CMorphisms.
+  Coq.Init.Notations
+  Coq.Init.Logic
+  Coq.Init.Logic_Type
+  Coq.Init.Datatypes
+  Coq.Init.Specif
+  Coq.Init.Decimal
+  Coq.Init.Nat
+  Coq.Init.Peano
+  Coq.Init.Wf
+  Coq.Init.Tactics
+  Coq.Init.Tauto
 
-  Corelib.Bool.Zerob
-  Corelib.Bool.Bvector (* Requires Corelib.PArith.BinPos which is bugged *)
+  Coq.Bool.Bool
+  Coq.Bool.BoolEq
+  Coq.Bool.DecBool
+  Coq.Bool.IfProp (*
+  Coq.Bool.Sumbool
+  Coq.Bool.Zerob
+  Coq.Bool.Bvector (* Requires Coq.PArith.BinPos which is bugged *)
 *)
 
-(*
-  Corelib.Logic.ProofIrrelevanceFacts
-  Corelib.Logic.Decidable
-  Corelib.Logic.Hurkens   (* Bug to fix... *)
+  Coq.Logic.ProofIrrelevanceFacts (*
+  Coq.Logic.Decidable
+  Coq.Logic.Hurkens   (* Bug to fix... *)
 *)
-(*
-  Corelib.Arith.Arith_base
+  Coq.Arith.Arith_base
 
-  Corelib.Lists.List (* Requires Corelib.PArith.BinPos which is bugged *)
+  (*
+  Coq.Lists.List (* Requires Coq.PArith.BinPos which is bugged *)
 *)
 .

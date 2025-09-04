@@ -1,6 +1,6 @@
 (*   Entry point script for the Dedukti plugin.   *)
 
-Require Coqine.
+Declare ML Module "coqine_plugin".
 
 (* Useful for more informative debug messages *)
 Set Printing Universes.
@@ -12,7 +12,7 @@ Dedukti Set Destination "out".
 Dedukti Enable Debug.
 Dedukti Set Debug "debug.out".
 
-Dedukti Debug Lib "Corelib.Init.Logic".
+Dedukti Add Debug "Coq.Init.Datatype".
 
 (* Import some modules to translate *)
 Require Import Test.Fixpoints.
@@ -21,5 +21,4 @@ Require Import Test.Fixpoints.
 Load config.
 
 (* Exporting all imported modules *)
-Dedukti Export All
-  But Corelib.Init.Prelude. (* contains universe polymorphic definitions *)
+Dedukti Export All.

@@ -1,38 +1,12 @@
-
 Inductive nat :=
 | o : nat
 | s : nat -> nat.
-
-Definition plus_nat : nat -> nat -> nat :=
-  fun n =>
-    (
-      fix aux (m:nat) {struct m} : nat
-      := match m with
-         | o => n
-         | s m' => s (aux m') end
-    ).
-
-Definition even : nat -> bool :=
-  (fix even' (n:nat) : bool
-   :=
-     (match n with
-       o    => true
-     | s n' => odd' n'
-     end)
-   with odd' (n:nat) : bool
-   :=
-     (match n with
-       o    => false
-     | s n' => even' n'
-     end)
-   for even').
 
 Fixpoint id x :=
 match x with
 | o => o
 | s x => s (id x)
 end.
-
 
 Fixpoint id1 a b n :=
 match n with
@@ -57,17 +31,6 @@ Fixpoint f x :=
     end
   end) x.
 
-
-Fixpoint f' x :=
-  match x with
-  | o => o
-  | s x1 => g' x1
-  end
-with g' y :=
-  match y with
-  | o => o
-  | s y1 => f' y1
-  end.
 
 
 Inductive nat' : Type :=
