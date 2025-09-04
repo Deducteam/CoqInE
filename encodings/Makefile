@@ -1,4 +1,4 @@
-DKCHECK?=dkcheck
+DKCHECK?=dk check
 BUILD=_build
 
 all:

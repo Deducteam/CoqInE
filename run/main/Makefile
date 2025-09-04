@@ -1,15 +1,16 @@
 # Generic Makefile to run Coqine
 
 # Variables
-COQ_MAKEFILE ?= coq_makefile
-COQC         ?= coqc
-DKCHECK      ?= dkcheck
-DKDEP        ?= dkdep
+COQ_MAKEFILE ?= rocq makefile
+COQC         ?= rocq compile -allow-sprop
+DKCHECK      ?= dk check
+DKDEP        ?= dk dep
 VERBOSE      ?=
 MAINFILE     ?= main_debug
 
 OUTFOLDER = out
-COQINEPATH=../../src
+COQINE_SRC=../../_build/install/default/lib
+COQINE_LIB=../../_build/install/default/lib/coq/user-contrib/Coqine
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
@@ -33,7 +34,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main_???.v]
 generate: compile $(OUTFOLDER)
-	$(COQC) -nois -init-file ../../.coqrc -verbose -R . Top $(MAINFILE).v
+	$(COQC) -nois -verbose -R . Top -R $(COQINE_LIB) Coqine -I $(COQINE_SRC) $(MAINFILE).v
 
 # Generate the dependencies of [.dk] files
 depend:
@@ -43,7 +44,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) --eta --snf -e $<
+	$(DKCHECK) -I $(OUTFOLDER) --eta -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean

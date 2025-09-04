@@ -3,13 +3,26 @@
 open Debug
 open Translator
 
-(** Translate the library referred to by [qualid].
-    A libray is a module that corresponds to a file on disk. **)
+let translate_term term =
+  (*
+  let t = CAst.with_val (fun x -> x) term in
+  debug "Exporting %a" pp_coq_term t;
+  let module_path = assert false in
+  let filename = assert false in
+  let empty_env = assert false in
+  let info = assert false in
+  let term' = Terms.translate_constr info (Global.env ()) empty_env term in
+  Info.close info;
+*)
+  Feedback.msg_notice (Pp.str "Dedukti rep: ")
+
+(* Translate the library referred to by [qualid].
+   A libray is a module that corresponds to a file on disk. *)
 let translate_qualified_library qualid =
-  let libname = Libnames.pr_qualid qualid in
-  message "Exporting %a" pp_t libname;
+  let libname = Pp.string_of_ppcmds (Libnames.pr_qualid qualid) in
+  message "Exporting %s" libname;
   if is_debug_lib libname then debug_start ();
-  debug "Exporting %a" pp_t (Libnames.pr_qualid qualid);
+  debug "Exporting %s" libname;
   let module_path = Nametab.locate_module qualid in
   let module_body = Global.lookup_module module_path in
   let dir_path = Nametab.dirpath_of_module module_path in
@@ -23,21 +36,22 @@ let translate_qualified_library qualid =
   debug_stop ();
   Info.close info
 
-let qualid_of_ref r = (Libnames.qualid_of_reference r).CAst.v
-
-(** Translates the given library *)
-let translate_library reference =
-  let qualid = qualid_of_ref reference in
-  let lib_loc, lib_path, lib_phys_path = Library.locate_qualified_library qualid in
-  Library.require_library_from_dirpath [ (lib_path, Libnames.string_of_qualid qualid) ] None;
-  Tsorts.set_universes (Global.universes ());
-  translate_qualified_library qualid
+(* Translates the given library *)
+let translate_library qualid =
+  match Loadpath.locate_qualified_library qualid with
+  | Ok(lib_path, lib_phys_path) ->
+    Library.require_library_from_dirpath 
+      (Library.require_library_syntax_from_dirpath 
+        ~intern:Vernacinterp.fs_intern[ None, lib_path ]);
+    Tsorts.set_universes (Global.universes ());
+    translate_qualified_library qualid
+  | Error _ -> assert false
 
 let translate_universes () =
   if Encoding.need_universe_file ()
   then
     (* "universe_file" is the file for global universe definitions  *)
-    let info = Info.init Names.ModPath.initial (Encoding.symb "universe_file") in
+    let info = Info.init Names.ModPath.dummy (Encoding.symb "universe_file") in
     begin
       try
         (pp_list "" Dedukti.printc) info.Info.fmt (T.coq_header ());
@@ -46,10 +60,9 @@ let translate_universes () =
     end;
     Info.close info
 
-(** Translate all loaded libraries but expressions. **)
-let translate_all_but refs =
+(* Translate all loaded libraries but expressions. *)
+let translate_all_but ignore_qualids =
   let sep = "\n  Ignoring " in
-  let ignore_qualids = List.map qualid_of_ref refs in
   begin
     match ignore_qualids with
     | [] -> message "Translating all libraries"
@@ -57,40 +70,13 @@ let translate_all_but refs =
       message "Translating all libraries except from the following:%s%a"
         sep (pp_list sep pp_t) (List.map Libnames.pr_qualid ignore_qualids)
   end;
-  let not_ignored qualid = not (List.exists (Libnames.qualid_eq qualid) ignore_qualids) in
+  let not_ignored qualid =
+    not (List.exists (Libnames.qualid_eq qualid) ignore_qualids) in
   let dirpaths = Library.loaded_libraries () in
   let qualids = List.map Libnames.qualid_of_dirpath dirpaths in
   Tsorts.set_universes (Global.universes ());
   translate_universes ();
   List.iter translate_qualified_library (List.filter not_ignored qualids)
 
-(** Translate all loaded libraries. **)
+(* Translate all loaded libraries. *)
 let translate_all () = translate_all_but []
-
-
-let print_universes_constraints universes =
-  let register constraint_type j k =
-    match constraint_type with
-    | Univ.Lt -> message "%s <  %s" j k
-    | Univ.Le -> message "%s <= %s" j k
-    | Univ.Eq -> message "%s == %s" j k
-  in
-  UGraph.dump_universes register universes
-
-let show_universes_constraints () =
-  message "";
-  message "------------------------------------------------";
-  message "|    Printing global universes constraints     |";
-  message "------------------------------------------------";
-  print_universes_constraints (Global.universes ());
-  message "-----------------------------------------------";
-  message ""
-
-let show_sorted_universes_constraints () =
-  message "";
-  message "------------------------------------------------";
-  message "| Printing global sorted universes constraints |";
-  message "------------------------------------------------";
-  print_universes_constraints (UGraph.sort_universes (Global.universes ()));
-  message "-----------------------------------------------";
-  message ""

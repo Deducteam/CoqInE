@@ -6,8 +6,14 @@ open Info
 
 
 let fail_on_issue = ref true
-let  enable_failproofmode () = message "Failproof mode enabled." ; fail_on_issue := false
-let disable_failproofmode () = message "Failproof mode disabled."; fail_on_issue := true
+
+let enable_failproofmode () =
+  message "Failproof mode enabled.";
+  fail_on_issue := false
+
+let disable_failproofmode () =
+  message "Failproof mode disabled.";
+  fail_on_issue := true
 
 let symb_filter = ref []
 let filter_out symb = symb_filter := symb :: !symb_filter
@@ -19,7 +25,6 @@ let isalias resolver kername =
   if Names.KerName.compare (Names.MutInd.user mind) can = 0
   then None
   else Some can
-
 
 let translate_alias_constant_body info env alias label const =
   let label' = Cname.translate_element_name info env label in
@@ -44,15 +49,15 @@ let translate_constant_body info env isalias label const =
   assert (List.length const.const_hyps = 0);
   let poly_ctxt, poly_inst, poly_cstr, env =
     match const.const_universes with
-    | Monomorphic_const uctxt ->
+    | Monomorphic ->
       debug "Translating monomorphic constant body: %s" name;
-      let env' = Environ.push_context_set ~strict:true uctxt env in
-      Univ.AUContext.empty, Univ.Instance.empty, Univ.Constraint.empty, env'
-    | Polymorphic_const univ_ctxt ->
-      let uctxt = Univ.AUContext.repr univ_ctxt in
+      (* let env' = Environ.push_context_set ~strict:true env in *)
+      UVars.AbstractContext.empty, UVars.Instance.empty, Univ.Constraints.empty, env
+    | Polymorphic univ_ctxt ->
+      let uctxt = UVars.AbstractContext.repr univ_ctxt in
       let env' = Environ.push_context ~strict:false uctxt env in
-      let instance = Univ.UContext.instance uctxt in
-      let constraints = Univ.UContext.constraints uctxt in
+      let instance = UVars.UContext.instance uctxt in
+      let constraints = UVars.UContext.constraints uctxt in
       debug "Translating polymorphic [%a] constant body: %s"
         pp_coq_inst instance name;
       univ_ctxt, instance, constraints, env'
@@ -71,8 +76,7 @@ let translate_constant_body info env isalias label const =
     (* For now assume inline is None. *)
     assert (inline = None);
     Dedukti.print info.fmt (Dedukti.declaration false label' const_type')
-  | Def constr_substituted ->
-    let constr = Mod_subst.force_constr constr_substituted in
+  | Def constr ->
     let constr =
       if Encoding.flag "unfold_letin"
       then
@@ -84,10 +88,13 @@ let translate_constant_body info env isalias label const =
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition false label' const_type' constr')
   | OpaqueDef lazy_constr ->
-    let constr = Opaqueproof.force_proof Opaqueproof.empty_opaquetab lazy_constr in
+    let access = Library.indirect_accessor[@@warning "-3"] in
+    let constr, _ = Global.force_proof (access) lazy_constr in
     let constr' = Terms.translate_constr ~expected_type:const_type info env uenv constr in
     let constr' = Tsorts.add_poly_params_def univ_poly_params univ_poly_cstr constr' in
     Dedukti.print info.fmt (Dedukti.definition true label' const_type' constr')
+  | Primitive _ -> assert false
+  | Symbol _rules -> failwith("Translate_constant_body : Symbol not supported")
 end
 
 (** Translate the body of mutual inductive definitions [mind]. *)
@@ -100,7 +107,7 @@ let translate_mutual_inductive_body info env isalias label mind_body =
   | None ->
     debug "Translating inductive: %s" (Names.Label.to_string label);
     let ntypes = mind_body.mind_ntypes in
-    let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+    let inds = Array.init ntypes (Inductives.get_infos env mind_body) in
     let iter f = Array.iter (f info env label) inds in
     (* First declare all the inductive types. Constructors of one inductive type
        can refer to other inductive types in the same block. *)
@@ -127,7 +134,7 @@ let translate_mutual_inductive_body info env isalias label mind_body =
 let translate_mutual_coinductive_body info env isalias label mind_body =
   Error.warning "Translating coinductive %a" pp_coq_label label;
   let ntypes = mind_body.mind_ntypes in
-  let inds = Array.init ntypes (Inductives.get_infos mind_body) in
+  let inds = Array.init ntypes (Inductives.get_infos env mind_body) in
   let iter f =
     for i = 0 to pred ntypes do f info env label inds.(i) done in
   debug "Translating co-inductive body: %s" (Names.Label.to_string label);
@@ -145,8 +152,9 @@ let translate_mutual_coinductive_body info env isalias label mind_body =
 (** Translate the body of non-recursive definitions when it's a record. *)
 let translate_record_body info env isalias label mind_body =
   match mind_body.mind_record with
-  | None   -> Error.not_supported "Non-recursive translation"
-  | Some _ ->
+  | NotRecord
+  | FakeRecord
+  | PrimRecord _ ->
     debug "Translating record: %a" pp_coq_label label;
     translate_mutual_inductive_body info env isalias label mind_body
 
@@ -186,22 +194,27 @@ let rec translate_module_body info env mb =
   debug "=============================================";
   if not_filtered mod_name
   then
-    match mb.mod_expr with
+    let {mod_expr=ModBodyVal me; _} = mb in
+    match me with
     | Abstract          -> Error.not_supported "Abstract"
     | Algebraic mod_exp ->
       translate_module_expression info env mb.mod_delta mb.mod_mp mod_exp
     | Struct mod_sig    ->
-      translate_module_signature info env mb.mod_delta mod_sig
+      translate_module_signature info env mb.mod_delta (NoFunctor mod_sig)
     | FullStruct        ->
       translate_module_signature info env mb.mod_delta mb.mod_type
   else debug "Filtered out"
 
 and translate_module_expression info env resolver modpath = function
-  | NoFunctor alg_exp ->
-    let modsig, _, resolver, ctxt =
-      Mod_typing.translate_mse env (Some modpath) (Some 1000) alg_exp in
-    translate_module_signature info env resolver modsig
-  | MoreFunctor _ -> ()
+  | MENoFunctor alg_exp ->
+    let mb, _, _ =
+      let state = ((Environ.universes env, Univ.Constraints.empty), Reductionops.inferred_universes) in
+      let vm_handler env univs c vmtab = vmtab, None in
+      let vmstate = 
+        Environ.vm_library env, { Mod_typing.vm_handler } in
+      Mod_typing.translate_module state vmstate env (modpath) (Some 1000) (MExpr ([], alg_exp, None)) in
+    translate_module_signature info env mb.mod_delta mb.mod_type
+  | MEMoreFunctor _ -> ()
   (* Functors definitions are simply ignored.
      Whenever functors are applied to define algebraic modules, their
      definition is expanded.
@@ -223,6 +236,7 @@ and translate_module_signature info env resolver = function
 and translate_structure_field_body info env resolver (label, sfb) =
   let full_name = (Names.ModPath.to_string info.module_path) ^ "." ^
                   (Names.Label.to_string label) in
+  if Debug.is_debug_smb full_name then debug_start ();
   debug "";
   debug "---------------------------------------------";
   debug "    Structure field body: %s" full_name;
@@ -232,7 +246,7 @@ and translate_structure_field_body info env resolver (label, sfb) =
     begin
       try
         verbose "-> %s" full_name;
-        let kername = Names.KerName.make2 info.module_path label in
+        let kername = Names.KerName.make info.module_path label in
         match sfb with
         | SFBconst cb ->
           translate_constant_body info env (isalias resolver kername) label cb
@@ -244,6 +258,7 @@ and translate_structure_field_body info env resolver (label, sfb) =
           ) info env (isalias resolver kername) label mib;
         | SFBmodule  mb -> translate_module_body (Info.update info label) env mb
         | SFBmodtype _  -> ()
+        | SFBrules _    -> failwith("translate_structure_field_body : Not supported : SBFrules")
       with e ->
         if !fail_on_issue
         then (Info.close info; raise e)
@@ -253,4 +268,5 @@ and translate_structure_field_body info env resolver (label, sfb) =
     begin
       debug "Filtered out";
       verbose "-> %s (ignored)" full_name
-    end
+    end;
+  if Debug.is_debug_smb full_name then debug_stop ();

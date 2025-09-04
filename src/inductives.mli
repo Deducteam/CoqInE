@@ -3,7 +3,7 @@
 type ind_infos
 
 (** Extract inductive infos from Coq representation *)
-val get_infos : Declarations.mutual_inductive_body -> int -> ind_infos
+val get_infos : Environ.env -> Declarations.mutual_inductive_body -> int -> ind_infos
 
 (** Translate the given inductive type.
 Handles both regular inductive type (no polymorphism):

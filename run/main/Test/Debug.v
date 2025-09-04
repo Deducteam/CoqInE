@@ -17,9 +17,9 @@
    Institution: LRI, CNRS UMR 8623 - University Paris Sud
 *)
 
-Require Export Coq.Classes.Init.
-Require Import Coq.Program.Basics.
-Require Import Coq.Program.Tactics.
+Require Export Corelib.Classes.Init.
+Require Import Corelib.Program.Basics.
+Require Import Corelib.Program.Tactics.
 
 Generalizable Variables A B C D R S T U l eqA eqB eqC eqD.
 
@@ -92,15 +92,19 @@ Section Defs.
   (** A [PreOrder] is both Reflexive and Transitive. *)
 
   Class PreOrder (R : crelation A)  := {
-    PreOrder_Reflexive :> Reflexive R | 2 ;
-    PreOrder_Transitive :> Transitive R | 2 }.
+    PreOrder_Reflexive : Reflexive R | 2 ;
+    PreOrder_Transitive : Transitive R | 2 }.
+  #[global] Existing Instance PreOrder_Reflexive.
+  #[global] Existing Instance PreOrder_Transitive.
 
   (** A [StrictOrder] is both Irreflexive and Transitive. *)
 
   Class StrictOrder (R : crelation A)  := {
-    StrictOrder_Irreflexive :> Irreflexive R ;
-    StrictOrder_Transitive :> Transitive R }.
-
+    StrictOrder_Irreflexive : Irreflexive R ;
+    StrictOrder_Transitive : Transitive R }.
+  #[global] Existing Instance StrictOrder_Irreflexive.
+  #[global] Existing Instance StrictOrder_Transitive.
+  
   (** By definition, a strict order is also asymmetric *)
   Global Instance StrictOrder_Asymmetric `(StrictOrder R) : Asymmetric R.
   Proof. firstorder. Qed.
@@ -108,15 +112,20 @@ Section Defs.
   (** A partial equivalence crelation is Symmetric and Transitive. *)
 
   Class PER (R : crelation A)  := {
-    PER_Symmetric :> Symmetric R | 3 ;
-    PER_Transitive :> Transitive R | 3 }.
+    PER_Symmetric : Symmetric R | 3 ;
+    PER_Transitive : Transitive R | 3 }.
+  #[global] Existing Instance PER_Symmetric.
+  #[global] Existing Instance PER_Transitive.
 
   (** Equivalence crelations. *)
 
   Class Equivalence (R : crelation A)  := {
-    Equivalence_Reflexive :> Reflexive R ;
-    Equivalence_Symmetric :> Symmetric R ;
-    Equivalence_Transitive :> Transitive R }.
+    Equivalence_Reflexive : Reflexive R ;
+    Equivalence_Symmetric : Symmetric R ;
+    Equivalence_Transitive : Transitive R }.
+  #[global] Existing Instance Equivalence_Reflexive.
+  #[global] Existing Instance Equivalence_Symmetric.
+  #[global] Existing Instance Equivalence_Transitive.
 
   (** An Equivalence is a PER plus reflexivity. *)
 
@@ -198,7 +207,8 @@ Section Defs.
   (** Any [Equivalence] declared in the context is automatically considered
    a rewrite crelation. *)
 
-  Global Instance equivalence_rewrite_crelation `(Equivalence eqA) : RewriteRelation eqA.
+    Global Instance equivalence_rewrite_crelation `(Equivalence eqA) : RewriteRelation eqA.
+    Defined.
 
   (** Leibniz equality. *)
   Section Leibniz.
@@ -216,28 +226,28 @@ Section Defs.
 End Defs.
 
 (** Default rewrite crelations handled by [setoid_rewrite]. *)
-Instance: RewriteRelation impl.
-Instance: RewriteRelation iff.
+#[local] Instance: RewriteRelation impl. Defined.
+#[local] Instance: RewriteRelation iff.  Defined.
 
 (** Hints to drive the typeclass resolution avoiding loops
  due to the use of full unification. *)
-Hint Extern 1 (Reflexive (complement _)) => class_apply @irreflexivity : typeclass_instances.
-Hint Extern 3 (Symmetric (complement _)) => class_apply complement_Symmetric : typeclass_instances.
-Hint Extern 3 (Irreflexive (complement _)) => class_apply complement_Irreflexive : typeclass_instances.
+#[local] Hint Extern 1 (Reflexive (complement _)) => class_apply @irreflexivity : typeclass_instances.
+#[local] Hint Extern 3 (Symmetric (complement _)) => class_apply complement_Symmetric : typeclass_instances.
+#[local] Hint Extern 3 (Irreflexive (complement _)) => class_apply complement_Irreflexive : typeclass_instances.
 
-Hint Extern 3 (Reflexive (flip _)) => apply flip_Reflexive : typeclass_instances.
-Hint Extern 3 (Irreflexive (flip _)) => class_apply flip_Irreflexive : typeclass_instances.
-Hint Extern 3 (Symmetric (flip _)) => class_apply flip_Symmetric : typeclass_instances.
-Hint Extern 3 (Asymmetric (flip _)) => class_apply flip_Asymmetric : typeclass_instances.
-Hint Extern 3 (Antisymmetric (flip _)) => class_apply flip_Antisymmetric : typeclass_instances.
-Hint Extern 3 (Transitive (flip _)) => class_apply flip_Transitive : typeclass_instances.
-Hint Extern 3 (StrictOrder (flip _)) => class_apply flip_StrictOrder : typeclass_instances.
-Hint Extern 3 (PreOrder (flip _)) => class_apply flip_PreOrder : typeclass_instances.
+#[local] Hint Extern 3 (Reflexive (flip _)) => apply flip_Reflexive : typeclass_instances.
+#[local] Hint Extern 3 (Irreflexive (flip _)) => class_apply flip_Irreflexive : typeclass_instances.
+#[local] Hint Extern 3 (Symmetric (flip _)) => class_apply flip_Symmetric : typeclass_instances.
+#[local] Hint Extern 3 (Asymmetric (flip _)) => class_apply flip_Asymmetric : typeclass_instances.
+#[local] Hint Extern 3 (Antisymmetric (flip _)) => class_apply flip_Antisymmetric : typeclass_instances.
+#[local] Hint Extern 3 (Transitive (flip _)) => class_apply flip_Transitive : typeclass_instances.
+#[local] Hint Extern 3 (StrictOrder (flip _)) => class_apply flip_StrictOrder : typeclass_instances.
+#[local] Hint Extern 3 (PreOrder (flip _)) => class_apply flip_PreOrder : typeclass_instances.
 
-Hint Extern 4 (subrelation (flip _) _) =>
+#[local] Hint Extern 4 (subrelation (flip _) _) =>
   class_apply @subrelation_symmetric : typeclass_instances.
 
-Hint Resolve irreflexivity : ord.
+#[local] Hint Resolve irreflexivity : ord.
 
 Unset Implicit Arguments.
 
@@ -249,7 +259,7 @@ Ltac solve_crelation :=
   | [ H : ?R ?x ?y |- ?R ?y ?x ] => symmetry ; exact H
   end.
 
-Hint Extern 4 => solve_crelation : crelations.
+#[local] Hint Extern 4 => solve_crelation : crelations.
 
 (** We can already dualize all these properties. *)
 
@@ -283,26 +293,26 @@ Local Obligation Tactic := simpl_crelation.
 
 (** Logical implication. *)
 
-Program Instance impl_Reflexive : Reflexive impl.
-Program Instance impl_Transitive : Transitive impl.
+#[local] Program Instance impl_Reflexive : Reflexive impl.
+#[local] Program Instance impl_Transitive : Transitive impl.
 
 (** Logical equivalence. *)
 
-Instance iff_Reflexive : Reflexive iff := iff_refl.
-Instance iff_Symmetric : Symmetric iff := iff_sym.
-Instance iff_Transitive : Transitive iff := iff_trans.
+#[local] Instance iff_Reflexive : Reflexive iff := iff_refl.
+#[local] Instance iff_Symmetric : Symmetric iff := iff_sym.
+#[local] Instance iff_Transitive : Transitive iff := iff_trans.
 
 (** Logical equivalence [iff] is an equivalence crelation. *)
 
-Program Instance iff_equivalence : Equivalence iff.
-Program Instance arrow_Reflexive : Reflexive arrow.
-Program Instance arrow_Transitive : Transitive arrow.
+#[local] Program Instance iff_equivalence : Equivalence iff.
+#[local] Program Instance arrow_Reflexive : Reflexive arrow.
+#[local] Program Instance arrow_Transitive : Transitive arrow.
 
-Instance iffT_Reflexive : Reflexive iffT.
+#[local] Instance iffT_Reflexive : Reflexive iffT.
 Proof. firstorder. Defined.
-Instance iffT_Symmetric : Symmetric iffT.
+#[local] Instance iffT_Symmetric : Symmetric iffT.
 Proof. firstorder. Defined.
-Instance iffT_Transitive : Transitive iffT.
+#[local] Instance iffT_Transitive : Transitive iffT.
 Proof. firstorder. Defined.
 
 (** We now develop a generalization of results on crelations for arbitrary predicates.
@@ -320,7 +330,7 @@ Section Binary.
   Definition relation_equivalence : crelation (crelation A) :=
     fun R R' => forall x y, iffT (R x y) (R' x y).
 
-  Global Instance: RewriteRelation relation_equivalence.
+  Global Instance: RewriteRelation relation_equivalence. Defined.
 
   Definition relation_conjunction (R : crelation A) (R' : crelation A) : crelation A :=
     fun x y => prod (R x y) (R' x y).
@@ -350,7 +360,7 @@ Section Binary.
    morphism for equivalence (see Morphisms).  It is also sufficient to
    show that [R] is antisymmetric w.r.t. [eqA] *)
 
-  Global Instance partial_order_antisym `(PartialOrder eqA R) : ! Antisymmetric A eqA R.
+  Global Instance partial_order_antisym `(PartialOrder eqA R) : Antisymmetric eqA R.
   Proof with auto.
     reduce_goal.
     apply H. firstorder.

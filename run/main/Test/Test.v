@@ -3,8 +3,13 @@ Inductive list {A:Type} : Type :=
 | Nil : list
 | Cons : A -> list -> list.
 
-Definition f : nat -> nat :=
+Definition g : nat -> nat :=
   fun x => (fix aux (n:nat) : nat := 0) x.
+
+Definition f : nat -> nat :=
+  fix  f (n:nat) {struct n} : nat := match n with 0 => 0 | S n' => S (g n') end
+  with g (n:nat) {struct n} : nat := n
+  for f.
 
 (*
 Eval compute in (fun x => f x).

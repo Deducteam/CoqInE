@@ -32,60 +32,61 @@ let set_params = List.iter (fun (x,y) -> set_param x y)
 let init_flags () =
   List.iter (fun (x,y) -> Hashtbl.replace flags x y)
     [
-      ("simpl_letins"    , false);
-      (** Translate let-in as simpl beta redices or not ? *)
+      ("simpl_letins"    , false)
+    (* Translate let-in as simpl beta redices or not ? *)
 
-      ("upolymorphism"   , false);
-      (** Is (true) polymorphism translation on ? *)
+    ; ("upolymorphism"   , false)
+    (* Is (true) polymorphism translation on ? *)
 
-      ("tpolymorphism"   , false);
-      (** Is template polymorphism translation on ? *)
+    ; ("tpolymorphism"   , false)
+    (* Is template polymorphism translation on ? *)
 
-      ("tpoly_cons"      , false);
-      (** Are template polymorphic constructors polymorphic ? *)
+    ; ("tpoly_cons"      , false)
+    (* Are template polymorphic constructors polymorphic ? *)
 
-      ("tpoly_code"      , false);
-      (** Should template polymorphic inductives parameter sort-irrelevance
-          be obtained through lift elimination (false) or a private code (true) ? *)
+    ; ("tpoly_code"      , false)
+    (* Should template polymorphic inductives parameter sort-irrelevance
+        be obtained through lift elimination (false) or a private code (true) ? *)
 
-      ("float_univ"      , false);
-      (** Is floating universe translation on ? *)
+    ; ("float_univ"      , false)
+    (* Is floating universe translation on ? *)
 
-      ("constraints"     , false);
-      (** Constraints translation ? Only has meaning when float is true. *)
+    ; ("constraints"     , false)
+    (* Constraints translation ? Only has meaning when float is true. *)
 
-      ("named_univ"      , false);
-      (** Should we use universe names or value ? Only has meaning when float is false. *)
+    ; ("named_univ"      , false)
+    (* Should we use universe names or value ?
+        Only has meaning when float is false. *)
 
-      ("readable"        , false);
-      (** Is (pseudo-)readable translation mode on ? *)
+    ; ("readable"        , false)
+    (* Is (pseudo-)readable translation mode on ? *)
 
-      ("use_cast"        , false);
-      (** Are we allowed to use casts (for casted lambdas) ?
+    ; ("use_cast"        , false)
+    (* Are we allowed to use casts (for casted lambdas) ?
           Or should we turn them into lifted lambdas instead ? *)
 
-      ("pred_univ"       , false);
-      ("pred_prod"       , false);
-      ("pred_lift"       , false);
-      ("pred_cast"       , false);
-      ("priv_lift"       , false);
-      ("priv_cast"       , false);
-      ("priv_univ"       , false);
-      ("priv_prod"       , false);
+    ; ("pred_univ"       , false)
+    ; ("pred_prod"       , false)
+    ; ("pred_lift"       , false)
+    ; ("pred_cast"       , false)
+    ; ("priv_lift"       , false)
+    ; ("priv_cast"       , false)
+    ; ("priv_univ"       , false)
+    ; ("priv_prod"       , false)
 
-      ("inlined_fixpoint", false);
-      (** Translate fixpoints as external body or inlined generic fixpoint operator ?
+    ; ("inlined_fixpoint", false)
+      (* Translate fixpoints as external body or inlined generic fixpoint operator ?
           This is a very experimental feature. *)
 
-      ("fix_arity_sort"  , false);
+    ; ("fix_arity_sort"  , false)
 
-      ("cast_arguments"  , false);
-      (** Should arguments of an application be systematically be casted to
-          their expected type ? *)
+    ; ("cast_arguments"  , false)
+    (* Should arguments of an application be systematically be casted to
+        their expected type ? *)
 
-      ("code_guarded"    , false);
+    ; ("code_guarded"    , false)
 
-      ("unfold_letin"    , false)
+    ; ("unfold_letin"    , false)
     ]
 
 let init_empty_symbs () =
@@ -109,6 +110,7 @@ let init_empty_symbs () =
       "cast";
 
       (* Infinite hierarchy of universes constructors *)
+      "sprop";
       "prop";
       "set";
       "type";

@@ -3,12 +3,14 @@
 # Variables
 COQ_MAKEFILE ?= coq_makefile
 COQTOP       ?= coqtop
-DKCHECK      ?= dkcheck
-DKDEP        ?= dkdep
+DKCHECK      ?= dk check
+DKDEP        ?= dk dep
 VERBOSE      ?=
 
 OUTFOLDER = out
 COQINEPATH=../../src
+COQINE_SRC=../../_build/install/default/lib
+COQINE_LIB=../../_build/install/default/lib/coq/user-contrib/Coqine Coqine
 
 DKS = $(wildcard $(OUTFOLDER)/*.dk)
 DKOS = $(DKS:.dk=.dko)
@@ -32,7 +34,7 @@ $(OUTFOLDER):
 
 # Generate the [.dk] files by executing [main.v]
 generate: compile $(OUTFOLDER)
-	$(COQTOP) -init-file ../../.coqrc -nois -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
+	$(COQTOP) -nois -batch -debug -R $(COQINEPATH) Coqine -R . Top -l main
 #	rm $(OUTFOLDER)/Coq__Init__Specif.dk
 #	rm $(OUTFOLDER)/Coq__Init__Tactics.dk
 #	rm $(OUTFOLDER)/Coq__Init__Peano.dk
@@ -46,7 +48,7 @@ depend:
 check: $(DKOS)
 
 %.dko: %.dk depend
-	$(DKCHECK) -I $(OUTFOLDER) --eta --snf -e $<
+	$(DKCHECK) -I $(OUTFOLDER) --eta -e $<
 
 clean: CoqMakefile
 	make -f CoqMakefile - clean
